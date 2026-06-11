@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-36081bb6.js";
+            window.path_to_searchindex_js = "searchindex-9b971663.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-f3f324e1.js"></script>
+        <script src="toc-7336c431.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,7 +178,59 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<p>Ironwood is a proposed new shielded value pool for Zcash. It is designed as an
+Orchard successor pool: it keeps the Orchard action shape, keys, and proof
+system, while separating Ironwood state from Orchard state and using a new note
+plaintext format for quantum-recoverable notes.</p>
+<p>At a high level, Ironwood introduces:</p>
+<ul>
+<li>a new shielded value pool and value balance based on Orchard,</li>
+<li>a new note commitment tree and nullifier set,</li>
+<li>transaction version 6, which is version 5 with an Ironwood bundle added,</li>
+<li>Ironwood quantum-recoverable note plaintexts,</li>
+<li>a rule that no funds can flow into Orchard after NU7, and</li>
+<li>a circuit update that lets Orchard notes be withdrawn or split into change
+notes, without allowing new value to enter Orchard.</li>
+</ul>
+<h2 id="relationship-to-orchard"><a class="header" href="#relationship-to-orchard">Relationship To Orchard</a></h2>
+<p>Ironwood reuses the Orchard action and zero-knowledge proof structure. This
+keeps the transition smaller than introducing an entirely new shielded protocol
+from first principles.</p>
+<p>The important distinction is that Ironwood is not "more Orchard state". It has
+its own value pool, tree, and nullifier set. An Ironwood note is represented with
+Orchard note machinery, but it is committed into the Ironwood note commitment
+tree and spent against the Ironwood nullifier set.</p>
+<p>This lets existing Orchard receiver and viewing-key infrastructure remain useful
+while creating a clean state boundary between legacy Orchard funds and Ironwood
+funds.</p>
+<h2 id="quantum-recoverable-notes"><a class="header" href="#quantum-recoverable-notes">Quantum-Recoverable Notes</a></h2>
+<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
+is the quantum-recoverable note plaintext format.</p>
+<p>In wallet-facing code, Ironwood notes are Orchard-shaped notes using the
+Ironwood note plaintext format. Existing Orchard notes remain ordinary Orchard
+notes. Ironwood notes use Ironwood tree state when they are spent.</p>
+<h2 id="transaction-version-6"><a class="header" href="#transaction-version-6">Transaction Version 6</a></h2>
+<p>Ironwood is carried by transaction version 6. Transaction version 6 is the same
+as version 5, except that it adds an Ironwood bundle. A version 6 transaction
+can contain:</p>
+<ul>
+<li>transparent inputs and outputs,</li>
+<li>a Sapling bundle,</li>
+<li>an Orchard bundle, and</li>
+<li>an Ironwood bundle.</li>
+</ul>
+<p>Sapling and transparent components are unchanged from version 5. The Orchard and
+Ironwood bundles follow the same Orchard-style bundle structure, but they are
+separate bundles in the transaction. Ironwood uses different personalization
+strings for its transaction and authorization hashes.</p>
+<h2 id="value-movement-after-nu7"><a class="header" href="#value-movement-after-nu7">Value Movement After NU7</a></h2>
+<p>After NU7 activation, no funds can flow into Orchard. Transactions can still
+spend Orchard funds, and zero-balance Orchard actions are still allowed, but
+Orchard value balance must not be negative.</p>
+<p>Wallet-created payments and change that would previously have produced Orchard
+outputs are routed to Ironwood after NU7. This moves newly created shielded
+value into Ironwood while still allowing legacy Orchard notes to be spent.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 
                     </main>
 

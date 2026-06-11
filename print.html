@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-36081bb6.js";
+            window.path_to_searchindex_js = "searchindex-9b971663.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-f3f324e1.js"></script>
+        <script src="toc-7336c431.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,6 +179,8 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="ironwoodsetup1λ"><a class="header" href="#ironwoodsetup1λ"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">ironwood</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord">Setup</span></span><span class="mopen">(</span><span class="mord"><span class="mord">1</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">λ</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></a></h1>
+<p>Ironwood is a new shielded pool, built to restore confidence for all Zcash'rs
+in the supply integrity of Zcash. It runs a formally verified Orchard circuit.</p>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
 <ul>
 <li><a href="https://zcash.github.io/ironwood/">The Ironwood Book</a></li>
@@ -196,19 +198,363 @@
 submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.</p>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<p>Ironwood is a proposed new shielded value pool for Zcash. It is designed as an
+Orchard successor pool: it keeps the Orchard action shape, keys, and proof
+system, while separating Ironwood state from Orchard state and using a new note
+plaintext format for quantum-recoverable notes.</p>
+<p>At a high level, Ironwood introduces:</p>
+<ul>
+<li>a new shielded value pool and value balance based on Orchard,</li>
+<li>a new note commitment tree and nullifier set,</li>
+<li>transaction version 6, which is version 5 with an Ironwood bundle added,</li>
+<li>Ironwood quantum-recoverable note plaintexts,</li>
+<li>a rule that no funds can flow into Orchard after NU7, and</li>
+<li>a circuit update that lets Orchard notes be withdrawn or split into change
+notes, without allowing new value to enter Orchard.</li>
+</ul>
+<h2 id="relationship-to-orchard"><a class="header" href="#relationship-to-orchard">Relationship To Orchard</a></h2>
+<p>Ironwood reuses the Orchard action and zero-knowledge proof structure. This
+keeps the transition smaller than introducing an entirely new shielded protocol
+from first principles.</p>
+<p>The important distinction is that Ironwood is not "more Orchard state". It has
+its own value pool, tree, and nullifier set. An Ironwood note is represented with
+Orchard note machinery, but it is committed into the Ironwood note commitment
+tree and spent against the Ironwood nullifier set.</p>
+<p>This lets existing Orchard receiver and viewing-key infrastructure remain useful
+while creating a clean state boundary between legacy Orchard funds and Ironwood
+funds.</p>
+<h2 id="quantum-recoverable-notes"><a class="header" href="#quantum-recoverable-notes">Quantum-Recoverable Notes</a></h2>
+<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
+is the quantum-recoverable note plaintext format.</p>
+<p>In wallet-facing code, Ironwood notes are Orchard-shaped notes using the
+Ironwood note plaintext format. Existing Orchard notes remain ordinary Orchard
+notes. Ironwood notes use Ironwood tree state when they are spent.</p>
+<h2 id="transaction-version-6"><a class="header" href="#transaction-version-6">Transaction Version 6</a></h2>
+<p>Ironwood is carried by transaction version 6. Transaction version 6 is the same
+as version 5, except that it adds an Ironwood bundle. A version 6 transaction
+can contain:</p>
+<ul>
+<li>transparent inputs and outputs,</li>
+<li>a Sapling bundle,</li>
+<li>an Orchard bundle, and</li>
+<li>an Ironwood bundle.</li>
+</ul>
+<p>Sapling and transparent components are unchanged from version 5. The Orchard and
+Ironwood bundles follow the same Orchard-style bundle structure, but they are
+separate bundles in the transaction. Ironwood uses different personalization
+strings for its transaction and authorization hashes.</p>
+<h2 id="value-movement-after-nu7"><a class="header" href="#value-movement-after-nu7">Value Movement After NU7</a></h2>
+<p>After NU7 activation, no funds can flow into Orchard. Transactions can still
+spend Orchard funds, and zero-balance Orchard actions are still allowed, but
+Orchard value balance must not be negative.</p>
+<p>Wallet-created payments and change that would previously have produced Orchard
+outputs are routed to Ironwood after NU7. This moves newly created shielded
+value into Ironwood while still allowing legacy Orchard notes to be spent.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="preliminaries"><a class="header" href="#preliminaries">Preliminaries</a></h1>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="quantum-recoverability"><a class="header" href="#quantum-recoverability">Quantum Recoverability</a></h1>
+<p>Quantum recoverability is the note-level change that defines Ironwood notes. It
+does not make the current Orchard-style protocol post-quantum. Instead, it
+changes how new Orchard-style notes are created so they can be recovered into a
+future shielded protocol if the current elliptic-curve-based protocol ever has
+to be disabled.</p>
+<p>The threat model is supply integrity. If an attacker can break discrete
+logarithms on the curves used by Zcash, then the existing Sapling and Orchard
+note commitments are not binding against that attacker. Even if Zcash later
+upgraded its proof system and rebuilt note commitments with a post-quantum hash,
+an attacker could otherwise try to forge a note that was not actually in the
+commitment tree.</p>
+<p>Quantum-recoverable notes address this by changing how note commitment
+randomness is derived.</p>
+<h2 id="ironwood-notes"><a class="header" href="#ironwood-notes">Ironwood Notes</a></h2>
+<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
+is the quantum-recoverable note plaintext format.</p>
+<p>Older Orchard notes use note plaintext lead byte <code>0x02</code>. For those notes, the note
+commitment randomness is derived from <code>rseed</code> and the note position seed <code>rho</code>.</p>
+<p>For Ironwood notes, the randomness is instead derived from the note contents. The
+derivation binds the randomness to:</p>
+<ul>
+<li>the diversifier-derived point,</li>
+<li>the recipient public key,</li>
+<li>the note value,</li>
+<li><code>rho</code>, and</li>
+<li>the note-specific <code>psi</code> value.</li>
+</ul>
+<p>In effect, the note contents become part of the randomness derivation.</p>
+<pre class="mermaid">flowchart LR
+    subgraph V2[&quot;Orchard note&quot;]
+        V2Inputs[&quot;rseed, rho&quot;] --&gt; V2Rcm[&quot;rcm&quot;]
+    end
+
+    subgraph Ironwood[&quot;Ironwood / QR note&quot;]
+        IronwoodInputs[&quot;rseed, gd, pkd, value, rho, psi&quot;] --&gt; IronwoodRcm[&quot;rcm&quot;]
+    end
+
+    IronwoodRcm --&gt; Future[&quot;future recovery statement can check derivation&quot;]
+</pre>
+<p>This makes it possible for a future recovery protocol to prove that a recovered
+note corresponds to a real note with fixed contents, rather than to a forged
+choice of note fields.</p>
+<p>Ironwood outputs are Orchard-style notes using the Ironwood note plaintext
+format. Ironwood still uses Orchard-shaped actions, receivers, and note
+encryption. The distinction is that Ironwood notes use the QR note plaintext
+format, are committed into the Ironwood note commitment tree, and are spent
+against the Ironwood nullifier set.</p>
+<h2 id="what-this-does-not-do"><a class="header" href="#what-this-does-not-do">What This Does Not Do</a></h2>
+<p>Quantum recoverability is not a post-quantum shielded protocol by itself.</p>
+<p>It does not:</p>
+<ul>
+<li>make current Orchard-style spends post-quantum secure,</li>
+<li>define the future recovery protocol in full,</li>
+<li>choose a future post-quantum proof system, or</li>
+<li>choose a future post-quantum note commitment tree.</li>
+</ul>
+<p>It is a forward-compatibility change. The goal is to make funds created as
+recoverable notes usable by a later recovery protocol, without requiring Zcash
+to choose that future protocol today.</p>
+<h2 id="why-this-matters-for-ironwood"><a class="header" href="#why-this-matters-for-ironwood">Why This Matters For Ironwood</a></h2>
+<p>Ironwood is the pool where new Orchard-style shielded value goes after NU7.
+Using Ironwood notes means new Ironwood funds are created in the recoverable
+format from the start.</p>
+<p>This gives Zcash a migration path: existing value can be moved into Ironwood,
+and Ironwood notes are structured so that a future post-quantum transition has
+the information it needs to recover those funds.</p>
+<p>Further reading:</p>
+<ul>
+<li><a href="https://zips.z.cash/zip-2005">ZIP 2005: Orchard Quantum Recoverability</a></li>
+</ul>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="design"><a class="header" href="#design">Design</a></h1>
-<script class="todo-data" type="application/json">["concepts.html", "concepts/preliminaries.html", "design.html", "user.html"]</script>
+<p>This page summarizes the main design decisions behind Ironwood.</p>
+<h2 id="goals"><a class="header" href="#goals">Goals</a></h2>
+<p>Ironwood is intended to introduce a new shielded pool without discarding the
+parts of Orchard that are still useful. The design therefore separates
+consensus state while reusing Orchard-shaped actions, proofs, receivers, and
+wallet infrastructure where possible.</p>
+<p>The result is a new pool with a smaller implementation and deployment surface
+than a fully independent shielded protocol.</p>
+<h2 id="new-shielded-pool"><a class="header" href="#new-shielded-pool">New Shielded Pool</a></h2>
+<p>Ironwood is a new shielded value pool and value balance based on Orchard. This
+is consensus-relevant: transactions account for Ironwood value separately from
+Sapling and Orchard.</p>
+<p>Version 6 transactions support the following pools:</p>
+<ul>
+<li>transparent,</li>
+<li>Sapling,</li>
+<li>Orchard, and</li>
+<li>Ironwood.</li>
+</ul>
+<p>Transaction version 6 is the same as transaction version 5, except that it adds
+an Ironwood bundle. Sapling, Orchard, and transparent transaction components are
+otherwise unchanged from version 5.</p>
+<h2 id="separate-state"><a class="header" href="#separate-state">Separate State</a></h2>
+<p>Ironwood has a separate note commitment tree and a separate nullifier set.</p>
+<p>This is the main boundary between Orchard and Ironwood. Even though an Ironwood
+action has the Orchard action shape, its note commitments are appended to the
+Ironwood tree, and its nullifiers are checked against the Ironwood nullifier
+set.</p>
+<p>This prevents Orchard and Ironwood from sharing anonymity-set state by accident
+and gives the protocol a clean migration path away from legacy Orchard state.</p>
+<h2 id="orchard-style-bundle"><a class="header" href="#orchard-style-bundle">Orchard-Style Bundle</a></h2>
+<p>The Ironwood bundle reuses Orchard action and bundle structure. In the
+implementation this appears as a second Orchard-shaped bundle with an Ironwood
+bundle protocol marker.</p>
+<p>This means Ironwood inherits:</p>
+<ul>
+<li>Orchard action layout,</li>
+<li>Orchard authorization structure,</li>
+<li>Orchard note encryption shape,</li>
+<li>Orchard proof construction, and</li>
+<li>Orchard bundle padding behavior.</li>
+</ul>
+<p>Quantum recoverability is the only note-level change for new Ironwood outputs.
+The rest of the bundle structure follows Orchard.</p>
+<h2 id="orchard-circuit-constraint"><a class="header" href="#orchard-circuit-constraint">Orchard Circuit Constraint</a></h2>
+<p>After NU7, Orchard is constrained so that it can only remove value from Orchard
+or split existing Orchard notes into change notes. It must not allow new value
+to enter Orchard.</p>
+<p>This means Orchard remains usable for legacy note handling:</p>
+<ul>
+<li>an Orchard note can be withdrawn out of Orchard,</li>
+<li>an Orchard note can be split into multiple Orchard change notes, and</li>
+<li>zero-balance Orchard actions remain possible.</li>
+</ul>
+<p>But transactions cannot use Orchard as a destination for newly created value.
+New shielded outputs that would previously have been Orchard outputs are routed
+to Ironwood instead.</p>
+<h2 id="quantum-recoverable-ironwood-notes"><a class="header" href="#quantum-recoverable-ironwood-notes">Quantum-Recoverable Ironwood Notes</a></h2>
+<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
+is the quantum-recoverable note plaintext format.</p>
+<p>This gives Ironwood a concrete note-level distinction while preserving Orchard
+keys and receiver handling. Wallet code can therefore model Ironwood notes as
+Orchard-shaped notes, but classify them by note plaintext format:</p>
+<ul>
+<li>Orchard notes use the existing Orchard note plaintext format,</li>
+<li>Ironwood notes use the Ironwood / QR note plaintext format.</li>
+</ul>
+<p>When an Ironwood note is spent, the witness is obtained from the Ironwood note
+commitment tree, not the Orchard tree.</p>
+<h2 id="version-6-transaction-format"><a class="header" href="#version-6-transaction-format">Version 6 Transaction Format</a></h2>
+<p>Transaction version 6 adds the Ironwood bundle to the transaction format. The
+bundle order is:</p>
+<ol>
+<li>transparent bundle,</li>
+<li>Sapling bundle,</li>
+<li>Orchard bundle,</li>
+<li>Ironwood bundle.</li>
+</ol>
+<p>The Ironwood bundle uses the same Orchard-style bundle serialization as the
+Orchard bundle, but is interpreted under the Ironwood protocol context.</p>
+<p>Version 6 is the default transaction version for NU7. Version 5 remains the
+transaction version for NU5 through NU6.2.</p>
+<h2 id="transaction-hashing"><a class="header" href="#transaction-hashing">Transaction Hashing</a></h2>
+<p>Ironwood uses Orchard-style bundle and action hashing, but with
+Ironwood-specific personalization strings.</p>
+<p>This applies to:</p>
+<ul>
+<li>Ironwood bundle txid hashing,</li>
+<li>Ironwood action compact hashing,</li>
+<li>Ironwood action memo hashing,</li>
+<li>Ironwood action non-compact hashing, and</li>
+<li>Ironwood authorization hashing.</li>
+</ul>
+<p>The version 6 transaction ID tree includes an Ironwood digest after the Orchard
+digest. Empty Ironwood bundles are represented by the Ironwood empty-bundle
+digest, not by reusing Orchard's empty-bundle digest.</p>
+<p>Version 6 signature hashing uses the version 6 transaction hash path. This
+ensures signatures bind to the Ironwood bundle when it is present.</p>
+<h2 id="post-nu7-orchard-value-rule"><a class="header" href="#post-nu7-orchard-value-rule">Post-NU7 Orchard Value Rule</a></h2>
+<p>After NU7 activation, no funds can flow into Orchard. Transactions must not have
+a negative Orchard value balance.</p>
+<p>The rule still permits:</p>
+<ul>
+<li>spending existing Orchard value,</li>
+<li>positive Orchard value balances, where value exits Orchard, and</li>
+<li>zero-balance Orchard actions.</li>
+</ul>
+<p>This lets wallets spend existing Orchard funds while preventing newly created
+shielded value from being placed back into Orchard.</p>
+<h2 id="wallet-routing"><a class="header" href="#wallet-routing">Wallet Routing</a></h2>
+<p>Wallet-created Orchard receiver outputs are routed to Ironwood after NU7.</p>
+<p>Before NU7, an Orchard receiver produces an Orchard output. After NU7, the same
+receiver produces an Ironwood output using the QR note plaintext format.
+Change follows the same rule: Orchard change after NU7 is emitted as Ironwood
+change.</p>
+<p>When spending notes, wallets split Orchard-shaped notes by note plaintext
+format:</p>
+<ul>
+<li>Orchard notes use the Orchard anchor and Orchard witness path,</li>
+<li>Ironwood notes use the Ironwood anchor and Ironwood witness path.</li>
+</ul>
+<p>This allows legacy Orchard notes to migrate out through ordinary spends while
+ensuring new outputs land in Ironwood.</p>
+<h2 id="wallet-storage-and-apis"><a class="header" href="#wallet-storage-and-apis">Wallet Storage And APIs</a></h2>
+<p>Ironwood is exposed as a distinct pool in wallet-facing state, while reusing
+Orchard-shaped note data internally.</p>
+<p>Wallet storage tracks:</p>
+<ul>
+<li>Ironwood tree metadata,</li>
+<li>Ironwood shardtree state,</li>
+<li>Ironwood nullifier observations,</li>
+<li>Ironwood balances,</li>
+<li>Ironwood Orchard-shaped received notes, and</li>
+<li>pool-code distinctions for sent and received outputs.</li>
+</ul>
+<p>Compact block and lightwallet protocol data also grow Ironwood fields:</p>
+<ul>
+<li>Ironwood action data,</li>
+<li>Ironwood commitment tree size,</li>
+<li>Ironwood tree state, and</li>
+<li>Ironwood subtree roots.</li>
+</ul>
+<p>This gives light clients enough information to maintain the Ironwood note
+commitment tree and detect Ironwood spends and outputs independently of Orchard.</p>
+<h2 id="pczt"><a class="header" href="#pczt">PCZT</a></h2>
+<p>Partially-created Zcash transactions include an Ironwood bundle in the updated
+PCZT format.</p>
+<p>PCZT version 2 can carry:</p>
+<ul>
+<li>transparent data,</li>
+<li>Sapling data,</li>
+<li>Orchard data, and</li>
+<li>Ironwood data.</li>
+</ul>
+<p>The PCZT Orchard action fields also include note plaintext version, because
+verifiers and provers need the note version to reconstruct note commitments.</p>
+<h2 id="open-placeholders"><a class="header" href="#open-placeholders">Open Placeholders</a></h2>
+<p>The current design still has placeholders that should be finalized before a
+production protocol specification:</p>
+<ul>
+<li>the NU7 consensus branch ID,</li>
+<li>the exact circuit/proof-system changes, if any, beyond Orchard reuse,</li>
+<li>final ZIP text for transaction version 6 and Ironwood hashing, and</li>
+<li>final activation heights and deployment rules.</li>
+</ul>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="transaction-format"><a class="header" href="#transaction-format">Transaction Format</a></h1>
+<p>Version 6 follows the version 5 transaction format, with an Ironwood bundle
+added after the Orchard bundle.</p>
+<p>At the transaction ID layer, Ironwood is another child in the transaction hash
+tree:</p>
+<pre class="mermaid">flowchart TD
+    TxId[&quot;txid&lt;br/&gt;ZcashTxHash_ || consensusBranchId&quot;]
+
+    Header[&quot;header digest&lt;br/&gt;version, branch ID, lock time, expiry height&quot;]
+    Transparent[&quot;transparent digest&quot;]
+    Sapling[&quot;Sapling digest&quot;]
+    Orchard[&quot;Orchard bundle digest&quot;]
+    Ironwood[&quot;Ironwood bundle digest&quot;]
+
+    TxId --&gt; Header
+    TxId --&gt; Transparent
+    TxId --&gt; Sapling
+    TxId --&gt; Orchard
+    TxId --&gt; Ironwood
+</pre>
+<p>The Orchard and Ironwood bundle digests have the same structure. The difference
+is that Ironwood uses its own personalization strings at each bundle-hash node:</p>
+<pre class="mermaid">flowchart TD
+    OrchardBundle[&quot;Orchard bundle digest&lt;br/&gt;ZTxIdOrchardHash&quot;]
+    IronwoodBundle[&quot;Ironwood bundle digest&lt;br/&gt;ZTxIdIronwd_Hash&quot;]
+
+    subgraph Shape[&quot;Same Orchard-style bundle hash shape&quot;]
+        Compact[&quot;actions compact hash&lt;br/&gt;nf, cmx, epk, compact ciphertext&quot;]
+        Memos[&quot;actions memo hash&lt;br/&gt;memo ciphertext&quot;]
+        NonCompact[&quot;actions non-compact hash&lt;br/&gt;cv, rk, remaining ciphertext&quot;]
+        Flags[&quot;bundle flags&quot;]
+        Value[&quot;value balance&quot;]
+        Anchor[&quot;bundle anchor&quot;]
+    end
+
+    OrchardBundle --&gt; Compact
+    OrchardBundle --&gt; Memos
+    OrchardBundle --&gt; NonCompact
+    OrchardBundle --&gt; Flags
+    OrchardBundle --&gt; Value
+    OrchardBundle --&gt; Anchor
+
+    IronwoodBundle -. same fields .-&gt; Compact
+    IronwoodBundle -. same fields .-&gt; Memos
+    IronwoodBundle -. same fields .-&gt; NonCompact
+    IronwoodBundle -. same fields .-&gt; Flags
+    IronwoodBundle -. same fields .-&gt; Value
+    IronwoodBundle -. same fields .-&gt; Anchor
+</pre>
+<p>The same rule applies to authorization hashing: Ironwood follows the Orchard
+bundle authorization structure, but uses Ironwood-specific personalization
+strings.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
 
                     </main>
 
