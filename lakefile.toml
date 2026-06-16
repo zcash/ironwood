@@ -1,0 +1,21 @@
+name = "Zcash"
+version = "0.1.0"
+keywords = ["cryptography", "math", "protocols"]
+defaultTargets = ["Zcash"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.30.0-rc2"
+
+[[require]]
+name = "CompElliptic"
+git = "https://github.com/daira/CompElliptic"
+rev = "74a35313bbda9d6c32f98e33f8cd71700aa120c1"
+
+[[lean_lib]]
+name = "Zcash"

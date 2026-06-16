@@ -1,0 +1,83 @@
+name: Lean
+
+# Always triggers, so the required `Lean CI` check is always reported (a
+# workflow skipped by `on.paths` would leave a required check pending and
+# block merges). The heavy build is instead gated on a path filter computed
+# inside the run: it is skipped only when the change is provably irrelevant
+# to Lean (touches nothing but non-Lean files under book/). Erring toward
+# running keeps a malicious PR from silently dodging the build by editing a
+# Lean-relevant file.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  changes:
+    name: Detect Lean-relevant changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      lean: ${{ steps.filter.outputs.lean }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      # dorny/paths-filter compiles each rule to its own picomatch matcher and
+      # ORs them, so a change is Lean-relevant iff some changed file is either
+      # not under book/ or is a .lean file (anywhere). Note this is NOT the
+      # sequential-negation semantics of GitHub's own `on.paths` engine.
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        id: filter
+        with:
+          filters: |
+            lean:
+              - '!book/**'
+              - '**/*.lean'
+
+  build:
+    name: Build the Zcash formalization
+    needs: changes
+    if: needs.changes.outputs.lean == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      # Installs the toolchain from lean-toolchain, fetches the Mathlib olean
+      # cache, and runs `lake build` (defaultTargets = Zcash).
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+
+  lean-ci:
+    # The single stable check to mark as a required status check. It always
+    # runs, so it always reports; it fails only if the build actually failed.
+    name: Lean CI
+    needs: [changes, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on the build result
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "The changes-detection job did not succeed."
+            exit 1
+          fi
+          case "$BUILD_RESULT" in
+            success|skipped)
+              echo "Lean build passed or was not required for this change." ;;
+            *)
+              echo "Lean build result: $BUILD_RESULT."
+              exit 1 ;;
+          esac
