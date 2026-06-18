@@ -56,6 +56,19 @@ def add {k : ℕ} {F G : Type*} [Add F] (m₁ m₂ : Msm k F G) : Msm k F G :=
     uScalar := m₁.uScalar + m₂.uScalar
     other := m₁.other ++ m₂.other }
 
+/-- Add a list of scalars to the SRS-generator coefficients by position (halo2 `add_to_g_scalars`;
+also covers `add_constant_term c` as `addToGScalars [c]`). Entries past the list default to `0`. -/
+def addToGScalars {k : ℕ} {F G : Type*} [Add F] [Zero F] (l : List F) (m : Msm k F G) : Msm k F G :=
+  { m with gScalars := fun i => m.gScalars i + l.getD i.val 0 }
+
+/-- Add to the inner-product-generator coefficient (halo2 `add_to_u_scalar`). -/
+def addToUScalar {k : ℕ} {F G : Type*} [Add F] (c : F) (m : Msm k F G) : Msm k F G :=
+  { m with uScalar := m.uScalar + c }
+
+/-- Add to the blinding-generator coefficient (halo2 `add_to_w_scalar`). -/
+def addToWScalar {k : ℕ} {F G : Type*} [Add F] (c : F) (m : Msm k F G) : Msm k F G :=
+  { m with wScalar := m.wScalar + c }
+
 /-- Evaluate the MSM against an `SRS` as
 `(∑ᵢ gScalarsᵢ • gᵢ) + wScalar • w + uScalar • u + Σ (c • P)`. The verifier accepts iff this is `0`. -/
 def eval {F G : Type*} [Field F] [AddCommGroup G] [Module F G]

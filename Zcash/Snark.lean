@@ -8,3 +8,4 @@ import Zcash.Snark.Challenges
 import Zcash.Snark.Msm
 import Zcash.Snark.Fingerprint
 import Zcash.Snark.Batch
+import Zcash.Snark.Ipa
