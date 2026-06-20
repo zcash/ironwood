@@ -14,3 +14,4 @@ import Zcash.Snark.Queries
 import Zcash.Snark.Expressions
 import Zcash.Snark.Assemble
 import Zcash.Snark.FiatShamir
+import Zcash.Snark.Match
