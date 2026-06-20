@@ -12,3 +12,4 @@ import Zcash.Snark.Ipa
 import Zcash.Snark.Verifier
 import Zcash.Snark.Queries
 import Zcash.Snark.Expressions
+import Zcash.Snark.Assemble
