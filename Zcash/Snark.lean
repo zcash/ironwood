@@ -11,3 +11,4 @@ import Zcash.Snark.Batch
 import Zcash.Snark.Ipa
 import Zcash.Snark.Verifier
 import Zcash.Snark.Queries
+import Zcash.Snark.Expressions
