@@ -14,11 +14,11 @@ What this file currently provides:
 * `vanishingHCommitment` — the vanishing argument's `h` commitment.
 * `accumulateCommitment`, `compressQCommitments`, `multiopenCombine` — the multiopen `x₁` compression and
   `x₄` collapse (`multiopen/verifier.rs`).
+* `lagrangeEval`, `multiopenEval` — the multiopen combined value `v` (the Lagrange interpolation step).
 
-Two VK-fixed pieces are still taken as inputs here rather than re-derived: the point-set grouping
-(`construct_intermediate_sets`, which depends only on the query layout) supplies the `sets` argument of
-`compressQCommitments`, and the Lagrange interpolation of the per-set evaluations supplies the `msmEval`
-base of `multiopenCombine`.
+The point-set grouping (`construct_intermediate_sets`) is still taken as input — it is VK-fixed
+bookkeeping that depends only on the query layout, and supplies the per-set commitment and evaluation
+lists. Everything downstream (the `x₁`/`x₄` folds and the combined value `v`) is computed here.
 -/
 
 namespace Zcash.Snark
@@ -68,5 +68,26 @@ def multiopenCombine {k : ℕ} {F G : Type*} [Field F] (x4 : F) (qPrime : G)
   (qCommitments.zip u).foldl
     (fun (st : Msm k F G × F) p => ((st.1.scale x4).add p.1, st.2 * x4 + p.2))
     (incoming.appendTerm (1 : F) qPrime, msmEval)
+
+/-- The value at `x` of the polynomial interpolating `(points, evals)`, in barycentric Lagrange form
+`Σᵢ evalsᵢ · ∏_{j≠i} (x − pⱼ)/(pᵢ − pⱼ)`. This is the same field element as halo2's
+`eval_polynomial (lagrange_interpolate points evals) x` (the unique interpolant evaluated at `x`). -/
+def lagrangeEval {F : Type*} [Field F] (x : F) (points evals : List F) : F :=
+  let n := points.length
+  (List.range n).foldl (fun acc i =>
+    let pi := points.getD i 0
+    let li := (List.range n).foldl (fun p j =>
+      if j = i then p else p * (x - points.getD j 0) / (pi - points.getD j 0)) (1 : F)
+    acc + evals.getD i 0 * li) (0 : F)
+
+/-- The multiopen combined evaluation `msm_eval` — the base of the opening value `v` (`multiopen/verifier.rs`).
+For each point set (`s = (points, evals, u)`, with `evals` the `x₁`-compressed per-point evaluations and
+`u` the prover's claimed quotient evaluation), subtract the Lagrange value of `evals` at `x₃`, divide out
+the vanishing factors `∏ (x₃ − pt)⁻¹`, and combine the sets by `x₂`. -/
+def multiopenEval {F : Type*} [Field F] (x2 x3 : F) (sets : List (List F × List F × F)) : F :=
+  sets.foldl (fun msmEval s =>
+    let rEval := lagrangeEval x3 s.1 s.2.1
+    let evalSet := s.1.foldl (fun e point => e * (x3 - point)⁻¹) (s.2.2 - rEval)
+    msmEval * x2 + evalSet) (0 : F)
 
 end Zcash.Snark
