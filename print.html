@@ -30,7 +30,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-c11d721a.css">
+        <link rel="stylesheet" href="custom-1235b096.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-6e2fc95b.js";
+            window.path_to_searchindex_js = "searchindex-96b4daa9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-7336c431.js"></script>
+        <script src="toc-7236eabb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,16 +178,16 @@
                 <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="ironwoodsetup1λ"><a class="header" href="#ironwoodsetup1λ"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">ironwood</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord">Setup</span></span><span class="mopen">(</span><span class="mord"><span class="mord">1</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">λ</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></a></h1>
-<p>Ironwood is a new shielded pool, built to restore confidence for all Zcash'rs
-in the supply integrity of Zcash. A formal verification is in progress, which
-is intended to cover at least soundness of the Action circuit used by the
-Orchard and Ironwood pools, before the upgrade that activates Ironwood.
-An important part of this effort will be to clearly and accurately document
-the scope of what is and is not formally verified.</p>
+<h1 id="ironwood-setup1λ"><a class="header" href="#ironwood-setup1λ">Ironwood <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3302em;"></span><span class="mrel sizing reset-size6 size5">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9684em;vertical-align:-0.225em;"></span><span class="mord text sizing reset-size6 size5"><span class="mord">Setup</span></span><span class="mopen sizing reset-size6 size5">(</span><span class="mord sizing reset-size6 size5"><span class="mord">1</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.826em;"><span style="top:-2.963em;margin-right:0.0556em;"><span class="pstrut" style="height:2.6em;"></span><span class="sizing reset-size5 size2 mtight"><span class="mord mathnormal mtight">λ</span></span></span></span></span></span></span></span><span class="mclose sizing reset-size6 size5">)</span></span></span></span></a></h1>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span> is a project to deploy a new shielded pool, built to restore
+confidence for all Zcash'rs in the supply integrity of Zcash.</p>
+<p>A formal verification is in progress, which is intended to cover at least soundness
+of the Action circuit used by the <em>Orchard</em> and <em>Ironwood pools</em>, before the NU6.3
+upgrade that activates the latter. An important part of this effort will be to clearly
+and accurately document the scope of what is and is not formally verified.</p>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
 <ul>
-<li><a href="https://zcash.github.io/ironwood/">The Ironwood Book</a></li>
+<li><a href="https://zcash.github.io/ironwood/"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">The Ironwood Book</span></span></span></span></span></a></li>
 </ul>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>Copyright 2026 Zcash Protocol Developers.</p>
@@ -202,119 +202,145 @@ the scope of what is and is not formally verified.</p>
 submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
-<p>Ironwood is a proposed new shielded value pool for Zcash. It is designed as an
-Orchard successor pool: it keeps the Orchard action shape, keys, and proof
-system, while separating Ironwood state from Orchard state and using a new note
-plaintext format for quantum-recoverable notes.</p>
-<p>At a high level, Ironwood introduces:</p>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span> is the project to deploy a new shielded value pool for Zcash: the
+<em>Ironwood pool</em>. The <em>Ironwood pool</em> reuses the Orchard protocol —the Orchard
+action shape, keys, and proof system— while keeping its own state, separate from
+the <em>Orchard pool</em>, and using a new note plaintext format for quantum-recoverable
+notes.</p>
+<p>At a high level, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span> introduces:</p>
 <ul>
-<li>a new shielded value pool and value balance based on Orchard,</li>
-<li>a new note commitment tree and nullifier set,</li>
-<li>transaction version 6, which is version 5 with an Ironwood bundle added,</li>
-<li>Ironwood quantum-recoverable note plaintexts,</li>
-<li>a rule that no funds can flow into Orchard after NU7, and</li>
-<li>a circuit update that lets Orchard notes be withdrawn or split into change
-notes, without allowing new value to enter Orchard.</li>
+<li>a new shielded value pool and value balance, the <em>Ironwood pool</em>, with its
+own note commitment tree and nullifier set but reusing the Orchard protocol;</li>
+<li>transaction version 6, which is version 5 with an <em>Ironwood-pool</em> bundle added;</li>
+<li>quantum-recoverable note plaintexts for <em>Ironwood-pool</em> notes;</li>
+<li>a rule that no funds can flow into the <em>Orchard pool</em> after NU6.3; and</li>
+<li>a circuit update that lets <em>Orchard-pool</em> notes be withdrawn or split into
+change notes, without allowing new value to enter that pool.</li>
 </ul>
 <h2 id="relationship-to-orchard"><a class="header" href="#relationship-to-orchard">Relationship To Orchard</a></h2>
-<p>Ironwood reuses the Orchard action and zero-knowledge proof structure. This
-keeps the transition smaller than introducing an entirely new shielded protocol
-from first principles.</p>
-<p>The important distinction is that Ironwood is not "more Orchard state". It has
-its own value pool, tree, and nullifier set. An Ironwood note is represented with
-Orchard note machinery, but it is committed into the Ironwood note commitment
-tree and spent against the Ironwood nullifier set.</p>
-<p>This lets existing Orchard receiver and viewing-key infrastructure remain useful
-while creating a clean state boundary between legacy Orchard funds and Ironwood
-funds.</p>
+<p>We distinguish the Orchard protocol —the shared action shape, keys, proof
+system, and note machinery— from the <em>Orchard pool</em> and the <em>Ironwood pool</em>, the
+two value pools that use it. Each pool has its own note commitment tree,
+nullifier set, and value balance.</p>
+<p>The <em>Ironwood pool</em> reuses the Orchard protocol's action and zero-knowledge proof
+structure. This keeps the transition smaller than introducing an entirely new
+shielded protocol from first principles.</p>
+<p>The important distinction is that the <em>Ironwood pool</em> is not "more <em>Orchard-pool</em>
+state". It has its own value balance, note commitment tree, and nullifier set. An
+<em>Ironwood-pool</em> note is represented with Orchard-protocol note machinery, but it
+is committed into the <em>Ironwood pool</em>'s note commitment tree and spent against the
+<em>Ironwood pool</em>'s nullifier set.</p>
+<p>This lets the existing Orchard receiver and viewing-key infrastructure remain
+useful while creating a clean state boundary between legacy <em>Orchard-pool</em> funds
+and <em>Ironwood-pool</em> funds.</p>
 <h2 id="quantum-recoverable-notes"><a class="header" href="#quantum-recoverable-notes">Quantum-Recoverable Notes</a></h2>
-<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
-is the quantum-recoverable note plaintext format.</p>
-<p>In wallet-facing code, Ironwood notes are Orchard-shaped notes using the
-Ironwood note plaintext format. Existing Orchard notes remain ordinary Orchard
-notes. Ironwood notes use Ironwood tree state when they are spent.</p>
+<p>ZIP 2005 defines a new Orchard-protocol note plaintext format with lead byte
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">0x03</span></span></span></span></span>: the quantum-recoverable note plaintext format. The <em>Ironwood pool</em>
+adopts this format for its notes.</p>
+<p>In wallet-facing code, <em>Ironwood-pool</em> notes are Orchard-shaped notes using the
+quantum-recoverable note plaintext format. The note plaintext format of
+<em>Orchard-pool</em> notes remains unchanged. <em>Ironwood-pool</em> notes use that pool's
+treestate when they are spent.</p>
+<h2 id="value-movement-after-nu63"><a class="header" href="#value-movement-after-nu63">Value Movement After NU6.3</a></h2>
+<p>After NU6.3 activation, no funds can flow into the <em>Orchard pool</em>. Transactions
+can still spend <em>Orchard-pool</em> funds, and zero-balance <em>Orchard-pool</em> actions are
+still allowed, but the <em>Orchard pool</em>'s value balance must not be negative.</p>
+<p>Wallet-created payments and change that would previously have produced
+<em>Orchard-pool</em> outputs are routed to the <em>Ironwood pool</em> after NU6.3. This moves
+newly created shielded value into the <em>Ironwood pool</em> while still allowing legacy
+<em>Orchard-pool</em> notes to be spent.</p>
 <h2 id="transaction-version-6"><a class="header" href="#transaction-version-6">Transaction Version 6</a></h2>
-<p>Ironwood is carried by transaction version 6. Transaction version 6 is the same
-as version 5, except that it adds an Ironwood bundle. A version 6 transaction
-can contain:</p>
+<p>A new transaction format, version 6, is introduced in order to add an
+<em>Ironwood-pool</em> bundle. There are no other transaction format changes from v5
+(there is a change to the signature hashing needed to support <a href="concepts.html#anchor-update">anchor update</a>).</p>
+<p>A version 6 transaction can contain:</p>
 <ul>
 <li>transparent inputs and outputs,</li>
-<li>a Sapling bundle,</li>
-<li>an Orchard bundle, and</li>
-<li>an Ironwood bundle.</li>
+<li>bundles for each of the <em>Sapling</em>, <em>Orchard</em>, and <em>Ironwood</em> pools.</li>
 </ul>
-<p>Sapling and transparent components are unchanged from version 5. The Orchard and
-Ironwood bundles follow the same Orchard-style bundle structure, but they are
-separate bundles in the transaction. Ironwood uses different personalization
-strings for its transaction and authorization hashes.</p>
-<h2 id="value-movement-after-nu7"><a class="header" href="#value-movement-after-nu7">Value Movement After NU7</a></h2>
-<p>After NU7 activation, no funds can flow into Orchard. Transactions can still
-spend Orchard funds, and zero-balance Orchard actions are still allowed, but
-Orchard value balance must not be negative.</p>
-<p>Wallet-created payments and change that would previously have produced Orchard
-outputs are routed to Ironwood after NU7. This moves newly created shielded
-value into Ironwood while still allowing legacy Orchard notes to be spent.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<p>The <em>Sapling-pool</em> and transparent components are unchanged from version 5. The
+<em>Orchard-pool</em> and <em>Ironwood-pool</em> bundles follow the same Orchard-protocol
+bundle structure, but they are separate bundles in the transaction. The
+<em>Ironwood-pool</em> bundle uses different personalization strings for its transaction
+and authorization hashes.</p>
+<h3 id="anchor-update"><a class="header" href="#anchor-update">Anchor update</a></h3>
+<p>NU6.3 introduces an additional change for v6 transactions, applying to all of
+the pools that version supports (<em>Sapling</em>, <em>Orchard</em>, and <em>Ironwood</em>), that allows a
+transaction to be signed and then have its anchor updated later. This can improve
+privacy by leaking less information about when the transaction was signed.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="preliminaries"><a class="header" href="#preliminaries">Preliminaries</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="quantum-recoverability"><a class="header" href="#quantum-recoverability">Quantum Recoverability</a></h1>
-<p>Quantum recoverability is the note-level change that defines Ironwood notes. It
-does not make the current Orchard-style protocol post-quantum. Instead, it
-changes how new Orchard-style notes are created so they can be recovered into a
-future shielded protocol if the current elliptic-curve-based protocol ever has
-to be disabled.</p>
-<p>The threat model is supply integrity. If an attacker can break discrete
-logarithms on the curves used by Zcash, then the existing Sapling and Orchard
+<p>Quantum recoverability is the note-level change that defines <em>Ironwood-pool</em>
+notes. It does not make the current Orchard protocol post-quantum. Instead, it
+changes how new <em>Ironwood-pool</em> notes are created so they can be recovered into a
+future shielded protocol if the current elliptic-curve-based protocol ever has to
+be disabled.</p>
+<p>The threat model is supply integrity. If an attacker can break discrete logarithms
+on the curves used by Zcash, then the existing <em>Sapling-pool</em> and <em>Orchard-pool</em>
 note commitments are not binding against that attacker. Even if Zcash later
 upgraded its proof system and rebuilt note commitments with a post-quantum hash,
 an attacker could otherwise try to forge a note that was not actually in the
 commitment tree.</p>
 <p>Quantum-recoverable notes address this by changing how note commitment
 randomness is derived.</p>
-<h2 id="ironwood-notes"><a class="header" href="#ironwood-notes">Ironwood Notes</a></h2>
-<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
-is the quantum-recoverable note plaintext format.</p>
-<p>Older Orchard notes use note plaintext lead byte <code>0x02</code>. For those notes, the note
-commitment randomness is derived from <code>rseed</code> and the note position seed <code>rho</code>.</p>
-<p>For Ironwood notes, the randomness is instead derived from the note contents. The
-derivation binds the randomness to:</p>
+<h2 id="ironwood-pool-notes"><a class="header" href="#ironwood-pool-notes"><em>Ironwood-Pool</em> Notes</a></h2>
+<p>ZIP 2005 defines a new Orchard-protocol note plaintext format with lead byte
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">0x03</span></span></span></span></span>: the quantum-recoverable note plaintext format. The <em>Ironwood pool</em>
+adopts this format for its notes. ZIP 2005 defines and analyses this new format
+and how it is used; it does not by itself define the <em>Ironwood pool</em>, or its
+note commitment tree or nullifier set. Those are layered on top of the ZIP 2005
+note-level change.</p>
+<p><em>Orchard-pool</em> notes still use note plaintext lead byte <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">0x02</span></span></span></span></span>. For
+those notes, the note commitment randomness is derived only from <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rseed</span></span></span></span></span></span>
+and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;"></span><span class="mord"><span class="mord text"><span class="mord">ρ</span></span></span></span></span></span>. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rseed</span></span></span></span></span></span> is the 32-byte random seed the sender picks for a note.
+When a note is created, its <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;"></span><span class="mord"><span class="mord text"><span class="mord">ρ</span></span></span></span></span></span> is set to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8491em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">n</span><span class="mord"><span class="mord mathsf" style="margin-right:0.06944em;">f</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span></span></span></span></span>, the nullifier of the
+input note spent in the same action (the nullifier that action reveals).</p>
+<p>For <em>Ironwood-pool</em> notes, the randomness is instead derived from the entire note
+contents. The derivation binds the randomness to:</p>
 <ul>
 <li>the diversifier-derived point,</li>
 <li>the recipient public key,</li>
 <li>the note value,</li>
-<li><code>rho</code>, and</li>
-<li>the note-specific <code>psi</code> value.</li>
+<li><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;"></span><span class="mord"><span class="mord text"><span class="mord">ρ</span></span></span></span></span></span>, and</li>
+<li>the note-specific <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;"></span><span class="mord"><span class="mord text"><span class="mord">φ</span></span></span></span></span></span> value.</li>
 </ul>
 <p>In effect, the note contents become part of the randomness derivation.</p>
 <pre class="mermaid">flowchart LR
-    subgraph V2[&quot;Orchard note&quot;]
-        V2Inputs[&quot;rseed, rho&quot;] --&gt; V2Rcm[&quot;rcm&quot;]
+    subgraph V2[&quot;Orchard-pool note&quot;]
+        V2Inputs[&quot;<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rseed</span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord text"><span class="mord">ρ</span></span></span></span></span></span>&quot;] --&gt; V2Rcm[&quot;<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4444em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rcm</span></span></span></span></span></span>&quot;]
     end
 
-    subgraph Ironwood[&quot;Ironwood / QR note&quot;]
-        IronwoodInputs[&quot;rseed, gd, pkd, value, rho, psi&quot;] --&gt; IronwoodRcm[&quot;rcm&quot;]
+    subgraph Ironwood[&quot;Ironwood-pool (QR) note&quot;]
+        IronwoodInputs[&quot;<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rseed</span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord text"><span class="mord">ρ</span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord text"><span class="mord">φ</span></span></span></span></span></span>&quot;] --&gt; IronwoodRcm[&quot;<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4444em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rcm</span></span></span></span></span></span>&quot;]
     end
 
     IronwoodRcm --&gt; Future[&quot;future recovery statement can check derivation&quot;]
 </pre>
 <p>This makes it possible for a future recovery protocol to prove that a recovered
 note corresponds to a real note with fixed contents, rather than to a forged
-choice of note fields.</p>
-<p>Ironwood outputs are Orchard-style notes using the Ironwood note plaintext
-format. Ironwood still uses Orchard-shaped actions, receivers, and note
-encryption. The distinction is that Ironwood notes use the QR note plaintext
-format, are committed into the Ironwood note commitment tree, and are spent
-against the Ironwood nullifier set.</p>
+choice of note fields. Because <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4444em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rcm</span></span></span></span></span></span> is now a hash of the note contents, the
+derivation can be recomputed from the recovered fields and checked against the
+on-chain commitment. The <em>Ironwood-pool</em> spend proof does not itself enforce this
+derivation; the check is instead carried out by a future, dedicated recovery
+statement that proves <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4444em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rcm</span></span></span></span></span></span> was derived from the note contents.</p>
+<p><em>Ironwood-pool</em> outputs are Orchard-shaped notes using the quantum-recoverable
+note plaintext format. The <em>Ironwood pool</em> still uses Orchard-shaped actions,
+receivers, and note encryption. The distinction is that <em>Ironwood-pool</em> notes use
+the quantum-recoverable note plaintext format, are committed into the <em>Ironwood
+pool</em>'s note commitment tree, and are spent against the <em>Ironwood pool</em>'s
+nullifier set.</p>
 <h2 id="what-this-does-not-do"><a class="header" href="#what-this-does-not-do">What This Does Not Do</a></h2>
 <p>Quantum recoverability is not a post-quantum shielded protocol by itself.</p>
 <p>It does not:</p>
 <ul>
-<li>make current Orchard-style spends post-quantum secure,</li>
+<li>make current Orchard-protocol spends post-quantum secure,</li>
 <li>define the future recovery protocol in full,</li>
 <li>choose a future post-quantum proof system, or</li>
 <li>choose a future post-quantum note commitment tree.</li>
@@ -323,202 +349,282 @@ against the Ironwood nullifier set.</p>
 recoverable notes usable by a later recovery protocol, without requiring Zcash
 to choose that future protocol today.</p>
 <h2 id="why-this-matters-for-ironwood"><a class="header" href="#why-this-matters-for-ironwood">Why This Matters For Ironwood</a></h2>
-<p>Ironwood is the pool where new Orchard-style shielded value goes after NU7.
-Using Ironwood notes means new Ironwood funds are created in the recoverable
-format from the start.</p>
-<p>This gives Zcash a migration path: existing value can be moved into Ironwood,
-and Ironwood notes are structured so that a future post-quantum transition has
-the information it needs to recover those funds.</p>
+<p>The <em>Ironwood pool</em> is where newly created shielded value goes after NU6.3.
+Using <em>Ironwood-pool</em> notes means new <em>Ironwood-pool</em> funds are created in the
+recoverable format from the start.</p>
+<p>This gives Zcash a migration path: existing value can be moved into the <em>Ironwood
+pool</em>, and <em>Ironwood-pool</em> notes are structured so that a future post-quantum
+transition has the information it needs to recover those funds.</p>
 <p>Further reading:</p>
 <ul>
-<li><a href="https://zips.z.cash/zip-2005">ZIP 2005: Orchard Quantum Recoverability</a></li>
+<li><a href="https://zips.z.cash/zip-2005">ZIP 2005: Ironwood Quantum Recoverability</a></li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="design"><a class="header" href="#design">Design</a></h1>
-<p>This page summarizes the main design decisions behind Ironwood.</p>
-<h2 id="goals"><a class="header" href="#goals">Goals</a></h2>
-<p>Ironwood is intended to introduce a new shielded pool without discarding the
-parts of Orchard that are still useful. The design therefore separates
+<p>This page summarizes the main design decisions behind <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span>.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<h3 id="goals"><a class="header" href="#goals">Goals</a></h3>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span> introduces a new shielded pool without discarding the parts
+of the Orchard protocol that are still useful. The design therefore separates
 consensus state while reusing Orchard-shaped actions, proofs, receivers, and
 wallet infrastructure where possible.</p>
-<p>The result is a new pool with a smaller implementation and deployment surface
-than a fully independent shielded protocol.</p>
-<h2 id="new-shielded-pool"><a class="header" href="#new-shielded-pool">New Shielded Pool</a></h2>
-<p>Ironwood is a new shielded value pool and value balance based on Orchard. This
-is consensus-relevant: transactions account for Ironwood value separately from
-Sapling and Orchard.</p>
+<p>The result is the <em>Ironwood pool</em>, with a smaller implementation and deployment
+surface than a fully independent shielded protocol.</p>
+<h3 id="new-shielded-pool"><a class="header" href="#new-shielded-pool">New Shielded Pool</a></h3>
+<p>The <em>Ironwood pool</em> is a new shielded value pool and value balance, based on the
+Orchard protocol. This is consensus-relevant: transactions account for
+<em>Ironwood-pool</em> value separately from the <em>Sapling</em> and <em>Orchard pools</em>.</p>
 <p>Version 6 transactions support the following pools:</p>
 <ul>
 <li>transparent,</li>
-<li>Sapling,</li>
-<li>Orchard, and</li>
-<li>Ironwood.</li>
+<li><em>Sapling</em>,</li>
+<li><em>Orchard</em>, and</li>
+<li><em>Ironwood</em>.</li>
 </ul>
-<p>Transaction version 6 is the same as transaction version 5, except that it adds
-an Ironwood bundle. Sapling, Orchard, and transparent transaction components are
-otherwise unchanged from version 5.</p>
-<h2 id="separate-state"><a class="header" href="#separate-state">Separate State</a></h2>
-<p>Ironwood has a separate note commitment tree and a separate nullifier set.</p>
-<p>This is the main boundary between Orchard and Ironwood. Even though an Ironwood
-action has the Orchard action shape, its note commitments are appended to the
-Ironwood tree, and its nullifiers are checked against the Ironwood nullifier
+<p>Transaction version 6 is based on transaction version 5 and adds an
+<em>Ironwood-pool</em> bundle. The transparent and <em>Sapling-pool</em> components are
+unchanged from version 5. The <em>Orchard-pool</em> component is the same bundle
+as in version 5, but version 6 changes how it is hashed and verified; see
+<a href="design.html#orchard-pool-bundle-changes-in-version-6"><em>Orchard-Pool</em> Bundle Changes in Version 6</a>.</p>
+<h2 id="pool-state"><a class="header" href="#pool-state">Pool State</a></h2>
+<h3 id="separate-state"><a class="header" href="#separate-state">Separate State</a></h3>
+<p>The <em>Ironwood pool</em> has a separate note commitment tree and a separate nullifier
 set.</p>
-<p>This prevents Orchard and Ironwood from sharing anonymity-set state by accident
-and gives the protocol a clean migration path away from legacy Orchard state.</p>
-<h2 id="orchard-style-bundle"><a class="header" href="#orchard-style-bundle">Orchard-Style Bundle</a></h2>
-<p>The Ironwood bundle reuses Orchard action and bundle structure. In the
-implementation this appears as a second Orchard-shaped bundle with an Ironwood
-bundle protocol marker.</p>
-<p>This means Ironwood inherits:</p>
+<p>This is the main boundary between the <em>Orchard</em> and <em>Ironwood pools</em>. Even though
+an <em>Ironwood-pool</em> action has the Orchard action shape, its note commitments are
+appended to the <em>Ironwood pool</em>'s tree, and its nullifiers are checked against the
+<em>Ironwood pool</em>'s nullifier set.</p>
+<p>This prevents the <em>Orchard</em> and <em>Ironwood pools</em> from sharing anonymity-set state
+by accident, and gives a clean migration path away from legacy <em>Orchard-pool</em>
+state.</p>
+<h3 id="chain-history-tree"><a class="header" href="#chain-history-tree">Chain History Tree</a></h3>
+<p>The chain history tree (the FlyClient MMR introduced in
+<a href="https://zips.z.cash/zip-0221">ZIP 221</a>) gains <em>Ironwood-pool</em> metadata. From
+NU6.3 onward, history nodes use a new node-data version that, in addition to the
+existing <em>Sapling-pool</em> and <em>Orchard-pool</em> fields, commits to:</p>
 <ul>
-<li>Orchard action layout,</li>
-<li>Orchard authorization structure,</li>
-<li>Orchard note encryption shape,</li>
-<li>Orchard proof construction, and</li>
-<li>Orchard bundle padding behavior.</li>
+<li>the <em>Ironwood pool</em>'s note commitment tree root at the start of the node's
+block range,</li>
+<li>the <em>Ironwood pool</em>'s note commitment tree root at the end of the node's block
+range, and</li>
+<li>the number of transactions in the range that contain an <em>Ironwood-pool</em> bundle.</li>
 </ul>
-<p>Quantum recoverability is the only note-level change for new Ironwood outputs.
-The rest of the bundle structure follows Orchard.</p>
-<h2 id="orchard-circuit-constraint"><a class="header" href="#orchard-circuit-constraint">Orchard Circuit Constraint</a></h2>
-<p>After NU7, Orchard is constrained so that it can only remove value from Orchard
-or split existing Orchard notes into change notes. It must not allow new value
-to enter Orchard.</p>
-<p>This means Orchard remains usable for legacy note handling:</p>
+<p>The effect is that, from NU6.3 onward, the chain history commitment binds the
+<em>Ironwood pool</em>'s tree state and <em>Ironwood-pool</em> activity of every block range,
+just as it already binds the <em>Sapling</em> and <em>Orchard pools</em>.</p>
+<h2 id="actions-and-notes"><a class="header" href="#actions-and-notes">Actions and Notes</a></h2>
+<h3 id="ironwood-pool-bundle"><a class="header" href="#ironwood-pool-bundle"><em>Ironwood-Pool</em> Bundle</a></h3>
+<p>The <em>Ironwood-pool</em> bundle reuses the Orchard-protocol action and bundle
+structure. In the implementation this appears as a second Orchard-shaped bundle
+in the transaction encoding.</p>
+<p>This means the <em>Ironwood pool</em> inherits, from the Orchard protocol:</p>
 <ul>
-<li>an Orchard note can be withdrawn out of Orchard,</li>
-<li>an Orchard note can be split into multiple Orchard change notes, and</li>
-<li>zero-balance Orchard actions remain possible.</li>
+<li>the Orchard-protocol action layout;</li>
+<li>the Orchard-protocol authorization structure;</li>
+<li>the Orchard-protocol note encryption, modified for quantum recoverability;</li>
+<li>Orchard-protocol proof construction; and</li>
+<li>Orchard-protocol bundle padding behavior.</li>
 </ul>
-<p>But transactions cannot use Orchard as a destination for newly created value.
-New shielded outputs that would previously have been Orchard outputs are routed
-to Ironwood instead.</p>
-<h2 id="quantum-recoverable-ironwood-notes"><a class="header" href="#quantum-recoverable-ironwood-notes">Quantum-Recoverable Ironwood Notes</a></h2>
-<p>ZIP 2005 defines the Ironwood note plaintext format with lead byte <code>0x03</code>. This
-is the quantum-recoverable note plaintext format.</p>
-<p>This gives Ironwood a concrete note-level distinction while preserving Orchard
-keys and receiver handling. Wallet code can therefore model Ironwood notes as
-Orchard-shaped notes, but classify them by note plaintext format:</p>
+<p>Quantum recoverability is the only note-level change for new <em>Ironwood-pool</em>
+outputs. The rest of the bundle structure follows the Orchard protocol.</p>
+<h3 id="orchard-circuit-constraint"><a class="header" href="#orchard-circuit-constraint">Orchard Circuit Constraint</a></h3>
+<p>After NU6.3, the <em>Orchard pool</em> is constrained so that it can only remove value
+from the <em>Orchard pool</em> or split existing <em>Orchard-pool</em> notes into change notes.
+It must not allow new value to enter the <em>Orchard pool</em>.</p>
+<p>This means the <em>Orchard pool</em> remains usable for legacy note handling:</p>
 <ul>
-<li>Orchard notes use the existing Orchard note plaintext format,</li>
-<li>Ironwood notes use the Ironwood / QR note plaintext format.</li>
+<li>an <em>Orchard-pool</em> note can be withdrawn out of the <em>Orchard pool</em>;</li>
+<li>an <em>Orchard-pool</em> note can be split into multiple <em>Orchard-pool</em> change notes; and</li>
+<li>zero-balance <em>Orchard-pool</em> actions remain possible.</li>
 </ul>
-<p>When an Ironwood note is spent, the witness is obtained from the Ironwood note
-commitment tree, not the Orchard tree.</p>
-<h2 id="version-6-transaction-format"><a class="header" href="#version-6-transaction-format">Version 6 Transaction Format</a></h2>
-<p>Transaction version 6 adds the Ironwood bundle to the transaction format. The
-bundle order is:</p>
-<ol>
-<li>transparent bundle,</li>
-<li>Sapling bundle,</li>
-<li>Orchard bundle,</li>
-<li>Ironwood bundle.</li>
-</ol>
-<p>The Ironwood bundle uses the same Orchard-style bundle serialization as the
-Orchard bundle, but is interpreted under the Ironwood protocol context.</p>
-<p>Version 6 is the default transaction version for NU7. Version 5 remains the
-transaction version for NU5 through NU6.2.</p>
-<h2 id="transaction-hashing"><a class="header" href="#transaction-hashing">Transaction Hashing</a></h2>
-<p>Ironwood uses Orchard-style bundle and action hashing, but with
-Ironwood-specific personalization strings.</p>
-<p>This applies to:</p>
-<ul>
-<li>Ironwood bundle txid hashing,</li>
-<li>Ironwood action compact hashing,</li>
-<li>Ironwood action memo hashing,</li>
-<li>Ironwood action non-compact hashing, and</li>
-<li>Ironwood authorization hashing.</li>
-</ul>
-<p>The version 6 transaction ID tree includes an Ironwood digest after the Orchard
-digest. Empty Ironwood bundles are represented by the Ironwood empty-bundle
-digest, not by reusing Orchard's empty-bundle digest.</p>
-<p>Version 6 signature hashing uses the version 6 transaction hash path. This
-ensures signatures bind to the Ironwood bundle when it is present.</p>
-<h2 id="post-nu7-orchard-value-rule"><a class="header" href="#post-nu7-orchard-value-rule">Post-NU7 Orchard Value Rule</a></h2>
-<p>After NU7 activation, no funds can flow into Orchard. Transactions must not have
-a negative Orchard value balance.</p>
-<p>The rule still permits:</p>
-<ul>
-<li>spending existing Orchard value,</li>
-<li>positive Orchard value balances, where value exits Orchard, and</li>
-<li>zero-balance Orchard actions.</li>
-</ul>
-<p>This lets wallets spend existing Orchard funds while preventing newly created
-shielded value from being placed back into Orchard.</p>
-<h2 id="wallet-routing"><a class="header" href="#wallet-routing">Wallet Routing</a></h2>
-<p>Wallet-created Orchard receiver outputs are routed to Ironwood after NU7.</p>
-<p>Before NU7, an Orchard receiver produces an Orchard output. After NU7, the same
-receiver produces an Ironwood output using the QR note plaintext format.
-Change follows the same rule: Orchard change after NU7 is emitted as Ironwood
-change.</p>
-<p>When spending notes, wallets split Orchard-shaped notes by note plaintext
+<p>But transactions cannot use the <em>Orchard pool</em> as a destination for newly created
+value. New shielded outputs that would previously have been <em>Orchard-pool</em>
+outputs are routed to the <em>Ironwood pool</em> instead.</p>
+<p>The "split into change notes" half of this constraint (requiring each retained
+output to return to the address it was spent from) is enforced in the Action
+circuit as the cross-address restriction. The "no new value" half is the
+value-balance rule below. See <a href="design/action-circuit.html">Action Circuit</a> for the
+exact circuit mechanism.</p>
+<h3 id="quantum-recoverable-ironwood-pool-notes"><a class="header" href="#quantum-recoverable-ironwood-pool-notes">Quantum-Recoverable <em>Ironwood-Pool</em> Notes</a></h3>
+<p>ZIP 2005 defines a new Orchard-protocol note plaintext format with lead byte
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord"><span class="mord mathtt">0x03</span></span></span></span></span>: the quantum-recoverable note plaintext format. The <em>Ironwood pool</em>
+adopts this format for its notes.</p>
+<p>This gives the <em>Ironwood pool</em> a concrete note-level distinction while preserving
+the Orchard keys and receiver handling. Wallet code can therefore model
+<em>Ironwood-pool</em> notes as Orchard-shaped notes, but classify them by note plaintext
 format:</p>
 <ul>
-<li>Orchard notes use the Orchard anchor and Orchard witness path,</li>
-<li>Ironwood notes use the Ironwood anchor and Ironwood witness path.</li>
+<li><em>Orchard-pool</em> notes use the existing note plaintext format, and</li>
+<li><em>Ironwood-pool</em> notes use the quantum-recoverable note plaintext format.</li>
 </ul>
-<p>This allows legacy Orchard notes to migrate out through ordinary spends while
-ensuring new outputs land in Ironwood.</p>
-<h2 id="wallet-storage-and-apis"><a class="header" href="#wallet-storage-and-apis">Wallet Storage And APIs</a></h2>
-<p>Ironwood is exposed as a distinct pool in wallet-facing state, while reusing
-Orchard-shaped note data internally.</p>
+<p>When an <em>Ironwood-pool</em> note is spent, the witness is obtained from the <em>Ironwood
+pool</em>'s note commitment tree, not the <em>Orchard pool</em>'s tree.</p>
+<h2 id="transaction-format-and-hashing"><a class="header" href="#transaction-format-and-hashing">Transaction Format and Hashing</a></h2>
+<h3 id="version-6-transaction-format"><a class="header" href="#version-6-transaction-format">Version 6 Transaction Format</a></h3>
+<p>Transaction version 6 adds the <em>Ironwood-pool</em> bundle to the transaction format.
+The bundle order is:</p>
+<ol>
+<li>transparent bundle,</li>
+<li><em>Sapling-pool</em> bundle,</li>
+<li><em>Orchard-pool</em> bundle,</li>
+<li><em>Ironwood-pool</em> bundle.</li>
+</ol>
+<p>The <em>Ironwood-pool</em> bundle uses the same Orchard-protocol bundle serialization as
+the <em>Orchard-pool</em> bundle, but is interpreted in the <em>Ironwood-pool</em> context.</p>
+<p>Version 6 is the default transaction version that wallets SHOULD use from NU6.3
+activation. Transaction versions 4 and 5 remain valid.</p>
+<h3 id="orchard-pool-bundle-changes-in-version-6"><a class="header" href="#orchard-pool-bundle-changes-in-version-6"><em>Orchard-Pool</em> Bundle Changes in Version 6</a></h3>
+<p>The <em>Orchard-pool</em> bundle keeps its version 5 layout, but version 6 changes it in
+three consensus-visible ways. Together these wind the <em>Orchard pool</em> down so that
+it only supports transactions that take value out of the pool or that send it to
+one of the expanded receivers spent from in the same transaction.</p>
+<ul>
+<li><strong>Flag encoding.</strong> The flags byte gains a new <code>enableCrossAddress</code> flag (bit 2).
+After NU6.3 an <em>Orchard-pool</em> bundle must <em>not</em> set it: consensus rejects a
+version 6 <em>Orchard-pool</em> bundle that does, restricting <em>Orchard-pool</em> actions to
+change or withdrawal. An <em>Ironwood-pool</em> bundle, by contrast, may set it. See
+<a href="design/action-circuit.html">Action Circuit</a>.</li>
+<li><strong>Anchor placement.</strong> For every supported pool (<em>Sapling</em>, <em>Orchard</em>, and <em>Ironwood</em>),
+the anchor is excluded from the version 6 txid and signature hash and is committed
+in the authorization digest instead. See <a href="design.html#transaction-hashing">Transaction Hashing</a>.</li>
+<li><strong>Verifying key.</strong> From NU6.3, <em>Orchard-pool</em> actions are verified with the
+post-NU6.3 circuit verifying key, which is selected by block height (not by
+transaction version), so that the cross-address restriction is enforceable on
+them. This binds <em>Orchard-pool</em> actions in version 5 transactions as well as
+version 6.</li>
+</ul>
+<p>The Orchard-protocol action machinery is otherwise reused.</p>
+<h3 id="transaction-hashing"><a class="header" href="#transaction-hashing">Transaction Hashing</a></h3>
+<p>The <em>Ironwood-pool</em> bundle uses Orchard-protocol bundle and action hashing, but
+with <em>Ironwood-pool</em>-specific personalization strings.</p>
+<p>This applies to:</p>
+<ul>
+<li><em>Ironwood-pool</em> bundle hashing,</li>
+<li><em>Ironwood-pool</em> action compact hashing,</li>
+<li><em>Ironwood-pool</em> action memo hashing,</li>
+<li><em>Ironwood-pool</em> action non-compact hashing, and</li>
+<li><em>Ironwood-pool</em> authorization hashing.</li>
+</ul>
+<p>The version 6 transaction ID tree includes an <em>Ironwood-pool</em> component digest
+after the <em>Orchard-pool</em> one. An empty <em>Ironwood-pool</em> bundle is represented by
+its own empty-bundle digest, not by reusing the <em>Orchard-pool</em> empty-bundle
+digest.</p>
+<p>Version 6 signature hashing uses the version 6 transaction hash path. This ensures
+signatures bind to the <em>Ironwood-pool</em> bundle when it is present.</p>
+<p>The bundle anchor is excluded from version 6 txid and signature hashing, and is
+committed in the authorization digest instead. Because the signature no longer
+binds the anchor, a spend can be pre-signed before the anchor it is finalized
+against exists. The anchor is still bound at the consensus layer, through the
+block's authorizing-data commitment.</p>
+<h2 id="consensus-value-rules"><a class="header" href="#consensus-value-rules">Consensus Value Rules</a></h2>
+<h3 id="post-nu63-orchard-pool-value-rule"><a class="header" href="#post-nu63-orchard-pool-value-rule">Post-NU6.3 <em>Orchard-Pool</em> Value Rule</a></h3>
+<p>After NU6.3 activation, no funds can flow into the <em>Orchard pool</em>. Transactions
+must not have a negative <em>Orchard-pool</em> value balance.</p>
+<p>The rule still permits:</p>
+<ul>
+<li>spending existing <em>Orchard-pool</em> value,</li>
+<li>positive <em>Orchard-pool</em> value balances, where value exits the <em>Orchard pool</em>,
+and</li>
+<li>zero-balance <em>Orchard-pool</em> actions.</li>
+</ul>
+<p>This lets wallets spend existing <em>Orchard-pool</em> funds while preventing newly
+created shielded value from being placed back into the <em>Orchard pool</em>.</p>
+<h3 id="coinbase-after-nu63"><a class="header" href="#coinbase-after-nu63">Coinbase After NU6.3</a></h3>
+<p>Because new value may not enter the <em>Orchard pool</em> after NU6.3, coinbase rules
+change so that block rewards are never paid into it:</p>
+<ul>
+<li><strong>Empty Orchard component.</strong> A coinbase transaction must contain no
+<em>Orchard-pool</em> actions at all. Coinbase reward outputs are routed to the
+<em>Sapling pool</em> or transparent receivers; the Orchard receiver is no longer a
+reward destination after NU6.3, and a miner address whose unified address
+contains <em>only</em> an Orchard receiver is rejected for coinbase use.</li>
+<li><strong>Coinbase value balance.</strong> The coinbase balance check accounts for the
+<em>Ironwood-pool</em> value balance alongside the <em>Sapling</em> and <em>Orchard pools</em>, and
+<em>Ironwood-pool</em> coinbase outputs must be recoverable, as already required for
+the <em>Sapling</em> and <em>Orchard pools</em>, so that coinbase funds are not burned.</li>
+<li><strong>No coinbase spends.</strong> A coinbase transaction must not enable spends in its
+<em>Ironwood-pool</em> bundle, mirroring the existing rule for the <em>Orchard pool</em>.</li>
+</ul>
+<h2 id="wallet-and-tooling"><a class="header" href="#wallet-and-tooling">Wallet and Tooling</a></h2>
+<h3 id="wallet-routing"><a class="header" href="#wallet-routing">Wallet Routing</a></h3>
+<p>Wallet-created Orchard-receiver outputs are routed to the <em>Ironwood pool</em> after
+NU6.3.</p>
+<p>Before NU6.3, an Orchard receiver produces an <em>Orchard-pool</em> output. After NU6.3,
+the same receiver produces an <em>Ironwood-pool</em> output using the quantum-recoverable
+note plaintext format. Change follows the same rule: <em>Orchard-pool</em> change after
+NU6.3 is emitted as <em>Ironwood-pool</em> change.</p>
+<p>This allows legacy <em>Orchard-pool</em> notes to migrate out through ordinary spends
+while ensuring new outputs land in the <em>Ironwood pool</em>.</p>
+<p>Wallets must keep track of which pool a note is in (as they already need to do
+for notes in the <em>Sapling</em> and <em>Orchard pools</em>), and use the appropriate anchor
+and witness path when spending them.</p>
+<h3 id="wallet-storage-and-apis"><a class="header" href="#wallet-storage-and-apis">Wallet Storage And APIs</a></h3>
+<p>The <em>Ironwood pool</em> is exposed as a distinct pool in wallet-facing state, while
+reusing Orchard-protocol note data internally.</p>
 <p>Wallet storage tracks:</p>
 <ul>
-<li>Ironwood tree metadata,</li>
-<li>Ironwood shardtree state,</li>
-<li>Ironwood nullifier observations,</li>
-<li>Ironwood balances,</li>
-<li>Ironwood Orchard-shaped received notes, and</li>
-<li>pool-code distinctions for sent and received outputs.</li>
+<li><em>Ironwood-pool</em> note commitment tree metadata,</li>
+<li><em>Ironwood-pool</em> shardtree state,</li>
+<li><em>Ironwood-pool</em> nullifier observations,</li>
+<li><em>Ironwood-pool</em> balances,</li>
+<li><em>Ironwood-pool</em> Orchard-protocol received notes, and</li>
+<li>pool distinctions for sent and received outputs.</li>
 </ul>
-<p>Compact block and lightwallet protocol data also grow Ironwood fields:</p>
+<p>Compact block and lightwallet protocol data also grow <em>Ironwood-pool</em> fields:</p>
 <ul>
-<li>Ironwood action data,</li>
-<li>Ironwood commitment tree size,</li>
-<li>Ironwood tree state, and</li>
-<li>Ironwood subtree roots.</li>
+<li><em>Ironwood-pool</em> action data,</li>
+<li><em>Ironwood-pool</em> note commitment tree size,</li>
+<li><em>Ironwood-pool</em> tree state, and</li>
+<li><em>Ironwood-pool</em> subtree roots.</li>
 </ul>
-<p>This gives light clients enough information to maintain the Ironwood note
-commitment tree and detect Ironwood spends and outputs independently of Orchard.</p>
-<h2 id="pczt"><a class="header" href="#pczt">PCZT</a></h2>
-<p>Partially-created Zcash transactions include an Ironwood bundle in the updated
-PCZT format.</p>
+<p>This gives light clients enough information to maintain the <em>Ironwood pool</em>'s note
+commitment tree and detect <em>Ironwood-pool</em> spends and outputs independently of the
+<em>Orchard pool</em>.</p>
+<h3 id="pczt"><a class="header" href="#pczt">PCZT</a></h3>
+<p>Partially-created Zcash transactions include an <em>Ironwood-pool</em> bundle in the
+updated PCZT format.</p>
 <p>PCZT version 2 can carry:</p>
 <ul>
 <li>transparent data,</li>
-<li>Sapling data,</li>
-<li>Orchard data, and</li>
-<li>Ironwood data.</li>
+<li><em>Sapling-pool</em> data,</li>
+<li><em>Orchard-pool</em> data, and</li>
+<li><em>Ironwood-pool</em> data.</li>
 </ul>
-<p>The PCZT Orchard action fields also include note plaintext version, because
-verifiers and provers need the note version to reconstruct note commitments.</p>
-<h2 id="open-placeholders"><a class="header" href="#open-placeholders">Open Placeholders</a></h2>
+<p>The PCZT action fields also include the note plaintext version, because verifiers
+and provers need it to reconstruct note commitments.</p>
+<h2 id="status"><a class="header" href="#status">Status</a></h2>
+<h3 id="open-placeholders"><a class="header" href="#open-placeholders">Open Placeholders</a></h3>
 <p>The current design still has placeholders that should be finalized before a
 production protocol specification:</p>
 <ul>
-<li>the NU7 consensus branch ID,</li>
-<li>the exact circuit/proof-system changes, if any, beyond Orchard reuse,</li>
-<li>final ZIP text for transaction version 6 and Ironwood hashing, and</li>
 <li>final activation heights and deployment rules.</li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<p>The circuit and proof-system changes, previously open here, are now specified in
+<a href="design/action-circuit.html">Action Circuit</a>. From NU6.3 a single Action circuit
+version —the Orchard-protocol Action circuit plus one new constraint, the
+cross-address restriction— is used for both the <em>Orchard</em> and <em>Ironwood pools</em>,
+with its own proving and verifying keys.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="transaction-format"><a class="header" href="#transaction-format">Transaction Format</a></h1>
-<p>Version 6 follows the version 5 transaction format, with an Ironwood bundle
-added after the Orchard bundle.</p>
-<p>At the transaction ID layer, Ironwood is another child in the transaction hash
-tree:</p>
+<p>Version 6 follows the version 5 transaction format, with an <em>Ironwood-pool</em> bundle
+added after the <em>Orchard-pool</em> bundle. Within version 6, the <em>Orchard-pool</em> bundle
+keeps its version 5 layout but gains a new <code>enableCrossAddress</code> flag. See
+<a href="design/../design.html#orchard-pool-bundle-changes-in-version-6">Orchard-Pool Bundle Changes in Version 6</a>.</p>
+<p>At the transaction ID layer, the <em>Ironwood-pool</em> bundle is another child in the
+transaction hash tree:</p>
 <pre class="mermaid">flowchart TD
     TxId[&quot;txid&lt;br/&gt;ZcashTxHash_ || consensusBranchId&quot;]
 
     Header[&quot;header digest&lt;br/&gt;version, branch ID, lock time, expiry height&quot;]
     Transparent[&quot;transparent digest&quot;]
-    Sapling[&quot;Sapling digest&quot;]
-    Orchard[&quot;Orchard bundle digest&quot;]
-    Ironwood[&quot;Ironwood bundle digest&quot;]
+    Sapling[&quot;Sapling-pool digest&quot;]
+    Orchard[&quot;Orchard-pool bundle digest&quot;]
+    Ironwood[&quot;Ironwood-pool bundle digest&quot;]
 
     TxId --&gt; Header
     TxId --&gt; Transparent
@@ -526,19 +632,19 @@ tree:</p>
     TxId --&gt; Orchard
     TxId --&gt; Ironwood
 </pre>
-<p>The Orchard and Ironwood bundle digests have the same structure. The difference
-is that Ironwood uses its own personalization strings at each bundle-hash node:</p>
+<p>The <em>Orchard-pool</em> and <em>Ironwood-pool</em> bundle digests have the same structure. The
+difference is that the <em>Ironwood-pool</em> bundle uses its own personalization strings
+at each bundle-hash node:</p>
 <pre class="mermaid">flowchart TD
-    OrchardBundle[&quot;Orchard bundle digest&lt;br/&gt;ZTxIdOrchardHash&quot;]
-    IronwoodBundle[&quot;Ironwood bundle digest&lt;br/&gt;ZTxIdIronwd_Hash&quot;]
+    OrchardBundle[&quot;Orchard-pool bundle digest&lt;br/&gt;ZTxIdOrchardH_v6&quot;]
+    IronwoodBundle[&quot;Ironwood-pool bundle digest&lt;br/&gt;ZTxIdIronwd_H_v6&quot;]
 
-    subgraph Shape[&quot;Same Orchard-style bundle hash shape&quot;]
+    subgraph Shape[&quot;Same Orchard-protocol bundle hash shape&quot;]
         Compact[&quot;actions compact hash&lt;br/&gt;nf, cmx, epk, compact ciphertext&quot;]
         Memos[&quot;actions memo hash&lt;br/&gt;memo ciphertext&quot;]
-        NonCompact[&quot;actions non-compact hash&lt;br/&gt;cv, rk, remaining ciphertext&quot;]
+        NonCompact[&quot;actions non-compact hash&lt;br/&gt;cv, rk, remaining enc ciphertext, out ciphertext&quot;]
         Flags[&quot;bundle flags&quot;]
         Value[&quot;value balance&quot;]
-        Anchor[&quot;bundle anchor&quot;]
     end
 
     OrchardBundle --&gt; Compact
@@ -546,19 +652,132 @@ is that Ironwood uses its own personalization strings at each bundle-hash node:<
     OrchardBundle --&gt; NonCompact
     OrchardBundle --&gt; Flags
     OrchardBundle --&gt; Value
-    OrchardBundle --&gt; Anchor
 
     IronwoodBundle -. same fields .-&gt; Compact
     IronwoodBundle -. same fields .-&gt; Memos
     IronwoodBundle -. same fields .-&gt; NonCompact
     IronwoodBundle -. same fields .-&gt; Flags
     IronwoodBundle -. same fields .-&gt; Value
-    IronwoodBundle -. same fields .-&gt; Anchor
 </pre>
-<p>The same rule applies to authorization hashing: Ironwood follows the Orchard
-bundle authorization structure, but uses Ironwood-specific personalization
-strings.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<p>The same rule applies to authorization hashing: the <em>Ironwood-pool</em> bundle follows
+the <em>Orchard-pool</em> bundle authorization structure, but uses <em>Ironwood-pool</em>-specific
+personalization strings.</p>
+<p>In version 6 the bundle <strong>anchor</strong> is excluded from the txid bundle digest
+shown above, and is instead committed in the <strong>authorization digest</strong>. This
+keeps both the txid and the signature sighash independent of the anchor, so
+that a spend can be signed before the anchor it is finalized against —the
+note-commitment-tree root— exists.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="action-circuit"><a class="header" href="#action-circuit">Action Circuit</a></h1>
+<p>From NU6.3, both the <em>Orchard</em> and <em>Ironwood pools</em> use a single Action circuit
+version (<code>OrchardCircuitVersion::PostNU6_3</code>). It inherits the proof system,
+curves, gadgets, and action statement from the Orchard protocol unchanged, and
+adds exactly one circuit-level constraint: a configurable <strong>cross-address
+restriction</strong> that, when active, forces an action's output note to be addressed
+to the same expanded receiver (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></span>) as the note it spends.</p>
+<h2 id="what-ironwood-reuses"><a class="header" href="#what-ironwood-reuses">What Ironwood Reuses</a></h2>
+<p>A post-NU6.3 action, in either pool, proves the
+<a href="https://zips.z.cash/protocol/protocol.pdf#actionstatement">Action Statement (Orchard)</a>
+plus the cross-address restriction below, reusing the same machinery: the same
+Halo 2 proof system and gadgets.</p>
+<p>The post-NU6.3 circuit keeps the same advice columns, the same custom gates, and
+the same circuit size as the pre-NU6.3 one. Post-NU6.3 proofs are therefore the
+same size as pre-NU6.3 proofs. They are also the same size between the <em>Orchard-pool</em>
+and <em>Ironwood-pool</em> bundles.</p>
+<h2 id="the-cross-address-restriction"><a class="header" href="#the-cross-address-restriction">The Cross-Address Restriction</a></h2>
+<p>The one new circuit constraint enforces a same-receiver property. A note is
+addressed to an expanded receiver, represented in the circuit by the diversified
+base <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span> and the diversified transmission key <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></span>. When the restriction is
+active, an action's output note and spent note must share that expanded receiver:</p>
+<blockquote>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> of the output note must equal <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> of the spent note.</p>
+</blockquote>
+<p>When active, the restriction limits each action to change (the output returns to
+the spent note's address) or withdrawal (value leaves the pool through a positive
+value balance), rather than a <em>cross-address transfer</em>. Its purpose is to
+discourage economic activity within the pool.</p>
+<p>This is the circuit mechanism behind the
+<a href="design/../design.html#orchard-circuit-constraint">Orchard Circuit Constraint</a>: after NU6.3,
+legacy <em>Orchard-pool</em> actions disable cross-address transfers and the <em>Orchard pool</em>
+is wound down, while pools that accept new payments (the <em>Ironwood pool</em>) keep
+cross-address transfers enabled.</p>
+<p>The companion rule that no new value may enter the <em>Orchard pool</em> after NU6.3
+(that the <em>Orchard pool</em>'s value balance must not be negative) is not enforced by
+this circuit. The per-action circuit only ties <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9324em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6741em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6741em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight" style="margin-right:0.01389em;">new</span></span></span></span></span></span></span></span></span></span></span></span></span> to the action's
+value commitment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.763em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">c</span><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.763em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">net</span></span></span></span></span></span></span></span></span></span></span></span></span></span>; the sign of the bundle's value balance is a
+transaction-level concern outside the orchard crate. See
+<a href="design/../design.html#post-nu63-orchard-pool-value-rule">Post-NU6.3 <em>Orchard-Pool</em> Value Rule</a>.</p>
+<h3 id="a-new-public-input"><a class="header" href="#a-new-public-input">A new public input</a></h3>
+<p>The public-input layout is unified across all circuit versions: every version's
+instance carries the same ten public inputs, with <code>disableCrossAddress</code> added
+after the existing Orchard-protocol action inputs.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: right">Index</th><th>Public input</th></tr></thead><tbody>
+<tr><td style="text-align: right">0</td><td>anchor</td></tr>
+<tr><td style="text-align: right">1–2</td><td>value commitment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.763em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">c</span><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.763em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">net</span></span></span></span></span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td style="text-align: right">3</td><td>nullifier <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8491em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">n</span><span class="mord"><span class="mord mathsf" style="margin-right:0.06944em;">f</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td style="text-align: right">4–5</td><td>randomized spend-auth key <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">rk</span></span></span></span></span></span></td></tr>
+<tr><td style="text-align: right">6</td><td>output note commitment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5944em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathsf">cm</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td style="text-align: right">7</td><td><code>enableSpends</code></td></tr>
+<tr><td style="text-align: right">8</td><td><code>enableOutputs</code></td></tr>
+<tr><td style="text-align: right">9</td><td><code>disableCrossAddress</code></td></tr>
+</tbody></table>
+</div>
+<p>The bundle-level flag is <code>enableCrossAddress</code> (the NU6.3 flag, bit 2); the
+circuit-level public input is its negation, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span></span></span></span>. The post-NU6.3
+circuit constrains it: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span> imposes no extra constraint, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> enforces the
+same-expanded-receiver property above. Older circuit versions carry and
+commit the input but leave it unconstrained, relying on the proving and
+verification API to reject a set flag they cannot enforce. Because instance
+columns are zero-padded over the evaluation domain, an unrestricted statement
+(<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>) commits identically to the pre-NU6.3 nine-input
+instance encoding.</p>
+<h3 id="how-the-constraint-is-enforced"><a class="header" href="#how-the-constraint-is-enforced">How the constraint is enforced</a></h3>
+<p>The post-NU6.3 circuit adds the constraint without adding a gate or a column. The
+existing "Orchard circuit checks" gate (which checks value balance, the computed
+Merkle root against the anchor, and the enable flags) already contains a product
+constraint of the form <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8491em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">v</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathsf">root</span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">anchor</span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>, exactly the shape needed
+for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">coor</span><span class="mord"><span class="mord mathsf">d</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">coor</span><span class="mord"><span class="mord mathsf">d</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6741em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight" style="margin-right:0.01389em;">new</span></span></span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>.</p>
+<p>The circuit reuses that gate on four extra rows, one per affine coordinate of
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0139em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">p</span><span class="mord"><span class="mord mathsf">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathsf mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></span>. Copy constraints place <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span></span></span></span> and the spent and
+output coordinates into the gate, and its selector is enabled on those rows; with
+the gate's other terms neutralized, the surviving constraint is:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1491em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">coor</span><span class="mord"><span class="mord mathsf">d</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight">old</span></span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathsf" style="margin-right:0.01389em;">coor</span><span class="mord"><span class="mord mathsf">d</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7241em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathsf mtight" style="margin-right:0.01389em;">new</span></span></span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span></p>
+<p>Any nonzero <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span></span></span></span> forces each coordinate of the output address to
+equal the spent address; a zero leaves them free. The check is conditional on the
+flag and does not rely on the flag being boolean.</p>
+<h2 id="keys-and-enforcement"><a class="header" href="#keys-and-enforcement">Keys And Enforcement</a></h2>
+<p>The post-NU6.3 circuit (<code>OrchardCircuitVersion::PostNU6_3</code>) is a new circuit
+version in the orchard crate that extends the fixed post-NU6.2 circuit with the
+cross-address constraint. It ships with its own proving and verifying keys.</p>
+<ul>
+<li><strong>The verifying key differs.</strong> Enabling the shared gate on the four extra rows
+changes the circuit's fixed (selector) columns, so the post-NU6.3 verifying
+key is distinct from the fixed-circuit verifying key, even though the proof size
+and verification cost are unchanged.</li>
+<li><strong>Restricted statements require the post-NU6.3 keys.</strong> Because older versions
+cannot constrain <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span></span></span></span>, it is incorrect to use those versions
+with an instance that includes the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord"><span class="mord mathsf">disableCrossAddress</span></span></span></span></span></span> instance variable.</li>
+</ul>
+<p>The circuit is the cryptographic enforcement point: a prover cannot satisfy a
+restricted statement with a cross-address output. The builder, PCZT,
+and signer layers add a same-receiver structural check so that honest
+participants do not construct a restricted bundle that would fail to prove.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="orchard--to-ironwood-pool-migration"><a class="header" href="#orchard--to-ironwood-pool-migration"><em>Orchard-</em> to <em>Ironwood-pool</em> Migration</a></h1>
+<p>Moving existing <em>Orchard-pool</em> funds into the <em>Ironwood pool</em> is an ordinary
+version 6 transaction rather than a special protocol operation: it spends
+<em>Orchard-pool</em> notes and creates <em>Ironwood-pool</em> outputs. It is the case where
+the post-NU6.3 rules compose. The <em>Orchard-pool</em> side has a positive value
+balance (value leaves the <em>Orchard pool</em>, which the value rule permits), and the
+<em>Ironwood-pool</em> side has a negative value balance (value enters the <em>Ironwood
+pool</em>); the two net to the fee.</p>
+<p><em>Exact wallet migration mechanics to be described.</em></p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="formal-verification"><a class="header" href="#formal-verification">Formal Verification</a></h1>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 
                     </main>
 

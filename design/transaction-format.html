@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-c11d721a.css">
+        <link rel="stylesheet" href="../custom-1235b096.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-6e2fc95b.js";
+            window.path_to_searchindex_js = "../searchindex-96b4daa9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-7336c431.js"></script>
+        <script src="../toc-7236eabb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,18 +178,20 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="transaction-format"><a class="header" href="#transaction-format">Transaction Format</a></h1>
-<p>Version 6 follows the version 5 transaction format, with an Ironwood bundle
-added after the Orchard bundle.</p>
-<p>At the transaction ID layer, Ironwood is another child in the transaction hash
-tree:</p>
+<p>Version 6 follows the version 5 transaction format, with an <em>Ironwood-pool</em> bundle
+added after the <em>Orchard-pool</em> bundle. Within version 6, the <em>Orchard-pool</em> bundle
+keeps its version 5 layout but gains a new <code>enableCrossAddress</code> flag. See
+<a href="../design.html#orchard-pool-bundle-changes-in-version-6">Orchard-Pool Bundle Changes in Version 6</a>.</p>
+<p>At the transaction ID layer, the <em>Ironwood-pool</em> bundle is another child in the
+transaction hash tree:</p>
 <pre class="mermaid">flowchart TD
     TxId[&quot;txid&lt;br/&gt;ZcashTxHash_ || consensusBranchId&quot;]
 
     Header[&quot;header digest&lt;br/&gt;version, branch ID, lock time, expiry height&quot;]
     Transparent[&quot;transparent digest&quot;]
-    Sapling[&quot;Sapling digest&quot;]
-    Orchard[&quot;Orchard bundle digest&quot;]
-    Ironwood[&quot;Ironwood bundle digest&quot;]
+    Sapling[&quot;Sapling-pool digest&quot;]
+    Orchard[&quot;Orchard-pool bundle digest&quot;]
+    Ironwood[&quot;Ironwood-pool bundle digest&quot;]
 
     TxId --&gt; Header
     TxId --&gt; Transparent
@@ -197,19 +199,19 @@ tree:</p>
     TxId --&gt; Orchard
     TxId --&gt; Ironwood
 </pre>
-<p>The Orchard and Ironwood bundle digests have the same structure. The difference
-is that Ironwood uses its own personalization strings at each bundle-hash node:</p>
+<p>The <em>Orchard-pool</em> and <em>Ironwood-pool</em> bundle digests have the same structure. The
+difference is that the <em>Ironwood-pool</em> bundle uses its own personalization strings
+at each bundle-hash node:</p>
 <pre class="mermaid">flowchart TD
-    OrchardBundle[&quot;Orchard bundle digest&lt;br/&gt;ZTxIdOrchardHash&quot;]
-    IronwoodBundle[&quot;Ironwood bundle digest&lt;br/&gt;ZTxIdIronwd_Hash&quot;]
+    OrchardBundle[&quot;Orchard-pool bundle digest&lt;br/&gt;ZTxIdOrchardH_v6&quot;]
+    IronwoodBundle[&quot;Ironwood-pool bundle digest&lt;br/&gt;ZTxIdIronwd_H_v6&quot;]
 
-    subgraph Shape[&quot;Same Orchard-style bundle hash shape&quot;]
+    subgraph Shape[&quot;Same Orchard-protocol bundle hash shape&quot;]
         Compact[&quot;actions compact hash&lt;br/&gt;nf, cmx, epk, compact ciphertext&quot;]
         Memos[&quot;actions memo hash&lt;br/&gt;memo ciphertext&quot;]
-        NonCompact[&quot;actions non-compact hash&lt;br/&gt;cv, rk, remaining ciphertext&quot;]
+        NonCompact[&quot;actions non-compact hash&lt;br/&gt;cv, rk, remaining enc ciphertext, out ciphertext&quot;]
         Flags[&quot;bundle flags&quot;]
         Value[&quot;value balance&quot;]
-        Anchor[&quot;bundle anchor&quot;]
     end
 
     OrchardBundle --&gt; Compact
@@ -217,19 +219,22 @@ is that Ironwood uses its own personalization strings at each bundle-hash node:<
     OrchardBundle --&gt; NonCompact
     OrchardBundle --&gt; Flags
     OrchardBundle --&gt; Value
-    OrchardBundle --&gt; Anchor
 
     IronwoodBundle -. same fields .-&gt; Compact
     IronwoodBundle -. same fields .-&gt; Memos
     IronwoodBundle -. same fields .-&gt; NonCompact
     IronwoodBundle -. same fields .-&gt; Flags
     IronwoodBundle -. same fields .-&gt; Value
-    IronwoodBundle -. same fields .-&gt; Anchor
 </pre>
-<p>The same rule applies to authorization hashing: Ironwood follows the Orchard
-bundle authorization structure, but uses Ironwood-specific personalization
-strings.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "user.html"]</script>
+<p>The same rule applies to authorization hashing: the <em>Ironwood-pool</em> bundle follows
+the <em>Orchard-pool</em> bundle authorization structure, but uses <em>Ironwood-pool</em>-specific
+personalization strings.</p>
+<p>In version 6 the bundle <strong>anchor</strong> is excluded from the txid bundle digest
+shown above, and is instead committed in the <strong>authorization digest</strong>. This
+keeps both the txid and the signature sighash independent of the anchor, so
+that a spend can be signed before the anchor it is finalized against —the
+note-commitment-tree root— exists.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
 
                     </main>
 
@@ -239,6 +244,9 @@ strings.</p>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../design/action-circuit.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -250,6 +258,9 @@ strings.</p>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../design/action-circuit.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

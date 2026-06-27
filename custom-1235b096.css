@@ -326,3 +326,59 @@ html :is(.admonition) > :last-child {
 .rust :is(.admonish-example) > :is(.admonition-title, summary.admonition-title)::before {
     background-color: #8a72aa;
 }
+
+/* ==================== */
+/* Raleway Italic for <em>, matching the ZIPs' slanted type for pool         */
+/* identifiers such as *Orchard pool* / *Ironwood pool*.                      */
+/* ==================== */
+
+@font-face {
+    font-family: ralewayitalic;
+    src: url('fonts/Raleway-Italic-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: raleway;
+    src: url('fonts/Raleway-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+}
+
+em {
+    font-family: 'ralewayitalic', Arial, 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 500;
+    font-stretch: 85%;
+}
+
+/* Pool identifiers written inside KaTeX as \textit{...}, to match *...* in prose. */
+.katex .textit {
+    font-family: 'ralewayitalic', Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+    font-style: italic !important;
+    font-weight: 500 !important;
+    font-size: 0.92em !important;
+}
+
+.katex .textsf {
+    font-family: 'raleway', Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+    font-style: normal !important;
+    font-weight: 500 !important;
+    font-size: 0.83em !important;
+}
+
+/* Headings and the book title in upright Raleway (body text stays the theme font). */
+.content :is(h1, h2, h3, h4, h5, h6),
+.menu-title {
+    font-family: 'raleway', 'Open Sans', sans-serif;
+}
+
+.menu-title {
+    font-weight: 400;
+}
+
+/* Inside headings, italic pool identifiers should take the heading's weight,
+   not the lighter weight used for em in body text. */
+.content :is(h1, h2, h3, h4, h5, h6) em {
+    font-weight: inherit;
+}
