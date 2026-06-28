@@ -23,6 +23,7 @@ import Zcash.Snark.Soundness.BindingReduction
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.DeployedFold
 import Zcash.Snark.Soundness.DeployedIpa
 import Zcash.Snark.Soundness.DeployedIpaPeel
 import Zcash.Snark.Soundness.Main
