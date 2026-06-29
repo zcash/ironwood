@@ -20,7 +20,8 @@ This discharges the assembly↔equation correspondence separately from the bridg
 covers is the forking that produces the recursive tree, the node `L`/`R` decomposition, the leaf
 `g`-representation of the folded commitment, and the
 adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` that folds the value and `S`/`ξ` terms into the opened
-commitment (issue #11; see `FiatShamirTree`'s inventory).
+commitment (see `FiatShamirTree`'s inventory — all discharged on the live forking path, where the residual
+narrows to the execution-semantics floor).
 -/
 
 namespace Zcash.Snark
@@ -131,10 +132,11 @@ theorem deployed_verification_eq {shape : Shape} (g : Fin (2 ^ shape.k) → G) (
 `deployed_verification_eq` this is exactly `(assembleFinalMsm …).eval = 0`. Stating it explicitly lets the
 forking bridge act on halo2's actual IPA equation, with `P`/`v` the pinned `multiopenCommitment`/`Value`.
 
-Totality caveat: the closed form uses Lean's total inverse (`0⁻¹ = 0`), so at a zero round challenge the
-equation is defined although no deployed execution corresponds to it (the Rust inverts the round
-challenges). Harmless for the soundness direction — the capstones consume the equation only under
-`DeployedAccepts` — but the equation is total where halo2 is partial (a negligible-probability corner). -/
+Zero-challenge caveat: halo2's batch inversion leaves zero-valued round challenges as zero, so Lean's
+total inverse (`0⁻¹ = 0`) matches the deployed equation at this point. The forking extractor still requires
+the three sibling challenges at each node to be nonzero, because the Vandermonde recovery and `u⁻¹` fold
+need cancellable challenges; `TreeExtraction.kerr` pays the extra bad challenge per round by requiring four
+good first challenges before erasing zero. -/
 def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (ps : ProofString shape F G) (ch : Challenges shape.k F) : Prop :=
