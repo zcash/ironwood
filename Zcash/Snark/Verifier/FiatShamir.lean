@@ -8,9 +8,10 @@ import Zcash.Snark.Verifier.Assemble
 
 The deployed verifier is non-interactive: each challenge is a hash of the transcript absorbed so far,
 rather than a fresh verifier coin. The hash is Blake2b (`transcript.rs`, personalization
-`"Halo2-Transcript"`). Per
-project scope the hash is hand-waved: we model it as an abstract `squeeze` function (`FiatShamir`) and
-formalize neither Blake2b nor the random-oracle reduction.
+`"Halo2-Transcript"`). Per project scope the hash is hand-waved *here*: this module models it as an abstract
+`squeeze` function (`FiatShamir`) and does not formalize Blake2b. The random-oracle idealization of the
+squeeze — reprogramming and the uniform-challenge bound the forking argument draws on — is separate, in
+`Zcash.Snark.Soundness.RandomOracle`.
 
 ## What is pinned down
 
@@ -31,11 +32,16 @@ sense in which the deployed verifier is the Fiat-Shamir image of the interactive
 
 namespace Zcash.Snark
 
-/-- An element absorbed into the Fiat-Shamir transcript: a commitment (group point, via `common_point`
-/ `read_point`) or a scalar (via `common_scalar` / `read_scalar`). -/
+/-- An element written to the Fiat-Shamir transcript, carrying halo2's three Blake2b domain prefixes: a
+commitment (group point, via `common_point` / `read_point`, `BLAKE2B_PREFIX_POINT`), a scalar (via
+`common_scalar` / `read_scalar`, `BLAKE2B_PREFIX_SCALAR`), or the domain marker written before each
+squeeze (`BLAKE2B_PREFIX_CHALLENGE`). The `challenge` marker — rather than re-absorbing the squeezed value —
+is what makes consecutive squeezes differ, matching the deployed transcript (the prefix-byte writes persist
+in the hash state; the challenge value is never fed back). -/
 inductive TranscriptElt (F G : Type*) where
   | point : G → TranscriptElt F G
   | scalar : F → TranscriptElt F G
+  | challenge : TranscriptElt F G
 
 /-- The Fiat-Shamir hash, hand-waved: squeezes a field challenge from the transcript absorbed so far.
 In the deployed verifier this is Blake2b; neither it nor the random-oracle reduction is modeled. -/
@@ -75,27 +81,27 @@ def absorbLookup {F G : Type*} (e : LookupEval F) : List (TranscriptElt F G) :=
    .scalar e.permutedInputInvEval, .scalar e.permutedTableEval]
 
 /-- Derive the verifier's challenges by Fiat-Shamir, following the deployed schedule
-(`plonk/verifier.rs` → `multiopen/verifier.rs` → `commitment/verifier.rs`). After each squeeze the
-challenge is appended to the transcript so consecutive squeezes differ — a modeling choice; halo2's
-deployed Blake2b transcript instead separates squeezes with a domain-prefix byte
-(`BLAKE2B_PREFIX_CHALLENGE`) rather than re-absorbing the challenge. `init` is the pre-absorbed prefix
-(the verifying-key hash and instance commitments). -/
+(`plonk/verifier.rs` → `multiopen/verifier.rs` → `commitment/verifier.rs`). Before each squeeze a
+`TranscriptElt.challenge` domain marker (halo2's `BLAKE2B_PREFIX_CHALLENGE` byte) is appended, and the
+squeezed challenge is *not* re-absorbed — matching the deployed Blake2b transcript, where the prefix-byte
+writes persist in the hash state and the challenge value is never fed back. `init` is the pre-absorbed
+prefix (the verifying-key hash and instance commitments). -/
 def deriveChallenges {shape : Shape} {F G : Type*} [Zero F] (fs : FiatShamir F G)
     (init : List (TranscriptElt F G)) (ps : ProofString shape F G) : Challenges shape.k F :=
   -- advice commitments → θ
-  let t := init ++ absorbPoints2 ps.adviceCommitments
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
   let theta := fs.squeeze t
   -- lookup permuted commitments → β, γ
-  let t := t ++ [.scalar theta] ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
   let beta := fs.squeeze t
-  let t := t ++ [.scalar beta]
+  let t := t ++ [.challenge]
   let gamma := fs.squeeze t
   -- permutation / lookup product commitments + vanishing random commitment → y
-  let t := t ++ [.scalar gamma] ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
-    ++ [TranscriptElt.point ps.vanishingRandom]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
   let y := fs.squeeze t
   -- quotient h pieces → x
-  let t := t ++ [.scalar y] ++ absorbPoints ps.hPieces
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
   let x := fs.squeeze t
   -- all evaluations → (multiopen) x₁, x₂
   let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
@@ -103,27 +109,27 @@ def deriveChallenges {shape : Shape} {F G : Type*} [Zero F] (fs : FiatShamir F G
     ++ absorbScalars ps.permutationCommonEvals
     ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
     ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
-  let t := t ++ [.scalar x] ++ evalElts
+  let t := t ++ evalElts ++ [.challenge]
   let x1 := fs.squeeze t
-  let t := t ++ [.scalar x1]
+  let t := t ++ [.challenge]
   let x2 := fs.squeeze t
   -- q' → x₃
-  let t := t ++ [.scalar x2] ++ [TranscriptElt.point ps.multiopenQPrime]
+  let t := t ++ [TranscriptElt.point ps.multiopenQPrime] ++ [.challenge]
   let x3 := fs.squeeze t
   -- multiopen evals u → x₄
-  let t := t ++ [.scalar x3] ++ absorbScalars ps.multiopenU
+  let t := t ++ absorbScalars ps.multiopenU ++ [.challenge]
   let x4 := fs.squeeze t
   -- (IPA) S → ξ, z
-  let t := t ++ [.scalar x4] ++ [TranscriptElt.point ps.ipaS]
+  let t := t ++ [TranscriptElt.point ps.ipaS] ++ [.challenge]
   let xi := fs.squeeze t
-  let t := t ++ [.scalar xi]
+  let t := t ++ [.challenge]
   let z := fs.squeeze t
-  let t := t ++ [.scalar z]
   -- per IPA round: (Lⱼ, Rⱼ) → uⱼ
   let ipaRes := (List.finRange shape.k).foldl (fun (st : List (TranscriptElt F G) × List F) j =>
-      let t := st.1 ++ [TranscriptElt.point (ps.ipaRounds j).1, TranscriptElt.point (ps.ipaRounds j).2]
+      let t := st.1 ++ [TranscriptElt.point (ps.ipaRounds j).1, TranscriptElt.point (ps.ipaRounds j).2,
+        TranscriptElt.challenge]
       let uj := fs.squeeze t
-      (t ++ [TranscriptElt.scalar uj], st.2 ++ [uj])) (t, [])
+      (t, st.2 ++ [uj])) (t, [])
   { theta := theta, beta := beta, gamma := gamma, y := y, x := x,
     x1 := x1, x2 := x2, x3 := x3, x4 := x4, xi := xi, z := z,
     ipaRound := fun j => ipaRes.2.getD j.val 0 }
