@@ -19,20 +19,18 @@ This module supplies the random-oracle primitives the forking development is fra
   `Fp`, hence lands in a finite "bad" set of size `d` with probability `d / p`. This is the Schwartz–Zippel
   exclusion budget (issue #12) and the source of the forking-collision bounds.
 
-## The distributional floor (where mechanization stops)
+## The distributional floor: the random-oracle uniformity axiom (accepted, not proved)
 
 The forking probability (`Soundness.ForkingProbability`, `Soundness.TreeExtraction`) is stated over the uniform
-measure `PMF.uniformOfFintype (Fin k → Fp)` on the IPA round-challenge *vector*. The random-oracle
-idealization is what licenses that measure: idealizing the Blake2b squeeze as a random oracle makes each fresh
-challenge uniform on `Fp` (`uniformChallenge`) and independent across the `k` distinct round prefixes, so the
-vector is uniform on `Fin k → Fp`. `uniformChallenge_badSet` is genuinely consumed — it supplies the `1/p`
-`ξ`-randomization budget in `Soundness.Forking` (`blinder_shift_badSet_measure`).
+measure `PMF.uniformOfFintype (Fin k → Fp)` on the IPA round-challenge *vector*. What licenses that measure is
+**the one accepted axiom of the Fiat-Shamir discharge**:
 
 > **Random-oracle uniformity.** Idealizing the Blake2b squeeze as a random oracle, the round-challenge vector
 > `roChallenges O init ps = deriveChallenges (ofOracle O) init ps` that an oracle `O` induces is distributed as
 > `PMF.uniformOfFintype (Fin k → Fp)`: each fresh squeeze is uniform on `Fp` (`uniformChallenge`), the `k`
 > distinct round prefixes squeeze independently, and rewinding (`reprogram`) resamples a fresh independent
-> challenge.
+> challenge. The `Challenge255 → F_p` decoding (a 512-bit hash output reduced into `F_p`) is likewise
+> idealized as exactly uniform; the reduction bias ≈ `p/2⁵¹² < 2⁻²⁵⁶` is absorbed into this axiom.
 
 This is **accepted, not proved** — it is the standard random-oracle-model assumption (no concrete hash,
 Blake2b included, is provably a random oracle), and it is the *only* distributional assumption the Fiat-Shamir
@@ -45,11 +43,20 @@ the explicit prover-as-oracle/execution-semantics bridge hypotheses around
 therefore conditional on this axiom and says so in its own signature; nothing hides it. (Scope note: the
 `_deployed` capstones instantiate the prover as the *fixed* proof string, so their `hprob` is that proof's
 accept measure over the whole challenge space — the static dichotomy — while the adaptive rewinding reduction
-connecting a Fiat-Shamir forger to such a measure is issue #23, additional to this axiom; see the
-quantifier-shape caveats on those capstones.)
+connecting a Fiat-Shamir forger to such a measure — the execution-semantics identification with its query
+loss — is an out-of-Lean floor additional to this axiom; see the quantifier-shape caveats on those
+capstones.)
 `uniformChallenge_badSet` is the one directly-consumed consequence — it
 supplies the `1/p` `ξ`-randomization budget in `Soundness.Forking` (`blinder_shift_badSet_measure`,
 `Soundness.Vesta.blinder_value_recovery_badSet`).
+
+Two further scope notes. **Existence-only:** beating `kerr` proves the extracted witness *exists* — a
+counting argument over the challenge space (`Soundness.TreeExtraction`, `Soundness.ForkingProbability`) —
+not that an expected-polynomial-time extractor computes it; the runtime/emulation half of literature
+knowledge soundness is not modeled, a gap distinct from the query-count factor above. **Uncomposed
+budgets:** the per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p` each) and the `3k/p` tree
+threshold are stated separately, not yet composed into one end-to-end bound — the composition belongs with
+the query-loss accounting, part of the same out-of-Lean floor.
 -/
 
 namespace Zcash.Snark
