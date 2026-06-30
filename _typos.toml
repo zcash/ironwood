@@ -14,3 +14,7 @@ extend-exclude = [
 [default.extend-words]
 # `hae` is a Lean hypothesis name (hypothesis about `a`'s evaluation), not a misspelling of "have".
 hae = "hae"
+# `haa` is a Lean hypothesis name (the two extracted `a`-openings agree), not a misspelling of "has".
+haa = "haa"
+# `Nd` appears in the Lean hypothesis name `hNd` (a cardinality bound), not a misspelling of "And".
+Nd = "Nd"
