@@ -382,6 +382,20 @@ theorem deployed_forking_soundness_flat [DecidableEq G] [Inhabited G] (urs : URS
         (commit urs aDep + (z * 0) • urs.u + blind • urs.w), invProver_invProver Q]
   exact hprob
 
+/-! ## TODO (follow-up issue/PR): eliminating the prover-as-oracle bridge `hbridge`
+
+`hbridge` (the hypothesis of `deployed_forking_soundness_of_bridge` below) is the correct boundary for this
+development — it is named and explicit, **not** a hidden soundness bug. It says: the actual deployed verifier's
+accept event, as a function of the challenge vector, is equivalent to some prefix-respecting prover strategy
+`Q` satisfying `flatAccept`.
+
+It is closeable *in principle*, but not inside the current model without adding a new layer. Closing it needs a
+formal prover/transcript-semantics theorem: parse the deployed proof / adversary execution into a `Prover`
+tree, prove each IPA round point is fixed before its challenge (the Fiat-Shamir prefix-determination), and
+prove each path's `flatAccept` matches the deployed verifier equation. That is "round-by-round transcript
+soundness" — modeling the prover as an RO-oracle algorithm and the transcript ordering — not just algebra. So
+`hbridge` is kept named and explicit here; eliminating it should be a separate issue/PR. -/
+
 open scoped ENNReal in
 open Classical in
 /-- **The deployed forking soundness from an explicit prover-as-oracle bridge.** This is the honest top of the

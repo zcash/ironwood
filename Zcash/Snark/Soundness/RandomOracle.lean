@@ -19,22 +19,29 @@ This module supplies the random-oracle primitives the forking development is fra
   `Fp`, hence lands in a finite "bad" set of size `d` with probability `d / p`. This is the Schwartz–Zippel
   exclusion budget (issue #12) and the source of the forking-collision bounds.
 
-## The distributional floor (where mechanization stops)
+## The distributional floor: the random-oracle uniformity axiom (accepted, not proved)
 
 The forking probability (`Soundness.ForkingProbability`, `Soundness.TreeExtraction`) is stated over the uniform
-measure `PMF.uniformOfFintype (Fin k → Fp)` on the IPA round-challenge *vector*. The random-oracle
-idealization is what licenses that measure: idealizing the Blake2b squeeze as a random oracle makes each fresh
-challenge uniform on `Fp` (`uniformChallenge`) and independent across the `k` distinct round prefixes, so the
-vector is uniform on `Fin k → Fp`. `uniformChallenge_badSet` is genuinely consumed — it supplies the `1/p`
-`ξ`-randomization budget in `Soundness.Forking` (`blinder_shift_badSet_measure`).
+measure `PMF.uniformOfFintype (Fin k → Fp)` on the IPA round-challenge *vector*. What licenses that measure is
+**the one accepted axiom of the Fiat-Shamir discharge**:
 
-What is **not** mechanized, and is the irreducible floor, is the step from an actual
-`deriveChallenges (ofOracle O)` execution to that uniform measure — that Blake2b behaves as a random oracle,
-that distinct prefixes squeeze independently, and that rewinding (`reprogram`) resamples a fresh independent
-challenge. `reprogram` is the model's rewinding primitive; it is the tool the floor is *phrased* with, not a
-mechanized reduction. So every soundness result that consumes the uniform challenge measure is conditional on
-this idealization — stated explicitly (e.g. as the `hbridge` of `deployed_forking_soundness_of_bridge`),
-rather than proved.
+> **Random-oracle uniformity.** Idealizing the Blake2b squeeze as a random oracle, the round-challenge vector
+> `roChallenges O init ps = deriveChallenges (ofOracle O) init ps` that an oracle `O` induces is distributed as
+> `PMF.uniformOfFintype (Fin k → Fp)`: each fresh squeeze is uniform on `Fp` (`uniformChallenge`), the `k`
+> distinct round prefixes squeeze independently, and rewinding (`reprogram`) resamples a fresh independent
+> challenge.
+
+This is **accepted, not proved** — it is the standard random-oracle-model assumption (no concrete hash,
+Blake2b included, is provably a random oracle), and it is the *only* distributional assumption the Fiat-Shamir
+development rests on. It is deliberately **not** introduced as a Lean `axiom`: this development declares no
+`axiom` of its own and uses no `sorry`, so the assumption is carried *explicitly in the theorem statements* —
+as the uniform measure of the forking-probability hypothesis `hprob`
+(`Soundness.Forking.deployed_forking_soundness` and up) and, at the verifier level, as the `FiatShamirForking`
+output of the `_ro` reductions / the `hbridge` of `deployed_forking_soundness_of_bridge`. Every soundness
+result that consumes the uniform challenge measure is therefore conditional on this axiom and says so in its
+own signature; nothing hides it. `uniformChallenge_badSet` is the one directly-consumed consequence — it
+supplies the `1/p` `ξ`-randomization budget in `Soundness.Forking` (`blinder_shift_badSet_measure`,
+`Soundness.Vesta.blinder_value_recovery_badSet`).
 -/
 
 namespace Zcash.Snark
