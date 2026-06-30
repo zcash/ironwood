@@ -5,6 +5,7 @@ import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.IpaSoundness
 import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Deployed.Verification
+import Zcash.Snark.Soundness.ForkingAssembly
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -24,7 +25,9 @@ by the fingerprint), not re-proved here. The residual `FiatShamirTree` bridge is
 forking **plus the special-soundness extraction content**: the node `L`/`R`↦value/blinding decomposition,
 the leaf `g`-representation of the folded commitment, and the adjusted-commitment step
 `P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms into the opened commitment — which needs a
-representation of the adversary point `S`, so it is not a deterministic rewrite) — all issue #11.
+representation of the adversary point `S`, so it is not a deterministic rewrite) — all discharged on the
+live forking path (`Soundness.Forking`, `ForkingAssembly`, `ForkingExtractor`); this legacy bridge keeps
+them bundled.
 Commitment binding is load-bearing *in the proof* (the `U`/`W` separation is derived from a discrete-log
 relation reduction, `Zcash.Snark.Soundness.Deployed.IpaPeel`), so the deployed conclusion is
 `SnarkRelation ∨ HasNontrivialRelation` — a *reduction*: it exhibits a discrete-log relation rather than
@@ -127,7 +130,8 @@ evaluates to the identity), `assemble?_eq_some` identifies the accepted MSM with
 `DeployedIpaVerifierEq` holds for the proof's actual `(vk, ps, ch)`. This discharges the MSM↔equation
 correspondence the bridge used to absorb; the residual bundle in `FiatShamirTree` is the forking and the
 extraction-content data it supplies — the node decomposition, the leaf `g`-representation, and the
-adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (issue #11). The `urs.k`↔`shape.k`
+adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (all discharged on the live forking path; the legacy
+bridge keeps them bundled). The `urs.k`↔`shape.k`
 transport is `eval_cast`. -/
 theorem deployedAccepts_verifierEq [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
@@ -198,7 +202,9 @@ MSM↔equation correspondence is discharged separately
 (`deployedAccepts_verifierEq`), not assumed here; the per-leaf `g`/`U`/`W` separation is *derived*
 (`deployed_to_acceptV`) — but `S`/`ξ` is not peeled, it lives in (d). `b`/`z`/`blind` are bridge-mediated
 (the protocol fixes `b = evalVector urs.k ch.x3` — whose per-round fold telescopes to the leaf
-`b₀ = computeB ch.x3 ·` — and `z = ch.z`); only `P`/`v` are pinned. All of (a)–(d) are issue #11. -/
+`b₀ = computeB ch.x3 ·` — and `z = ch.z`); only `P`/`v` are pinned. All of (a)–(d) are discharged on the
+live forking path (`Soundness.Forking` and the Vesta `_rewind`/`_adaptive_rewind` capstones); this legacy
+bridge keeps them bundled, with the execution-semantics identification the remaining out-of-Lean floor. -/
 def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp) : Prop :=
@@ -206,6 +212,37 @@ def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (
     ∃ t : DeployedIpaTreeV Fp G urs.k,
       DeployedIpaAcceptV urs.g b urs.u urs.w z
         (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind t
+
+/-- The Fiat–Shamir **forking** hypothesis — the genuine residual (the random-oracle floor). On an accepting
+deployed proof, rewinding the random oracle yields the 3-special-soundness forking *output*: a
+`DeployedIpaTreeV` whose every node records three accepting continuations at distinct nonzero per-round
+challenges and whose every leaf carries the flat closed-form verifier equation (`ForkAccept`). This is
+exactly the rewinding content that cannot be discharged in Lean; it supplies the distinct-challenge
+transcripts and, in the node decorations, each round point's value/blinding decomposition. Everything
+downstream of having these transcripts is a theorem (`fiatShamirTree_of_forking`). -/
+def FiatShamirForking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
+    (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp) : Prop :=
+  DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps ch →
+    ∃ t : DeployedIpaTreeV Fp G urs.k,
+      ForkAccept urs.g b urs.u urs.w z
+        (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind t
+
+/-- **The tree-assembly discharge.** The forking output (`FiatShamirForking`) *proves* the `FiatShamirTree`
+bridge: the forking supplies the distinct-challenge accepting transcripts, and the deterministic assembly
+`forkAccept_to_acceptV` (threading the per-round fold to the leaves, reconciling each flat closed-form
+equation to the reformulated leaf check) turns them into `DeployedIpaAcceptV`. So the residual narrows from
+the handwave "an accepting verifier equation yields the whole 3-ary tree" to the genuine random-oracle floor
+"the rewinding yields the forked transcripts": the tree assembly itself — the node `L`/`R`↦value/blinding
+fold and the adjusted-commitment/leaf reconciliation — is now a theorem, `sorry`/`axiom`-free. -/
+theorem fiatShamirTree_of_forking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp)
+    (hForking : FiatShamirForking urs hk vk ps ch b z blind) :
+    FiatShamirTree urs hk vk ps ch b z blind := by
+  intro hEq
+  obtain ⟨t, hFork⟩ := hForking hEq
+  exact ⟨t, forkAccept_to_acceptV _ _ _ _ _ t hFork⟩
 
 /-- The deployed Orchard verifier opening, as a binding **reduction**, with `P`/`v` **pinned** to the proof
 (`deployedCommitment`/`multiopenValue` from `(vk, ps, ch)`, not free parameters). From the deployed accept,
@@ -221,7 +258,7 @@ and the theorem is vacuous *as a statement* (provable as `Or.inr` without the hy
 the constructive extraction plus the assumption that no efficient adversary can *find* the relation (DLR/AGM
 hardness, not formalized in Lean). Commitment binding is load-bearing in the *proof structure*, not the
 Vesta statement.
-Named assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the circuit side (`hcirc`), and
+Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), and
 VK-correctness (`hencodes`).
 
 Caveat on `hcirc`'s shape: it quantifies over *every* mathematical opening `a` of the pinned `(P, b, v)`.
@@ -272,7 +309,7 @@ outright); a relation always *exists* at a prime-order curve, so this disjunctio
 and the theorem is vacuous as a *statement*, the force being the DLR/AGM hardness layer (not formalized in
 Lean) that no adversary can *find* one.
 
-Named assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the gate point-check (`hquot`), the SZ good
+Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate point-check (`hquot`), the SZ good
 challenge (`hgood`), and VK-correctness (`hencodes`).
 
 Caveat on the `hquot`/`hgood` shape (as for `hcirc` above): both quantify over *every* mathematical
