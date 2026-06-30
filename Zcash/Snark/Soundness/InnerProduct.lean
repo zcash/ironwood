@@ -52,6 +52,84 @@ def IpaRelation (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v : F)
     (a : Fin (2 ^ urs.k) → F) : Prop :=
   commit urs a = P ∧ innerProduct a b = v
 
+/-- `commit` is additive in the coefficient vector: `⟨a + a', G⟩ = ⟨a, G⟩ + ⟨a', G⟩`. -/
+theorem commit_add (urs : URS G) (a a' : Fin (2 ^ urs.k) → F) :
+    commit urs (a + a') = commit urs a + commit urs a' := by
+  simp only [commit, Pi.add_apply, add_smul, Finset.sum_add_distrib]
+
+/-- A single-index coefficient vector commits to that generator scaled: `⟨[i ↦ x], G⟩ = x • gᵢ`. -/
+theorem commit_single (urs : URS G) (i : Fin (2 ^ urs.k)) (x : F) :
+    commit urs (Pi.single i x) = x • urs.g i := by
+  simp only [commit]
+  rw [Finset.sum_eq_single i (fun j _ hj => by rw [Pi.single_eq_of_ne hj, zero_smul])
+    (fun h => absurd (Finset.mem_univ i) h), Pi.single_eq_same]
+
+/-- `innerProduct` is additive in its left argument. -/
+theorem innerProduct_add {n : ℕ} (a a' b : Fin n → F) :
+    innerProduct (a + a') b = innerProduct a b + innerProduct a' b := by
+  simp only [innerProduct, Pi.add_apply, add_mul, Finset.sum_add_distrib]
+
+/-- A single-index left argument: `⟨[i ↦ x], b⟩ = x · bᵢ`. -/
+theorem innerProduct_single {n : ℕ} (i : Fin n) (x : F) (b : Fin n → F) :
+    innerProduct (Pi.single i x) b = x * b i := by
+  simp only [innerProduct]
+  rw [Finset.sum_eq_single i (fun j _ hj => by rw [Pi.single_eq_of_ne hj, zero_mul])
+    (fun h => absurd (Finset.mem_univ i) h), Pi.single_eq_same]
+
+/-- **The adjusted-commitment un-shift (halo2's value placement).** halo2's IPA verifier folds the claimed
+value into the commitment at `g₀` (`msm.add_constant_term(-v)`, so the opened commitment is `P − [v]g₀`) while
+checking the inner product on `U`; the two are reconciled by the evaluation vector's leading entry `b₀ = 1`
+(`evalVector` gives `b 0 = x^0 = 1`). So opening `P − [v]g₀` to inner product `0` *is* opening `P` to inner
+product `v`: shift the witness's `g₀`-coefficient by `v`. This is the exact halo2 invariant resolving the
+value living on `g₀` (the verifier equation) versus on `U` (the transcript tree). -/
+theorem ipaRelation_unshift (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v : F)
+    (a : Fin (2 ^ urs.k) → F) (hb0 : b 0 = 1)
+    (h : IpaRelation urs (P - v • urs.g 0) b 0 a) :
+    IpaRelation urs P b v (a + Pi.single 0 v) := by
+  obtain ⟨hc, hi⟩ := h
+  refine ⟨?_, ?_⟩
+  · rw [commit_add, commit_single, hc]; abel
+  · rw [innerProduct_add, innerProduct_single, hi, hb0, mul_one, zero_add]
+
+/-- `commit` is homogeneous: `⟨c • a, G⟩ = c • ⟨a, G⟩`. -/
+theorem commit_smul (urs : URS G) (c : F) (a : Fin (2 ^ urs.k) → F) :
+    commit urs (c • a) = c • commit urs a := by
+  simp only [commit, Pi.smul_apply, smul_assoc, ← Finset.smul_sum]
+
+/-- `innerProduct` is homogeneous in its left argument: `⟨c • s, b⟩ = c · ⟨s, b⟩`. -/
+theorem innerProduct_smul {n : ℕ} (c : F) (s b : Fin n → F) :
+    innerProduct (c • s) b = c * innerProduct s b := by
+  simp only [innerProduct, Pi.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
+
+/-- **The synthetic-blinding strip (the true opened value).** halo2's IPA folds a synthetic blinding
+commitment `[ξ]S` into the opened commitment, with `S = ⟨s, G⟩`. Stripping it — subtract `ξ·s` from the
+witness — opens the plain `P` to `v − ξ·⟨s, b⟩`. This is *unconditional*: it reports the **true** opened value
+of `P`, whatever the prover's blinder `s` is. The verifier never checks `s`; `S` is prover-supplied. So the
+soundness content lives in how `v − ξ·⟨s, b⟩` relates to the claimed value, which the caller must pin (see
+`ipaRelation_unblind` for the honest-prover case, and `Soundness.Forking` for the `ξ`-randomization that
+bounds a malicious blinder). -/
+theorem ipaRelation_unblind_value (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v ξ : F)
+    (s a : Fin (2 ^ urs.k) → F)
+    (h : IpaRelation urs (P + ξ • commit urs s) b v a) :
+    IpaRelation urs P b (v - ξ * innerProduct s b) (a - ξ • s) := by
+  obtain ⟨hc, hi⟩ := h
+  refine ⟨?_, ?_⟩
+  · rw [sub_eq_add_neg, ← neg_smul, commit_add, commit_smul, hc, neg_smul]; abel
+  · rw [sub_eq_add_neg, ← neg_smul, innerProduct_add, innerProduct_smul, hi]; ring
+
+/-- **The synthetic-blinding strip, honest-prover case.** When the blinder vanishes at the evaluation point
+(`⟨s, b⟩ = 0` — halo2's prover sets `s_poly[0] -= s(x₃)` so `s(x₃) = 0`), stripping `[ξ]S` leaves the opened
+value at the claimed `v`. This is the `⟨s, b⟩ = 0` specialization of `ipaRelation_unblind_value`; a malicious
+prover need not satisfy it, which is exactly why `[ξ]S`'s soundness rests on `ξ` being drawn after `S`
+(`Soundness.Forking`), not on this hypothesis. With `ipaRelation_unshift` it reconciles the adjusted
+commitment `P' = P − [v]g₀ + [ξ]S` with the plain `P`. -/
+theorem ipaRelation_unblind (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v ξ : F)
+    (s a : Fin (2 ^ urs.k) → F) (hs : innerProduct s b = 0)
+    (h : IpaRelation urs (P + ξ • commit urs s) b v a) :
+    IpaRelation urs P b v (a - ξ • s) := by
+  have h' := ipaRelation_unblind_value urs P b v ξ s a h
+  rwa [hs, mul_zero, sub_zero] at h'
+
 /-! ## The IPA round fold and its 2-special-soundness extractor
 
 One round of the inner-product argument halves the witness. The prover sends the cross-commitments
