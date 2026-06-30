@@ -53,7 +53,7 @@ def ColumnRef.resolve {F : Type*} (cr : ColumnRef) (instanceEvals adviceEvals fi
 -- circuit. So "the dumped `gates`/`omega`/`n`/query layouts are the real circuit's VK" is an assumption,
 -- not a theorem (the input-faithfulness seam). Discharging it means re-running keygen from the circuit
 -- definition and comparing. This is distinct from, and cheaper than, the output-side adequacy gap
--- (Step 4, see `Soundness/Main.lean`). This is the "VK-correctness" assumption (the §3 input-faithfulness boundary).
+-- (see `Soundness/Main.lean`). This is the "VK-correctness" assumption (the §3 input-faithfulness boundary).
 /-- The verifying-key–level circuit structure the assembly needs (halo2 `VerifyingKey` / `ConstraintSystem`).
 `omega` is the domain generator and `n = 2 ^ k` the domain size; `blindingFactors`, `delta`, `chunkLen`
 are the permutation-argument constants. `gates` are the custom-gate polynomials; `instance/advice/fixed
