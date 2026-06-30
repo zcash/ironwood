@@ -15,6 +15,7 @@ import Zcash.Snark.Verifier.Expressions
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Verifier.FiatShamir
 import Zcash.Snark.Fingerprint.Match
+import Zcash.Snark.Soundness.RandomOracle
 import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
@@ -27,5 +28,10 @@ import Zcash.Snark.Soundness.DeployedFold
 import Zcash.Snark.Soundness.DeployedIpa
 import Zcash.Snark.Soundness.DeployedIpaPeel
 import Zcash.Snark.Soundness.DeployedVerification
+import Zcash.Snark.Soundness.ForkingAssembly
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Vesta
+import Zcash.Snark.Soundness.Forking
+import Zcash.Snark.Soundness.ForkingProbability
+import Zcash.Snark.Soundness.TreeExtraction
+import Zcash.Snark.Soundness.ForkingExtractor
