@@ -5,6 +5,7 @@ import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.IpaSoundness
 import Zcash.Snark.Soundness.DeployedIpaPeel
 import Zcash.Snark.Soundness.DeployedVerification
+import Zcash.Snark.Soundness.ForkingAssembly
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -206,6 +207,37 @@ def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (
     ∃ t : DeployedIpaTreeV Fp G urs.k,
       DeployedIpaAcceptV urs.g b urs.u urs.w z
         (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind t
+
+/-- The Fiat–Shamir **forking** hypothesis — the genuine residual (the random-oracle floor). On an accepting
+deployed proof, rewinding the random oracle yields the 3-special-soundness forking *output*: a
+`DeployedIpaTreeV` whose every node records three accepting continuations at distinct nonzero per-round
+challenges and whose every leaf carries the flat closed-form verifier equation (`ForkAccept`). This is
+exactly the rewinding content that cannot be discharged in Lean; it supplies the distinct-challenge
+transcripts and, in the node decorations, each round point's value/blinding decomposition. Everything
+downstream of having these transcripts is a theorem (`fiatShamirTree_of_forking`). -/
+def FiatShamirForking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
+    (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp) : Prop :=
+  DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps ch →
+    ∃ t : DeployedIpaTreeV Fp G urs.k,
+      ForkAccept urs.g b urs.u urs.w z
+        (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind t
+
+/-- **The tree-assembly discharge.** The forking output (`FiatShamirForking`) *proves* the `FiatShamirTree`
+bridge: the forking supplies the distinct-challenge accepting transcripts, and the deterministic assembly
+`forkAccept_to_acceptV` (threading the per-round fold to the leaves, reconciling each flat closed-form
+equation to the reformulated leaf check) turns them into `DeployedIpaAcceptV`. So the residual narrows from
+the handwave "an accepting verifier equation yields the whole 3-ary tree" to the genuine random-oracle floor
+"the rewinding yields the forked transcripts": the tree assembly itself — the node `L`/`R`↦value/blinding
+fold and the adjusted-commitment/leaf reconciliation — is now a theorem, `sorry`/`axiom`-free. -/
+theorem fiatShamirTree_of_forking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp)
+    (hForking : FiatShamirForking urs hk vk ps ch b z blind) :
+    FiatShamirTree urs hk vk ps ch b z blind := by
+  intro hEq
+  obtain ⟨t, hFork⟩ := hForking hEq
+  exact ⟨t, forkAccept_to_acceptV _ _ _ _ _ t hFork⟩
 
 /-- The deployed Orchard verifier opening, as a binding **reduction**, with `P`/`v` **pinned** to the proof
 (`deployedCommitment`/`multiopenValue` from `(vk, ps, ch)`, not free parameters). From the deployed accept,
