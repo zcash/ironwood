@@ -53,7 +53,9 @@ now the Fiat-Shamir forking *output* `hForking` (`FiatShamirForking`: rewinding 
 accepting transcripts), taken at those RO-derived challenges; the tree assembly downstream of it is proven
 (`fiatShamirTree_of_forking`), so what stays out of Lean is the rewinding itself (`RandomOracle.reprogram`)
 and its probabilistic success bound (issue #11). Conclusion and reduction framing are unchanged:
-`S ∨ HasNontrivialRelation g U W`, vacuous as a statement at a prime-order curve, force in the DLR/AGM layer. -/
+`S ∨ HasNontrivialRelation g U W`, vacuous as a statement at a prime-order curve, force in the DLR/AGM layer.
+`hcirc` retains the ∀-openings shape — unsatisfiable for the intended instantiation (see the caveat on
+`orchard_verifier_deployed_opening_reduction`; the restatement over the extracted witness is issue #18). -/
 theorem orchard_verifier_deployed_opening_reduction_ro [DecidableEq G] [Inhabited G] {shape : Shape}
     (O : List (TranscriptElt Fp G) → Fp) (init : List (TranscriptElt Fp G))
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
@@ -74,7 +76,9 @@ open Polynomial in
 `roChallenges O init ps`. The forking-output residual `hForking` (the tree assembly downstream is proven,
 `fiatShamirTree_of_forking`) and the Schwartz–Zippel good-challenge condition (`hquot`/`hgood`) are taken at
 the RO-derived challenges; under the random-oracle model the SZ exclusion is the `d/p` budget of
-`uniformChallenge_badSet`, whose discharge into `hgood` is part of the out-of-Lean floor (issue #11/#12). -/
+`uniformChallenge_badSet`, whose discharge into `hgood` is part of the out-of-Lean floor (issue #11/#12).
+`hquot`/`hgood` retain the ∀-openings shape — unsatisfiable for any decode that genuinely reads the witness
+(see the caveat on `orchard_verifier_deployed_constraint_reduction`; issue #18). -/
 theorem orchard_verifier_deployed_constraint_reduction_ro [DecidableEq G] [Inhabited G] {shape : Shape}
     (O : List (TranscriptElt Fp G) → Fp) (init : List (TranscriptElt Fp G))
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
@@ -130,7 +134,9 @@ def FiatShamirForkingFlat [DecidableEq G] [Inhabited G] {shape : Shape} (urs : U
 decomposition) instead of `FiatShamirForking`/`FiatShamirTree`. The decomposition is recovered and the root
 pinned to `deployedCommitment` by `deployed_forking_tree`; its `∨ HasNontrivialRelation` is absorbed into the
 reduction's own relation branch (binding). So the residual carries only the rewinding, not the
-`L`/`R`↦value/blinding split — the special-soundness extraction that the split used to assume is now proven. -/
+`L`/`R`↦value/blinding split — the special-soundness extraction that the split used to assume is now proven.
+`hcirc` retains the ∀-openings shape — unsatisfiable for the intended instantiation (see the caveat on
+`orchard_verifier_deployed_opening_reduction`; issue #18). -/
 theorem orchard_verifier_deployed_opening_reduction_flat [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
