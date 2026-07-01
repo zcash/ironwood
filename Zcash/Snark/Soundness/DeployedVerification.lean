@@ -2,7 +2,7 @@ import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Soundness.DeployedFold
 
 /-!
-# The deployed accept is halo2's explicit IPA verifier equation (structural faithfulness)
+# The deployed accept entails halo2's explicit IPA verifier equation (structural faithfulness)
 
 `eval_assembleFinalMsm` evaluates the assembled fingerprint MSM in closed form; `deployed_gterm_foldAll`
 identifies its `g`-term as `[-c]·G'₀`. This module welds them into halo2's published IPA verification
@@ -17,9 +17,10 @@ equation and ties it to the deployed accept condition, pinning the opened object
   `some m`, `m` is the non-rejecting `assembleFinalMsm`, so the equation transfers.
 
 This discharges the assembly↔equation correspondence separately from the bridge. What the bridge still
-covers is the forking that produces the recursive tree, the node `L`/`R` decomposition, and the
+covers is the forking that produces the recursive tree, the node `L`/`R` decomposition, the leaf
+`g`-representation of the folded commitment, and the
 adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` that folds the value and `S`/`ξ` terms into the opened
-commitment (issue #11).
+commitment (issue #11; see `FiatShamirTree`'s inventory).
 -/
 
 namespace Zcash.Snark
@@ -128,7 +129,12 @@ theorem deployed_verification_eq {shape : Shape} (g : Fin (2 ^ shape.k) → G) (
 
 /-- halo2's explicit IPA verifier equation for the deployed proof, set to the group identity. By
 `deployed_verification_eq` this is exactly `(assembleFinalMsm …).eval = 0`. Stating it explicitly lets the
-forking bridge act on halo2's actual IPA equation, with `P`/`v` the pinned `multiopenCommitment`/`Value`. -/
+forking bridge act on halo2's actual IPA equation, with `P`/`v` the pinned `multiopenCommitment`/`Value`.
+
+Totality caveat: the closed form uses Lean's total inverse (`0⁻¹ = 0`), so at a zero round challenge the
+equation is defined although no deployed execution corresponds to it (the Rust inverts the round
+challenges). Harmless for the soundness direction — the capstones consume the equation only under
+`DeployedAccepts` — but the equation is total where halo2 is partial (a negligible-probability corner). -/
 def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (ps : ProofString shape F G) (ch : Challenges shape.k F) : Prop :=

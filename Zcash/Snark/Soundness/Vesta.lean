@@ -80,7 +80,7 @@ theorem orchard_verifier_sound_vesta_conditional [Fact (HasseBound Vesta.curve)]
 
 /-- The deployed Orchard verifier opening over Vesta, as a binding **reduction**, with `P`/`v` pinned to the
 proof. `orchard_verifier_deployed_opening_reduction` specialised to `SWPoint Vesta.curve`: from an accepting
-fingerprint — proven equal to the explicit `DeployedIpaVerifierEq` form (`deployedAccepts_verifierEq`) — and
+fingerprint — proven to entail the explicit `DeployedIpaVerifierEq` form (`deployedAccepts_verifierEq`) — and
 the forking bridge (`hFS`), either the SNARK relation holds for the pinned
 `deployedCommitment`/`multiopenValue`, or the augmented Vesta generators `(g, U, W)` admit a nontrivial
 discrete-log relation. The `U`/`W` separation is derived (`deployed_to_acceptV`), not bundled. Caveat: a
