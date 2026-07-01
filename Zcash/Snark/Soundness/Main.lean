@@ -221,8 +221,17 @@ and the theorem is vacuous *as a statement* (provable as `Or.inr` without the hy
 the constructive extraction plus the assumption that no efficient adversary can *find* the relation (DLR/AGM
 hardness, not formalized in Lean). Commitment binding is load-bearing in the *proof structure*, not the
 Vesta statement.
-Named assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the circuit side (`hcirc`, dischargeable by
-`circuitSatViaGates_of_check`), and VK-correctness (`hencodes`). -/
+Named assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the circuit side (`hcirc`), and
+VK-correctness (`hencodes`).
+
+Caveat on `hcirc`'s shape: it quantifies over *every* mathematical opening `a` of the pinned `(P, b, v)`.
+At a prime-order curve those openings form an affine subspace of dimension `≥ 2^k − 2` (two linear
+conditions on `2^k` coordinates), so any `circuitSat` that genuinely reads the witness fails on almost
+all of it — the hypothesis is unsatisfiable for the intended instantiation, the `AugmentedBinding`
+failure mode in hypothesis position. `circuitSatViaGates_of_check` does not discharge it: that lemma
+derives `circuitSat` for *one* `a` from that `a`'s own point-check, never the quantified premise.
+The fix is restating the constraint side as a derived fact about the *extracted* witness via the
+multiopen decode — issue #18. -/
 theorem orchard_verifier_deployed_opening_reduction [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
@@ -264,9 +273,14 @@ and the theorem is vacuous as a *statement*, the force being the DLR/AGM hardnes
 Lean) that no adversary can *find* one.
 
 Named assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the gate point-check (`hquot`), the SZ good
-challenge (`hgood`), and VK-correctness (`hencodes`). `hquot`/`hgood` are the constraint-side analog of the
-opening's circuit hypothesis — the gate check is part of the verifier equation modulo the multiopen decode
-that ties the opened columns to it. -/
+challenge (`hgood`), and VK-correctness (`hencodes`).
+
+Caveat on the `hquot`/`hgood` shape (as for `hcirc` above): both quantify over *every* mathematical
+opening `a` of the pinned `(P, b, v)` — an affine subspace of dimension `≥ 2^k − 2` at a prime-order
+curve — so for any decode that genuinely reads columns out of `a` they are unsatisfiable, not merely
+undischarged: the verifier's actual gate check constrains the *claimed* evaluations, not every
+opening's decode. Restating them as facts about the *extracted* witness — binding the decode to the
+real columns via `batch_open_soundV` — is issue #18. -/
 theorem orchard_verifier_deployed_constraint_reduction [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}

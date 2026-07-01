@@ -88,7 +88,10 @@ relation always *exists* in Vesta's prime-order group, so this `∨ HasNontrivia
 propositionally `True` (vacuous at the curve); the force is the out-of-Lean DLR/AGM layer — no feasible
 adversary can *find* the relation. Named assumptions:
 the residual bridge (`hFS`, issue #11), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
-(`hencodes`). -/
+(`hencodes`). `hcirc` quantifies over every mathematical opening of the pinned `(P, b, v)` and is
+unsatisfiable at Vesta for any `circuitSat` that genuinely reads the witness — see the caveat on
+`orchard_verifier_deployed_opening_reduction`, and issue #18 for the restatement over the extracted
+witness. -/
 theorem orchard_verifier_vesta_opening_reduction [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG] [Inhabited VestaG]
     {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG)
     (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -113,7 +116,11 @@ conclusion is `S ∨ HasNontrivialRelation g U W` — a relation always *exists*
 so this statement is propositionally `True` (vacuous at the curve); the force is the out-of-Lean DLR/AGM
 layer (no feasible adversary can *find* one), not the proposition. Named
 assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
-(`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`). -/
+(`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`).
+`hquot`/`hgood` quantify over every mathematical opening of the pinned `(P, b, v)` and are unsatisfiable
+at Vesta for any decode that genuinely reads columns out of the witness — see the caveat on
+`orchard_verifier_deployed_constraint_reduction`, and issue #18 for the restatement over the extracted
+witness. -/
 theorem orchard_verifier_vesta_constraint_reduction [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG] [Inhabited VestaG]
     {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG)
     (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
