@@ -299,13 +299,128 @@ theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
 
+/-- The deployed adjusted-commitment's value term `Σᵢ [-v].getD i • gᵢ` is `-v` on the single generator `g 0`
+(the value list `[-v]` has one entry, placed at index `0`). Lets the deployed verifier's adjusted commitment
+`multiopen + Σ[-v].getD·g` meet the capstone's `-v • g 0` form. -/
+theorem sum_getD_single [Fact (HasseBound Vesta.curve)] {shape : Shape} (gg : Fin (2 ^ shape.k) → VestaG)
+    (v : Fp) :
+    (∑ i, ([-v].getD i.val 0 : Fp) • gg i) = -v • gg 0 := by
+  rw [Finset.sum_eq_single (0 : Fin (2 ^ shape.k))]
+  · simp
+  · intro i _ hi
+    have hival : i.val ≠ 0 := Fin.val_ne_zero_iff.mpr hi
+    rw [List.getD_eq_default, zero_smul]
+    simp only [List.length_cons, List.length_nil, Nat.zero_add]
+    omega
+  · intro h; exact absurd (Finset.mem_univ _) h
+
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening over Vesta, with `hbridge` discharged.** This is
+`orchard_verifier_vesta_forking_opening` with the abstract prover-as-oracle bridge *removed*: `accepts` is
+halo2's **actual** verifier equation `DeployedIpaVerifierEq` at the rewound IPA challenges, and the bridge to
+`flatAccept` of the concrete proof tree `proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF` is **proven** internally
+by `deployedVerifierEq_iff_flatAccept` — not assumed. The `shape.k`↔`urs.k` transport is discharged by
+`subst`, and the commitment slot is reconciled (`sum_getD_single`, `deployedCommitment = multiopenCommitment`,
+the `S`-opening `hs : commit urs s = ps.ipaS`, `module`). The remaining hypotheses are all honest deployed
+facts — `z ≠ 0`, the nonzero generator `hg0` (prime-order `g`-span), the `S`-opening `hs` — plus the accept
+*probability* `hprob` over the uniform IPA-challenge measure. That uniform measure is the *only* residual
+assumption: the random-oracle uniformity axiom (`RandomOracle`); the prover-as-oracle identification is no
+longer assumed. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
+theorem orchard_verifier_vesta_forking_opening_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp) (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch - ch.xi * innerProduct s (evalVector urs.k ch.x3)) a)
+      ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  obtain ⟨k, gg, ww, uu⟩ := urs
+  change shape.k = k at hk
+  subst hk
+  refine orchard_verifier_vesta_forking_opening ⟨shape.k, gg, ww, uu⟩ rfl vk ps ch ch.x3 ch.xi ch.z 0 s
+    (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF)
+    (fun χ => DeployedIpaVerifierEq gg ww uu vk ps {ch with ipaRound := χ}) hz hg0 ?_ hprob
+  intro χ
+  dsimp only
+  rw [deployedVerifierEq_iff_flatAccept]
+  have hPwhole :
+      (multiopenCommitment gg ww uu vk ps {ch with ipaRound := χ}
+          + (∑ i, ([-(multiopenValue vk ps {ch with ipaRound := χ})].getD i.val 0) • gg i)
+          + ({ch with ipaRound := χ} : Challenges shape.k Fp).xi • ps.ipaS)
+        = (deployedCommitment ⟨shape.k, gg, ww, uu⟩ rfl vk ps ch
+            - multiopenValue vk ps ch • gg 0 + ch.xi • commit ⟨shape.k, gg, ww, uu⟩ s
+            + (ch.z * 0) • uu + 0 • ww) := by
+    have e1 : multiopenValue vk ps {ch with ipaRound := χ} = multiopenValue vk ps ch := rfl
+    have e2 : multiopenCommitment gg ww uu vk ps {ch with ipaRound := χ}
+        = multiopenCommitment gg ww uu vk ps ch := rfl
+    have e3 : ({ch with ipaRound := χ} : Challenges shape.k Fp).xi = ch.xi := rfl
+    rw [e1, e2, e3, sum_getD_single gg (multiopenValue vk ps ch), ← hs]
+    simp only [deployedCommitment]
+    module
+  rw [hPwhole]
+  exact Iff.rfl
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening *and constraint* over Vesta, with `hbridge` discharged.** The constraint
+companion of `orchard_verifier_vesta_forking_opening_deployed`: same discharged bridge (halo2's actual verifier
+accept, no abstract `hbridge`), routed through the opening to the gate-satisfaction seam
+(`hquot`/`hgood` → `circuitSatViaGates`, `hencodes`) at the *claimed* value `multiopenValue` — pinned from the
+forking opening's `multiopenValue − ξ·⟨s,b⟩` by the minimal value-recovery hypothesis
+`hξ : ch.xi·⟨s,b⟩ = 0` (honest blinding, or a `1/p`-measure set of post-`S` challenges for a malicious blinder,
+`blinder_value_recovery_badSet`). Residual assumptions: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening
+`hs`, and `hξ` — plus the random-oracle uniformity axiom in `hprob`. The prover-as-oracle bridge is proven, not
+assumed. -/
+theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch)
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases orchard_verifier_vesta_forking_opening_deployed urs hk vk ps ch s hz hg0 hs hprob with ⟨a, hrel'⟩ | hrel
+  · rw [hξ, sub_zero] at hrel'
+    have hsat : circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg a :=
+      circuitSatViaGates_of_check fixedCols decodeAdvice decodeInstance y gates hpoly deg a x
+        (hquot a hrel') (hgood a hrel')
+    exact Or.inl (hencodes a ⟨hrel', hsat⟩)
+  · exact Or.inr hrel
+
 /-! ## The forking capstones as terminal results
 
-`orchard_verifier_vesta_forking_opening` and `orchard_verifier_vesta_forking_constraint` are **terminal** —
-the soundness deliverables of this development — so nothing consumes them upward; the opening is wired in only
-here, by the constraint capstone, which calls it. Like the legacy
-`orchard_verifier_vesta_opening_reduction`/`_constraint`, they are compiled and checked as part of the library
-but are not building blocks for a higher theorem. This is by design: they are the top-level statements a reader
-takes as the deployed-curve soundness results. -/
+`orchard_verifier_vesta_forking_opening_deployed` and `orchard_verifier_vesta_forking_constraint_deployed` are
+the **terminal, `hbridge`-free** soundness deliverables: they take halo2's *actual* verifier accept
+`DeployedIpaVerifierEq` (no abstract prover-as-oracle bridge — it is proven internally by
+`Forking.deployedVerifierEq_iff_flatAccept`), leaving only the honest deployed facts (`z ≠ 0`, `hg0`, the
+`S`-opening `hs`, and for the constraint side `hξ`) and the random-oracle uniformity axiom in `hprob`. Their
+abstract predecessors `orchard_verifier_vesta_forking_opening`/`_constraint` retain the modular `hbridge`
+hypothesis and are what the `_deployed` versions call; like the legacy
+`orchard_verifier_vesta_opening_reduction`/`_constraint` they remain compiled and checked but are no longer the
+top statement a reader takes. Nothing consumes the `_deployed` capstones upward — they are the top-level
+deployed-curve soundness results. -/
 
 end Zcash.Snark

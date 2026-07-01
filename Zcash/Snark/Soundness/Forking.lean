@@ -260,19 +260,162 @@ theorem deployed_forking_soundness_flat [DecidableEq G] [Inhabited G] (urs : URS
         (commit urs aDep + (z * 0) • urs.u + blind • urs.w), invProver_invProver Q]
   exact hprob
 
-/-! ## TODO (follow-up issue/PR): eliminating the prover-as-oracle bridge `hbridge`
+/-! ## Discharging the deterministic half of the prover-as-oracle bridge `hbridge`
 
-`hbridge` (the hypothesis of `deployed_forking_soundness_of_bridge` below) is the correct boundary for this
-development — it is named and explicit, **not** a hidden soundness bug. It says: the actual deployed verifier's
-accept event, as a function of the challenge vector, is equivalent to some prefix-respecting prover strategy
-`Q` satisfying `flatAccept`.
+`hbridge` bundles a deterministic algebra half — the deployed verifier equation folds, along each challenge
+path, to the flat tree predicate `flatAccept` of the proof read as a `Prover` — with the irreducible
+random-oracle half (the accept *probability* is over uniform rewindable challenges). This section discharges
+the **algebra half**: `deployedVerifierEq_iff_flatAccept` proves halo2's actual `DeployedIpaVerifierEq` is
+`flatAccept (proverOfRounds …)` at the challenge vector, so `hbridge` is a *theorem* for the deployed verifier,
+not an assumption. The residual is then only the random-oracle uniformity axiom (`RandomOracle`). -/
 
-It is closeable *in principle*, but not inside the current model without adding a new layer. Closing it needs a
-formal prover/transcript-semantics theorem: parse the deployed proof / adversary execution into a `Prover`
-tree, prove each IPA round point is fixed before its challenge (the Fiat-Shamir prefix-determination), and
-prove each path's `flatAccept` matches the deployed verifier equation. That is "round-by-round transcript
-soundness" — modeling the prover as an RO-oracle algorithm and the transcript ordering — not just algebra. So
-`hbridge` is kept named and explicit here; eliminating it should be a separate issue/PR. -/
+/-- The prover-strategy tree the deployed non-interactive proof realises: at each IPA round it commits the
+proof's **fixed** round points `(Lⱼ, Rⱼ)` (they are written in the proof string, so the continuation ignores
+the challenge), and the leaf carries the final folded opening scalar `c` and blinding `f`. This is the concrete
+`Prover` object that `hbridge` posits abstractly — here built explicitly from the proof string. -/
+def proverOfRounds : {d : ℕ} → (Fin d → G × G) → Fp → Fp → Prover Fp G d
+  | 0, _, c, f => .leaf c f
+  | _ + 1, R, c, f => .node (R 0).1 (R 0).2 (fun _ => proverOfRounds (Fin.tail R) c f)
+
+/-- `foldGens` commutes with reindexing the generators along a `Fin.cast` (`loHalf`/`hiHalf` read only the
+index value, which `Fin.cast` preserves). The bookkeeping lemma letting the `flatAccept` fold — indexed by the
+round count `d` — meet the closed-form `CF` fold, indexed by the challenge-*list* length `(List.ofFn χ).length`
+(propositionally, not definitionally, `d`). -/
+theorem foldGens_comp_cast {m n : ℕ} (h : n = m) (g : Fin (2 ^ (m + 1)) → G) (u : Fp) :
+    foldGens (fun j : Fin (2 ^ (n + 1)) => g (Fin.cast (by rw [h]) j)) u
+      = fun i : Fin (2 ^ n) => foldGens g u (Fin.cast (by rw [h]) i) := by
+  subst h; rfl
+
+/-- Fin-indexed generator fold: fold `g` by `foldGens · (χ j)⁻¹` down all `d` rounds to a single generator.
+The cast-free counterpart of the deployed list fold `foldAll (List.ofFn χ) …`, matching `flatAccept`'s
+per-round generator fold exactly, so the identity's induction stays cast-free. -/
+def foldAllFin : {d : ℕ} → (Fin d → Fp) → (Fin (2 ^ d) → G) → G
+  | 0, _, g => g 0
+  | _ + 1, χ, g => foldAllFin (Fin.tail χ) (foldGens g (χ 0)⁻¹)
+
+/-- `foldAll` reindexed along a list equality: rewrites the list and the generators' `Fin.cast` together (via
+`subst`), the tool that peels `foldAll (List.ofFn χ)` past the dependent cast that blocks a bare `rw`. -/
+theorem foldAll_congr_cast {u u' : List Fp} (h : u = u') (g : Fin (2 ^ u.length) → G) :
+    foldAll u g = foldAll u' (fun j => g (Fin.cast (by rw [h]) j)) := by
+  subst h; rfl
+
+/-- **The Fin↔list generator-fold bridge.** The cast-free `foldAllFin χ g` equals the deployed list fold
+`foldAll (List.ofFn χ) (g ∘ cast) 0`. Peels one round on each side (`foldAllFin` by definition, `foldAll` via
+`foldAll_congr_cast` past the dependent cast) and reconciles the folded generators by `foldGens_comp_cast`. -/
+theorem foldAllFin_eq : {d : ℕ} → (χ : Fin d → Fp) → (g : Fin (2 ^ d) → G) →
+    foldAllFin χ g = foldAll (List.ofFn χ) (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j)) 0
+  | 0, _, g => by simp only [foldAllFin]; rfl
+  | d + 1, χ, g => by
+      have hchal : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
+      rw [foldAllFin, foldAllFin_eq (Fin.tail χ) (foldGens g (χ 0)⁻¹), foldAll_congr_cast hchal, foldAll]
+      simp only [Fin.cast_cast]
+      exact congrArg (fun gen => foldAll (List.ofFn (Fin.tail χ)) gen 0)
+        (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
+
+/-- `CF` reindexed along a challenge-list equality: rewrites the challenge list and the generators' `Fin.cast`
+together (via `subst`). -/
+theorem CF_congr_chal {u u' : List Fp} (h : u = u') (rounds : List (G × G))
+    (g : Fin (2 ^ u.length) → G) (P : G) (c Uc Wc : Fp) (U W : G) :
+    CF rounds u g P c Uc U Wc W
+      = CF rounds u' (fun j => g (Fin.cast (by rw [h]) j)) P c Uc U Wc W := by
+  subst h; rfl
+
+/-- **The verifier-fold ↔ tree-fold identity — the deterministic core of `hbridge`.** For the concrete prover
+tree `proverOfRounds R c f` built from a proof's fixed round points, the flat verifier predicate `flatAccept`
+along challenge path `χ` is *exactly* the closed-form verifier equation `CF … = 0` over the round list
+`List.ofFn R` and challenge list `List.ofFn χ`. Proven by induction on the round count: the leaf reconciles the
+final opening (base), and each round folds one `(Lⱼ, Rⱼ)` into the commitment (`CF_cons`, the round point
+undecomposed) while the value coefficient tracks the eval-vector fold `foldAllFin χ b`. No `sorry`/`axiom`. -/
+theorem flatAccept_proverOfRounds :
+    {d : ℕ} → (R : Fin d → G × G) → (c f : Fp) → (g : Fin (2 ^ d) → G) → (b : Fin (2 ^ d) → Fp) →
+    (U W : G) → (z : Fp) → (P : G) → (χ : Fin d → Fp) →
+    (flatAccept (proverOfRounds R c f) g b U W z P χ ↔
+      CF (List.ofFn R) (List.ofFn χ)
+          (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j)) P c
+          (-(z * c * foldAllFin χ b)) U (-f) W = 0)
+  | 0, R, c, f, g, b, U, W, z, P, χ => by
+      rw [proverOfRounds, flatAccept]
+      simp only [CF, gPart]
+      rw [← foldAllFin_eq]
+      have hg : commitGen g (fun _ : Fin (2 ^ 0) => c) = c • g 0 := by simp [commitGen]
+      have hb : commitGen b (fun _ : Fin (2 ^ 0) => c) = c * b 0 := by simp [commitGen]
+      simp only [roundSum, List.ofFn_zero, List.zip_nil_right, List.map_nil, List.sum_nil, add_zero,
+        foldAllFin, hg, hb]
+      constructor
+      · intro h; rw [h]; module
+      · intro h; linear_combination (norm := module) h
+  | d + 1, R, c, f, g, b, U, W, z, P, χ => by
+      have hchal : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
+      have hround : List.ofFn R = ((R 0).1, (R 0).2) :: List.ofFn (Fin.tail R) := by
+        rw [List.ofFn_succ]; rfl
+      rw [proverOfRounds, flatAccept,
+          flatAccept_proverOfRounds (Fin.tail R) c f (foldGens g (χ 0)⁻¹) (foldGens b (χ 0)⁻¹) U W z
+            (P + (χ 0)⁻¹ • (R 0).1 + (χ 0) • (R 0).2) (Fin.tail χ)]
+      rw [hround, CF_congr_chal hchal]
+      rw [show (((R 0).1, (R 0).2) : G × G)
+            = ((R 0).1 + (0 : Fp) • U + (0 : Fp) • W, (R 0).2 + (0 : Fp) • U + (0 : Fp) • W) by simp]
+      rw [CF_cons]
+      simp only [mul_zero, add_zero, Fin.cast_cast]
+      refine iff_of_eq (congrArg (· = (0 : G)) ?_)
+      congr 1
+      exact (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
+
+/-- The Fin-indexed eval-vector fold is the flat `computeB` (the `b`-value bridge, Fin form): folds the powers
+vector `evalVector d x` down `χ` to `computeB x (List.ofFn χ)`. `foldAllFin_eq` moves to the list fold and
+`foldAll_evalVector` telescopes it. -/
+theorem foldAllFin_evalVector {d : ℕ} (χ : Fin d → Fp) (x : Fp) :
+    foldAllFin χ (evalVector d x) = computeB x (List.ofFn χ) := by
+  rw [foldAllFin_eq]
+  have hev : (fun j => evalVector d x (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
+      = evalVector (List.ofFn χ).length x := by
+    funext j; simp only [evalVector, Fin.val_cast]
+  rw [hev]
+  exact foldAll_evalVector x (List.ofFn χ)
+
+/-- **`hbridge`, discharged for the deployed verifier (the algebra half).** halo2's actual verifier equation
+`DeployedIpaVerifierEq` at any IPA challenge vector `ch.ipaRound` is *exactly* the flat verifier predicate
+`flatAccept` of the concrete prover tree `proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF` read off the proof —
+with the eval vector `evalVector shape.k ch.x3` and the adjusted commitment `multiopen + [-v]g₀ + [ξ]S`. This is
+the deterministic content of the prover-as-oracle bridge, now a **theorem**, not an assumption: chaining
+`deployedVerifierEq_cf` (the verifier equation is `CF = 0`), `flatAccept_proverOfRounds` (`flatAccept` of the
+tree is that same `CF = 0`), and `foldAllFin_evalVector` (the `U`-coefficient is `computeB`). The only residual
+is the random-oracle uniformity axiom on the accept *measure* (`RandomOracle`). -/
+theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [DecidableEq G] [Inhabited G]
+    (g : Fin (2 ^ shape.k) → G) (w u : G) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) :
+    DeployedIpaVerifierEq g w u vk ps ch ↔
+      flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF) g (evalVector shape.k ch.x3) u w ch.z
+        (multiopenCommitment g w u vk ps ch
+          + (∑ i, ([-(multiopenValue vk ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS)
+        ch.ipaRound := by
+  rw [deployedVerifierEq_cf, flatAccept_proverOfRounds, foldAllFin_evalVector,
+    show (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z)
+      = -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound)) from by ring]
+
+/-! ## The deterministic content of the prover-as-oracle bridge `hbridge` is proven
+
+`hbridge` (the hypothesis of `deployed_forking_soundness_of_bridge` below) says: the deployed verifier's accept
+event, as a function of the challenge vector, is the flat predicate `flatAccept Q` of a prefix-respecting prover
+strategy `Q`. This is a **pointwise** (deterministic) identification — it carries no probability.
+
+Its deterministic content is now **proven**: `deployedVerifierEq_iff_flatAccept` (above) proves halo2's actual
+verifier equation `DeployedIpaVerifierEq` *is* `flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF)` at the
+challenge vector. The earlier "needs a separate round-by-round transcript-semantics layer" is done inside the
+model: the tree is `proverOfRounds` (its round points fixed by the proof string, its leaf the final opening —
+the Fiat-Shamir prefix-determination), and each path's `flatAccept` matches the verifier equation by
+`flatAccept_proverOfRounds` (`flatAccept` ↔ `CF = 0`) composed with `deployedVerifierEq_cf` (`CF = 0` ↔ the
+verifier equation).
+
+**Status.** `hbridge` is *discharged* in the deployed opening capstone
+`orchard_verifier_vesta_forking_opening_deployed` (`Soundness.Vesta`): that theorem takes halo2's **actual**
+verifier accept `DeployedIpaVerifierEq` (no abstract `hbridge`) and proves the bridge internally via
+`deployedVerifierEq_iff_flatAccept`, at the cost of the honest `S`-opening fact `commit urs s = ps.ipaS` (and
+the `shape.k`↔`urs.k` transport, discharged by `subst`). The abstract theorems —
+`deployed_forking_soundness_of_bridge` below, and `orchard_verifier_vesta_forking_opening`/`_constraint` —
+retain `hbridge` as a *modular* hypothesis (they are stated over an abstract `accepts`/`Q`), now a theorem for
+the deployed verifier rather than an irreducible assumption. The one irreducible floor, once `hbridge` is
+discharged, is the random-oracle uniformity axiom on the accept *probability* (the uniform measure of `hprob`,
+`RandomOracle`) — that the challenges are uniform, independent, rewindable random-oracle draws. -/
 
 open scoped ENNReal in
 open Classical in
@@ -284,11 +427,14 @@ with the **explicit** faithfulness bridge `hbridge` identifying that event with 
 
 `flatAccept` folds generators by `foldGens g u⁻¹`, exactly halo2's `compute_s` direction, so the verifier
 equation `DeployedIpaVerifierEq` — which `deployedVerifierEq_cf` identifies with the closed form `CF = 0` —
-folds along each challenge path to `flatAccept Q`. Discharging `hbridge` (the proof string read as a
-prefix-respecting `Prover Q` whose per-path `flatAccept` is the verifier's accept) is precisely the
-prover-as-oracle realization: the one irreducible Fiat-Shamir/Blake2b modeling floor. With `hbridge` supplied,
-the residual is *only* that floor — every other link (extraction, root-consistency, value placement, the
-`u`-vs-`u⁻¹` convention) is a theorem. This is the granular replacement for the monolithic `FiatShamirTree`. -/
+folds along each challenge path to `flatAccept Q`. The deterministic content of `hbridge` is **proven** by
+`deployedVerifierEq_iff_flatAccept` (the proof string read as the prefix-respecting `Prover`
+`proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF`, whose per-path `flatAccept` *is* the verifier's accept), so
+`hbridge` is *dischargeable* — but this theorem still takes it as an explicit hypothesis (it has not been
+rewired to consume that identity; doing so also needs the `S`-opening fact `commit urs s = ps.ipaS`). With
+`hbridge` supplied, the residual is *only* the random-oracle uniformity axiom on the accept probability — every
+other link (extraction, root-consistency, value placement, the `u`-vs-`u⁻¹` convention) is a theorem. This is
+the granular replacement for the monolithic `FiatShamirTree`. -/
 theorem deployed_forking_soundness_of_bridge [DecidableEq G] [Inhabited G] (urs : URS G)
     (b : Fin (2 ^ urs.k) → Fp) (v ξ z blind : Fp) (aMulti aDep s : Fin (2 ^ urs.k) → Fp)
     (Q : Prover Fp G urs.k) (accepts : (Fin urs.k → Fp) → Prop)
