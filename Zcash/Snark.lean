@@ -37,3 +37,4 @@ import Zcash.Snark.Soundness.Forking
 import Zcash.Snark.Soundness.ForkingProbability
 import Zcash.Snark.Soundness.TreeExtraction
 import Zcash.Snark.Soundness.ForkingExtractor
+import Zcash.Snark.Soundness.TranscriptOrdering
