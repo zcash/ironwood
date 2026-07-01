@@ -11,16 +11,20 @@ import Zcash.Snark.Soundness.DeployedVerification
 
 This module formalizes the composition that turns IPA knowledge soundness into the SNARK relation, in
 two layers: a `_conditional` family over an opaque `accepts : Prop`, and a `_deployed` family over the
-concrete accept condition `(assemble? vk ps ch).eval … = 0` (the §1 fingerprint MSM). The conditional
+concrete accept condition `DeployedAccepts` (the rejecting `assemble?` succeeds and its MSM — the §1
+fingerprint — evaluates to the identity). The conditional
 theorems are named with a `_conditional` suffix to avoid overclaiming: they are scaffolds, not finished
 soundness. The deployed `_opening` / `_constraint` theorems below derive the IPA opening (via `ipa_soundV`,
 after peeling the `U`/`W` apparatus) and the gate constraint from the accept, with `P`/`v` **pinned** to
-the proof's `multiopenCommitment`/`multiopenValue`. The accept is **proven** equal to the explicit
-closed-form `DeployedIpaVerifierEq` (`deployedAccepts_verifierEq`, via `Zcash.Snark.Soundness.DeployedVerification`);
+the proof's `multiopenCommitment`/`multiopenValue`. The accept is **proven** to entail the explicit
+closed-form `DeployedIpaVerifierEq` (`deployedAccepts_verifierEq`, via `Zcash.Snark.Soundness.DeployedVerification`
+— an implication, the direction soundness consumes; the accept also comprises the rejection guards);
 fidelity of that closed form to halo2's Rust is the §1 transcription (`assembleFinalMsm`/`ipaFold`, checked
 by the fingerprint), not re-proved here. The residual `FiatShamirTree` bridge is the Fiat–Shamir
-forking, the node `L`/`R` decomposition, and the deterministic adjusted-commitment step
-`P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms into the opened commitment) — all issue #11.
+forking **plus the special-soundness extraction content**: the node `L`/`R`↦value/blinding decomposition,
+the leaf `g`-representation of the folded commitment, and the adjusted-commitment step
+`P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms into the opened commitment — which needs a
+representation of the adversary point `S`, so it is not a deterministic rewrite) — all issue #11.
 Commitment binding is load-bearing *in the proof* (the `U`/`W` separation is derived from a discrete-log
 relation reduction, `Zcash.Snark.Soundness.DeployedIpaPeel`), so the deployed conclusion is
 `SnarkRelation ∨ HasNontrivialRelation` — a *reduction*: it exhibits a discrete-log relation rather than
@@ -114,13 +118,16 @@ theorem eval_cast {shape : Shape} {urs : URS G} (hk : shape.k = urs.k) (m : Msm 
   subst hk
   rfl
 
-/-- Structural faithfulness, **proven** (was assumed by the Fiat–Shamir bridge): the deployed accept *is*
-halo2's explicit IPA verifier equation. From `DeployedAccepts` (the rejecting fingerprint `assemble?`
+/-- Structural faithfulness, **proven** (was assumed by the Fiat–Shamir bridge): the deployed accept
+*entails* halo2's explicit IPA verifier equation. (An implication, not an `Iff` — the accept additionally
+comprises the rejection guards; this is the direction soundness consumes.) From `DeployedAccepts` (the
+rejecting fingerprint `assemble?` succeeds and
 evaluates to the identity), `assemble?_eq_some` identifies the accepted MSM with the non-rejecting
 `assembleFinalMsm`, and `deployed_verification_eq` rewrites its evaluation to the explicit equation — so
 `DeployedIpaVerifierEq` holds for the proof's actual `(vk, ps, ch)`. This discharges the MSM↔equation
-correspondence the bridge used to absorb; the residual bundle in `FiatShamirTree` is the forking, the node
-decomposition, and the adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (issue #11). The `urs.k`↔`shape.k`
+correspondence the bridge used to absorb; the residual bundle in `FiatShamirTree` is the forking and the
+extraction-content data it supplies — the node decomposition, the leaf `g`-representation, and the
+adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (issue #11). The `urs.k`↔`shape.k`
 transport is `eval_cast`. -/
 theorem deployedAccepts_verifierEq [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
@@ -144,9 +151,13 @@ theorem deployedAccepts_verifierEq [DecidableEq G] [Inhabited G] {shape : Shape}
 `Zcash.Snark.ipa_soundV` derives the full opening relation — `commit g a = P` and `⟨a,b⟩ = v` — from an
 accepting IPA transcript tree (`IpaAcceptV`), binding-free, by 3-special soundness. So the bridge no
 longer assumes `IpaRelation`. Honest caveat for `FiatShamirTree` below: beyond the Fiat–Shamir rewinding it
-still absorbs (i) the node-level `L`/`R`↦value/blinding decomposition and (ii) the deterministic
-adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms). The MSM↔equation
-correspondence and the `P`/`v` pinning it used to also absorb are now discharged
+still absorbs (i) the node-level `L`/`R`↦value/blinding decomposition, (ii) the leaf `g`-representation of
+the folded commitment (`DeployedIpaAcceptV`'s `∃ aP` span condition), and (iii) the
+adjusted-commitment step `P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms — this needs a
+representation of the adversary point `S`, so it is rewinding- or AGM-content, not a deterministic
+rewrite). (i)–(ii) are what the special-soundness extraction would *derive* from the forked flat equations
+by Vandermonde over the augmented `(g, U, W)` basis; here they arrive as bridge-supplied tree data. The
+MSM↔equation correspondence and the `P`/`v` pinning it used to also absorb are now discharged
 (`deployedAccepts_verifierEq`); the cryptographic opening and the `g`/`U`/`W` separation are derived. -/
 
 /-- `IpaAcceptV` over the URS generators derives `IpaRelation`: the witness `ipa_soundV` extracts opens
@@ -172,14 +183,22 @@ abbrev deployedCommitment [DecidableEq G] [Inhabited G] {shape : Shape} (urs : U
 `DeployedIpaVerifierEq` (which `deployedAccepts_verifierEq` *proves* the deployed
 accept entails), and its conclusion opens the pinned `deployedCommitment`/`multiopenValue` — the actual
 `P`/`v` from `(vk, ps, ch)`, not free parameters. So what this assumes is: the verifier equation holding
-yields a consistent deployed IPA transcript tree (`DeployedIpaAcceptV`, carrying the `U`/`W` apparatus) —
-comprising (a) the Fiat–Shamir **forking**; (b) the node-level `L`/`R`↦value/blinding **decomposition**
-(`Lv`/`Rv`/`Lw`/`Rw`); and (c) the deterministic **adjusted-commitment** step `P' = P − [v]g₀ + [ξ]S`, which
-folds the value term `[-v]g₀` and the `S`/`ξ` blinding-poly `[ξ]S` (both present in `DeployedIpaVerifierEq`)
-into the commitment the tree opens. The MSM↔equation correspondence is discharged separately
+yields a consistent deployed IPA transcript tree (`DeployedIpaAcceptV`, carrying the `U`/`W` apparatus).
+That bundles the Fiat–Shamir **forking** — (a) the rewinding that produces three accepting continuations
+per node at distinct nonzero challenges — with the special-soundness **extraction** content, knowledge the
+forked transcripts would pin by Vandermonde over the augmented `(g, U, W)` basis but that here arrives as
+bridge-supplied tree data: (b) the node-level `L`/`R`↦value/blinding **decomposition**
+(`Lv`/`Rv`/`Lw`/`Rw` — each round point's `(g, U, W)`-representation, which must not depend on `z`);
+(c) the leaf **`g`-representation** `∃ aP, P = ⟨aP, g⟩` of the folded commitment (the span condition
+`DeployedIpaAcceptV`'s leaf demands); and (d) the **adjusted-commitment** step `P' = P − [v]g₀ + [ξ]S`,
+which folds the value term `[-v]g₀` and the `S`/`ξ` blinding-poly `[ξ]S` (both present in
+`DeployedIpaVerifierEq`) into the commitment the tree opens — this needs a representation of the adversary
+point `S` (ξ-side rewinding or AGM), so it is not a deterministic rewrite of the equation. The
+MSM↔equation correspondence is discharged separately
 (`deployedAccepts_verifierEq`), not assumed here; the per-leaf `g`/`U`/`W` separation is *derived*
-(`deployed_to_acceptV`) — but `S`/`ξ` is not peeled, it lives in (c). `b`/`z`/`blind` are bridge-mediated
-(the protocol fixes `b = computeB ch.x3 …`, `z = ch.z`); only `P`/`v` are pinned. All of (a)–(c) are issue #11. -/
+(`deployed_to_acceptV`) — but `S`/`ξ` is not peeled, it lives in (d). `b`/`z`/`blind` are bridge-mediated
+(the protocol fixes `b = evalVector urs.k ch.x3` — whose per-round fold telescopes to the leaf
+`b₀ = computeB ch.x3 ·` — and `z = ch.z`); only `P`/`v` are pinned. All of (a)–(d) are issue #11. -/
 def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp) : Prop :=
@@ -190,7 +209,7 @@ def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (
 
 /-- The deployed Orchard verifier opening, as a binding **reduction**, with `P`/`v` **pinned** to the proof
 (`deployedCommitment`/`multiopenValue` from `(vk, ps, ch)`, not free parameters). From the deployed accept,
-`deployedAccepts_verifierEq` *proves* it equal to the explicit `DeployedIpaVerifierEq` form; the forking
+`deployedAccepts_verifierEq` *proves* the explicit `DeployedIpaVerifierEq` form; the forking
 bridge `hFS` turns that equation into the deployed transcript tree opening the pinned commitment (via the
 adjusted-commitment step `P' = P − [v]g₀ + [ξ]S`); `deployed_to_acceptV` peels the `U`/`W` apparatus onto the
 clean `IpaAcceptV` (deriving the per-leaf separation from binding); and `ipa_soundV` extracts the opening.
