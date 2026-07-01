@@ -261,7 +261,8 @@ The deployed-curve residual is the explicit prover-as-oracle bridge `hbridge` (a
 discharged. The original `FiatShamirTree` reductions
 (`orchard_verifier_vesta_opening_reduction`/`_constraint`) remain as the coarser legacy endpoints. The
 `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order, the force in the out-of-Lean
-DLR/AGM layer. -/
+DLR/AGM layer. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that
+genuinely reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -375,7 +376,8 @@ forking opening's `multiopenValue − ξ·⟨s,b⟩` by the minimal value-recove
 `hξ : ch.xi·⟨s,b⟩ = 0` (honest blinding, or a `1/p`-measure set of post-`S` challenges for a malicious blinder,
 `blinder_value_recovery_badSet`). Residual assumptions: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening
 `hs`, and `hξ` — plus the random-oracle uniformity axiom in `hprob`. The prover-as-oracle bridge is proven, not
-assumed. -/
+assumed. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that genuinely
+reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
