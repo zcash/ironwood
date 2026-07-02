@@ -150,6 +150,83 @@ theorem relation_prob_le_of_DL {bound : ℝ≥0∞} (h : DLAdvantageLE B A bound
       ≤ Fintype.card ι * bound := by gcongr
   rwa [one_div, ← mul_assoc, ENNReal.mul_inv_cancel hm0 hm_top, one_mul] at hmul
 
+/-! ### Reduction to textbook single-generator discrete log
+
+`DLAdvantageLE` above bounds the reduction's success on the *embedded* game (the challenge is one slot
+of the sampled basis). The textbook discrete-log game samples a secret `x` and presents `x • B`; the
+reduction places that challenge in a uniform slot and self-generates the other slots' logs. The two
+games have identical success probability — a perfect re-randomization: the coin map
+`(x, c, s') ↦ (Function.update s' c x, c)` is `|F|`-to-one onto the abstract `(scalars, slot)` space.
+This lets binding be stated against *plain* discrete log, not the bespoke embedded game. -/
+
+/-- Coins of the textbook single-generator DL reduction: the hidden secret `x`, a uniform challenge
+slot `c`, and the self-generated logs `s'` of the other slots. The reduction places `x • B` in slot
+`c` and `s' i • B` elsewhere (= `scalarBasis B (Function.update s' c x)`), runs `A`, and on a hit
+outputs the extracted `w` with `w • B = x • B`. It wins exactly when `(Function.update s' c x, c)`
+lands in `succSet`. -/
+noncomputable def winSet : Finset (F × ι × (ι → F)) :=
+  Finset.univ.filter (fun t => (Function.update t.2.2 t.2.1 t.1, t.2.1) ∈ succSet B A)
+
+omit [Nonempty ι] in
+/-- **Perfect re-randomization (counting form).** The reduction's winning-coins set is exactly `|F|`
+copies of the abstract `succSet`: for each abstract `(s, c)` the fiber is the free value `s' c`. -/
+theorem winSet_card :
+    (winSet B A).card = (succSet B A).card * Fintype.card F := by
+  rw [← Finset.card_univ (α := F), ← Finset.card_product]
+  refine Finset.card_bij'
+    (fun t _ => ((Function.update t.2.2 t.2.1 t.1, t.2.1), t.2.2 t.2.1))
+    (fun p _ => (p.1.1 p.1.2, p.1.2, Function.update p.1.1 p.1.2 p.2))
+    ?hi ?hj ?left ?right
+  case hi =>
+    rintro ⟨x, c, s'⟩ ht
+    simp only [winSet, Finset.mem_filter, Finset.mem_univ, true_and] at ht
+    simp only [Finset.mem_product, Finset.mem_univ, and_true]
+    exact ht
+  case hj =>
+    rintro ⟨⟨s, c⟩, t⟩ hp
+    simp only [Finset.mem_product, Finset.mem_univ, and_true] at hp
+    simp only [winSet, Finset.mem_filter, Finset.mem_univ, true_and,
+      Function.update_idem, Function.update_eq_self]
+    exact hp
+  case left =>
+    rintro ⟨x, c, s'⟩ _
+    simp only [Function.update_self, Function.update_idem, Function.update_eq_self]
+  case right =>
+    rintro ⟨⟨s, c⟩, t⟩ _
+    simp only [Function.update_self, Function.update_idem, Function.update_eq_self]
+
+/-- The reduction's success probability on the textbook game (uniform coins `(x, c, s')`) equals the
+abstract `succSet` probability. Perfect simulation, in probability form. -/
+theorem textbook_winProb_eq_succProb :
+    (PMF.uniformOfFintype (F × ι × (ι → F))).toOuterMeasure (winSet B A)
+      = (PMF.uniformOfFintype ((ι → F) × ι)).toOuterMeasure (succSet B A) := by
+  haveI : Nonempty (ι → F) := ⟨fun _ => 0⟩
+  rw [uniformOfFintype_toOuterMeasure_finset, uniformOfFintype_toOuterMeasure_finset, winSet_card]
+  have hcard : Fintype.card (F × ι × (ι → F))
+      = Fintype.card F * Fintype.card ((ι → F) × ι) := by
+    simp only [Fintype.card_prod]; ring
+  rw [hcard]
+  push_cast
+  rw [mul_comm ((succSet B A).card : ℝ≥0∞) (Fintype.card F : ℝ≥0∞),
+    ENNReal.mul_div_mul_left _ _
+      (by exact_mod_cast Fintype.card_ne_zero) (ENNReal.natCast_ne_top _)]
+
+/-- Textbook single-generator discrete-log hardness at `B`: no reduction wins the DL game (secret
+`x`, challenge `x • B`, uniform coins) with probability more than `bound`. -/
+def TextbookDLAdvantageLE (bound : ℝ≥0∞) : Prop :=
+  (PMF.uniformOfFintype (F × ι × (ι → F))).toOuterMeasure (winSet B A) ≤ bound
+
+/-- **Binding from textbook discrete-log hardness.** Under standard single-generator DL hardness,
+the algebraic adversary finds a relation with probability at most `|ι| · bound`. Combines the perfect
+re-randomization identity (`textbook_winProb_eq_succProb`) with `relation_prob_le_of_DL`; this states
+binding against *plain* discrete log rather than the embedded `DLAdvantageLE` game. -/
+theorem relation_prob_le_of_textbookDL {bound : ℝ≥0∞} (h : TextbookDLAdvantageLE B A bound) :
+    (PMF.uniformOfFintype (ι → F)).toOuterMeasure (relSet B A) ≤ Fintype.card ι * bound := by
+  refine relation_prob_le_of_DL B A ?_
+  show (PMF.uniformOfFintype ((ι → F) × ι)).toOuterMeasure (succSet B A) ≤ bound
+  rw [← textbook_winProb_eq_succProb]
+  exact h
+
 end Reduction
 
 end Zcash.Snark

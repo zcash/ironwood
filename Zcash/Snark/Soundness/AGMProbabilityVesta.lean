@@ -47,4 +47,19 @@ theorem orchard_reduction_advantage_ge [Fact (HasseBound Vesta.curve)]
           (succSet B A) :=
   reduction_advantage_ge B A
 
+/-- **Commitment binding from plain discrete log (URS generators).** Specializing the reduction to the
+URS generator index `Fin (2 ^ urs.k)` over Vesta: an algebraic adversary that finds a nontrivial
+relation among the URS generators `urs.g` — in particular a commitment collision, whose difference
+`a - a'` is such a relation (`relationWitnessOfCollision`) — with probability exceeding `2^k · bound`
+yields a textbook single-generator discrete-log solver over `B` beating `bound`. Equivalently, under
+textbook DL hardness the collision/relation probability is at most `2^k · bound`. This is commitment
+binding reduced to *plain* discrete log. -/
+theorem commitment_binding_prob_le_of_textbookDL [Fact (HasseBound Vesta.curve)]
+    (urs : URS VestaG) (B : VestaG)
+    (A : (b : Fin (2 ^ urs.k) → VestaG) → Option (AlgebraicRelationWitness (F := Fp) b))
+    {bound : ℝ≥0∞} (h : TextbookDLAdvantageLE B A bound) :
+    (PMF.uniformOfFintype (Fin (2 ^ urs.k) → Fp)).toOuterMeasure (relSet B A)
+      ≤ Fintype.card (Fin (2 ^ urs.k)) * bound :=
+  relation_prob_le_of_textbookDL B A h
+
 end Zcash.Snark
