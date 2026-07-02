@@ -75,11 +75,6 @@ theorem roundPoint_mem_roundTranscript (t₀ : List (TranscriptElt F G)) (rounds
       TranscriptElt.point (rounds j).2 ∈ roundTranscript t₀ rounds j := by
   cases j <;> exact ⟨by simp [roundTranscript], by simp [roundTranscript]⟩
 
-/-- The round-`j` IPA challenge as the deployed schedule squeezes it: from the round-`j` transcript, which
-contains `(Lⱼ, Rⱼ)` (`roundPoint_mem_roundTranscript`) and never the challenge `uⱼ` itself. -/
-def roundChallenge (fs : FiatShamir F G) (t₀ : List (TranscriptElt F G)) (rounds : ℕ → G × G) (j : ℕ) : F :=
-  fs.squeeze (roundTranscript t₀ rounds j)
-
 /-- **The deployed schedule's IPA `foldl` builds the round-by-round transcript.** Folding the round points in
 `L` — at each `i`, appending `[.point Lᵢ, .point Rᵢ, .challenge]` to the running transcript and squeezing —
 the final transcript is the base `t₀` followed by every round's point-pair and challenge marker, in order.
@@ -132,5 +127,84 @@ theorem proverRoundPoint_prefix : {d : ℕ} → (P : Prover F G d) → (χ χ' :
       rw [h0]
       exact proverRoundPoint_prefix (cont (χ' 0)) (Fin.tail χ) (Fin.tail χ') j
         (fun i hi => h i.succ (by simp only [Fin.val_succ]; omega))
+
+/-! ## Sealing the module to the deployed derivation
+
+The lemmas above are stated over `roundTranscript`, a *reconstruction* of `deriveChallenges`'s IPA fold. To
+rule out drift between the reconstruction and the deployed schedule, `deriveChallenges_ipaRound_eq` proves
+the deployed round challenges *are* the round-by-round squeezes: `(deriveChallenges fs init ps).ipaRound j`
+is `fs.squeeze` of the round-`j` transcript over the named base `preIpaTranscript init ps` and the proof's
+own round points. Any refactor of `deriveChallenges` that changes the IPA absorb order breaks this theorem,
+so the ordering facts hold of the deployed derivation itself, not of a mirror. -/
+
+/-- The transcript `deriveChallenges` has absorbed when its IPA fold starts: `init`, then every pre-IPA
+absorb block with its challenge markers, through the `z` marker. The chain never re-absorbs a squeezed
+challenge (halo2's no-self-absorption), so it is a function of `init` and the proof string alone — no
+`FiatShamir` argument. `deriveChallenges_ipaRound_eq` pins this to the deployed derivation. -/
+def preIpaTranscript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
+    ++ absorbScalars ps.fixedEvals ++ [TranscriptElt.scalar ps.vanishingRandomEval]
+    ++ absorbScalars ps.permutationCommonEvals
+    ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
+    ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
+  let t := t ++ evalElts ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ [TranscriptElt.point ps.multiopenQPrime] ++ [.challenge]
+  let t := t ++ absorbScalars ps.multiopenU ++ [.challenge]
+  let t := t ++ [TranscriptElt.point ps.ipaS] ++ [.challenge]
+  let t := t ++ [.challenge]
+  t
+
+/-- The challenge side of the IPA `foldl` (companion of `ipaFold_transcript`, which characterizes the
+transcript side): the accumulated challenge list is `us₀` extended by, for each round position `m`, the
+squeeze of the base extended by the first `m + 1` rounds' absorb blocks. -/
+theorem ipaFold_challenges {ι : Type*} (fs : FiatShamir F G) (rp : ι → G × G)
+    (L : List ι) (t₀ : List (TranscriptElt F G)) (us₀ : List F) :
+    (L.foldl (fun st i =>
+        (st.1 ++ [TranscriptElt.point (rp i).1, TranscriptElt.point (rp i).2, TranscriptElt.challenge],
+          st.2 ++ [fs.squeeze (st.1 ++ [TranscriptElt.point (rp i).1, TranscriptElt.point (rp i).2,
+            TranscriptElt.challenge])])) (t₀, us₀)).2
+      = us₀ ++ (List.range L.length).map (fun m =>
+          fs.squeeze (t₀ ++ ((L.take (m + 1)).map (fun i =>
+            [TranscriptElt.point (rp i).1, TranscriptElt.point (rp i).2,
+              TranscriptElt.challenge])).flatten)) := by
+  induction L generalizing t₀ us₀ with
+  | nil => simp
+  | cons i L ih =>
+      rw [List.foldl_cons, ih, List.length_cons, List.range_succ_eq_map]
+      simp only [List.map_cons, List.map_map, List.take_succ_cons, List.take_zero, List.map_nil,
+        List.flatten_cons, List.flatten_nil, Function.comp_def, List.append_assoc,
+        List.cons_append, List.nil_append]
+
+/-- The round-`j` transcript over `Fin`-indexed round points — the form the deployed schedule's
+`Fin shape.k → G × G` rounds produce directly. -/
+def roundTranscriptFin {k : ℕ} (t₀ : List (TranscriptElt F G)) (rounds : Fin k → G × G) (j : Fin k) :
+    List (TranscriptElt F G) :=
+  t₀ ++ (((List.finRange k).take (j.val + 1)).map (fun i =>
+    [TranscriptElt.point (rounds i).1, TranscriptElt.point (rounds i).2,
+      TranscriptElt.challenge])).flatten
+
+/-- **The anti-drift seal: the deployed schedule's IPA challenges are the round-by-round squeezes.**
+`(deriveChallenges fs init ps).ipaRound j` is exactly `fs.squeeze` of the round-`j` transcript over the
+named base `preIpaTranscript init ps` and the proof's own round points `ps.ipaRounds`. So
+`roundTranscript_succ` / `roundPoint_mem_roundTranscript` / `roundTranscript_prefix_mono` hold *of the
+deployed derivation itself* (#23, bullets 1–2): each `(Lⱼ, Rⱼ)` is absorbed before `uⱼ` is squeezed, and
+`uⱼ` is sampled from the prefix containing it. A refactor of `deriveChallenges` that changes the IPA
+absorb order breaks this theorem. -/
+theorem deriveChallenges_ipaRound_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) (j : Fin shape.k) :
+    (deriveChallenges fs init ps).ipaRound j
+      = fs.squeeze (roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j) := by
+  simp only [deriveChallenges, preIpaTranscript, roundTranscriptFin]
+  rw [ipaFold_challenges, List.nil_append, List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_range (by simp)]
+  rfl
 
 end Zcash.Snark

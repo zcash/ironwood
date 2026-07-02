@@ -1,6 +1,7 @@
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.RandomOracle
 import Zcash.Snark.Soundness.ForkingExtractor
+import Zcash.Snark.Soundness.TranscriptOrdering
 
 /-!
 # The deployed verifier under random-oracle rewinding
@@ -267,7 +268,10 @@ path, to the flat tree predicate `flatAccept` of the proof read as a `Prover` �
 random-oracle half (the accept *probability* is over uniform rewindable challenges). This section discharges
 the **algebra half**: `deployedVerifierEq_iff_flatAccept` proves halo2's actual `DeployedIpaVerifierEq` is
 `flatAccept (proverOfRounds …)` at the challenge vector, so `hbridge` is a *theorem* for the deployed verifier,
-not an assumption. The residual is then only the random-oracle uniformity axiom (`RandomOracle`). -/
+not an assumption. The round-by-round ordering behind the prefix-respecting `Prover` shape is likewise a
+theorem (`Soundness.TranscriptOrdering`, sealed to the deployed schedule by `deriveChallenges_ipaRound_eq`;
+`proverRoundPoint_proverOfRounds` below reads the fixed round points off `proverOfRounds` on every challenge
+path). The residual is then only the random-oracle uniformity axiom (`RandomOracle`). -/
 
 /-- The prover-strategy tree the deployed non-interactive proof realises: at each IPA round it commits the
 proof's **fixed** round points `(Lⱼ, Rⱼ)` (they are written in the proof string, so the continuation ignores
@@ -276,6 +280,23 @@ the challenge), and the leaf carries the final folded opening scalar `c` and bli
 def proverOfRounds : {d : ℕ} → (Fin d → G × G) → Fp → Fp → Prover Fp G d
   | 0, _, c, f => .leaf c f
   | _ + 1, R, c, f => .node (R 0).1 (R 0).2 (fun _ => proverOfRounds (Fin.tail R) c f)
+
+/-- The deployed fixed-proof prover commits constant round points: on *every* challenge path,
+`proverRoundPoint` of `proverOfRounds R c f` at depth `j` is `R j` — the degenerate
+(challenge-independent) case of `proverRoundPoint_prefix`, and the prover-tree side of the deployed
+schedule's ordering (`deriveChallenges_ipaRound_eq`). So the tree `hbridge` instantiates satisfies the
+round-by-round prefix-determination (#23) by construction. -/
+theorem proverRoundPoint_proverOfRounds : {d : ℕ} → (R : Fin d → G × G) → (c f : Fp) →
+    (χ : Fin d → Fp) → (j : ℕ) → (hj : j < d) →
+    proverRoundPoint (proverOfRounds R c f) χ j = some (R ⟨j, hj⟩)
+  | 0, _, _, _, _, _, hj => absurd hj (Nat.not_lt_zero _)
+  | _ + 1, R, _, _, _, 0, hj => by
+      show some ((R 0).1, (R 0).2) = some (R ⟨0, hj⟩)
+      exact congrArg some (congrArg R (Fin.ext (by simp)))
+  | _ + 1, R, c, f, χ, j + 1, hj => by
+      show proverRoundPoint (proverOfRounds (Fin.tail R) c f) (Fin.tail χ) j = _
+      rw [proverRoundPoint_proverOfRounds (Fin.tail R) c f (Fin.tail χ) j (Nat.lt_of_succ_lt_succ hj)]
+      rfl
 
 /-- `foldGens` commutes with reindexing the generators along a `Fin.cast` (`loHalf`/`hiHalf` read only the
 index value, which `Fin.cast` preserves). The bookkeeping lemma letting the `flatAccept` fold — indexed by the
@@ -496,10 +517,13 @@ random-oracle adversary *induces* such a staged strategy, with its RO-query loss
 half). The abstract theorems —
 `deployed_forking_soundness_of_bridge` below, and `orchard_verifier_vesta_forking_opening`/`_constraint` —
 retain `hbridge` as that *modular* hypothesis (they are stated over an abstract `accepts`/`Q`): its
-deterministic content is a theorem for every staged strategy; its execution-semantics content is the residual
-prover-as-oracle floor, alongside the random-oracle uniformity axiom on the accept *probability* (the uniform
-measure of `hprob`, `RandomOracle`) — that the challenges are uniform, independent, rewindable
-random-oracle draws. -/
+deterministic content is a theorem for every staged strategy, and the round-by-round transcript ordering
+behind the prefix-respecting shape (issue #23) is likewise proven and sealed to the deployed derivation
+(`Soundness.TranscriptOrdering`, `deriveChallenges_ipaRound_eq`; `proverRoundPoint_proverOfRounds` for the
+tree side). Its execution-semantics content is the residual prover-as-oracle floor — that a rewound
+random-oracle adversary *induces* such a staged strategy — alongside the random-oracle uniformity axiom on
+the accept *probability* (the uniform measure of `hprob`, `RandomOracle`) — that the challenges are
+uniform, independent, rewindable random-oracle draws. -/
 
 open scoped ENNReal in
 open Classical in
@@ -517,8 +541,9 @@ folds along each challenge path to `flatAccept Q`. The deterministic content of 
 `hbridge` is *dischargeable* — but this theorem still takes it as an explicit hypothesis (it has not been
 rewired to consume that identity; doing so also needs the `S`-opening fact `commit urs s = ps.ipaS`). With
 `hbridge` supplied, the residual is *only* the random-oracle uniformity axiom on the accept probability — every
-other link (extraction, root-consistency, value placement, the `u`-vs-`u⁻¹` convention) is a theorem. This is
-the granular replacement for the monolithic `FiatShamirTree`. -/
+other link (extraction, root-consistency, value placement, the `u`-vs-`u⁻¹` convention) is a theorem, as is
+the round-by-round transcript ordering (`Soundness.TranscriptOrdering`, sealed by
+`deriveChallenges_ipaRound_eq`). This is the granular replacement for the monolithic `FiatShamirTree`. -/
 theorem deployed_forking_soundness_of_bridge [DecidableEq G] [Inhabited G] (urs : URS G)
     (b : Fin (2 ^ urs.k) → Fp) (v ξ z blind : Fp) (aMulti aDep s : Fin (2 ^ urs.k) → Fp)
     (Q : Prover Fp G urs.k) (accepts : (Fin urs.k → Fp) → Prop)
