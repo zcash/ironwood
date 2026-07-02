@@ -3,6 +3,7 @@ import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.MultiopenDecode
 import Zcash.Snark.Soundness.DeployedIpaPeel
 import Zcash.Snark.Soundness.DeployedVerification
 import Zcash.Snark.Soundness.ForkingAssembly
@@ -74,7 +75,7 @@ def ExtractableFromAcceptance (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp)
   accepts → ∃ (t : Tree Fp urs.k) (a : Fin (2 ^ urs.k) → Fp),
     Consistent t a ∧ IpaRelation urs P b v a ∧ circuitSat a
 
--- Tracked semantic-adequacy gap (issue #18): `hencodes`/`S` below are the seam from circuit-satisfiability to the
+-- Tracked semantic-adequacy gap: `hencodes`/`S` below are the seam from circuit-satisfiability to the
 -- high-level Orchard relation. `S` is a free `Prop` and `hencodes` is an assumed hypothesis, so the
 -- chain stops at "the extracted witness satisfies the gates" (`SnarkRelation`) and never reaches
 -- "…therefore a valid Orchard action" (note well-formed, value balances, nullifier correctly derived,
@@ -270,8 +271,8 @@ conditions on `2^k` coordinates), so any `circuitSat` that genuinely reads the w
 all of it — the hypothesis is unsatisfiable for the intended instantiation, the `AugmentedBinding`
 failure mode in hypothesis position. `circuitSatViaGates_of_check` does not discharge it: that lemma
 derives `circuitSat` for *one* `a` from that `a`'s own point-check, never the quantified premise.
-The fix is restating the constraint side as a derived fact about the *extracted* witness via the
-multiopen decode — issue #18. -/
+The decoded-column capstone below restates the constraint side as a derived fact about columns recovered
+from the batched openings that contain the extracted witness. -/
 theorem orchard_verifier_deployed_opening_reduction [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
@@ -320,8 +321,8 @@ Caveat on the `hquot`/`hgood` shape (as for `hcirc` above): both quantify over *
 opening `a` of the pinned `(P, b, v)` — an affine subspace of dimension `≥ 2^k − 2` at a prime-order
 curve — so for any decode that genuinely reads columns out of `a` they are unsatisfiable, not merely
 undischarged: the verifier's actual gate check constrains the *claimed* evaluations, not every
-opening's decode. Restating them as facts about the *extracted* witness — binding the decode to the
-real columns via `batch_open_soundV` — is issue #18. -/
+opening's decode. The decoded-column capstone below restates them over columns recovered from batched
+openings via `batch_open_soundV`. -/
 theorem orchard_verifier_deployed_constraint_reduction [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
@@ -349,6 +350,74 @@ theorem orchard_verifier_deployed_constraint_reduction [DecidableEq G] [Inhabite
       circuitSatViaGates_of_check fixedCols decodeAdvice decodeInstance y gates hpoly deg a x
         (hquot a hrel') (hgood a hrel')
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
+  · exact Or.inr hrel
+
+open Polynomial in
+/-- The deployed Orchard verifier opening and constraint, with the multiopen witness decoded into real
+columns before the gate check is applied.
+
+Compared with `orchard_verifier_deployed_constraint_reduction`, `hquot`/`hgood` are no longer quantified
+over every mathematical opening of the pinned IPA relation. Instead, after the deployed accept extracts the
+current IPA witness `a`, `hbatch` supplies the rewound batched openings containing that witness, and
+`decodedColumnFamily_of_batch_openings` recovers the individual columns by `batch_open_soundV`. The gate
+check is then stated over those recovered columns, selected into the advice/instance slots the gate
+expressions read.
+
+This discharges the witness-to-real-columns half of the constraint-side bridge. The remaining hypothesis
+shape is deliberately explicit: `hquot` is still the separate quotient-check-from-deployed-assembly fact —
+stated for the canonical decode of the supplied batch (`decodedCols`), the family this proof constructs
+(the ∀-families form is jointly unsatisfiable; see the `MultiopenDecode` scope section). -/
+theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [Inhabited G]
+    {shape : Shape} (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
+    (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
+    {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : z ≠ 0)
+    (haccepts : DeployedAccepts urs hk vk ps ch)
+    (hFS : FiatShamirTree urs hk vk ps ch b z blind)
+    (hbatch : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
+      BatchOpeningsForWitness urs b columnCommitments columnEvals a)
+    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) a),
+      quotientCheck
+        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
+    (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) a),
+      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
+        y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  obtain ⟨t, ht⟩ := hFS (deployedAccepts_verifierEq urs hk vk ps ch haccepts)
+  rcases deployed_to_acceptV hz urs.g b (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch)
+    blind t ht with hclean | hrel
+  · obtain ⟨a, hrel'⟩ := ipaRelation_of_acceptV urs b (deployedCommitment urs hk vk ps ch)
+      (multiopenValue vk ps ch) (projTree t) hclean
+    have hsat : circuitSatViaGates fixedCols
+        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) adviceIndex)
+        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) instanceIndex)
+        y gates hpoly deg a :=
+      circuitSatViaGates_of_check fixedCols
+        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) adviceIndex)
+        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) instanceIndex)
+        y gates hpoly deg a x (hquot a hrel') (hgood a hrel')
+    exact Or.inl (hencodes a (decodedCols (hbatch a hrel'))
+      { opens := hrel'
+        batchOpenings := hbatch a hrel'
+        decodedColumns := decodedCols_spec (hbatch a hrel')
+        satisfiesCircuit := hsat })
   · exact Or.inr hrel
 
 end Zcash.Snark

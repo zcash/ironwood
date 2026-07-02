@@ -60,14 +60,14 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 (`IpaRelation`) and satisfies the circuit (`circuitSat a`). Both conjuncts are about the same extracted
 witness `a` (fixing the earlier flaw where the constraint was on free, unrelated polynomials).
 `circuitSat` is the circuit-satisfaction predicate — its intended instantiation is `circuitSatViaGates`
-("the witness's decoded columns satisfy the `y`-combined gates"). The remaining gap is deriving
-`circuitSat a` for the extracted `a` from the deployed constraint check (`constraint_identity_of_accept`)
-through the multiopen decode.
+("the witness's decoded columns satisfy the `y`-combined gates"). This raw relation is intentionally
+generic; the deployed decoded-column capstone in `Soundness.MultiopenDecode` /
+`orchard_verifier_deployed_decoded_constraint_reduction` pins the decode to the extracted witness via
+`batch_open_soundV`.
 
-Sharper statement of that gap: the two conjuncts share only the symbol `a`. Until the decode is pinned,
-`circuitSat a` may be instantiated independently of `a` (the decode that feeds `circuitSatViaGates` is a
-free function), so it need not constrain the extracted witness at all. Binding the decode to `a` — via
-the already-proven but currently unused `batch_open_soundV` — is exactly what closes this (issue #18). -/
+Sharper statement of the legacy gap: the two conjuncts share only the symbol `a`. If the decode that feeds
+`circuitSatViaGates` is left as a free function, `circuitSat a` may be instantiated independently of `a`,
+so it need not constrain the extracted witness at all. -/
 structure SnarkRelation (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
     (circuitSat : (Fin (2 ^ urs.k) → Fp) → Prop) (a : Fin (2 ^ urs.k) → Fp) : Prop where
   opens : IpaRelation urs P b v a
@@ -78,7 +78,7 @@ satisfy the `y`-combined gates' quotient identity. `decodeAdvice`/`decodeInstanc
 the circuit's column polynomials (the multiopen decode — abstract until the assembly is modeled), and
 `combineGates` is the `y`-combination of the gate `Expr`s (`eval_combineGates`). So
 `circuitSat := circuitSatViaGates …` reads "the extracted witness satisfies the circuit's gate constraints",
-and `constraint_identity_of_accept` is what would discharge it from the deployed check. -/
+and `constraint_identity_of_accept` is what discharges it once the caller supplies a non-free decode. -/
 def circuitSatViaGates {k : ℕ} (fixedCols : ℕ → Polynomial Fp)
     (decodeAdvice decodeInstance : (Fin (2 ^ k) → Fp) → (ℕ → Polynomial Fp))
     (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
@@ -109,8 +109,9 @@ unique witness satisfying `SnarkRelation`. Composes `extract_correct` (extractio
 `ipaRelation_unique` (uniqueness under DLR hardness).
 
 The hypotheses `hcons` and `hsat` are assumed here, not derived from acceptance — deriving them
-(via `accepting_fold_eq` + `commitGen_round`, and `constraint_identity_of_accept` off the `d/p` bad set
-through the multiopen decode) is the open composition work. -/
+(via `accepting_fold_eq` + `commitGen_round`, and `constraint_identity_of_accept` off the `d/p` bad set)
+is the open composition work for this raw theorem. The deployed decoded-column reduction handles the
+multiopen witness-to-columns bridge separately. -/
 theorem knowledge_sound (urs : URS G) (hbind : CommitmentBinding (F := Fp) urs)
     {t : Tree Fp urs.k} {a : Fin (2 ^ urs.k) → Fp} (hcons : Consistent t a)
     {P : G} {b : Fin (2 ^ urs.k) → Fp} {v : Fp} (hopen : IpaRelation urs P b v a)
