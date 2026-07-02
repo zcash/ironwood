@@ -422,7 +422,82 @@ the **terminal, `hbridge`-free** soundness deliverables: they take halo2's *actu
 abstract predecessors `orchard_verifier_vesta_forking_opening`/`_constraint` retain the modular `hbridge`
 hypothesis and are what the `_deployed` versions call; like the legacy
 `orchard_verifier_vesta_opening_reduction`/`_constraint` they remain compiled and checked but are no longer the
-top statement a reader takes. Nothing consumes the `_deployed` capstones upward — they are the top-level
-deployed-curve soundness results. -/
+top statement a reader takes. The `_rewind` forms below consume the `_deployed` capstones upward: they state
+the same results with the accept probability over **reprogrammed-oracle runs** (`reprogramRounds`), deriving
+the `{ch with ipaRound := χ}` round-vector semantics from the rewinding primitive via
+`roChallenges_reprogramRounds` — which puts the round-by-round transcript-ordering module
+(`Soundness.TranscriptOrdering`, issue #23) on the Fiat-Shamir path. The `_rewind` capstones are the
+top-level deployed-curve soundness results. -/
+
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening over Vesta, from oracle rewinding.**
+`orchard_verifier_vesta_forking_opening_deployed` at the honest run's challenges `roChallenges O init ps`,
+with the accept probability stated over **reprogrammed-oracle runs**: the event is halo2's verifier equation
+at `roChallenges (reprogramRounds O init ps χ) init ps` — the deployed schedule re-run under the oracle
+reprogrammed at the `k` round prefixes — rather than an unexplained `{ch with ipaRound := χ}` surgery.
+`roChallenges_reprogramRounds` proves the two events equal, so the round-vector semantics of the forking
+measure is *derived* from the rewinding primitive, consuming the transcript ordering (issue #23). Residuals
+are unchanged: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening `hs`, and the random-oracle uniformity
+axiom in `hprob`. -/
+theorem orchard_verifier_vesta_forking_opening_rewind [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0)
+    (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)
+          - (roChallenges O init ps).xi * innerProduct s (evalVector urs.k (roChallenges O init ps).x3)) a)
+      ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine orchard_verifier_vesta_forking_opening_deployed urs hk vk ps (roChallenges O init ps)
+    s hz hg0 hs ?_
+  simpa only [roChallenges_reprogramRounds] using hprob
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- The constraint companion of `orchard_verifier_vesta_forking_opening_rewind`:
+`orchard_verifier_vesta_forking_constraint_deployed` with the accept probability over reprogrammed-oracle
+runs, the round-vector semantics derived via `roChallenges_reprogramRounds` (issue #23). The `hquot`/`hgood`
+caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and issue #18. -/
+theorem orchard_verifier_vesta_forking_constraint_rewind [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : (roChallenges O init ps).xi
+        * innerProduct s (evalVector urs.k (roChallenges O init ps).x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps))
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine orchard_verifier_vesta_forking_constraint_deployed urs hk vk ps (roChallenges O init ps)
+    s fixedCols decodeAdvice decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes ?_
+  simpa only [roChallenges_reprogramRounds] using hprob
 
 end Zcash.Snark

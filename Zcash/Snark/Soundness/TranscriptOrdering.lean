@@ -230,6 +230,36 @@ theorem roundTranscriptFin_eq_roundTranscript {k : ℕ} (t₀ : List (Transcript
       TranscriptElt.challenge]) (Fin.ext ?_)
     simp [Nat.mod_eq_of_lt hn]
 
+private theorem length_flatten_map_triple {ι : Type*} (f g h : ι → TranscriptElt F G) :
+    ∀ l : List ι, ((l.map (fun i => [f i, g i, h i])).flatten).length = 3 * l.length
+  | [] => rfl
+  | i :: l => by
+      simp only [List.map_cons, List.flatten_cons, List.length_append, List.length_cons,
+        List.length_nil, length_flatten_map_triple f g h l]
+      omega
+
+/-- Each round's absorb block has three elements, so the round-`j` transcript extends the base by exactly
+`3 · (j + 1)` — the length arithmetic behind "distinct rounds have distinct transcripts". -/
+theorem roundTranscriptFin_length {k : ℕ} (t₀ : List (TranscriptElt F G)) (rounds : Fin k → G × G)
+    (j : Fin k) :
+    (roundTranscriptFin t₀ rounds j).length = t₀.length + 3 * (j.val + 1) := by
+  have hj := j.isLt
+  simp only [roundTranscriptFin, List.length_append,
+    length_flatten_map_triple (fun i => TranscriptElt.point (rounds i).1)
+      (fun i => TranscriptElt.point (rounds i).2) (fun _ => TranscriptElt.challenge),
+    List.length_take, List.length_finRange]
+  omega
+
+/-- Distinct rounds squeeze from distinct transcripts (their lengths differ by `3 · |j − j'|`) — the fact
+that lets the oracle be reprogrammed at one round's prefix without touching any other round's challenge. -/
+theorem roundTranscriptFin_injective {k : ℕ} (t₀ : List (TranscriptElt F G))
+    (rounds : Fin k → G × G) :
+    Function.Injective (roundTranscriptFin t₀ rounds) := by
+  intro a b h
+  have hlen := congrArg List.length h
+  rw [roundTranscriptFin_length, roundTranscriptFin_length] at hlen
+  exact Fin.ext (by omega)
+
 /-- **The anti-drift seal: the deployed schedule's IPA challenges are the round-by-round squeezes.**
 `(deriveChallenges fs init ps).ipaRound j` is exactly `fs.squeeze` of the round-`j` transcript over the
 named base `preIpaTranscript init ps` and the proof's own round points `ps.ipaRounds`. So

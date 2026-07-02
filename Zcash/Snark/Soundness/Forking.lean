@@ -47,6 +47,94 @@ def roChallenges {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
     (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) : Challenges shape.k Fp :=
   deriveChallenges (ofOracle O) init ps
 
+/-! ## Redrawing the round vector *is* reprogramming the deployed oracle
+
+The forking layer redraws the IPA round-challenge vector `χ` and evaluates the verifier at
+`{ch with ipaRound := χ}`; the random-oracle model rewinds by *reprogramming* the oracle
+(`Soundness.RandomOracle.reprogram`) at round prefixes and re-running the schedule. These are the same
+operation, and `roChallenges_reprogramRounds` proves it, consuming the round-by-round transcript ordering
+(`Soundness.TranscriptOrdering`, issue #23): the round prefixes are pairwise distinct and longer than every
+pre-IPA squeeze input (`roundTranscriptFin_length`/`_injective`), so reprogramming them changes exactly the
+round challenges (`deriveChallenges_ipaRound_eq`, the seal) and nothing upstream. This puts the ordering
+module on the Fiat-Shamir path: the `_rewind` capstones (`Soundness.Vesta`) state their accept probability
+over reprogrammed-oracle runs and reach the `_deployed` capstones through this identification. -/
+
+open Classical in
+/-- The `k`-point extension of `reprogram`: reprogram the oracle at *every* IPA round prefix of the fixed
+proof string at once, answering `χ j` at the round-`j` transcript (as `reprogram … (χ j)` would) and `O`
+elsewhere. Redrawing the whole round vector — what the forking probability ranges over — runs the deployed
+schedule under this oracle (`roChallenges_reprogramRounds`). -/
+noncomputable def reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp) :
+    List (TranscriptElt Fp G) → Fp :=
+  fun t => if h : ∃ j : Fin shape.k,
+      t = roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j
+    then χ h.choose else O t
+
+/-- At the round-`j` prefix, the reprogrammed oracle answers `χ j` (well-defined because distinct rounds
+have distinct prefixes, `roundTranscriptFin_injective`). -/
+theorem reprogramRounds_apply_round {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    (j : Fin shape.k) :
+    reprogramRounds O init ps χ
+      (roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j) = χ j := by
+  have hex : ∃ j' : Fin shape.k,
+      roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j
+        = roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j' := ⟨j, rfl⟩
+  simp only [reprogramRounds]
+  rw [dif_pos hex]
+  exact (congrArg χ (roundTranscriptFin_injective _ _ hex.choose_spec)).symm
+
+/-- Off the round prefixes, the reprogrammed oracle is `O`. -/
+theorem reprogramRounds_apply_ne {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    {t : List (TranscriptElt Fp G)}
+    (ht : ∀ j : Fin shape.k, t ≠ roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j) :
+    reprogramRounds O init ps χ t = O t := by
+  simp only [reprogramRounds]
+  rw [dif_neg]
+  rintro ⟨j, hj⟩
+  exact ht j hj
+
+/-- Every transcript no longer than the pre-IPA base is untouched by the round reprogramming: the round
+prefixes are strictly longer (`roundTranscriptFin_length`). In particular every pre-IPA squeeze input. -/
+theorem reprogramRounds_apply_short {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length ≤ (preIpaTranscript init ps).length) :
+    reprogramRounds O init ps χ t = O t :=
+  reprogramRounds_apply_ne O init ps χ (fun j h => by
+    have hlen := congrArg List.length h
+    rw [roundTranscriptFin_length] at hlen
+    omega)
+
+private theorem Challenges.ext' {k : ℕ} {F : Type*} {c₁ c₂ : Challenges k F}
+    (hθ : c₁.theta = c₂.theta) (hβ : c₁.beta = c₂.beta) (hγ : c₁.gamma = c₂.gamma)
+    (hy : c₁.y = c₂.y) (hx : c₁.x = c₂.x) (h1 : c₁.x1 = c₂.x1) (h2 : c₁.x2 = c₂.x2)
+    (h3 : c₁.x3 = c₂.x3) (h4 : c₁.x4 = c₂.x4) (hξ : c₁.xi = c₂.xi) (hz : c₁.z = c₂.z)
+    (hu : c₁.ipaRound = c₂.ipaRound) : c₁ = c₂ := by
+  cases c₁; cases c₂; simp_all
+
+/-- **Redrawing the round vector is reprogramming the deployed oracle.** Running the deployed schedule under
+the oracle reprogrammed at all `k` round prefixes yields exactly the honest run with its IPA round vector
+replaced by `χ`: the pre-IPA challenges are untouched (their squeeze inputs are no longer than the base,
+`reprogramRounds_apply_short`), and round `j`'s challenge is the reprogrammed answer `χ j` — by the
+transcript-ordering seal `deriveChallenges_ipaRound_eq`. This is the vector-semantics ⇔ rewinding
+identification the forking layer's `{ch with ipaRound := χ}` events rest on, and the load-bearing consumer
+of `Soundness.TranscriptOrdering` (issue #23). -/
+theorem roChallenges_reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp) :
+    roChallenges (reprogramRounds O init ps χ) init ps
+      = { roChallenges O init ps with ipaRound := χ } := by
+  refine Challenges.ext' ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    first
+      | (funext j
+         show (deriveChallenges (ofOracle (reprogramRounds O init ps χ)) init ps).ipaRound j = χ j
+         rw [deriveChallenges_ipaRound_eq]
+         exact reprogramRounds_apply_round O init ps χ j)
+      | exact reprogramRounds_apply_short O init ps χ (by
+          simp only [preIpaTranscript, List.length_append, List.length_cons, List.length_nil]
+          omega)
+
 /-- The deployed opening reduction at the **random-oracle-derived** challenges. Identical to
 `orchard_verifier_deployed_opening_reduction` but with the free `Challenges` replaced by the proof's own
 `roChallenges O init ps`, so the statement is about the deployed (non-interactive) verifier. The residual is
