@@ -323,11 +323,22 @@ halo2's **actual** verifier equation `DeployedIpaVerifierEq` at the rewound IPA 
 `flatAccept` of the concrete proof tree `proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF` is **proven** internally
 by `deployedVerifierEq_iff_flatAccept` — not assumed. The `shape.k`↔`urs.k` transport is discharged by
 `subst`, and the commitment slot is reconciled (`sum_getD_single`, `deployedCommitment = multiopenCommitment`,
-the `S`-opening `hs : commit urs s = ps.ipaS`, `module`). The remaining hypotheses are all honest deployed
-facts — `z ≠ 0`, the nonzero generator `hg0` (prime-order `g`-span), the `S`-opening `hs` — plus the accept
-*probability* `hprob` over the uniform IPA-challenge measure. That uniform measure is the *only* residual
-assumption: the random-oracle uniformity axiom (`RandomOracle`); the prover-as-oracle identification is no
-longer assumed. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
+the `S`-opening `hs : commit urs s = ps.ipaS`, `module`). The remaining hypotheses are `z ≠ 0`, the nonzero
+generator `hg0` (prime-order `g`-span), and the `S`-opening witness `hs` (such an opening always *exists* at
+prime order but is not feasibly constructible for a malicious prover — the same exists-but-not-findable tier
+as `commit_surjective` and the `∨ HasNontrivialRelation` disjunct), plus the accept *probability* `hprob`
+over the uniform IPA-challenge measure.
+
+**Quantifier-shape caveat (`hprob`).** Discharging the bridge with the *constant* strategy `proverOfRounds`
+changes what `hprob` measures: it is the accept set of this **fixed** proof string over *all* round-challenge
+vectors — not the Fiat–Shamir attack event. A real prover (honest ones included) produces a proof whose
+accept set is a low-degree variety of measure ≲ `(3k+1)/p`, generically ≈ `1/p` — below the `3k/p` threshold —
+and a forger only needs its single RO-derived vector to land on that variety. So this theorem is the *static
+dichotomy* "a proof accepting on more than `3k/p` of challenge space yields an opening"; the reduction from a
+forging adversary to `hprob` — rewinding with adaptively varying suffixes and its RO-query loss (the
+round-by-round transcript soundness of issue #23) — is not formalized. For an adaptive adversary the honest
+statement remains `orchard_verifier_vesta_forking_opening`, with `Q` the adversary-induced strategy and
+`hbridge` explicit. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
 theorem orchard_verifier_vesta_forking_opening_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -375,8 +386,12 @@ accept, no abstract `hbridge`), routed through the opening to the gate-satisfact
 forking opening's `multiopenValue − ξ·⟨s,b⟩` by the minimal value-recovery hypothesis
 `hξ : ch.xi·⟨s,b⟩ = 0` (honest blinding, or a `1/p`-measure set of post-`S` challenges for a malicious blinder,
 `blinder_value_recovery_badSet`). Residual assumptions: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening
-`hs`, and `hξ` — plus the random-oracle uniformity axiom in `hprob`. The prover-as-oracle bridge is proven, not
-assumed. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that genuinely
+witness `hs`, and `hξ` — plus the accept probability `hprob`, which carries the same quantifier-shape caveat
+as `orchard_verifier_vesta_forking_opening_deployed`: with the constant `proverOfRounds` strategy it measures
+the *fixed* proof's accept set over all round-challenge vectors, not the Fiat–Shamir attack event; the
+adaptive rewinding reduction (issue #23) is not formalized, and the adaptive-adversary statement remains
+`orchard_verifier_vesta_forking_constraint` with `hbridge` explicit. `hquot`/`hgood` retain the ∀-openings
+shape — unsatisfiable at Vesta for any decode that genuinely
 reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
@@ -412,17 +427,18 @@ theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Ves
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
 
-/-! ## The forking capstones as terminal results
+/-! ## The forking capstones: two terminal readings
 
-`orchard_verifier_vesta_forking_opening_deployed` and `orchard_verifier_vesta_forking_constraint_deployed` are
-the **terminal, `hbridge`-free** soundness deliverables: they take halo2's *actual* verifier accept
-`DeployedIpaVerifierEq` (no abstract prover-as-oracle bridge — it is proven internally by
-`Forking.deployedVerifierEq_iff_flatAccept`), leaving only the honest deployed facts (`z ≠ 0`, `hg0`, the
-`S`-opening `hs`, and for the constraint side `hξ`) and the random-oracle uniformity axiom in `hprob`. Their
-abstract predecessors `orchard_verifier_vesta_forking_opening`/`_constraint` retain the modular `hbridge`
-hypothesis and are what the `_deployed` versions call; like the legacy
-`orchard_verifier_vesta_opening_reduction`/`_constraint` they remain compiled and checked but are no longer the
-top statement a reader takes. Nothing consumes the `_deployed` capstones upward — they are the top-level
-deployed-curve soundness results. -/
+`orchard_verifier_vesta_forking_opening_deployed` and `orchard_verifier_vesta_forking_constraint_deployed`
+take halo2's *actual* verifier accept `DeployedIpaVerifierEq` with the prover-as-oracle bridge proven
+internally (`Forking.deployedVerifierEq_iff_flatAccept`) — but for the **constant** strategy
+`proverOfRounds`, so their `hprob` is the *fixed* proof's accept measure over the whole challenge space (the
+static dichotomy), not the Fiat–Shamir attack event: see the quantifier-shape caveat on each. For an
+**adaptive** adversary — rewinding with varying suffixes, the object the Fiat–Shamir game actually
+produces — the terminal statements remain `orchard_verifier_vesta_forking_opening`/`_constraint`, whose
+modular `hbridge` names the prover-as-oracle identification for the adversary-induced strategy; discharging
+*that* (with its RO-query loss) is the round-by-round transcript soundness of issue #23. The legacy
+`orchard_verifier_vesta_opening_reduction`/`_constraint` remain compiled and checked but are no longer the
+top statement a reader takes. Nothing consumes the forking capstones upward. -/
 
 end Zcash.Snark

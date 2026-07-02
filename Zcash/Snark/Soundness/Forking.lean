@@ -409,13 +409,18 @@ verifier equation).
 **Status.** `hbridge` is *discharged* in the deployed opening capstone
 `orchard_verifier_vesta_forking_opening_deployed` (`Soundness.Vesta`): that theorem takes halo2's **actual**
 verifier accept `DeployedIpaVerifierEq` (no abstract `hbridge`) and proves the bridge internally via
-`deployedVerifierEq_iff_flatAccept`, at the cost of the honest `S`-opening fact `commit urs s = ps.ipaS` (and
-the `shape.k`↔`urs.k` transport, discharged by `subst`). The abstract theorems —
+`deployedVerifierEq_iff_flatAccept`, at the cost of the `S`-opening witness `commit urs s = ps.ipaS` (and
+the `shape.k`↔`urs.k` transport, discharged by `subst`). **Scope of the discharge:** it instantiates the
+*constant* strategy `proverOfRounds` — the fixed proof string — so the capstone's `hprob` becomes that fixed
+proof's accept measure over the whole challenge space (the static dichotomy), *not* the Fiat–Shamir attack
+event; the identification for the **adaptive** adversary-induced strategy (rewinding with varying suffixes,
+the RO-query loss — issue #23) is exactly what `hbridge` still names. The abstract theorems —
 `deployed_forking_soundness_of_bridge` below, and `orchard_verifier_vesta_forking_opening`/`_constraint` —
-retain `hbridge` as a *modular* hypothesis (they are stated over an abstract `accepts`/`Q`), now a theorem for
-the deployed verifier rather than an irreducible assumption. The one irreducible floor, once `hbridge` is
-discharged, is the random-oracle uniformity axiom on the accept *probability* (the uniform measure of `hprob`,
-`RandomOracle`) — that the challenges are uniform, independent, rewindable random-oracle draws. -/
+retain `hbridge` as that *modular* hypothesis (they are stated over an abstract `accepts`/`Q`): its
+deterministic content is a theorem for the deployed proof string; its adaptive content is the residual
+prover-as-oracle floor, alongside the random-oracle uniformity axiom on the accept *probability* (the uniform
+measure of `hprob`, `RandomOracle`) — that the challenges are uniform, independent, rewindable
+random-oracle draws. -/
 
 open scoped ENNReal in
 open Classical in
