@@ -392,6 +392,81 @@ theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [Deci
     show (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z)
       = -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound)) from by ring]
 
+/-! ## The staged (round-adaptive) adversary: `hbridge` discharged beyond the constant strategy
+
+`deployedVerifierEq_iff_flatAccept` reads the *fixed* proof string as the constant strategy, so the accept
+event it identifies is one proof's accept set over the challenge space (the static dichotomy). Rewinding a
+real adversary produces more: the rewound runs share the pre-IPA prefix but answer each challenge path with
+their *own* round points and final opening — a prefix-respecting **staged** adversary, which is exactly a
+`Prover` tree together with the fixed pre-IPA data. This section discharges the bridge for *every* such
+strategy: `pathData` reads the strategy's outputs along one challenge path, `spliceIpa` forms its proof
+string at that path (pre-IPA fields fixed, IPA fields the path outputs), and
+`deployedVerifierEq_iff_flatAccept_adaptive` proves halo2's verifier equation on that proof *is*
+`flatAccept P` at the vector. So the corresponding capstones' `hprob` (`Soundness.Vesta`, the `_adaptive`
+pair) is the accept probability of an adaptive strategy — the object rewinding produces — rather than of one
+fixed proof. What remains is the execution-semantics identification (that a rewound random-oracle adversary
+*induces* such a staged strategy, with its RO-query loss) and the random-oracle uniformity axiom. -/
+
+/-- A strategy's outputs along one challenge path: the round points `(Lⱼ, Rⱼ)` it commits and the final
+opening `(c, f)` it sends when the round challenges are `χ` — `pathData P χ = (rounds, c, f)`. The round-`0`
+point is challenge-independent (the `Prover` node fixes it before its challenge); later points read only the
+challenge prefix, by the tree shape. -/
+def pathData : {d : ℕ} → Prover Fp G d → (Fin d → Fp) → (Fin d → G × G) × Fp × Fp
+  | 0, .leaf c f, _ => (Fin.elim0, c, f)
+  | _ + 1, .node L R cont, χ =>
+      (Fin.cons (L, R) (pathData (cont (χ 0)) (Fin.tail χ)).1, (pathData (cont (χ 0)) (Fin.tail χ)).2)
+
+/-- The staged adversary's proof string at one challenge path: every pre-IPA field is the fixed `ps`'s, and
+the IPA fields (`ipaRounds`, `ipaC`, `ipaF`) are replaced — with the strategy's path outputs, in the intended
+use. Rewinding shares the pre-IPA prefix and re-answers the rounds; this is that shape as data. -/
+def spliceIpa {shape : Shape} (ps : ProofString shape Fp G) (R : Fin shape.k → G × G) (c f : Fp) :
+    ProofString shape Fp G :=
+  { ps with ipaRounds := R, ipaC := c, ipaF := f }
+
+/-- `flatAccept` reads the strategy only along the challenge path: the adaptive tree `P` at `χ` agrees with
+the constant prover built from `P`'s own path outputs `pathData P χ`. The per-path bridge from the adaptive
+tree to `flatAccept_proverOfRounds`'s constant form. -/
+theorem flatAccept_pathData {U W : G} {z : Fp} : {d : ℕ} → (P : Prover Fp G d) →
+    (g : Fin (2 ^ d) → G) → (b : Fin (2 ^ d) → Fp) → (Pwhole : G) → (χ : Fin d → Fp) →
+    (flatAccept P g b U W z Pwhole χ ↔
+      flatAccept (proverOfRounds (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+        g b U W z Pwhole χ)
+  | 0, .leaf _ _, _, _, _, _ => Iff.rfl
+  | d + 1, .node L R cont, g, b, Pwhole, χ => by
+      rw [flatAccept, flatAccept_pathData (cont (χ 0)) (foldGens g (χ 0)⁻¹) (foldGens b (χ 0)⁻¹)
+        (Pwhole + (χ 0)⁻¹ • L + (χ 0) • R) (Fin.tail χ), pathData, proverOfRounds]
+      simp only [Fin.cons_zero, Fin.tail_cons]
+      rw [flatAccept]
+
+open Classical in
+/-- **`hbridge`, discharged for the staged (round-adaptive) adversary.** halo2's actual verifier equation on
+the strategy's spliced proof — pre-IPA fields the fixed `ps`'s, IPA fields the strategy's own outputs along
+`χ` — at IPA challenges `χ` is *exactly* `flatAccept P` at `χ`, with the eval vector
+`evalVector shape.k ch.x3` and the adjusted commitment built from the fixed `ps`. Chains
+`deployedVerifierEq_iff_flatAccept` on the spliced proof (whose pre-IPA projections are definitionally
+`ps`'s) with `flatAccept_pathData`. The constant-strategy identification is the special case
+`P := proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF`; here `hbridge` is a theorem for every prefix-respecting
+strategy — the shape a rewound adversary's runs take. -/
+theorem deployedVerifierEq_iff_flatAccept_adaptive {shape : Shape} [DecidableEq G] [Inhabited G]
+    (g : Fin (2 ^ shape.k) → G) (w u : G) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) (P : Prover Fp G shape.k) (χ : Fin shape.k → Fp) :
+    DeployedIpaVerifierEq g w u vk
+        (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ} ↔
+      flatAccept P g (evalVector shape.k ch.x3) u w ch.z
+        (multiopenCommitment g w u vk ps ch
+          + (∑ i, ([-(multiopenValue vk ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ := by
+  rw [deployedVerifierEq_iff_flatAccept]
+  have e1 : multiopenValue vk
+      (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
+      = multiopenValue vk ps ch := rfl
+  have e2 : multiopenCommitment g w u vk
+      (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
+      = multiopenCommitment g w u vk ps ch := rfl
+  rw [e1, e2]
+  exact (flatAccept_pathData P g (evalVector shape.k ch.x3)
+    (multiopenCommitment g w u vk ps ch
+      + (∑ i, ([-(multiopenValue vk ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ).symm
+
 /-! ## The deterministic content of the prover-as-oracle bridge `hbridge` is proven
 
 `hbridge` (the hypothesis of `deployed_forking_soundness_of_bridge` below) says: the deployed verifier's accept
@@ -410,14 +485,18 @@ verifier equation).
 `orchard_verifier_vesta_forking_opening_deployed` (`Soundness.Vesta`): that theorem takes halo2's **actual**
 verifier accept `DeployedIpaVerifierEq` (no abstract `hbridge`) and proves the bridge internally via
 `deployedVerifierEq_iff_flatAccept`, at the cost of the `S`-opening witness `commit urs s = ps.ipaS` (and
-the `shape.k`↔`urs.k` transport, discharged by `subst`). **Scope of the discharge:** it instantiates the
-*constant* strategy `proverOfRounds` — the fixed proof string — so the capstone's `hprob` becomes that fixed
+the `shape.k`↔`urs.k` transport, discharged by `subst`). **Scope of the discharge:** the `_deployed` pair
+instantiates the *constant* strategy `proverOfRounds` — the fixed proof string — so its `hprob` is that fixed
 proof's accept measure over the whole challenge space (the static dichotomy), *not* the Fiat–Shamir attack
-event; the identification for the **adaptive** adversary-induced strategy (rewinding with varying suffixes,
-the RO-query loss — issue #23) is exactly what `hbridge` still names. The abstract theorems —
+event. The staged discharge — `deployedVerifierEq_iff_flatAccept_adaptive` and the `_adaptive` capstones
+(`Soundness.Vesta`) — extends the bridge theorem to *every* prefix-respecting strategy (`spliceIpa` /
+`pathData`), so `hprob` there is the accept probability of a round-adaptive adversary, the object rewinding
+produces. What `hbridge` still names beyond that is the execution-semantics identification — that a rewound
+random-oracle adversary *induces* such a staged strategy, with its RO-query loss (issue #23's remaining
+half). The abstract theorems —
 `deployed_forking_soundness_of_bridge` below, and `orchard_verifier_vesta_forking_opening`/`_constraint` —
 retain `hbridge` as that *modular* hypothesis (they are stated over an abstract `accepts`/`Q`): its
-deterministic content is a theorem for the deployed proof string; its adaptive content is the residual
+deterministic content is a theorem for every staged strategy; its execution-semantics content is the residual
 prover-as-oracle floor, alongside the random-oracle uniformity axiom on the accept *probability* (the uniform
 measure of `hprob`, `RandomOracle`) — that the challenges are uniform, independent, rewindable
 random-oracle draws. -/
