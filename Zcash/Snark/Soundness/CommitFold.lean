@@ -96,15 +96,18 @@ The two results below state the trust boundary underlying commitment binding: ra
 commitment is binding outright, binding is modelled as a reduction to DLR hardness at the URS generators.
 The deployed binding reduction extends them to the `U`, `W` generators
 (`Zcash.Snark.Soundness.BindingReduction`), in place of an independence assumption. Discharging the
-resulting relation against DLR hardness is the computational / AGM layer: `Soundness.AGM` records the
-deterministic relation-to-DL adapter, while the efficient-adversary/probability wrapper remains outside
-this development.
+resulting relation against DLR hardness is the computational / AGM layer, which is *not* in this
+development; `Soundness.AGM` records its deterministic algebraic core — `relationWitnessOfCollision`
+and the fixed-slot `discreteLogOfCollisionAtChallenge` adapter (challenge slot fixed before the
+collision is seen) — while the probabilistic wrapper and the algebraic-prover model remain outside
+Lean.
 
 Rather than assuming the commitment is binding outright, the binding reduction models it as a reduction
 to a hardness assumption — the same shape as the binding-signature argument's `relation_of_imbalance`:
 the counterfactual that breaking binding produces a nontrivial discrete-log relation among the URS
-generators (`relation_of_collision`), against the discrete-log-relation (DLR) hardness assumption — no
-such relation exists on the Vesta generators. `commitmentBinding_iff_no_relation` makes precise that
+generators (`relation_of_collision`), against the discrete-log-relation (DLR) hardness assumption.
+Such relations always *exist* propositionally in a prime-order group; DLR hardness is that no feasible
+adversary can *find* one. `commitmentBinding_iff_no_relation` makes precise that
 `CommitmentBinding` is exactly DLR hardness, so the assumption is the standard, named one, with the
 reduction itself proven. -/
 
