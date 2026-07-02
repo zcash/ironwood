@@ -427,18 +427,121 @@ theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Ves
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
 
-/-! ## The forking capstones: two terminal readings
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening over Vesta for the staged (round-adaptive) adversary, bridge
+discharged.** `orchard_verifier_vesta_forking_opening_deployed` upgraded from the constant strategy to an
+arbitrary prefix-respecting strategy `P : Prover`: the accept event is halo2's **actual** verifier equation
+on the strategy's spliced proof (`spliceIpa` at `pathData P χ` — pre-IPA fields the fixed `ps`'s, since
+rewinding shares the pre-IPA prefix; IPA fields the strategy's own outputs along `χ`), and the bridge to
+`flatAccept P` is **proven** internally (`deployedVerifierEq_iff_flatAccept_adaptive`). So `hprob` is the
+accept probability of an adaptive round-strategy — the object rewinding produces — not one fixed proof's
+accept measure: the static-dichotomy caveat of the `_deployed` capstone does not apply at this rung. What
+remains is the execution-semantics identification (that a rewound random-oracle adversary *induces* such a
+staged strategy, with its RO-query loss), the random-oracle uniformity axiom in `hprob`, and the structural
+witnesses (`z ≠ 0`, `hg0`, the `S`-opening `hs` — with `ps.ipaS` splice-invariant, so one `s` serves every
+path). The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
+theorem orchard_verifier_vesta_forking_opening_adaptive [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              {ch with ipaRound := χ}))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch - ch.xi * innerProduct s (evalVector urs.k ch.x3)) a)
+      ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  obtain ⟨k, gg, ww, uu⟩ := urs
+  change shape.k = k at hk
+  subst hk
+  refine orchard_verifier_vesta_forking_opening ⟨shape.k, gg, ww, uu⟩ rfl vk ps ch ch.x3 ch.xi ch.z 0 s
+    P (fun χ => DeployedIpaVerifierEq gg ww uu vk
+      (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ})
+    hz hg0 ?_ hprob
+  intro χ
+  dsimp only
+  rw [deployedVerifierEq_iff_flatAccept_adaptive]
+  have hPwhole : (multiopenCommitment gg ww uu vk ps ch
+        + (∑ i, ([-(multiopenValue vk ps ch)].getD i.val 0) • gg i) + ch.xi • ps.ipaS)
+      = (deployedCommitment ⟨shape.k, gg, ww, uu⟩ rfl vk ps ch
+          - multiopenValue vk ps ch • gg 0 + ch.xi • commit ⟨shape.k, gg, ww, uu⟩ s
+          + (ch.z * 0) • uu + 0 • ww) := by
+    rw [sum_getD_single gg (multiopenValue vk ps ch), ← hs]
+    simp only [deployedCommitment]
+    module
+  rw [hPwhole]
+  exact Iff.rfl
 
-`orchard_verifier_vesta_forking_opening_deployed` and `orchard_verifier_vesta_forking_constraint_deployed`
-take halo2's *actual* verifier accept `DeployedIpaVerifierEq` with the prover-as-oracle bridge proven
-internally (`Forking.deployedVerifierEq_iff_flatAccept`) — but for the **constant** strategy
-`proverOfRounds`, so their `hprob` is the *fixed* proof's accept measure over the whole challenge space (the
-static dichotomy), not the Fiat–Shamir attack event: see the quantifier-shape caveat on each. For an
-**adaptive** adversary — rewinding with varying suffixes, the object the Fiat–Shamir game actually
-produces — the terminal statements remain `orchard_verifier_vesta_forking_opening`/`_constraint`, whose
-modular `hbridge` names the prover-as-oracle identification for the adversary-induced strategy; discharging
-*that* (with its RO-query loss) is the round-by-round transcript soundness of issue #23. The legacy
-`orchard_verifier_vesta_opening_reduction`/`_constraint` remain compiled and checked but are no longer the
-top statement a reader takes. Nothing consumes the forking capstones upward. -/
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening *and constraint* over Vesta for the staged (round-adaptive) adversary,
+bridge discharged.** The constraint companion of `orchard_verifier_vesta_forking_opening_adaptive`: same
+adaptive accept event and internally-proven bridge, routed to the gate-satisfaction seam
+(`hquot`/`hgood` → `circuitSatViaGates`, `hencodes`) at the *claimed* value `multiopenValue`, pinned by the
+value-recovery hypothesis `hξ` (honest blinding, or a `1/p`-measure set of post-`S` challenges for a
+malicious blinder, `blinder_value_recovery_badSet`). Residual: the execution-semantics identification, the
+random-oracle uniformity axiom in `hprob`, and the structural witnesses; the static-dichotomy caveat does not
+apply at this rung. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that
+genuinely reads the witness (issue #18). -/
+theorem orchard_verifier_vesta_forking_constraint_adaptive [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch)
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              {ch with ipaRound := χ}))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases orchard_verifier_vesta_forking_opening_adaptive urs hk vk ps ch s P hz hg0 hs hprob
+    with ⟨a, hrel'⟩ | hrel
+  · rw [hξ, sub_zero] at hrel'
+    have hsat : circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg a :=
+      circuitSatViaGates_of_check fixedCols decodeAdvice decodeInstance y gates hpoly deg a x
+        (hquot a hrel') (hgood a hrel')
+    exact Or.inl (hencodes a ⟨hrel', hsat⟩)
+  · exact Or.inr hrel
+
+/-! ## The forking capstones: three rungs
+
+Three readings, ordered by how much of the prover-as-oracle content is proven:
+
+* **Constant** — `orchard_verifier_vesta_forking_opening_deployed`/`_constraint_deployed`: halo2's actual
+  accept on the *fixed* proof string, bridge proven for the constant strategy `proverOfRounds`. Their
+  `hprob` is one proof's accept measure over the whole challenge space (the static dichotomy), not the
+  Fiat–Shamir attack event: see the quantifier-shape caveat on each.
+* **Staged (round-adaptive)** — `orchard_verifier_vesta_forking_opening_adaptive`/`_constraint_adaptive`:
+  halo2's actual accept on the spliced proofs of an arbitrary prefix-respecting strategy `P : Prover`,
+  bridge proven for every such strategy (`deployedVerifierEq_iff_flatAccept_adaptive`). Their `hprob` is an
+  adaptive strategy's accept probability — the object rewinding produces — so the static-dichotomy caveat
+  falls away; what remains is the execution-semantics identification that a rewound random-oracle adversary
+  *induces* such a strategy, with its RO-query loss, plus the random-oracle uniformity axiom.
+* **Abstract** — `orchard_verifier_vesta_forking_opening`/`_constraint`, whose modular `hbridge` names the
+  full prover-as-oracle identification; the staged rung proves its deterministic content, the
+  execution-semantics content stays the floor.
+
+The legacy `orchard_verifier_vesta_opening_reduction`/`_constraint` remain compiled and checked but are no
+longer the top statement a reader takes. Nothing consumes the forking capstones upward. -/
 
 end Zcash.Snark
