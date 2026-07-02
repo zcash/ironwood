@@ -87,8 +87,7 @@ the forking bridge (`hFS`), either the SNARK relation holds for the pinned
 discrete-log relation. The `U`/`W` separation is derived (`deployed_to_acceptV`), not bundled. Caveat: a
 relation always *exists* in Vesta's prime-order group, so this `∨ HasNontrivialRelation` statement is
 propositionally `True` (vacuous at the curve); the force is the DLR/AGM layer — `Soundness.AGM` gives the
-deterministic relation-to-DL adapter, while the efficient-adversary/probability wrapper remains outside
-Lean. Named assumptions:
+deterministic relation-to-DL adapter and augmented `(g,U,W)` specialization. Named assumptions:
 the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
 (`hencodes`). `hcirc` quantifies over every mathematical opening of the pinned `(P, b, v)` and is
 unsatisfiable at Vesta for any `circuitSat` that genuinely reads the witness — see the caveat on
@@ -116,8 +115,8 @@ deployed tree reached through the *proven* `deployedAccepts_verifierEq`, and `ci
 `circuitSatViaGates`) from the verifier's gate point-check `hquot` lifted by Schwartz–Zippel (`hgood`). The
 conclusion is `S ∨ HasNontrivialRelation g U W` — a relation always *exists* in Vesta's prime-order group,
 so this statement is propositionally `True` (vacuous at the curve); the force is the DLR/AGM layer
-(`Soundness.AGM` formalizes the deterministic adapter; the efficient-adversary/probability wrapper remains
-outside Lean), not the proposition. Named
+(`Soundness.AGM` formalizes the deterministic adapter and augmented specialization), not the proposition.
+Named
 assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
 (`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`).
 `hquot`/`hgood` quantify over every mathematical opening of the pinned `(P, b, v)` and are unsatisfiable
@@ -218,7 +217,7 @@ the **true** opened value `multiopenValue − ξ·⟨s,b⟩`, with no `⟨s,b⟩
 `hbridge` (the irreducible random-oracle floor), plus the antecedents `z ≠ 0`, the nonzero generator `hg0`, and
 the accept probability `hprob` beating the knowledge error `kerr/Nᵏ`. The `∨ HasNontrivialRelation` caveat is
 unchanged — vacuous at Vesta's prime order, with force in the DLR/AGM layer: deterministic adapter in
-`Soundness.AGM`, computational wrapper outside Lean. -/
+`Soundness.AGM`. -/
 theorem orchard_verifier_vesta_forking_opening [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -264,9 +263,10 @@ The deployed-curve residual is the explicit prover-as-oracle bridge `hbridge` (a
 `hg0`); both the opening and the constraint side now route through it with `b 0 = 1`, `hcommit`, and `hP`
 discharged. The original `FiatShamirTree` reductions
 (`orchard_verifier_vesta_opening_reduction`/`_constraint`) remain as the coarser legacy endpoints. The
-`∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order, the force in the out-of-Lean
-DLR/AGM layer. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that
-genuinely reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
+`∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order, with force in the
+`Soundness.AGM` relation-to-DL adapter. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta
+for any decode that genuinely reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s
+caveat; issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
