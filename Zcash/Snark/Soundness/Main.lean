@@ -33,7 +33,9 @@ relation reduction, `Zcash.Snark.Soundness.Deployed.IpaPeel`), so the deployed c
 `SnarkRelation ∨ HasNontrivialRelation` — a *reduction*: it exhibits a discrete-log relation rather than
 asserting soundness outright. A relation always *exists* in a prime-order group, so at the concrete curve this
 disjunction is propositionally `True` and the *statement* is vacuous; the soundness force is the DLR/AGM
-layer — no feasible adversary can *find* the relation, which is not formalized in Lean — not the proposition.
+layer — `Soundness.AGM` formalizes the deterministic relation-to-DL adapter, while the remaining
+efficient-adversary/probability wrapper says no feasible adversary can *find* the relation — not the
+proposition.
 
 ## Assumptions (the conditional family)
 
@@ -72,7 +74,7 @@ def ExtractableFromAcceptance (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp)
   accepts → ∃ (t : Tree Fp urs.k) (a : Fin (2 ^ urs.k) → Fp),
     Consistent t a ∧ IpaRelation urs P b v a ∧ circuitSat a
 
--- TODO(semantic adequacy): `hencodes`/`S` below are the seam from circuit-satisfiability to the
+-- Tracked semantic-adequacy gap (issue #18): `hencodes`/`S` below are the seam from circuit-satisfiability to the
 -- high-level Orchard relation. `S` is a free `Prop` and `hencodes` is an assumed hypothesis, so the
 -- chain stops at "the extracted witness satisfies the gates" (`SnarkRelation`) and never reaches
 -- "…therefore a valid Orchard action" (note well-formed, value balances, nullifier correctly derived,
@@ -255,9 +257,10 @@ The conclusion is `S ∨ HasNontrivialRelation g U W` — a reduction (it exhibi
 rather than asserting soundness outright). A relation always *exists* in a prime-order group, so at the
 concrete curve this disjunction is propositionally `True`
 and the theorem is vacuous *as a statement* (provable as `Or.inr` without the hypotheses); its content is
-the constructive extraction plus the assumption that no efficient adversary can *find* the relation (DLR/AGM
-hardness, not formalized in Lean). Commitment binding is load-bearing in the *proof structure*, not the
-Vesta statement.
+the constructive extraction plus the DLR/AGM layer: `Soundness.AGM` formalizes the deterministic
+relation-to-DL adapter, while the efficient-adversary/probability wrapper remains the assumption that no
+feasible adversary can *find* the relation. Commitment binding is load-bearing in the *proof structure*, not
+the Vesta statement.
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), and
 VK-correctness (`hencodes`).
 

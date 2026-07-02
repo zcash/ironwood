@@ -19,6 +19,7 @@ import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
 import Zcash.Snark.Soundness.CommitFold
+import Zcash.Snark.Soundness.AGM
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Soundness.IpaSoundness

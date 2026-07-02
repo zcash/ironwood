@@ -96,8 +96,9 @@ The two results below state the trust boundary underlying commitment binding: ra
 commitment is binding outright, binding is modelled as a reduction to DLR hardness at the URS generators.
 The deployed binding reduction extends them to the `U`, `W` generators
 (`Zcash.Snark.Soundness.Deployed.Binding`), in place of an independence assumption. Discharging the
-resulting relation against DLR hardness — the computational / AGM layer, not in this development — is what
-would yield unconditional binding.
+resulting relation against DLR hardness is the computational / AGM layer: `Soundness.AGM` records the
+deterministic relation-to-DL adapter, while the efficient-adversary/probability wrapper remains outside
+this development.
 
 Rather than assuming the commitment is binding outright, the binding reduction models it as a reduction
 to a hardness assumption — the same shape as the binding-signature argument's `relation_of_imbalance`:
