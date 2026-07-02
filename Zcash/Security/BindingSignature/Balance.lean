@@ -1,4 +1,5 @@
 import Mathlib
+import Zcash.Snark.Soundness.AGM
 
 /-!
 # Binding-signature balance: shared algebraic core
@@ -28,17 +29,16 @@ binding hypothesis. Instead we phrase binding as a reduction:
   (`relation_of_imbalance`), or equivalently the discrete log `dlog_R V`
   (`imbalance_yields_discrete_log`).
 
-  "The bundle balances" then reduces to the discrete-log relation problem (DLR) — a statement about
-  efficient adversaries, supplied by the algebraic group model or a DLR hardness assumption at the
-  computational layer. This is the shape of the spec's argument: *if you can unbalance, you can
-  solve DL*. The relation and discrete-log problems are tightly equivalent (Jaeger and Tessaro,
-  https://eprint.iacr.org/2020/1213 Lemma 3 in general, but this case is very simple), so this is
-  no stronger than DL.
+  "The bundle balances" then reduces to the discrete-log relation problem (DLR); for the two-slot
+  binding pair this collapses further to the plain discrete log `dlog_R V` given `R ≠ 0`
+  (`dlog_of_hasNontrivialRelation`, consumed by the `*_dlog` capstones). This is the
+  shape of the spec's argument: *if you can unbalance, you can solve DL*. The relation and
+  discrete-log problems are tightly equivalent (Jaeger and Tessaro, https://eprint.iacr.org/2020/1213
+  Lemma 3 in general, but this case is very simple), so this is no stronger than DL.
 
 The range / no-overflow lift from field balance to integer balance is already built (`§ Integer
 balance` below: `intBalance_eq_zero_of_lt`, discharged per pool by `orchard_natAbs_lt` /
-`sapling_natAbs_lt` from the 64-bit value-type ranges). What remains is cryptographic and
-computational, not algebraic:
+`sapling_natAbs_lt` from the 64-bit value-type ranges).
 
 ## Assumptions
 
@@ -47,10 +47,21 @@ computational, not algebraic:
 * **DLR hardness** — the assumption the reduction discharges against to conclude actual balance
   (the discrete-log relation problem, tightly equivalent to DL).
 
+## DLR-to-DL handoff
+
+For the two-slot binding pair, the generic fixed-slot AGM game (`Zcash.Snark.Soundness.AGM`)
+degenerates: placing the DL challenge at the `V` slot over `base := R` leaves `R` itself as the only
+non-challenge slot (known log `1`), so no auxiliary base or known-log embedding is needed, and the
+relation branch collapses directly to `dlog_R V` given `R ≠ 0` (`dlog_of_hasNontrivialRelation`,
+matching `imbalance_yields_discrete_log`). `relationWitnessOfBindingRelation` additionally records
+the binding relation as a generic `Zcash.Snark.AlgebraicRelationWitness` over the `(V, R)` basis for
+consumers of the generic layer.
+
 ## Not yet built
 
-* **The AGM / DLR wrapper** — the computational / AGM layer that consumes `relation_of_imbalance`
-  against DLR hardness.
+* The probabilistic / oracle-machine wrapper (adversary success accounting) and the algebraic-prover
+  model in which relation witnesses come from prover-output representations rather than from the
+  existential relation branch — see the module docs of `Zcash.Snark.Soundness.AGM` and issue #15.
 -/
 
 namespace Zcash.Security.BindingSignature
@@ -99,6 +110,79 @@ theorem imbalance_yields_discrete_log (V R bvk : M) (A B bsk : F) (hA : A ≠ 0)
 base `R`: scalars `(a, b)` not both zero with `a • V + b • R = 0`. The content of the binding
 reduction is that imbalance allows constructing such a relation explicitly. -/
 def HasNontrivialRelation (V R : M) : Prop := ∃ a b : F, (a ≠ 0 ∨ b ≠ 0) ∧ a • V + b • R = 0
+
+/-! ### AGM handoff for the binding relation -/
+
+/-- The two public bases used by the binding-signature relation: value base `V`, randomness base `R`. -/
+def bindingSignatureBasis (V R : M) : Fin 2 → M
+  | 0 => V
+  | 1 => R
+
+/-- The two coefficients of a binding-signature relation over `(V, R)`. -/
+def bindingSignatureCoeffs (a b : F) : Fin 2 → F
+  | 0 => a
+  | 1 => b
+
+/-- The generic AGM representation evaluator specializes to the binding-signature two-base MSM. -/
+theorem representationEval_bindingSignatureBasis (V R : M) (a b : F) :
+    Zcash.Snark.representationEval (bindingSignatureBasis V R) (bindingSignatureCoeffs a b)
+      = a • V + b • R := by
+  simp [Zcash.Snark.representationEval, bindingSignatureBasis, bindingSignatureCoeffs,
+    Fin.sum_univ_two]
+
+/-- A concrete binding-signature relation is the same AGM relation witness over the public basis `(V,R)`. -/
+def relationWitnessOfBindingRelation (V R : M) (a b : F)
+    (hnt : a ≠ 0 ∨ b ≠ 0) (hrel : a • V + b • R = 0) :
+    Zcash.Snark.AlgebraicRelationWitness (F := F) (bindingSignatureBasis V R) :=
+  { coeffs := bindingSignatureCoeffs a b
+    nontrivial := by
+      intro hzero
+      have ha : a = 0 := by
+        have h := congrFun hzero 0
+        simpa [bindingSignatureCoeffs] using h
+      have hb : b = 0 := by
+        have h := congrFun hzero 1
+        simpa [bindingSignatureCoeffs] using h
+      rcases hnt with ha_ne | hb_ne
+      · exact ha_ne ha
+      · exact hb_ne hb
+    relation := by
+      rw [representationEval_bindingSignatureBasis, hrel] }
+
+/-- **Two-slot collapse to `dlog_R V`.** From a nontrivial relation `a • V + b • R = 0` with
+`R ≠ 0`, the discrete log of `V` base `R`: if `a ≠ 0` the relation solves for `V`; if `a = 0` then
+`b ≠ 0` forces `R = 0`, a contradiction. This is the fixed-slot AGM game
+(`Zcash.Snark.FixedSlotEmbedding`) degenerated to the binding pair: with `base := R` and the DL
+challenge pre-placed at the `V` slot, the only non-challenge slot is `R` itself (known log `1`), so
+no auxiliary base or embedding hypothesis is needed, and the miss event `a = 0` is void for `R ≠ 0` —
+matching the spec's reduction target and `imbalance_yields_discrete_log`.
+
+Caveat (as for the relation form this consumes): `dlog_R V` always *exists* propositionally in a
+cyclic prime-order group, so a `∨ Nonempty (DiscreteLogRepresentation R V)` conclusion is vacuous as
+a statement; the content is the explicit construction, and the force — no feasible adversary can
+*find* the log — is the computational DL layer outside Lean. -/
+theorem dlog_of_hasNontrivialRelation (V R : M) (hR : R ≠ 0)
+    (hrel : HasNontrivialRelation (F := F) V R) :
+    Nonempty (Zcash.Snark.DiscreteLogRepresentation (F := F) R V) := by
+  obtain ⟨a, b, hnt, hab⟩ := hrel
+  by_cases ha : a = 0
+  · exfalso
+    have hb : b ≠ 0 := by
+      rcases hnt with h0 | hb
+      · exact absurd ha h0
+      · exact hb
+    have hbR : b • R = 0 := by
+      simpa [ha] using hab
+    have hR0 : R = 0 := by
+      have h := congrArg (fun X : M => b⁻¹ • X) hbR
+      simpa [smul_smul, inv_mul_cancel₀ hb] using h
+    exact hR hR0
+  · refine ⟨⟨-(a⁻¹ * b), ?_⟩⟩
+    have hV : a • V = -(b • R) := eq_neg_of_add_eq_zero_left hab
+    have h2 : V = a⁻¹ • -(b • R) := by
+      have h := congrArg (fun X : M => a⁻¹ • X) hV
+      simpa [smul_smul, inv_mul_cancel₀ ha] using h
+    rw [h2, smul_neg, smul_smul, neg_smul]
 
 /-- **Balance reduction (field level).** From RedDSA extractability (`bvk = bsk • R`) and the
 binding-key decomposition (`bvk = A • V + B • R`), with no other cryptographic hypothesis:
