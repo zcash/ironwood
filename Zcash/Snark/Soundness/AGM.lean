@@ -9,15 +9,15 @@ nontrivial discrete-log relation among the augmented bases `(g, U, W)`. In a pri
 relations exist propositionally; the security content is computational: an efficient adversary should not
 be able to *find* one.
 
-This module records the small AGM-facing layer that consumes that relation branch. It follows the useful
-part of ArkLib's AGM scaffold: group elements are paired with representations over a public basis. We do
-not model an oracle machine for adversaries here. The load-bearing theorem is the deterministic adapter:
-if all non-challenge bases have known discrete logs with respect to a base `B`, then any found augmented
-relation with a nonzero coefficient on the challenge target recovers the target's discrete log.
+This module records the AGM-facing layer that consumes that relation branch. It follows the useful part of
+ArkLib's AGM scaffold: group elements are paired with representations over a public basis. The load-bearing
+theorem is the deterministic DLR-to-DL adapter: if all non-challenge bases have known discrete logs with
+respect to a base `B`, then any found relation with a nonzero coefficient on the challenge target recovers
+the target's discrete log.
 
-The remaining probabilistic wrapper — placing the DL challenge into a random basis slot and accounting for
-the chance that the relation's coefficient there is nonzero — is the computational reduction layer outside
-this algebraic core.
+The probabilistic computational wrapper — placing the DL challenge into a random basis slot and accounting
+for the chance that the relation's coefficient there is nonzero — is not an oracle-machine model here. The
+Lean content below is the algebraic core that such a wrapper calls.
 -/
 
 namespace Zcash.Snark
@@ -70,6 +70,112 @@ A DL-hardness reading of this artifact presumes `B ≠ 0` (a generator of the pr
 structure DiscreteLogRepresentation (B target : G) where
   log : F
   hEq : log • B = target
+
+/-- A nontrivial algebraic relation over a finite public basis. This is the AGM object that a binding
+attack is reduced to: explicit coefficients, not just the proposition that a relation exists. -/
+structure AlgebraicRelationWitness {ι : Type*} [Fintype ι] (basis : ι → G) where
+  coeffs : ι → F
+  nontrivial : coeffs ≠ 0
+  relation : representationEval basis coeffs = 0
+
+namespace AlgebraicRelationWitness
+
+/-- A relation witness is the same data as a representation of the identity. -/
+def toGroupRepresentation {ι : Type*} [Fintype ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    GroupRepresentation (F := F) basis (0 : G) :=
+  { coeffs := r.coeffs
+    hEq := r.relation }
+
+/-- A relation witness also gives an algebraic point for the identity. -/
+def toAlgebraicPoint {ι : Type*} [Fintype ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    AlgebraicPoint (F := F) basis :=
+  { point := 0
+    repr := r.toGroupRepresentation }
+
+/-- A nontrivial finite relation has a nonzero coefficient at some basis slot. -/
+theorem exists_nonzero_coeff {ι : Type*} [Fintype ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    ∃ i, r.coeffs i ≠ 0 := by
+  classical
+  by_contra h
+  apply r.nontrivial
+  funext i
+  exact not_not.mp (not_exists.mp h i)
+
+end AlgebraicRelationWitness
+
+/-- The known-log contribution of every basis slot except the challenge slot. -/
+def relationLogExcept {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (logs coeffs : ι → F) (challenge : ι) : F :=
+  (Finset.univ.erase challenge).sum fun i => coeffs i * logs i
+
+/-- If every non-challenge basis element has a known log over `B`, then a relation separates into the
+challenge term plus a known scalar multiple of `B`. -/
+theorem representationEval_eq_challenge_add_known {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : G) (basis : ι → G) (logs coeffs : ι → F) (challenge : ι)
+    (hknown : ∀ i, i ≠ challenge → basis i = logs i • B) :
+    representationEval basis coeffs =
+      coeffs challenge • basis challenge + relationLogExcept logs coeffs challenge • B := by
+  classical
+  have hsum : ((Finset.univ.erase challenge).sum fun i => coeffs i • basis i)
+      = relationLogExcept logs coeffs challenge • B := by
+    calc
+      ((Finset.univ.erase challenge).sum fun i => coeffs i • basis i)
+          = (Finset.univ.erase challenge).sum (fun i => coeffs i • (logs i • B)) := by
+            apply Finset.sum_congr rfl
+            intro i hi
+            rw [hknown i (Finset.mem_erase.mp hi).1]
+      _ = (Finset.univ.erase challenge).sum (fun i => (coeffs i * logs i) • B) := by
+            simp [smul_smul]
+      _ = relationLogExcept logs coeffs challenge • B := by
+            rw [relationLogExcept, Finset.sum_smul]
+  calc
+    representationEval basis coeffs
+        = ((Finset.univ.erase challenge).sum fun i => coeffs i • basis i)
+            + coeffs challenge • basis challenge := by
+          rw [representationEval, ← Finset.sum_erase_add _ _ (Finset.mem_univ challenge)]
+    _ = coeffs challenge • basis challenge
+            + ((Finset.univ.erase challenge).sum fun i => coeffs i • basis i) := by
+          abel
+    _ = coeffs challenge • basis challenge + relationLogExcept logs coeffs challenge • B := by
+          rw [hsum]
+
+/-- **Fixed-slot AGM DLR-to-DL adapter.** A nontrivial relation whose challenge-slot coefficient is
+nonzero, with known logs for every *other* basis element, recovers the discrete log of the challenge
+basis element. The challenge slot is a parameter fixed independently of the relation: this is the
+deterministic step a DL reduction runs after placing its challenge in slot `challenge` and observing
+a hit. -/
+def discreteLogOfBasis_of_relation {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : G) (basis : ι → G) (logs : ι → F) (challenge : ι)
+    (r : AlgebraicRelationWitness (F := F) basis)
+    (hknown : ∀ i, i ≠ challenge → basis i = logs i • B)
+    (hcoeff : r.coeffs challenge ≠ 0) :
+    DiscreteLogRepresentation (F := F) B (basis challenge) := by
+  let known : F := relationLogExcept logs r.coeffs challenge
+  refine ⟨(r.coeffs challenge)⁻¹ * (-known), ?_⟩
+  have hsplit := representationEval_eq_challenge_add_known B basis logs r.coeffs challenge hknown
+  have hzero : r.coeffs challenge • basis challenge + known • B = 0 := by
+    rw [← hsplit]
+    exact r.relation
+  have hmul : r.coeffs challenge • basis challenge = (-known) • B := by
+    calc
+      r.coeffs challenge • basis challenge = -(known • B) := by
+        exact eq_neg_of_add_eq_zero_left hzero
+      _ = (-known) • B := by rw [neg_smul]
+  have hscale := congrArg ((fun X : G => (r.coeffs challenge)⁻¹ • X)) hmul
+  have hlog : basis challenge = ((r.coeffs challenge)⁻¹ * (-known)) • B := by
+    simpa [smul_smul, inv_mul_cancel₀ hcoeff] using hscale
+  exact hlog.symm
+
+/-- Fixed-slot known-log embedding: the hidden DL challenge occupies the single slot `challenge`,
+fixed *before* the adversary runs, and the reduction knows the discrete logs of every **other** slot
+with respect to `base`. This is exactly the data an actual DL reduction possesses — it does *not*
+know the log of `basis challenge`, which is the point of the game. -/
+structure FixedSlotEmbedding {ι : Type*} [Fintype ι] (base : G) (basis : ι → G) (challenge : ι) where
+  logs : ι → F
+  known : ∀ i, i ≠ challenge → basis i = logs i • base
 
 /-- The scalar contribution of the URS-generator part of an augmented relation after substituting known
 discrete logs `gLog i` for each `g i = gLog i • B`. -/
@@ -129,13 +235,36 @@ theorem representationEval_augmentedBasis {n : ℕ} (g : Fin n → G) (U W : G)
 
 namespace AugmentedRelationWitness
 
+/-- The same relation witness, viewed as a generic algebraic relation over the augmented basis. -/
+def toAlgebraicRelationWitness {n : ℕ} {g : Fin n → G} {U W : G}
+    (r : AugmentedRelationWitness (F := F) g U W) :
+    AlgebraicRelationWitness (F := F) (augmentedBasis g U W) :=
+  { coeffs := augmentedCoeffs r.a r.alpha r.beta
+    nontrivial := by
+      intro hzero
+      have ha : r.a = 0 := by
+        funext i
+        have h := congrFun hzero (AugmentedIndex.gen i)
+        simpa [AugmentedIndex.gen, augmentedCoeffs] using h
+      have halpha : r.alpha = 0 := by
+        have h := congrFun hzero (AugmentedIndex.u)
+        simpa [AugmentedIndex.u, augmentedCoeffs] using h
+      have hbeta : r.beta = 0 := by
+        have h := congrFun hzero (AugmentedIndex.w)
+        simpa [AugmentedIndex.w, augmentedCoeffs] using h
+      rcases r.nontrivial with hnt | hnt
+      · exact hnt ha
+      · rcases hnt with hnt | hnt
+        · exact hnt halpha
+        · exact hnt hbeta
+    relation := by
+      rw [representationEval_augmentedBasis, r.relation] }
+
 /-- The same relation witness, viewed as an AGM representation of zero over the augmented basis. -/
 def toGroupRepresentation {n : ℕ} {g : Fin n → G} {U W : G}
     (r : AugmentedRelationWitness (F := F) g U W) :
     GroupRepresentation (F := F) (augmentedBasis g U W) (0 : G) :=
-  { coeffs := augmentedCoeffs r.a r.alpha r.beta
-    hEq := by
-      rw [representationEval_augmentedBasis, r.relation] }
+  r.toAlgebraicRelationWitness.toGroupRepresentation
 
 end AugmentedRelationWitness
 
@@ -148,6 +277,44 @@ theorem augmentedRelationWitness_iff_hasNontrivialRelation {n : ℕ} (g : Fin n 
     exact ⟨r.a, r.alpha, r.beta, r.nontrivial, r.relation⟩
   · rintro ⟨a, alpha, beta, hnt, hrel⟩
     exact ⟨⟨a, alpha, beta, hnt, hrel⟩⟩
+
+/-- A commitment collision gives an explicit nontrivial algebraic relation over the URS generators. -/
+def relationWitnessOfCollision (urs : URS G) {a a' : Fin (2 ^ urs.k) → F}
+    (hneq : a ≠ a') (hcollision : commit urs a = commit urs a') :
+    AlgebraicRelationWitness (F := F) urs.g :=
+  { coeffs := a - a'
+    nontrivial := (relation_of_collision urs hcollision hneq).1
+    relation := (relation_of_collision urs hcollision hneq).2 }
+
+/-- A commitment collision gives an AGM representation of the identity over the URS generators. -/
+def groupRepresentationOfCollision (urs : URS G) {a a' : Fin (2 ^ urs.k) → F}
+    (hneq : a ≠ a') (hcollision : commit urs a = commit urs a') :
+    GroupRepresentation (F := F) urs.g (0 : G) :=
+  (relationWitnessOfCollision urs hneq hcollision).toGroupRepresentation
+
+/-- A commitment collision reduces to the plain discrete log of the pre-fixed challenge URS slot,
+provided the collision difference hits that slot, assuming known logs for all other URS generators. -/
+def discreteLogOfCollisionAtChallenge (urs : URS G) (B : G)
+    {a a' : Fin (2 ^ urs.k) → F} (logs : Fin (2 ^ urs.k) → F)
+    (challenge : Fin (2 ^ urs.k))
+    (hneq : a ≠ a') (hcollision : commit urs a = commit urs a')
+    (hknown : ∀ i, i ≠ challenge → urs.g i = logs i • B)
+    (hcoeff : (a - a') challenge ≠ 0) :
+    DiscreteLogRepresentation (F := F) B (urs.g challenge) :=
+  discreteLogOfBasis_of_relation B urs.g logs challenge
+    (relationWitnessOfCollision urs hneq hcollision) hknown hcoeff
+
+/-- An augmented deployed relation reduces to the plain discrete log of the pre-fixed challenge slot
+in `(gᵢ, U, W)`, provided its coefficient there is nonzero, assuming known logs for all other
+augmented generators. -/
+def discreteLogOfAugmentedRelationAtChallenge {n : ℕ} (B : G) (g : Fin n → G) (U W : G)
+    (logs : AugmentedIndex n → F) (challenge : AugmentedIndex n)
+    (r : AugmentedRelationWitness (F := F) g U W)
+    (hknown : ∀ i, i ≠ challenge → augmentedBasis g U W i = logs i • B)
+    (hcoeff : augmentedCoeffs r.a r.alpha r.beta challenge ≠ 0) :
+    DiscreteLogRepresentation (F := F) B (augmentedBasis g U W challenge) :=
+  discreteLogOfBasis_of_relation B (augmentedBasis g U W) logs challenge
+    r.toAlgebraicRelationWitness hknown hcoeff
 
 /-- Deterministic AGM-to-DL adapter for a relation whose pre-fixed challenge target is `U` — the
 `challenge := AugmentedIndex.u` instance of the fixed-slot embedding, with the known logs given
