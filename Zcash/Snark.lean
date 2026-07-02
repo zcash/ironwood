@@ -40,3 +40,5 @@ import Zcash.Snark.Soundness.Forking.Assembly
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
 import Zcash.Snark.Soundness.Vesta
+import Zcash.Snark.Soundness.AGMProbability
+import Zcash.Snark.Soundness.AGMProbabilityVesta
