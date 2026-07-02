@@ -33,6 +33,116 @@ def roChallenges {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
     (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) : Challenges shape.k Fp :=
   deriveChallenges (ofOracle O) init ps
 
+/-! ## Redrawing the round vector *is* reprogramming the deployed oracle
+
+The forking layer redraws the IPA round-challenge vector `χ` and evaluates the verifier at
+`{ch with ipaRound := χ}`; the random-oracle model rewinds by *reprogramming* the oracle
+(`Soundness.RandomOracle.reprogram`) at round prefixes and re-running the schedule. These are the same
+operation, and `roChallenges_reprogramRounds` proves it, consuming the round-by-round transcript ordering
+(`Soundness.TranscriptOrdering`, issue #23): the round prefixes are pairwise distinct and longer than every
+pre-IPA squeeze input (`roundTranscriptFin_length`/`_injective`), so reprogramming them changes exactly the
+round challenges (`deriveChallenges_ipaRound_eq`, the seal) and nothing upstream. This puts the ordering
+module on the Fiat-Shamir path: the `_rewind` capstones (`Soundness.Vesta`) state their accept probability
+over reprogrammed-oracle runs and reach the `_deployed` capstones through this identification. -/
+
+open Classical in
+/-- The `k`-point extension of `reprogram`: reprogram the oracle at *every* IPA round prefix of the fixed
+proof string at once, answering `χ j` at the round-`j` transcript (as `reprogram … (χ j)` would) and `O`
+elsewhere. Redrawing the whole round vector — what the forking probability ranges over — runs the deployed
+schedule under this oracle (`roChallenges_reprogramRounds`). -/
+noncomputable def reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp) :
+    List (TranscriptElt Fp G) → Fp :=
+  fun t => if h : ∃ j : Fin shape.k,
+      t = roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j
+    then χ h.choose else O t
+
+/-- At the round-`j` prefix, the reprogrammed oracle answers `χ j` (well-defined because distinct rounds
+have distinct prefixes, `roundTranscriptFin_injective`). -/
+theorem reprogramRounds_apply_round {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    (j : Fin shape.k) :
+    reprogramRounds O init ps χ
+      (roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j) = χ j := by
+  have hex : ∃ j' : Fin shape.k,
+      roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j
+        = roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j' := ⟨j, rfl⟩
+  simp only [reprogramRounds]
+  rw [dif_pos hex]
+  exact (congrArg χ (roundTranscriptFin_injective _ _ hex.choose_spec)).symm
+
+/-- Off the round prefixes, the reprogrammed oracle is `O`. -/
+theorem reprogramRounds_apply_ne {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    {t : List (TranscriptElt Fp G)}
+    (ht : ∀ j : Fin shape.k, t ≠ roundTranscriptFin (preIpaTranscript init ps) ps.ipaRounds j) :
+    reprogramRounds O init ps χ t = O t := by
+  simp only [reprogramRounds]
+  rw [dif_neg]
+  rintro ⟨j, hj⟩
+  exact ht j hj
+
+/-- Every transcript no longer than the pre-IPA base is untouched by the round reprogramming: the round
+prefixes are strictly longer (`roundTranscriptFin_length`). In particular every pre-IPA squeeze input. -/
+theorem reprogramRounds_apply_short {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length ≤ (preIpaTranscript init ps).length) :
+    reprogramRounds O init ps χ t = O t :=
+  reprogramRounds_apply_ne O init ps χ (fun j h => by
+    have hlen := congrArg List.length h
+    rw [roundTranscriptFin_length] at hlen
+    omega)
+
+private theorem Challenges.ext' {k : ℕ} {F : Type*} {c₁ c₂ : Challenges k F}
+    (hθ : c₁.theta = c₂.theta) (hβ : c₁.beta = c₂.beta) (hγ : c₁.gamma = c₂.gamma)
+    (hy : c₁.y = c₂.y) (hx : c₁.x = c₂.x) (h1 : c₁.x1 = c₂.x1) (h2 : c₁.x2 = c₂.x2)
+    (h3 : c₁.x3 = c₂.x3) (h4 : c₁.x4 = c₂.x4) (hξ : c₁.xi = c₂.xi) (hz : c₁.z = c₂.z)
+    (hu : c₁.ipaRound = c₂.ipaRound) : c₁ = c₂ := by
+  cases c₁; cases c₂; simp_all
+
+/-- **Redrawing the round vector is reprogramming the deployed oracle.** Running the deployed schedule under
+the oracle reprogrammed at all `k` round prefixes yields exactly the honest run with its IPA round vector
+replaced by `χ`: the pre-IPA challenges are untouched (their squeeze inputs are no longer than the base,
+`reprogramRounds_apply_short`), and round `j`'s challenge is the reprogrammed answer `χ j` — by the
+transcript-ordering seal `deriveChallenges_ipaRound_eq`. This is the vector-semantics ⇔ rewinding
+identification the forking layer's `{ch with ipaRound := χ}` events rest on, and the load-bearing consumer
+of `Soundness.TranscriptOrdering` (issue #23). -/
+theorem roChallenges_reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp) :
+    roChallenges (reprogramRounds O init ps χ) init ps
+      = { roChallenges O init ps with ipaRound := χ } := by
+  refine Challenges.ext' ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    first
+      | (funext j
+         show (deriveChallenges (ofOracle (reprogramRounds O init ps χ)) init ps).ipaRound j = χ j
+         rw [deriveChallenges_ipaRound_eq]
+         exact reprogramRounds_apply_round O init ps χ j)
+      | exact reprogramRounds_apply_short O init ps χ (by
+          simp only [preIpaTranscript, List.length_append, List.length_cons, List.length_nil]
+          omega)
+
+open scoped ENNReal in
+open Classical in
+/-- **Accept-measure monotonicity into the capstones' `hprob`.** The deployed accept (`DeployedAccepts`,
+the `assemble?` guards plus the MSM identity) implies the explicit verifier equation pointwise
+(`deployedAccepts_verifierEq`), so a threshold beaten by the *deployed-accept* event is beaten by the
+`DeployedIpaVerifierEq` event the capstones consume — stated over arbitrary proof-string/challenge-record
+families so it covers the constant, `_rewind`, and `_adaptive_rewind` event shapes alike. Use this to feed
+a capstone `hprob` from a genuine deployed-accept probability. -/
+theorem kerr_lt_verifierEq_of_deployedAccepts [DecidableEq G] [Inhabited G] {shape : Shape}
+    (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
+    (psf : (Fin shape.k → Fp) → ProofString shape Fp G)
+    (chf : (Fin shape.k → Fp) → Challenges shape.k Fp) {ε : ℝ≥0∞}
+    (h : ε < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+        (Finset.univ.filter (fun χ => DeployedAccepts urs hk vk (psf χ) (chf χ)))) :
+    ε < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+        (Finset.univ.filter (fun χ =>
+          DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk (psf χ) (chf χ))) := by
+  refine lt_of_lt_of_le h ((PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure.mono ?_)
+  intro χ hχ
+  simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq] at hχ ⊢
+  exact deployedAccepts_verifierEq urs hk vk (psf χ) (chf χ) hχ
+
 /-! ## The deployed forking opening: the value-placement composed end to end
 
 This closes the deterministic chain. From the flat forking output threading halo2's *adjusted* commitment
@@ -46,10 +156,12 @@ Blake2b-as-random-oracle. -/
 
 /-- **The deployed forking opening.** A flat forking output (`DeployedForkValid`, no posited decomposition)
 threading halo2's adjusted commitment `⟨aDep,G⟩ = ⟨aMulti,G⟩ − [v]g₀ + [ξ]⟨s,G⟩` yields an inner-product
-opening of the multiopen commitment `⟨aMulti,G⟩` to the **true** value `v − ξ·⟨s,b⟩` — or a nontrivial
-relation. The extraction (`deployed_forking_tree`) opens `⟨aDep,G⟩` to inner product `0`; `ipaRelation_unshift`
+opening of the multiopen commitment `⟨aMulti,G⟩` to the value `v − ξ·⟨s,b⟩` for the supplied `S`-opening
+`s` — unique under binding: two distinct openings of `ps.ipaS` shift it by `ξ·⟨Δ,b⟩` while exhibiting a
+`g`-relation, the `HasNontrivialRelation` branch — or a nontrivial relation. The extraction
+(`deployed_forking_tree`) opens `⟨aDep,G⟩` to inner product `0`; `ipaRelation_unshift`
 (keyed on `b₀ = 1`) restores the value, and `ipaRelation_unblind_value` strips the synthetic blinding
-*unconditionally* — reporting the true opened value whatever the prover's blinder `s` is (no `⟨s,b⟩ = 0`
+*unconditionally* — reporting that opened value whatever the prover's blinder `s` is (no `⟨s,b⟩ = 0`
 assumed; the honest case `⟨s,b⟩ = 0` recovers the claimed `v`). Every deterministic tie from rewinding to the
 opening is now proven. -/
 theorem deployed_forking_relation [DecidableEq G] [Inhabited G] (urs : URS G)
@@ -426,7 +538,9 @@ string at that path (pre-IPA fields fixed, IPA fields the path outputs), and
 `flatAccept P` at the vector. So the corresponding capstones' `hprob` (`Soundness.Vesta`, the `_adaptive`
 pair) is the accept probability of an adaptive strategy — the object rewinding produces — rather than of one
 fixed proof. What remains is the execution-semantics identification (that a rewound random-oracle adversary
-*induces* such a staged strategy, with its RO-query loss) and the random-oracle uniformity axiom. -/
+*induces* such a staged strategy, with its RO-query loss) and the random-oracle uniformity axiom. Issue #23's
+transcript-ordering and reprogramming content is internalized by `TranscriptOrdering`,
+`roChallenges_reprogramRounds`, and the Vesta `_adaptive_rewind` capstones. -/
 
 /-- A strategy's outputs along one challenge path: the round points `(Lⱼ, Rⱼ)` it commits and the final
 opening `(c, f)` it sends when the round challenges are `χ` — `pathData P χ = (rounds, c, f)`. The round-`0`
@@ -443,6 +557,18 @@ use. Rewinding shares the pre-IPA prefix and re-answers the rounds; this is that
 def spliceIpa {shape : Shape} (ps : ProofString shape Fp G) (R : Fin shape.k → G × G) (c f : Fp) :
     ProofString shape Fp G :=
   { ps with ipaRounds := R, ipaC := c, ipaF := f }
+
+omit [AddCommGroup G] [Module Fp G] in
+/-- Splicing a strategy path's IPA fields leaves the pre-IPA Fiat-Shamir challenges unchanged. After replacing
+the IPA round vector by `χ`, the spliced proof and the original proof therefore have the same `Challenges`
+record: only the `ipaRound` field differs, and both sides overwrite it. This is the pre-IPA half of the
+staged rewinding capstone; `roChallenges_reprogramRounds` supplies the round-vector half. -/
+theorem roChallenges_spliceIpa_pre {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (R : Fin shape.k → G × G)
+    (c f : Fp) (χ : Fin shape.k → Fp) :
+    { roChallenges O init (spliceIpa ps R c f) with ipaRound := χ }
+      = { roChallenges O init ps with ipaRound := χ } := by
+  refine Challenges.ext' ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;> rfl
 
 /-- `flatAccept` reads the strategy only along the challenge path: the adaptive tree `P` at `χ` agrees with
 the constant prover built from `P`'s own path outputs `pathData P χ`. The per-path bridge from the adaptive
@@ -513,8 +639,8 @@ event. The staged discharge — `deployedVerifierEq_iff_flatAccept_adaptive` and
 (`Soundness.Vesta`) — extends the bridge theorem to *every* prefix-respecting strategy (`spliceIpa` /
 `pathData`), so `hprob` there is the accept probability of a round-adaptive adversary, the object rewinding
 produces. What `hbridge` still names beyond that is the execution-semantics identification — that a rewound
-random-oracle adversary *induces* such a staged strategy, with its RO-query loss (issue #23's remaining
-half). The abstract theorems —
+random-oracle adversary *induces* such a staged strategy, with its RO-query loss (the out-of-Lean
+execution-semantics floor). The abstract theorems —
 `deployed_forking_soundness_of_bridge` below, and `orchard_verifier_vesta_forking_opening`/`_constraint` —
 retain `hbridge` as that *modular* hypothesis (they are stated over an abstract `accepts`/`Q`): its
 deterministic content is a theorem for every staged strategy, and the round-by-round transcript ordering

@@ -88,7 +88,7 @@ discrete-log relation. The `U`/`W` separation is derived (`deployed_to_acceptV`)
 relation always *exists* in Vesta's prime-order group, so this `∨ HasNontrivialRelation` statement is
 propositionally `True` (vacuous at the curve); the force is the out-of-Lean DLR/AGM layer — no feasible
 adversary can *find* the relation. Named assumptions:
-the residual bridge (`hFS`, issue #11), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
+the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
 (`hencodes`). `hcirc` quantifies over every mathematical opening of the pinned `(P, b, v)` and is
 unsatisfiable at Vesta for any `circuitSat` that genuinely reads the witness — see the caveat on
 `orchard_verifier_deployed_opening_reduction`, and issue #18 for the restatement over the extracted
@@ -116,7 +116,7 @@ deployed tree reached through the *proven* `deployedAccepts_verifierEq`, and `ci
 conclusion is `S ∨ HasNontrivialRelation g U W` — a relation always *exists* in Vesta's prime-order group,
 so this statement is propositionally `True` (vacuous at the curve); the force is the out-of-Lean DLR/AGM
 layer (no feasible adversary can *find* one), not the proposition. Named
-assumptions: the residual bridge (`hFS`, issue #11), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
+assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
 (`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`).
 `hquot`/`hgood` quantify over every mathematical opening of the pinned `(P, b, v)` and are unsatisfiable
 at Vesta for any decode that genuinely reads columns out of the witness — see the caveat on
@@ -253,7 +253,8 @@ open Classical in
 so `hP` holds by linearity) and the same gate seam as `orchard_verifier_vesta_constraint_reduction`
 (`hquot`/`hgood` → `circuitSatViaGates`, `hencodes`). Unlike the opening, the circuit is checked at the
 *claimed* value `multiopenValue`, so the minimal value-recovery hypothesis `hξ : ξ·⟨s,b⟩ = 0` is retained — it
-pins the true opened value `multiopenValue − ξ·⟨s,b⟩` from the forking opening back to `multiopenValue`. `hξ`
+pins the opened value `multiopenValue − ξ·⟨s,b⟩` (unique under binding) from the forking opening back to
+`multiopenValue`. `hξ`
 generalises honest blinding (`⟨s,b⟩ = 0`); for a *malicious* blinder (`⟨s,b⟩ ≠ 0`) it holds only on a
 `1/p`-measure set of post-`S` challenges `ξ` (`blinder_value_recovery_badSet`, the `ξ`-randomization budget).
 The deployed-curve residual is the explicit prover-as-oracle bridge `hbridge` (and the nonzero generator
@@ -302,11 +303,12 @@ theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)
 
 /-- The deployed adjusted-commitment's value term `Σᵢ [-v].getD i • gᵢ` is `-v` on the single generator `g 0`
 (the value list `[-v]` has one entry, placed at index `0`). Lets the deployed verifier's adjusted commitment
-`multiopen + Σ[-v].getD·g` meet the capstone's `-v • g 0` form. -/
-theorem sum_getD_single [Fact (HasseBound Vesta.curve)] {shape : Shape} (gg : Fin (2 ^ shape.k) → VestaG)
+`multiopen + Σ[-v].getD·g` meet the capstone's `-v • g 0` form. Pure module algebra, stated over any
+`Fp`-module (the Vesta instances supply `Module Fp VestaG` at the call sites). -/
+theorem sum_getD_single {k : ℕ} {G : Type*} [AddCommGroup G] [Module Fp G] (gg : Fin (2 ^ k) → G)
     (v : Fp) :
     (∑ i, ([-v].getD i.val 0 : Fp) • gg i) = -v • gg 0 := by
-  rw [Finset.sum_eq_single (0 : Fin (2 ^ shape.k))]
+  rw [Finset.sum_eq_single (0 : Fin (2 ^ k))]
   · simp
   · intro i _ hi
     have hival : i.val ≠ 0 := Fin.val_ne_zero_iff.mpr hi
@@ -332,13 +334,17 @@ over the uniform IPA-challenge measure.
 **Quantifier-shape caveat (`hprob`).** Discharging the bridge with the *constant* strategy `proverOfRounds`
 changes what `hprob` measures: it is the accept set of this **fixed** proof string over *all* round-challenge
 vectors — not the Fiat–Shamir attack event. A real prover (honest ones included) produces a proof whose
-accept set is a low-degree variety of measure ≲ `(3k+1)/p`, generically ≈ `1/p` — below the `3k/p` threshold —
-and a forger only needs its single RO-derived vector to land on that variety. So this theorem is the *static
-dichotomy* "a proof accepting on more than `3k/p` of challenge space yields an opening"; the reduction from a
-forging adversary to `hprob` — rewinding with adaptively varying suffixes and its RO-query loss (the
-round-by-round transcript soundness of issue #23) — is not formalized. For an adaptive adversary the honest
-statement remains `orchard_verifier_vesta_forking_opening`, with `Q` the adversary-induced strategy and
-`hbridge` explicit. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
+accept set is a low-degree variety of measure ≤ `3k/p` — clearing the verifier equation by `∏ χⱼ` leaves
+total degree ≤ `2k`, so Schwartz–Zippel gives ≤ `2k/p`, plus ≤ `k/p` for the zero-challenge hyperplanes
+where the total inverse departs from the cleared polynomial — generically ≈ `1/p`, and never *strictly
+above* the `3k/p` threshold: `hprob` here is satisfiable only by a proof that accepts *identically*, while
+a forger only needs its single RO-derived vector to land on that variety. So this theorem is the *static
+dichotomy* "a proof accepting on more than `3k/p` of challenge space yields an opening". For adaptive
+adversaries, use `orchard_verifier_vesta_forking_opening_adaptive` for the bridge-discharge over a
+prefix-respecting strategy and `orchard_verifier_vesta_forking_opening_adaptive_rewind` when the accept event
+should be stated over reprogrammed-oracle runs. The remaining floor there is not the deterministic bridge but
+the execution-semantics identification — a rewound random-oracle adversary induces such a strategy, with its
+RO-query loss. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
 theorem orchard_verifier_vesta_forking_opening_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -388,10 +394,10 @@ forking opening's `multiopenValue − ξ·⟨s,b⟩` by the minimal value-recove
 `blinder_value_recovery_badSet`). Residual assumptions: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening
 witness `hs`, and `hξ` — plus the accept probability `hprob`, which carries the same quantifier-shape caveat
 as `orchard_verifier_vesta_forking_opening_deployed`: with the constant `proverOfRounds` strategy it measures
-the *fixed* proof's accept set over all round-challenge vectors, not the Fiat–Shamir attack event; the
-adaptive rewinding reduction (issue #23) is not formalized, and the adaptive-adversary statement remains
-`orchard_verifier_vesta_forking_constraint` with `hbridge` explicit. `hquot`/`hgood` retain the ∀-openings
-shape — unsatisfiable at Vesta for any decode that genuinely
+the *fixed* proof's accept set over all round-challenge vectors, not the Fiat–Shamir attack event. For the
+adaptive form, use `orchard_verifier_vesta_forking_constraint_adaptive`; for the same statement over
+reprogrammed-oracle runs, use `orchard_verifier_vesta_forking_constraint_adaptive_rewind`. `hquot`/`hgood`
+retain the ∀-openings shape — unsatisfiable at Vesta for any decode that genuinely
 reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
@@ -440,7 +446,9 @@ accept measure: the static-dichotomy caveat of the `_deployed` capstone does not
 remains is the execution-semantics identification (that a rewound random-oracle adversary *induces* such a
 staged strategy, with its RO-query loss), the random-oracle uniformity axiom in `hprob`, and the structural
 witnesses (`z ≠ 0`, `hg0`, the `S`-opening `hs` — with `ps.ipaS` splice-invariant, so one `s` serves every
-path). The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order. -/
+path). Issue #23's transcript-ordering and reprogramming content is already on this path through the
+`_adaptive_rewind` capstone. The `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime
+order. -/
 theorem orchard_verifier_vesta_forking_opening_adaptive [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -485,8 +493,9 @@ adaptive accept event and internally-proven bridge, routed to the gate-satisfact
 value-recovery hypothesis `hξ` (honest blinding, or a `1/p`-measure set of post-`S` challenges for a
 malicious blinder, `blinder_value_recovery_badSet`). Residual: the execution-semantics identification, the
 random-oracle uniformity axiom in `hprob`, and the structural witnesses; the static-dichotomy caveat does not
-apply at this rung. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode that
-genuinely reads the witness (issue #18). -/
+apply at this rung. Issue #23's transcript-ordering and reprogramming content is discharged by the staged
+rewinding capstones below. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode
+that genuinely reads the witness (issue #18). -/
 theorem orchard_verifier_vesta_forking_constraint_adaptive [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -523,9 +532,9 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive [Fact (HasseBound Ves
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
 
-/-! ## The forking capstones: three rungs
+/-! ## The forking capstones: staged and rewound endpoints
 
-Three readings, ordered by how much of the prover-as-oracle content is proven:
+The terminal readings, ordered by how much of the prover-as-oracle and rewinding content is internalized:
 
 * **Constant** — `orchard_verifier_vesta_forking_opening_deployed`/`_constraint_deployed`: halo2's actual
   accept on the *fixed* proof string, bridge proven for the constant strategy `proverOfRounds`. Their
@@ -537,11 +546,180 @@ Three readings, ordered by how much of the prover-as-oracle content is proven:
   adaptive strategy's accept probability — the object rewinding produces — so the static-dichotomy caveat
   falls away; what remains is the execution-semantics identification that a rewound random-oracle adversary
   *induces* such a strategy, with its RO-query loss, plus the random-oracle uniformity axiom.
+* **Constant, rewound** — the `_rewind` forms below state the constant rung's accept events over
+  **reprogrammed-oracle runs** (`reprogramRounds`), deriving the `{ch with ipaRound := χ}` round-vector
+  surgery from the rewinding primitive via `roChallenges_reprogramRounds` — the transcript-ordering module
+  (`Soundness.TranscriptOrdering`, issue #23) on the Fiat-Shamir path.
+* **Staged, rewound** — the `_adaptive_rewind` forms below state the staged rung over reprogrammed-oracle
+  runs on each strategy-spliced proof. `roChallenges_spliceIpa_pre` proves those splices share the fixed
+  pre-IPA challenge prefix with `ps`; `roChallenges_reprogramRounds` then supplies the per-path round vector.
 * **Abstract** — `orchard_verifier_vesta_forking_opening`/`_constraint`, whose modular `hbridge` names the
-  full prover-as-oracle identification; the staged rung proves its deterministic content, the
+  full prover-as-oracle identification; the staged rungs prove its deterministic content, while the
   execution-semantics content stays the floor.
 
 The legacy `orchard_verifier_vesta_opening_reduction`/`_constraint` remain compiled and checked but are no
-longer the top statement a reader takes. Nothing consumes the forking capstones upward. -/
+longer the top statement a reader takes. -/
+
+open scoped ENNReal in
+open Classical in
+/-- **The deployed Orchard opening over Vesta, from oracle rewinding.**
+`orchard_verifier_vesta_forking_opening_deployed` at the honest run's challenges `roChallenges O init ps`,
+with the accept probability stated over **reprogrammed-oracle runs**: the event is halo2's verifier equation
+at `roChallenges (reprogramRounds O init ps χ) init ps` — the deployed schedule re-run under the oracle
+reprogrammed at the `k` round prefixes — rather than an unexplained `{ch with ipaRound := χ}` surgery.
+`roChallenges_reprogramRounds` proves the two events equal, so the round-vector semantics of the forking
+measure is *derived* from the rewinding primitive, consuming the transcript ordering (issue #23). Residuals
+are unchanged: `z ≠ 0`, the nonzero generator `hg0`, the `S`-opening `hs`, and the random-oracle uniformity
+axiom in `hprob` — including the constant rung's static-dichotomy scope: `hprob` is still the *fixed*
+proof's accept measure over the whole challenge space (see
+`orchard_verifier_vesta_forking_opening_deployed`); the `_adaptive`/`_adaptive_rewind` rungs are the
+attack-event forms. -/
+theorem orchard_verifier_vesta_forking_opening_rewind [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0)
+    (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)
+          - (roChallenges O init ps).xi * innerProduct s (evalVector urs.k (roChallenges O init ps).x3)) a)
+      ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine orchard_verifier_vesta_forking_opening_deployed urs hk vk ps (roChallenges O init ps)
+    s hz hg0 hs ?_
+  simpa only [roChallenges_reprogramRounds] using hprob
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- The constraint companion of `orchard_verifier_vesta_forking_opening_rewind`:
+`orchard_verifier_vesta_forking_constraint_deployed` with the accept probability over reprogrammed-oracle
+runs, the round-vector semantics derived via `roChallenges_reprogramRounds` (issue #23). The `hquot`/`hgood`
+caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and issue #18 — and so
+is the constant rung's static-dichotomy scope (see `orchard_verifier_vesta_forking_opening_deployed`); the
+`_adaptive_rewind` pair is the attack-event form. -/
+theorem orchard_verifier_vesta_forking_constraint_rewind [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : (roChallenges O init ps).xi
+        * innerProduct s (evalVector urs.k (roChallenges O init ps).x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps))
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine orchard_verifier_vesta_forking_constraint_deployed urs hk vk ps (roChallenges O init ps)
+    s fixedCols decodeAdvice decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes ?_
+  simpa only [roChallenges_reprogramRounds] using hprob
+
+open scoped ENNReal in
+open Classical in
+/-- **The staged Orchard opening over Vesta, from oracle rewinding.**
+This is `orchard_verifier_vesta_forking_opening_adaptive` with the adaptive accept probability stated over
+reprogrammed-oracle runs on each strategy-spliced proof. For each challenge path `χ`, the proof string is
+`spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2`; the oracle is reprogrammed at that
+spliced proof's IPA round prefixes and the deployed schedule is re-run. `roChallenges_reprogramRounds` turns
+that run into round-vector replacement, and `roChallenges_spliceIpa_pre` removes the irrelevant spliced
+pre-IPA fields. The residual is unchanged from the staged rung: the execution-semantics identification that a
+rewound random-oracle adversary induces such a strategy, with its RO-query loss, plus the uniformity axiom in
+`hprob`. -/
+theorem orchard_verifier_vesta_forking_opening_adaptive_rewind [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              (roChallenges
+                (reprogramRounds O init
+                  (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) χ)
+                init
+                (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2))))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)
+          - (roChallenges O init ps).xi * innerProduct s (evalVector urs.k (roChallenges O init ps).x3)) a)
+      ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine orchard_verifier_vesta_forking_opening_adaptive urs hk vk ps (roChallenges O init ps)
+    s P hz hg0 hs ?_
+  simpa only [roChallenges_reprogramRounds, roChallenges_spliceIpa_pre] using hprob
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- The constraint companion of `orchard_verifier_vesta_forking_opening_adaptive_rewind`: the staged
+round-adaptive capstone with its accept event grounded in reprogrammed-oracle runs on each spliced proof. The
+`hquot`/`hgood` caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and
+issue #18. -/
+theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : (roChallenges O init ps).xi
+        * innerProduct s (evalVector urs.k (roChallenges O init ps).x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps))
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              (roChallenges
+                (reprogramRounds O init
+                  (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) χ)
+                init
+                (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2))))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases orchard_verifier_vesta_forking_opening_adaptive_rewind urs hk vk ps O init s P hz hg0 hs hprob
+    with ⟨a, hrel'⟩ | hrel
+  · rw [hξ, sub_zero] at hrel'
+    have hsat : circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg a :=
+      circuitSatViaGates_of_check fixedCols decodeAdvice decodeInstance y gates hpoly deg a x
+        (hquot a hrel') (hgood a hrel')
+    exact Or.inl (hencodes a ⟨hrel', hsat⟩)
+  · exact Or.inr hrel
 
 end Zcash.Snark
