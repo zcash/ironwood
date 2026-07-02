@@ -283,14 +283,27 @@ theorem bindingVK_decomp (V R : M) (spends outputs : List (F × F)) (vBalance : 
 order, *or* the bundle exhibits a nontrivial discrete-log relation between `V` and `R`. There is no
 binding assumption; the decomposition `hSum` is derived by `bindingVK_decomp`. This is not yet
 integer balance — lifting `A = 0` to `∑ v_in = ∑ v_out + v_balance` over ℤ needs the no-overflow
-step `intBalance_eq_zero_of_lt` (applied in `bundle_integer_balances_reduction`); discharging the
-relation branch needs DLR hardness at the computational layer. -/
+step `intBalance_eq_zero_of_lt` (applied in `bundle_integer_balances_reduction`). The
+`bundle_mod_balances_dlog` wrapper collapses the relation branch to `dlog_R V` given `R ≠ 0`. -/
 theorem bundle_mod_balances_reduction (V R : M) (spends outputs : List (F × F)) (vBalance bsk : F)
     (hExtract : bindingVK V R spends outputs vBalance = bsk • R) :
     (spends.map Prod.fst).sum - (outputs.map Prod.fst).sum - vBalance = 0
       ∨ HasNontrivialRelation (F := F) V R :=
   value_coeff_zero_reduction V R (bindingVK V R spends outputs vBalance) _ _ bsk hExtract
     (bindingVK_decomp V R spends outputs vBalance)
+
+/-- Field-level bundle balance, with the relation branch collapsed to the plain discrete log
+`dlog_R V` (`dlog_of_hasNontrivialRelation`); the only added hypothesis over the reduction is
+`R ≠ 0`. Vacuity caveat as on `dlog_of_hasNontrivialRelation`. -/
+theorem bundle_mod_balances_dlog (V R : M)
+    (spends outputs : List (F × F)) (vBalance bsk : F)
+    (hR : R ≠ 0)
+    (hExtract : bindingVK V R spends outputs vBalance = bsk • R) :
+    (spends.map Prod.fst).sum - (outputs.map Prod.fst).sum - vBalance = 0
+      ∨ Nonempty (Zcash.Snark.DiscreteLogRepresentation (F := F) R V) := by
+  rcases bundle_mod_balances_reduction V R spends outputs vBalance bsk hExtract with hbal | hrel
+  · exact Or.inl hbal
+  · exact Or.inr (dlog_of_hasNontrivialRelation V R hR hrel)
 
 /-- Cast an integer-valued bundle (integer note / net values, field randomness) to a field-valued one,
 sending each value `v : ℤ` to its image `(v : ZMod r)` in the value commitment. -/
@@ -311,8 +324,8 @@ theorem castBundle_fst_sum {r : ℕ} (l : List (ℤ × ZMod r)) :
 whose values are the actual integer note / net values (`ℤ`), with field randomness. Given the no-overflow
 bound `hbound`, this lifts the field-level reduction to ℤ: *either* the bundle balances over ℤ
 (`∑ v_in − ∑ v_out − vBalance = 0`) *or* it exhibits a nontrivial discrete-log relation between `V`
-and `R`. There is no binding assumption — the relation branch is discharged against DLR hardness at
-the computational layer.
+and `R`. There is no binding assumption in this reduction; `bundle_integer_balances_dlog` is the
+handoff that collapses the relation branch to the plain discrete log `dlog_R V` given `R ≠ 0`.
 
 The integer→field cast is derived using `castBundle_fst_sum`; the only added input over the field
 reduction is the no-overflow bound `hbound`, provided by protocol-specific value-type range proofs
@@ -332,6 +345,26 @@ theorem bundle_integer_balances_reduction {r : ℕ} [Fact (Nat.Prime r)]
     rw [Int.cast_sub, Int.cast_sub]
     exact hmod
   · exact Or.inr hrel
+
+/-- Integer bundle balance, with the relation branch collapsed to the plain discrete log `dlog_R V`.
+The no-overflow bound still discharges the field-to-integer lift; the only added hypothesis over the
+reduction is `R ≠ 0`. Vacuity caveat as on `dlog_of_hasNontrivialRelation`. -/
+theorem bundle_integer_balances_dlog {r : ℕ} [Fact (Nat.Prime r)]
+    {M : Type*} [AddCommGroup M] [Module (ZMod r) M]
+    (V R : M) (spends outputs : List (ℤ × ZMod r)) (vBalance : ℤ) (bsk : ZMod r)
+    (hR : R ≠ 0)
+    (hbound : ((spends.map Prod.fst).sum - (outputs.map Prod.fst).sum - vBalance).natAbs < r)
+    (hExtract : bindingVK V R (castBundle spends) (castBundle outputs) (vBalance : ZMod r) = bsk • R) :
+    (spends.map Prod.fst).sum - (outputs.map Prod.fst).sum - vBalance = 0
+      ∨ Nonempty (Zcash.Snark.DiscreteLogRepresentation (F := ZMod r) R V) := by
+  haveI : NeZero r := ⟨(Fact.out : Nat.Prime r).pos.ne'⟩
+  rcases bundle_mod_balances_dlog V R (castBundle spends) (castBundle outputs)
+      (vBalance : ZMod r) bsk hR hExtract with hmod | hdl
+  · refine Or.inl (intBalance_eq_zero_of_lt _ ?_ hbound)
+    rw [castBundle_fst_sum, castBundle_fst_sum] at hmod
+    rw [Int.cast_sub, Int.cast_sub]
+    exact hmod
+  · exact Or.inr hdl
 
 /-! ### Generic integer-range helpers for the no-overflow lift
 

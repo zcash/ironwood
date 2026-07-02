@@ -50,8 +50,9 @@ theorem orchardVSumBound_lt_pallasScalarOrder : orchardVSumBound < (pallasScalar
 actions — each committing a net value `v ∈ [−2^64+1, 2^64−1]`, with signed-64-bit `vBalance` —
 *either* balances over ℤ (`∑ v_net − vBalance = 0`) *or* exhibits a nontrivial discrete-log relation
 between `V` and `R`. The no-overflow bound is discharged here by `orchard_natAbs_lt`; there is no
-binding assumption (RedDSA extractability `hExtract` is the only cryptographic input), and the
-relation branch is discharged against DLR hardness at the computational layer. -/
+binding assumption (RedDSA extractability `hExtract` is the only cryptographic input). The follow-on
+`orchard_bundle_balances_dlog` capstone collapses the relation branch to the plain discrete log
+`dlog_R V` given `R ≠ 0`. -/
 theorem orchard_bundle_balances_reduction {M : Type*} [AddCommGroup M]
     [Module (ZMod pallasScalarOrder) M]
     (V R : M) (actions : List (ℤ × ZMod pallasScalarOrder)) (vBalance : ℤ)
@@ -67,5 +68,28 @@ theorem orchard_bundle_balances_reduction {M : Type*} [AddCommGroup M]
     orchardVSumBound_lt_pallasScalarOrder
   simpa using
     bundle_integer_balances_reduction V R actions [] vBalance bsk (by simpa using hbound) hExtract
+
+/-- **Orchard balance / discrete-log capstone (§4.14).** A verifying Orchard bundle either balances
+over ℤ or yields the plain discrete log of the value base `V` in the randomness base `R` (given
+`R ≠ 0`) — the spec's reduction target. Caveat: `dlog_R V` always *exists* propositionally at the
+deployed prime-order curve, so the disjunction is vacuous as a statement; the content is the explicit
+reduction (`dlog_of_hasNontrivialRelation`), and the force — no feasible adversary *finds* the log —
+is the computational DL layer outside Lean. -/
+theorem orchard_bundle_balances_dlog {M : Type*} [AddCommGroup M]
+    [Module (ZMod pallasScalarOrder) M]
+    (V R : M) (actions : List (ℤ × ZMod pallasScalarOrder)) (vBalance : ℤ)
+    (bsk : ZMod pallasScalarOrder)
+    (hR : R ≠ 0)
+    (hv : ∀ v ∈ actions.map Prod.fst, |v| ≤ 2^64 - 1)
+    (hn : actions.length ≤ 2^16 - 1)
+    (hvBalance : |vBalance| ≤ 2^63)
+    (hExtract : bindingVK V R (castBundle actions) (castBundle []) (vBalance : ZMod pallasScalarOrder)
+      = bsk • R) :
+    (actions.map Prod.fst).sum - vBalance = 0
+      ∨ Nonempty (Zcash.Snark.DiscreteLogRepresentation (F := ZMod pallasScalarOrder) R V) := by
+  have hbound := orchard_natAbs_lt (actions.map Prod.fst) vBalance hv (by simpa using hn) hvBalance
+    orchardVSumBound_lt_pallasScalarOrder
+  simpa using
+    bundle_integer_balances_dlog V R actions [] vBalance bsk hR (by simpa using hbound) hExtract
 
 end Zcash.Security.BindingSignature

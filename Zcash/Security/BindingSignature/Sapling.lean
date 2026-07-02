@@ -148,8 +148,8 @@ spends and `≤ saplingMaxOutputs` outputs, each value in `[0, 2^64−1]`, signe
 *either* balances over ℤ (`∑ v_old − ∑ v_new − vBalance = 0`) *or* exhibits a nontrivial
 discrete-log relation between `V` and `R`. The no-overflow bound is discharged here by
 `sapling_natAbs_lt`; there is no binding assumption (RedDSA extractability `hExtract` is the only
-cryptographic input), and the relation branch is discharged against DLR hardness at the
-computational layer. -/
+cryptographic input). The follow-on `sapling_bundle_balances_dlog` capstone collapses the relation
+branch to the plain discrete log `dlog_R V` given `R ≠ 0`. -/
 theorem sapling_bundle_balances_reduction {M : Type*} [AddCommGroup M]
     [Module (ZMod jubjubScalarOrder) M]
     (V R : M) (spends outputs : List (ℤ × ZMod jubjubScalarOrder)) (vBalance : ℤ)
@@ -166,5 +166,29 @@ theorem sapling_bundle_balances_reduction {M : Type*} [AddCommGroup M]
   have hbound := sapling_natAbs_lt (spends.map Prod.fst) (outputs.map Prod.fst) vBalance
     hOld hNew (by simpa using hnOld) (by simpa using hnNew) hvBalance saplingVSumBound_lt_jubjubScalarOrder
   exact bundle_integer_balances_reduction V R spends outputs vBalance bsk hbound hExtract
+
+/-- **Sapling balance / discrete-log capstone (§4.13).** A verifying Sapling bundle either balances
+over ℤ or yields the plain discrete log of the value base `V` in the randomness base `R` (given
+`R ≠ 0`) — the spec's reduction target. Caveat: `dlog_R V` always *exists* propositionally at the
+deployed prime-order curve, so the disjunction is vacuous as a statement; the content is the explicit
+reduction (`dlog_of_hasNontrivialRelation`), and the force — no feasible adversary *finds* the log —
+is the computational DL layer outside Lean. -/
+theorem sapling_bundle_balances_dlog {M : Type*} [AddCommGroup M]
+    [Module (ZMod jubjubScalarOrder) M]
+    (V R : M) (spends outputs : List (ℤ × ZMod jubjubScalarOrder)) (vBalance : ℤ)
+    (bsk : ZMod jubjubScalarOrder)
+    (hR : R ≠ 0)
+    (hOld : ∀ v ∈ spends.map Prod.fst, 0 ≤ v ∧ v ≤ 2^64 - 1)
+    (hNew : ∀ v ∈ outputs.map Prod.fst, 0 ≤ v ∧ v ≤ 2^64 - 1)
+    (hnOld : spends.length ≤ saplingMaxSpends)
+    (hnNew : outputs.length ≤ saplingMaxOutputs)
+    (hvBalance : |vBalance| ≤ 2^63)
+    (hExtract : bindingVK V R (castBundle spends) (castBundle outputs) (vBalance : ZMod jubjubScalarOrder)
+      = bsk • R) :
+    (spends.map Prod.fst).sum - (outputs.map Prod.fst).sum - vBalance = 0
+      ∨ Nonempty (Zcash.Snark.DiscreteLogRepresentation (F := ZMod jubjubScalarOrder) R V) := by
+  have hbound := sapling_natAbs_lt (spends.map Prod.fst) (outputs.map Prod.fst) vBalance
+    hOld hNew (by simpa using hnOld) (by simpa using hnNew) hvBalance saplingVSumBound_lt_jubjubScalarOrder
+  exact bundle_integer_balances_dlog V R spends outputs vBalance bsk hR hbound hExtract
 
 end Zcash.Security.BindingSignature
