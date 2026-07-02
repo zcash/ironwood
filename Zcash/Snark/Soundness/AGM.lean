@@ -35,13 +35,16 @@ the deterministic adapter recovers the challenge's discrete log.
 
 ## What is *not* formalized — and the standing vacuity caveat
 
-The probability wrapper *is* now formalized (`Soundness.AGMProbability`). What remains outside Lean:
-(i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis there — an assumption by definition);
-(ii) the AGM idealization; and (iii) the algebraic-*prover* model — an AGM discharge must obtain the
-relation witness from representations carried by the prover's outputs, whereas here explicit witnesses
-are recovered from the existential relation predicate by choice
-(`relationWitnessOfHasNontrivialRelation`), which carries no computational content. Carrying
-representations through the deployed prover's transcript is the remaining scope of issue #15.
+The probability wrapper *is* now formalized (`Soundness.AGMProbability`), and the algebraic-*prover*
+model is provided at the peel level by `Soundness.AlgebraicPeel`: with the prover's representations
+supplied as data (`AlgebraicDeployedAcceptV`), the deployed peel returns an **explicit**
+`AugmentedRelationWitness` — its coefficients the prover's representation difference — with no
+`Classical.choice` (`deployedToAcceptVWitness`, `algebraicRelationOfDeployedAccept`). What remains
+outside Lean: (i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis there — an assumption
+by definition); (ii) the AGM idealization; and (iii) threading that data-carrying accept through the
+Fiat–Shamir/forking layer up to the top-level Vesta capstones (they still conclude the existential
+`HasNontrivialRelation`, with the choice-based `relationWitnessOfHasNontrivialRelation` as the bridge
+on that not-yet-rethreaded path). That end-to-end re-threading is the remaining scope of issue #15.
 
 Consequently the trichotomy conclusions below are still propositionally `True` at a prime-order
 curve — with at least two known-log slots a relation missing the challenge slot always *exists*, so
@@ -430,8 +433,10 @@ theorem augmentedRelationWitness_iff_hasNontrivialRelation {n : ℕ} (g : Fin n 
 
 /-- Proof-level plumbing, **not** an adversary run: extract an explicit witness from the existential
 relation predicate by choice. In a prime-order group a witness always exists propositionally, so this
-step carries no computational content; an actual AGM discharge must instead obtain the witness from
-prover-output representations (issue #15). -/
+step carries no computational content. The genuine algebraic-prover discharge — obtaining the witness
+from prover-output representations, with no choice — is `Soundness.AlgebraicPeel`
+(`deployedToAcceptVWitness` / `algebraicRelationOfDeployedAccept`); this def remains only for the
+capstone paths not yet re-threaded through that data-carrying peel (issue #15). -/
 noncomputable def relationWitnessOfHasNontrivialRelation {n : ℕ} (g : Fin n → G) (U W : G)
     (hrel : HasNontrivialRelation (F := F) g U W) :
     AugmentedRelationWitness (F := F) g U W :=
