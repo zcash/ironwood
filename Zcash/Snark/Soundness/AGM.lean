@@ -41,10 +41,12 @@ supplied as data (`AlgebraicDeployedAcceptV`), the deployed peel returns an **ex
 `AugmentedRelationWitness` — its coefficients the prover's representation difference — with no
 `Classical.choice` (`deployedToAcceptVWitness`, `algebraicRelationOfDeployedAccept`). What remains
 outside Lean: (i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis there — an assumption
-by definition); (ii) the AGM idealization; and (iii) threading that data-carrying accept through the
-Fiat–Shamir/forking layer up to the top-level Vesta capstones (they still conclude the existential
-`HasNontrivialRelation`, with the choice-based `relationWitnessOfHasNontrivialRelation` as the bridge
-on that not-yet-rethreaded path). That end-to-end re-threading is the remaining scope of issue #15.
+by definition); and (ii) the AGM idealization. The algebraic prover is wired to the deployed opening
+in `Soundness.AlgebraicCapstone` (`deployedAlgebraicRelation`). The top-level *forking* capstones
+still conclude the existential `HasNontrivialRelation` (with `relationWitnessOfHasNontrivialRelation`
+the bridge there), but that is inherent — the forking layer produces the transcript existentially from
+accept-probability, so an explicit witness at that level is not available by the nature of
+rewinding-based extraction, not for want of construction.
 
 Consequently the trichotomy conclusions below are still propositionally `True` at a prime-order
 curve — with at least two known-log slots a relation missing the challenge slot always *exists*, so

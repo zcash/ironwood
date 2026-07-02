@@ -9,7 +9,7 @@ basis index `AugmentedIndex (2 ^ urs.k)` over the Vesta group `VestaG` with scal
 the concrete-curve endpoint of the "relation-finder ⇒ discrete-log solver" reduction that discharges
 the `∨ HasNontrivialRelation` branch of the deployed Orchard verifier capstones.
 
-The one remaining gap is issue #15's other half: identifying the deployed Ironwood prover with the
+The one remaining gap is issue #15: identifying the deployed Ironwood prover with the
 abstract algebraic relation-finder `A` here (its group outputs carrying representations through the IPA
 verifier equation). The probability accounting itself is fully formalized upstream.
 -/
