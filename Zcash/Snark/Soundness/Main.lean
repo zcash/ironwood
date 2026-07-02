@@ -32,10 +32,10 @@ Commitment binding is load-bearing *in the proof* (the `U`/`W` separation is der
 relation reduction, `Zcash.Snark.Soundness.DeployedIpaPeel`), so the deployed conclusion is
 `SnarkRelation ∨ HasNontrivialRelation` — a *reduction*: it exhibits a discrete-log relation rather than
 asserting soundness outright. A relation always *exists* in a prime-order group, so at the concrete curve this
-disjunction is propositionally `True` and the *statement* is vacuous; the soundness force is the DLR/AGM
-layer — `Soundness.AGM` formalizes the deterministic relation-to-DL adapter
-(`discreteLogOfBasis_of_relation` and its augmented/collision specializations); the computational reading is
-that no feasible adversary can *find* the relation — not the proposition.
+disjunction is propositionally `True` and the *statement* is vacuous; the soundness force is the
+computational DLR/AGM layer — no feasible adversary can *find* the relation — which is **not** formalized
+in Lean: `Soundness.AGM` records only its deterministic core (the fixed-slot relation-to-DL adapter, the
+fixed-slot DL challenge game, and the finite hit-slot accounting) — not the proposition.
 
 ## Assumptions (the conditional family)
 
@@ -257,10 +257,10 @@ The conclusion is `S ∨ HasNontrivialRelation g U W` — a reduction (it exhibi
 rather than asserting soundness outright). A relation always *exists* in a prime-order group, so at the
 concrete curve this disjunction is propositionally `True`
 and the theorem is vacuous *as a statement* (provable as `Or.inr` without the hypotheses); its content is
-the constructive extraction plus the DLR/AGM layer: `Soundness.AGM` formalizes the deterministic
-relation-to-DL adapter and the augmented `(g,U,W)` specialization, while the computational reading remains
-that no feasible adversary can *find* the relation. Commitment binding is load-bearing in the *proof
-structure*, not the Vesta statement.
+the constructive extraction plus the computational DLR/AGM assumption that no efficient adversary can
+*find* the relation — not formalized in Lean; `Soundness.AGM` records only the deterministic fixed-slot
+relation-to-DL core and its augmented `(g,U,W)` specialization. Commitment
+binding is load-bearing in the *proof structure*, not the Vesta statement.
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), and
 VK-correctness (`hencodes`).
 
@@ -309,8 +309,9 @@ the polynomial identity by Schwartz–Zippel (`hgood`), via `circuitSatViaGates_
 reaches the forking bridge through the *proven* `deployedAccepts_verifierEq`. The conclusion is
 `S ∨ HasNontrivialRelation g U W` — a reduction (it exhibits a discrete-log relation, not soundness
 outright); a relation always *exists* at a prime-order curve, so this disjunction is propositionally `True`
-and the theorem is vacuous as a *statement*, the force being the DLR/AGM layer formalized in
-`Soundness.AGM` as a deterministic relation-to-DL adapter.
+and the theorem is vacuous as a *statement*, the force being the computational DLR/AGM layer (not
+formalized in Lean) that no adversary can *find* one; `Soundness.AGM` records only its deterministic
+fixed-slot relation-to-DL core.
 
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate point-check (`hquot`), the SZ good
 challenge (`hgood`), and VK-correctness (`hencodes`).
