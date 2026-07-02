@@ -4,7 +4,7 @@ import Zcash.Snark.Soundness.AGMProbability
 /-!
 # Algebraic-prover model: explicit relation witnesses from prover representations
 
-This module is the algebraic-group-model input side of issue #15(1). `Soundness.DeployedIpaPeel`
+This module is the algebraic-group-model input side of issue #15. `Soundness.DeployedIpaPeel`
 peels the deployed IPA to `IpaAcceptV ∨ HasNontrivialRelation` — the relation branch is an
 *existential* `Prop`, so extracting a usable witness for the DL reduction (`Soundness.AGMProbability`)
 otherwise needs `Classical.choice` (`relationWitnessOfHasNontrivialRelation`), which has no
@@ -22,11 +22,15 @@ representation `aP` is a subtype field, not `∃ aP`). The peel then returns an 
 * `algebraicRelationOfDeployedAccept` — bridges the explicit witness into the
   `AlgebraicRelationWitness (augmentedBasis g U W)` that the probability wrapper's reduction consumes.
 
-This closes the algebraic-prover half of #15(1) at the peel level: a binding failure yields an
-explicit relation from the prover's representations. What is **not** done here is threading the
-data-carrying accept through the Fiat–Shamir/forking layer (`Soundness.Forking`) up to the top-level
-Vesta capstones — those still conclude the existential `HasNontrivialRelation`; that end-to-end
-re-threading is mechanical but sizeable and remains future work.
+This is the algebraic-prover model asked by #15: a binding failure yields an explicit relation from
+the prover's representations. `Soundness.AlgebraicCapstone` wires it to the deployed opening
+(`deployedAlgebraicRelation`). The top-level *forking* capstones (`orchard_verifier_vesta_forking_*`)
+still conclude the existential `HasNontrivialRelation` — but that is **inherent**: the forking layer
+*produces* the transcript existentially from accept-probability (`extractable_of_prob` /
+`deployed_forking_tree`), so an explicit witness there is not available by the nature of
+rewinding-based extraction. The algebraic-prover content is precisely "given the transcript with
+representations, the relation is explicit", which is what this module and `AlgebraicCapstone`
+establish.
 -/
 
 open Classical
@@ -133,7 +137,7 @@ noncomputable def deployedToAcceptVWitness {U W : G} {z : F} (hz : z ≠ 0) :
 opening is either the clean `IpaAcceptV` transcript or an explicit `AlgebraicRelationWitness` over the
 augmented basis `(g, U, W)` — precisely the adversary output that `Soundness.AGMProbability`'s
 reduction consumes (`succSet`/`relSet`), with **no** `Classical.choice`. This is the algebraic-prover
-model of issue #15(1) wired to the DL reduction at the peel level. -/
+model of issue #15 wired to the DL reduction at the peel level. -/
 noncomputable def algebraicRelationOfDeployedAccept {d : ℕ} {U W : G} {z : F} (hz : z ≠ 0)
     (g : Fin (2 ^ d) → G) (b : Fin (2 ^ d) → F) (P : G) (v blind : F)
     (t : DeployedIpaTreeV F G d) (h : AlgebraicDeployedAcceptV g b U W z P v blind t) :

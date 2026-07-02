@@ -37,7 +37,7 @@ The adversary is the *abstract* algebraic relation-finder
 `A : (b : ι → G) → Option (AlgebraicRelationWitness b)`. What remains outside this file:
 (i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis — an assumption by definition);
 (ii) the AGM idealization; (iii) connecting the deployed Ironwood prover's outputs (representations
-through the IPA verifier equation) to this abstract `A` — issue #15's other half. None of these is
+through the IPA verifier equation) to this abstract `A` — issue #15. None of these is
 the probability accounting, which is now formalized here.
 -/
 

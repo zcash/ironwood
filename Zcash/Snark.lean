@@ -40,3 +40,4 @@ import Zcash.Snark.Soundness.TranscriptOrdering
 import Zcash.Snark.Soundness.AGMProbability
 import Zcash.Snark.Soundness.AGMProbabilityVesta
 import Zcash.Snark.Soundness.AlgebraicPeel
+import Zcash.Snark.Soundness.AlgebraicCapstone
