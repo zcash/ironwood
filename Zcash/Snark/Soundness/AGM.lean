@@ -316,6 +316,41 @@ def discreteLogOfAugmentedRelationAtChallenge {n : ℕ} (B : G) (g : Fin n → G
   discreteLogOfBasis_of_relation B (augmentedBasis g U W) logs challenge
     r.toAlgebraicRelationWitness hknown hcoeff
 
+/-- The fixed-slot reduction's failure event: some nontrivial augmented relation has vanishing
+coefficient at the pre-fixed challenge slot. Note that (like `HasNontrivialRelation` itself) this
+event holds propositionally whenever at least two other slots exist in a prime-order group, so the
+trichotomy below is vacuous *as a statement*; its content is the extraction chain in the middle
+branch. The external wrapper bounds the probability of this event over a uniformly placed slot via
+`challengeHitCount_pos`. -/
+def RelationMissesSlot {n : ℕ} (g : Fin n → G) (U W : G) (challenge : AugmentedIndex n) : Prop :=
+  ∃ (a : Fin n → F) (alpha beta : F), (a ≠ 0 ∨ alpha ≠ 0 ∨ beta ≠ 0)
+    ∧ commitGen g a + alpha • U + beta • W = 0
+    ∧ augmentedCoeffs a alpha beta challenge = 0
+
+/-- **Fixed-slot capstone handoff.** Any theorem ending in `S ∨ HasNontrivialRelation g U W` yields,
+for a challenge slot fixed *before* the relation is seen and embedded with known logs elsewhere:
+`S`, or the discrete log of the challenge slot, or the named failure event `RelationMissesSlot`.
+
+Caveat (same as the capstones it wraps): at a prime-order curve the disjunction is propositionally
+`True` — the failure branch always *exists* — so the statement itself is vacuous; the content is the
+deterministic extraction, and the computational force (a hidden uniformly-placed slot is hit with
+probability ≥ 1/|ι|, and no feasible adversary finds a relation at all) remains outside Lean. -/
+theorem soundnessOrDLAt_of_soundnessOrRelation {n : ℕ} (B : G) (g : Fin n → G) (U W : G)
+    (challenge : AugmentedIndex n)
+    (embedding : FixedSlotEmbedding (F := F) B (augmentedBasis g U W) challenge) {S : Prop}
+    (h : S ∨ HasNontrivialRelation (F := F) g U W) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := F) B (augmentedBasis g U W challenge))
+      ∨ RelationMissesSlot (F := F) g U W challenge := by
+  classical
+  rcases h with hS | hrel
+  · exact Or.inl hS
+  · obtain ⟨a, alpha, beta, hnt, hrel'⟩ := hrel
+    by_cases hcoeff : augmentedCoeffs a alpha beta challenge = 0
+    · exact Or.inr (Or.inr ⟨a, alpha, beta, hnt, hrel', hcoeff⟩)
+    · exact Or.inr (Or.inl
+        ⟨discreteLogOfAugmentedRelationAtChallenge B g U W embedding.logs challenge
+          ⟨a, alpha, beta, hnt, hrel'⟩ embedding.known hcoeff⟩)
+
 /-- Deterministic AGM-to-DL adapter for a relation whose pre-fixed challenge target is `U` — the
 `challenge := AugmentedIndex.u` instance of the fixed-slot embedding, with the known logs given
 directly on `g` and `W`.

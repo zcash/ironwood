@@ -1,4 +1,5 @@
 import Mathlib
+import Zcash.Snark.Soundness.AGM
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking
 import CompElliptic.Curves.Pasta
@@ -245,6 +246,37 @@ theorem orchard_verifier_vesta_forking_opening [Fact (HasseBound Vesta.curve)] [
     hbr hprob
   rwa [hcommit] at h
 
+open scoped ENNReal in
+open Classical in
+/-- The deployed Orchard opening over Vesta, with the augmented relation branch consumed by the
+fixed-slot AGM adapter: for a DL challenge pre-placed at `challenge` with known logs elsewhere
+(`FixedSlotEmbedding`), the conclusion is the opening, the challenge slot's discrete log, or the
+named failure event `RelationMissesSlot`. Caveat: like the capstone it wraps, the disjunction is
+propositionally `True` at Vesta's prime order (a relation missing the slot always *exists*), so the
+statement is vacuous; the content is the deterministic extraction chain, and the force — hitting a
+uniformly placed hidden slot, and that no feasible adversary finds a relation at all — remains
+outside Lean (see `Soundness.AGM`). -/
+theorem orchard_verifier_vesta_forking_opening_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (ch : Challenges shape.k Fp) (xEval ξ z blind : Fp) (s : Fin (2 ^ urs.k) → Fp)
+    (Q : Prover Fp VestaG urs.k) (accepts : (Fin urs.k → Fp) → Prop)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : z ≠ 0) (hg0 : urs.g 0 ≠ 0)
+    (hbridge : ∀ χ, accepts χ ↔ flatAccept Q urs.g (evalVector urs.k xEval) urs.u urs.w z
+        (deployedCommitment urs hk vk ps ch - multiopenValue vk ps ch • urs.g 0 + ξ • commit urs s
+          + (z * 0) • urs.u + blind • urs.w) χ)
+    (hprob : (kerr (Fintype.card Fp) urs.k : ℝ≥0∞) / Fintype.card (Fin urs.k → Fp)
+        < (PMF.uniformOfFintype (Fin urs.k → Fp)).toOuterMeasure (Finset.univ.filter accepts)) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
+        (multiopenValue vk ps ch - ξ * innerProduct s (evalVector urs.k xEval)) a)
+      ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_opening urs hk vk ps ch xEval ξ z blind s Q accepts
+      hz hg0 hbridge hprob)
+
 open Polynomial in
 open scoped ENNReal in
 open Classical in
@@ -303,6 +335,47 @@ theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)
         (hquot a hrel') (hgood a hrel')
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- The deployed Orchard constraint capstone over Vesta, with the augmented relation branch consumed
+by the fixed-slot AGM adapter (`soundnessOrDLAt_of_soundnessOrRelation`). Vacuity caveat as on
+`orchard_verifier_vesta_forking_opening_agm_dl`. -/
+theorem orchard_verifier_vesta_forking_constraint_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (ch : Challenges shape.k Fp) (xEval ξ z blind : Fp) (s : Fin (2 ^ urs.k) → Fp)
+    (Q : Prover Fp VestaG urs.k) (accepts : (Fin urs.k → Fp) → Prop)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : z ≠ 0) (hg0 : urs.g 0 ≠ 0)
+    (hξ : ξ * innerProduct s (evalVector urs.k xEval) = 0)
+    (hbridge : ∀ χ, accepts χ ↔ flatAccept Q urs.g (evalVector urs.k xEval) urs.u urs.w z
+        (deployedCommitment urs hk vk ps ch - multiopenValue vk ps ch • urs.g 0 + ξ • commit urs s
+          + (z * 0) • urs.u + blind • urs.w) χ)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
+        (multiopenValue vk ps ch) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
+        (multiopenValue vk ps ch) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
+        (multiopenValue vk ps ch)
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) urs.k : ℝ≥0∞) / Fintype.card (Fin urs.k → Fp)
+        < (PMF.uniformOfFintype (Fin urs.k → Fp)).toOuterMeasure (Finset.univ.filter accepts)) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_constraint urs hk vk ps ch xEval ξ z blind s Q accepts fixedCols
+      decodeAdvice decodeInstance y gates hpoly deg x hz hg0 hξ hbridge hquot hgood hencodes hprob)
 
 /-- The deployed adjusted-commitment's value term `Σᵢ [-v].getD i • gᵢ` is `-v` on the single generator `g 0`
 (the value list `[-v]` has one entry, placed at index `0`). Lets the deployed verifier's adjusted commitment
@@ -724,5 +797,292 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind [Fact (HasseBo
         (hquot a hrel') (hgood a hrel')
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
+
+/-! ## AGM/DL wrappers of the forking capstones
+
+Each rung of the ladder above ends in `∨ HasNontrivialRelation urs.g urs.u urs.w`. The wrappers
+below consume that branch with the fixed-slot AGM adapter
+(`soundnessOrDLAt_of_soundnessOrRelation`): given a DL challenge pre-placed at an augmented basis
+slot `challenge` — fixed *before* the relation is seen — with known logs everywhere else
+(`FixedSlotEmbedding`), the relation branch becomes the discrete log of that slot, or the named
+failure event `RelationMissesSlot`.
+
+Standing caveat (inherited from the wrapped capstones; see `Soundness.AGM`'s module docs): at Vesta's
+prime order the trichotomy is propositionally `True` — a relation missing the slot always *exists* —
+so these are vacuous *as statements*; their content is the deterministic extraction chain. The
+hit-probability half of the computational force — a uniformly placed hidden slot is hit with
+probability ≥ `1/|ι|` — is now formalized in `Soundness.AGMProbability`; the residual out-of-Lean
+force is discrete-log hardness (no feasible adversary finds a relation) together with the
+algebraic-prover model that produces the witness. -/
+
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_opening_deployed` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung (static dichotomy) and of the AGM section
+header both apply. -/
+theorem orchard_verifier_vesta_forking_opening_deployed_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch - ch.xi * innerProduct s (evalVector urs.k ch.x3)) a)
+      ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_opening_deployed urs hk vk ps ch s hz hg0 hs hprob)
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_constraint_deployed` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_constraint_deployed_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch)
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_constraint_deployed urs hk vk ps ch s fixedCols decodeAdvice
+      decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes hprob)
+
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_opening_adaptive` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_opening_adaptive_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              {ch with ipaRound := χ}))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch - ch.xi * innerProduct s (evalVector urs.k ch.x3)) a)
+      ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_opening_adaptive urs hk vk ps ch s P hz hg0 hs hprob)
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_constraint_adaptive` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_constraint_adaptive_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch)
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              {ch with ipaRound := χ}))) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_constraint_adaptive urs hk vk ps ch s P fixedCols decodeAdvice
+      decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes hprob)
+
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_opening_rewind` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_opening_rewind_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0)
+    (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)
+          - (roChallenges O init ps).xi * innerProduct s (evalVector urs.k (roChallenges O init ps).x3)) a)
+      ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_opening_rewind urs hk vk ps O init s hz hg0 hs hprob)
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_constraint_rewind` with the relation branch consumed by the
+fixed-slot AGM adapter. Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_constraint_rewind_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : (roChallenges O init ps).xi
+        * innerProduct s (evalVector urs.k (roChallenges O init ps).x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps))
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              (roChallenges (reprogramRounds O init ps χ) init ps)))) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_constraint_rewind urs hk vk ps O init s fixedCols decodeAdvice
+      decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes hprob)
+
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_opening_adaptive_rewind` with the relation branch consumed by the
+fixed-slot AGM adapter — the attack-event endpoint of the ladder, AGM/DL form. Caveats of the
+underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_opening_adaptive_rewind_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              (roChallenges
+                (reprogramRounds O init
+                  (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) χ)
+                init
+                (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2))))) :
+    (∃ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)
+          - (roChallenges O init ps).xi * innerProduct s (evalVector urs.k (roChallenges O init ps).x3)) a)
+      ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_opening_adaptive_rewind urs hk vk ps O init s P hz hg0 hs hprob)
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- `orchard_verifier_vesta_forking_constraint_adaptive_rewind` with the relation branch consumed by
+the fixed-slot AGM adapter — the attack-event constraint endpoint of the ladder, AGM/DL form.
+Caveats of the underlying rung and of the AGM section header both apply. -/
+theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind_agm_dl [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (O : List (TranscriptElt Fp VestaG) → Fp) (init : List (TranscriptElt Fp VestaG))
+    (s : Fin (2 ^ urs.k) → Fp) (P : Prover Fp VestaG shape.k)
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → (ℕ → Polynomial Fp))
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (B : VestaG) (challenge : AugmentedIndex (2 ^ urs.k))
+    (embedding : FixedSlotEmbedding (F := Fp) B (augmentedBasis urs.g urs.u urs.w) challenge)
+    (hz : (roChallenges O init ps).z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : (roChallenges O init ps).xi
+        * innerProduct s (evalVector urs.k (roChallenges O init ps).x3) = 0)
+    (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
+    (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3)
+        (multiopenValue vk ps (roChallenges O init ps)) a →
+      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
+        (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps))
+      (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk
+              (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2)
+              (roChallenges
+                (reprogramRounds O init
+                  (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) χ)
+                init
+                (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2))))) :
+    S ∨ Nonempty (DiscreteLogRepresentation (F := Fp) B (augmentedBasis urs.g urs.u urs.w challenge))
+      ∨ RelationMissesSlot (F := Fp) urs.g urs.u urs.w challenge :=
+  soundnessOrDLAt_of_soundnessOrRelation B urs.g urs.u urs.w challenge embedding
+    (orchard_verifier_vesta_forking_constraint_adaptive_rewind urs hk vk ps O init s P fixedCols
+      decodeAdvice decodeInstance y gates hpoly deg x hz hg0 hs hξ hquot hgood hencodes hprob)
 
 end Zcash.Snark
