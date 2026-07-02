@@ -1,7 +1,7 @@
 import Zcash.Snark.Soundness.BindingReduction
 
 /-!
-# Algebraic-group-model wrapper for the binding relation
+# Algebraic-group-model layer: fixed-slot DL reductions for the relation branches
 
 The deployed soundness capstones end in
 `S ∨ HasNontrivialRelation g U W`: a proof either satisfies the intended relation or exhibits a
@@ -9,21 +9,49 @@ nontrivial discrete-log relation among the augmented bases `(g, U, W)`. In a pri
 relations exist propositionally; the security content is computational: an efficient adversary should not
 be able to *find* one.
 
-This module records the AGM-facing layer that consumes that relation branch. It follows the useful part of
-ArkLib's AGM scaffold: group elements are paired with representations over a public basis. The load-bearing
-theorem is the deterministic DLR-to-DL adapter: if all non-challenge bases have known discrete logs with
-respect to a base `B`, then any found relation with a nonzero coefficient on the challenge target recovers
-the target's discrete log.
+This module records the algebraic core of the AGM/DLR-to-DL reduction that consumes that relation
+branch. The model is the standard one (Fuchsbauer–Kiltz–Loss): the reduction receives a DL challenge,
+places it in **one basis slot fixed before the adversary runs**, and knows the discrete logs of every
+*other* slot. If the relation found by the adversary has a nonzero coefficient at that pre-fixed slot,
+the deterministic adapter recovers the challenge's discrete log.
 
-The probabilistic computational wrapper — placing the DL challenge into a random basis slot and accounting
-for the chance that the relation's coefficient there is nonzero — is not an oracle-machine model here. The
-Lean content below is the algebraic core that such a wrapper calls.
+## What is formalized here
+
+* Representations over a public basis (`GroupRepresentation`, `AlgebraicPoint`,
+  `AlgebraicRelationWitness`).
+* The deterministic fixed-slot DLR-to-DL adapter (`discreteLogOfBasis_of_relation`) and its
+  collision / augmented-basis specializations.
+* The fixed-slot challenge game (`DLChallengeGame`): the challenge slot is part of the game, fixed
+  before any adversary output; extraction (`solveFromRelation`) is *conditional* on the found
+  relation hitting that slot (`hits`).
+* The finite accounting the external probability wrapper needs: a nontrivial relation hits at least
+  one slot (`nonzeroCoeffSlots_nonempty`, `challengeHitCount_pos`), and at most all of them
+  (`challengeHitCount_le_total`) — so a uniformly placed challenge slot is hit with probability at
+  least `1 / |ι|`. The probability statement itself is not formalized.
+* The capstone trichotomy (`soundnessOrDLAt_of_soundnessOrRelation`): `S`, or the discrete log of the
+  pre-fixed challenge slot, or the named failure event `RelationMissesSlot`.
+
+## What is *not* formalized — and the standing vacuity caveat
+
+The oracle-machine adversary, the random placement of the challenge slot, and the success-probability
+accounting all live outside Lean. So does the algebraic-*prover* model itself: an AGM discharge must
+obtain the relation witness from representations carried by the prover's outputs, whereas here
+explicit witnesses are recovered from the existential relation predicate by choice
+(`relationWitnessOfHasNontrivialRelation`), which carries no computational content. Carrying
+representations through the deployed prover's transcript is the remaining scope of issue #15.
+
+Consequently the trichotomy conclusions below are still propositionally `True` at a prime-order
+curve — with at least two known-log slots a relation missing the challenge slot always *exists*, so
+the `RelationMissesSlot` branch is available without any hypothesis, exactly as `Or.inr` discharges
+the original `∨ HasNontrivialRelation` capstones. The formal content is the deterministic extraction
+chain (witness → hit → discrete log), not the disjunction; the computational force — no feasible
+adversary *finds* a relation, and a hidden slot is hit with noticeable probability — remains the
+out-of-Lean layer.
 -/
 
 namespace Zcash.Snark
 
 variable {F G : Type*} [Field F] [AddCommGroup G] [Module F G]
-
 
 /-- Evaluate an AGM representation over an arbitrary finite public basis. -/
 def representationEval {ι : Type*} [Fintype ι] (basis : ι → G) (coeffs : ι → F) : G :=
@@ -104,7 +132,62 @@ theorem exists_nonzero_coeff {ι : Type*} [Fintype ι] {basis : ι → G}
   funext i
   exact not_not.mp (not_exists.mp h i)
 
+/-- Challenge slots where a fixed-slot DL embedding can extract from this relation. -/
+noncomputable def nonzeroCoeffSlots {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) : Finset ι :=
+  by
+    classical
+    exact Finset.univ.filter fun i => r.coeffs i ≠ 0
+
+@[simp] theorem mem_nonzeroCoeffSlots {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {basis : ι → G} (r : AlgebraicRelationWitness (F := F) basis) (i : ι) :
+    i ∈ r.nonzeroCoeffSlots ↔ r.coeffs i ≠ 0 := by
+  classical
+  simp [nonzeroCoeffSlots]
+
+/-- The finite accounting fact behind the random challenge-slot wrapper: a nontrivial relation has at
+least one challenge slot where extraction succeeds. -/
+theorem nonzeroCoeffSlots_nonempty {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    r.nonzeroCoeffSlots.Nonempty := by
+  classical
+  obtain ⟨i, hi⟩ := r.exists_nonzero_coeff
+  exact ⟨i, by simp [nonzeroCoeffSlots, hi]⟩
+
+/-- Count of challenge slots where the relation has nonzero coefficient. -/
+noncomputable def challengeHitCount {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) : ℕ :=
+  r.nonzeroCoeffSlots.card
+
+/-- The random-slot wrapper has a nonzero finite support of successful challenge placements: a
+uniformly placed challenge slot is hit with probability at least `1 / |ι|` (the probability statement
+itself is outside Lean). -/
+theorem challengeHitCount_pos {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    0 < r.challengeHitCount := by
+  classical
+  exact Finset.card_pos.mpr r.nonzeroCoeffSlots_nonempty
+
+/-- The number of successful challenge placements is bounded by the number of public basis slots. -/
+theorem challengeHitCount_le_total {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
+    (r : AlgebraicRelationWitness (F := F) basis) :
+    r.challengeHitCount ≤ Fintype.card ι := by
+  classical
+  dsimp [challengeHitCount, nonzeroCoeffSlots]
+  apply Finset.card_le_card
+  intro i hi
+  exact Finset.mem_univ i
+
 end AlgebraicRelationWitness
+
+/-- Public input to an algebraic relation adversary.
+
+The `params` field is for scalar or protocol data that is not itself a group element. The group-valued
+material visible to the AGM extractor is isolated in `basis`, so every group output can be represented
+over this finite public basis. -/
+structure AlgebraicAdversaryInput (Params ι : Type*) [Fintype ι] where
+  params : Params
+  basis : ι → G
 
 /-- The known-log contribution of every basis slot except the challenge slot. -/
 def relationLogExcept {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -177,6 +260,52 @@ structure FixedSlotEmbedding {ι : Type*} [Fintype ι] (base : G) (basis : ι �
   logs : ι → F
   known : ∀ i, i ≠ challenge → basis i = logs i • base
 
+/-- Plain discrete-log challenge game associated with an AGM public input.
+
+The challenge slot is part of the game, sampled/fixed before any adversary output; the embedding
+knows the logs of the other slots only. A solution is the discrete log of the *pre-fixed* challenge
+slot — not of a slot chosen after seeing a relation. -/
+structure DLChallengeGame (Params ι : Type*) [Fintype ι] [DecidableEq ι] where
+  input : AlgebraicAdversaryInput (G := G) Params ι
+  base : G
+  challenge : ι
+  embedding : FixedSlotEmbedding (F := F) base input.basis challenge
+
+namespace DLChallengeGame
+
+/-- A solution of the game: the discrete log of the pre-fixed challenge slot. -/
+abbrev Solution {Params ι : Type*} [Fintype ι] [DecidableEq ι]
+    (game : DLChallengeGame (F := F) (G := G) Params ι) : Type _ :=
+  DiscreteLogRepresentation (F := F) game.base (game.input.basis game.challenge)
+
+/-- The extraction-success event: the found relation has a nonzero coefficient at the game's
+pre-fixed challenge slot. Over a uniformly placed slot this happens with probability at least
+`challengeHitCount / |ι| ≥ 1 / |ι|` (`challengeHitCount_pos`); the probability accounting is the
+out-of-Lean wrapper. -/
+def hits {Params ι : Type*} [Fintype ι] [DecidableEq ι]
+    (game : DLChallengeGame (F := F) (G := G) Params ι)
+    (r : AlgebraicRelationWitness (F := F) game.input.basis) : Prop :=
+  r.coeffs game.challenge ≠ 0
+
+theorem hits_iff_mem_nonzeroCoeffSlots {Params ι : Type*} [Fintype ι] [DecidableEq ι]
+    (game : DLChallengeGame (F := F) (G := G) Params ι)
+    (r : AlgebraicRelationWitness (F := F) game.input.basis) :
+    game.hits r ↔ game.challenge ∈ r.nonzeroCoeffSlots :=
+  (r.mem_nonzeroCoeffSlots game.challenge).symm
+
+/-- Conditional extraction: a relation that hits the pre-fixed challenge slot solves the game. A
+relation that misses it does **not** — that failure branch is the price of a faithful fixed-slot
+game, and is what the external probability wrapper averages away over the slot placement. -/
+def solveFromRelation {Params ι : Type*} [Fintype ι] [DecidableEq ι]
+    (game : DLChallengeGame (F := F) (G := G) Params ι)
+    (r : AlgebraicRelationWitness (F := F) game.input.basis)
+    (hhit : game.hits r) :
+    Solution (F := F) game :=
+  discreteLogOfBasis_of_relation game.base game.input.basis game.embedding.logs game.challenge r
+    game.embedding.known hhit
+
+end DLChallengeGame
+
 /-- The scalar contribution of the URS-generator part of an augmented relation after substituting known
 discrete logs `gLog i` for each `g i = gLog i • B`. -/
 def relationGLog {n : ℕ} (gLog a : Fin n → F) : F :=
@@ -219,6 +348,22 @@ end AugmentedIndex
 def augmentedBasis {n : ℕ} (g : Fin n → G) (U W : G) : AugmentedIndex n → G
   | Sum.inl i => g i
   | Sum.inr j => if j = 0 then U else W
+
+/-- Canonical public AGM input for the augmented `(g, U, W)` basis. -/
+def augmentedAdversaryInput {n : ℕ} (g : Fin n → G) (U W : G) :
+    AlgebraicAdversaryInput (G := G) Unit (AugmentedIndex n) :=
+  { params := ()
+    basis := augmentedBasis g U W }
+
+/-- DL challenge game with the hidden challenge pre-placed at the augmented basis slot `challenge`. -/
+def augmentedDLChallengeGame {n : ℕ} (B : G) (g : Fin n → G) (U W : G)
+    (challenge : AugmentedIndex n)
+    (embedding : FixedSlotEmbedding (F := F) B (augmentedBasis g U W) challenge) :
+    DLChallengeGame (F := F) (G := G) Unit (AugmentedIndex n) :=
+  { input := augmentedAdversaryInput g U W
+    base := B
+    challenge := challenge
+    embedding := embedding }
 
 /-- The coefficients of an augmented relation as one representation vector. -/
 def augmentedCoeffs {n : ℕ} (a : Fin n → F) (alpha beta : F) : AugmentedIndex n → F
@@ -277,6 +422,15 @@ theorem augmentedRelationWitness_iff_hasNontrivialRelation {n : ℕ} (g : Fin n 
     exact ⟨r.a, r.alpha, r.beta, r.nontrivial, r.relation⟩
   · rintro ⟨a, alpha, beta, hnt, hrel⟩
     exact ⟨⟨a, alpha, beta, hnt, hrel⟩⟩
+
+/-- Proof-level plumbing, **not** an adversary run: extract an explicit witness from the existential
+relation predicate by choice. In a prime-order group a witness always exists propositionally, so this
+step carries no computational content; an actual AGM discharge must instead obtain the witness from
+prover-output representations (issue #15). -/
+noncomputable def relationWitnessOfHasNontrivialRelation {n : ℕ} (g : Fin n → G) (U W : G)
+    (hrel : HasNontrivialRelation (F := F) g U W) :
+    AugmentedRelationWitness (F := F) g U W :=
+  Classical.choice ((augmentedRelationWitness_iff_hasNontrivialRelation g U W).mpr hrel)
 
 /-- A commitment collision gives an explicit nontrivial algebraic relation over the URS generators. -/
 def relationWitnessOfCollision (urs : URS G) {a a' : Fin (2 ^ urs.k) → F}
