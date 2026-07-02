@@ -94,8 +94,8 @@ specialization). Named assumptions:
 the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
 (`hencodes`). `hcirc` quantifies over every mathematical opening of the pinned `(P, b, v)` and is
 unsatisfiable at Vesta for any `circuitSat` that genuinely reads the witness — see the caveat on
-`orchard_verifier_deployed_opening_reduction`, and issue #18 for the restatement over the extracted
-witness. -/
+`orchard_verifier_deployed_opening_reduction`; use the decoded constraint capstone below for the
+witness-to-columns restatement. -/
 theorem orchard_verifier_vesta_opening_reduction [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG] [Inhabited VestaG]
     {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG)
     (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -125,8 +125,8 @@ assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠
 (`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`).
 `hquot`/`hgood` quantify over every mathematical opening of the pinned `(P, b, v)` and are unsatisfiable
 at Vesta for any decode that genuinely reads columns out of the witness — see the caveat on
-`orchard_verifier_deployed_constraint_reduction`, and issue #18 for the restatement over the extracted
-witness. -/
+`orchard_verifier_deployed_constraint_reduction`; use
+`orchard_verifier_vesta_decoded_constraint_reduction` for the witness-to-columns restatement. -/
 theorem orchard_verifier_vesta_constraint_reduction [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG] [Inhabited VestaG]
     {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG)
     (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -148,6 +148,54 @@ theorem orchard_verifier_vesta_constraint_reduction [Fact (HasseBound Vesta.curv
     S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w :=
   orchard_verifier_deployed_constraint_reduction urs hk vk ps ch fixedCols decodeAdvice decodeInstance y gates
     hpoly deg x hz haccepts hFS hquot hgood hencodes
+
+open Polynomial in
+/-- The deployed Orchard verifier opening and constraint over Vesta, with the multiopen witness first
+decoded into real columns. This is the Vesta specialization of
+`orchard_verifier_deployed_decoded_constraint_reduction`: the opening is still a binding reduction, but
+the gate side no longer asks for arbitrary witness-indexed decode functions. Instead, `hbatch` supplies the
+rewound batched openings containing the extracted witness, `batch_open_soundV` recovers the column
+polynomials, and `hquot`/`hgood` are stated for the canonical decode of the supplied batch
+(`decodedCols`; see the `MultiopenDecode` scope section).
+
+This is the endpoint to use for the issue #18 witness-to-columns bridge. The older
+`orchard_verifier_vesta_constraint_reduction` remains as a legacy, compatibility-shaped capstone. -/
+theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
+    (ch : Challenges shape.k Fp)
+    {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → VestaG) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : z ≠ 0)
+    (haccepts : DeployedAccepts urs hk vk ps ch)
+    (hFS : FiatShamirTree urs hk vk ps ch b z blind)
+    (hbatch : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
+      BatchOpeningsForWitness urs b columnCommitments columnEvals a)
+    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) a),
+      quotientCheck
+        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
+    (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) a),
+      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
+        y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+  orchard_verifier_deployed_decoded_constraint_reduction urs hk vk ps ch columnCommitments columnEvals
+    adviceIndex instanceIndex fixedCols y gates hpoly deg x hz haccepts hFS hbatch hquot hgood hencodes
 
 /-- The powers evaluation vector's leading entry is `1` (`b 0 = x⁰ = 1`), discharging the IPA's `hb0`
 structural fact for the concrete deployed `b = evalVector`. -/
@@ -302,7 +350,7 @@ discharged. The original `FiatShamirTree` reductions
 computational DLR/AGM layer outside Lean (`Soundness.AGM.Adapter` records only its deterministic fixed-slot
 core). `hquot`/`hgood` retain the ∀-openings shape —
 unsatisfiable at Vesta for any decode that genuinely reads the witness (see
-`orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
+`orchard_verifier_deployed_constraint_reduction`'s caveat, and the decoded capstone above). -/
 theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -478,7 +526,8 @@ the *fixed* proof's accept set over all round-challenge vectors, not the Fiat–
 adaptive form, use `orchard_verifier_vesta_forking_constraint_adaptive`; for the same statement over
 reprogrammed-oracle runs, use `orchard_verifier_vesta_forking_constraint_adaptive_rewind`. `hquot`/`hgood`
 retain the ∀-openings shape — unsatisfiable at Vesta for any decode that genuinely
-reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
+reads the witness (see `orchard_verifier_deployed_constraint_reduction`'s caveat, and the decoded
+capstone above). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -575,7 +624,7 @@ malicious blinder, `blinder_value_recovery_badSet`). Residual: the execution-sem
 random-oracle uniformity axiom in `hprob`, and the structural witnesses; the static-dichotomy caveat does not
 apply at this rung. Issue #23's transcript-ordering and reprogramming content is discharged by the staged
 rewinding capstones below. `hquot`/`hgood` retain the ∀-openings shape — unsatisfiable at Vesta for any decode
-that genuinely reads the witness (issue #18). -/
+that genuinely reads the witness; the decoded capstone above is the witness-to-columns endpoint. -/
 theorem orchard_verifier_vesta_forking_constraint_adaptive [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -679,7 +728,8 @@ open Classical in
 /-- The constraint companion of `orchard_verifier_vesta_forking_opening_rewind`:
 `orchard_verifier_vesta_forking_constraint_deployed` with the accept probability over reprogrammed-oracle
 runs, the round-vector semantics derived via `roChallenges_reprogramRounds` (issue #23). The `hquot`/`hgood`
-caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and issue #18 — and so
+caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and the decoded
+capstone — and so
 is the constant rung's static-dichotomy scope (see `orchard_verifier_vesta_forking_opening_deployed`); the
 `_adaptive_rewind` pair is the attack-event form. -/
 theorem orchard_verifier_vesta_forking_constraint_rewind [Fact (HasseBound Vesta.curve)]
@@ -757,7 +807,7 @@ open Classical in
 /-- The constraint companion of `orchard_verifier_vesta_forking_opening_adaptive_rewind`: the staged
 round-adaptive capstone with its accept event grounded in reprogrammed-oracle runs on each spliced proof. The
 `hquot`/`hgood` caveat is unchanged — see `orchard_verifier_deployed_constraint_reduction`'s caveat and
-issue #18. -/
+the decoded capstone. -/
 theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
