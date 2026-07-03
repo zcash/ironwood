@@ -188,6 +188,32 @@ noncomputable def multiopenRewindForRelation_of_acceptedFamily {urs : URS G} {P 
       commitment := fun r => by rw [commit_eq_commitGen]; exact hbC r
       value := hbe }
 
+/-- Package rewound accepting transcripts at distinct batching challenges into an
+`AcceptedBatchFamily`, given the flat power form of the batched statement in the batching challenge.
+`P`/`v` are the statement as a function of that challenge — for the deployed verifier,
+`fun ξ => deployedCommitment urs hk vk ps {ch with x4 := ξ}` and the matching `multiopenValue`, the
+runs `Soundness.Forking.reprogramX4` (via its apply lemmas) identifies with oracle reprogramming — and
+`hP`/`hv` are the flat-batch power form, the model boundary the scope section above records. -/
+noncomputable def acceptedBatchFamily_of_rewinds {urs : URS G} {b : Fin (2 ^ urs.k) → Fp}
+    {numColumns : ℕ} {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    (ξ : Fin numColumns → Fp) (hξinj : Function.Injective ξ)
+    (P : Fp → G) (v : Fp → Fp)
+    (hP : ∀ r, P (ξ r) = ∑ j : Fin numColumns, ξ r ^ (j : ℕ) • columnCommitments j)
+    (hv : ∀ r, v (ξ r) = ∑ j : Fin numColumns, ξ r ^ (j : ℕ) • columnEvals j)
+    (cur : Fin numColumns)
+    (htrees : ∀ r, ∃ t : IpaTreeV Fp G urs.k, IpaAcceptV urs.g b (P (ξ r)) (v (ξ r)) t) :
+    AcceptedBatchFamily urs (P (ξ cur)) b (v (ξ cur)) columnCommitments columnEvals := by
+  classical
+  choose trees htacc using htrees
+  exact
+    { batchChallenge := ξ
+      challengesDistinct := hξinj
+      trees := trees
+      accepts := fun r => by rw [← hP r, ← hv r]; exact htacc r
+      current := cur
+      current_P := (hP cur).symm
+      current_v := (hv cur).symm }
+
 /-- The recovered per-column polynomials and their opening facts. -/
 structure DecodedColumnFamily (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {numColumns : ℕ}
     (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)

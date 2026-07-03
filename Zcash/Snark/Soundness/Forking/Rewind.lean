@@ -121,6 +121,139 @@ theorem roChallenges_reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp
           simp only [preIpaTranscript, List.length_append, List.length_cons, List.length_nil]
           omega)
 
+/-! ## Redrawing the batching challenge is reprogramming at the `x₄` squeeze
+
+The multiopen rewinding (`Soundness.MultiopenDecode`, issue #18's note) forks on the batching
+challenge: redraw `x₄`, re-run, and collect accepting runs at distinct values. `reprogramX4` is the
+one-point analogue of `reprogramRounds` at the sealed `x₄` prefix (`preX4Transcript`,
+`deriveChallenges_x4_eq`), and its pointwise apply lemmas (`reprogramX4_apply_x4`/`_short`/`_long`)
+give the identification field by field: re-running the deployed schedule under it is exactly the
+honest run with `x₄` replaced — every other squeeze input has a different length, so nothing else
+moves. Both halves of what the `{ch with x4 := ξ}` runs then owe the terminal capstones are theorems
+(`Soundness.DeployedMultiopen`): the flat-batch power form of the deployed statement in `x₄` is proven
+over the fingerprinted grouping's aggregates (`deployedCommitment_x4_batch`/`multiopenValue_x4_batch`),
+and the accept-probability step is the single-squeeze counting floor
+(`exists_injective_accepting_of_measure`, consumed by `deployedMultiopenRewind_of_x4Prob`) — the same
+seam shape the round-forking ladder carries, extending the issue-#23 ordering treatment to the
+multiopen squeeze points. -/
+
+open Classical in
+/-- Reprogram the oracle at the `x₄` squeeze prefix of the fixed proof string, answering `ξ` there
+and `O` elsewhere. -/
+noncomputable def reprogramX4 {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp) :
+    List (TranscriptElt Fp G) → Fp :=
+  fun t => if t = preX4Transcript init ps then ξ else O t
+
+/-- At the `x₄` prefix the reprogrammed oracle answers `ξ`. -/
+theorem reprogramX4_apply_x4 {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp) :
+    reprogramX4 O init ps ξ (preX4Transcript init ps) = ξ := by
+  simp [reprogramX4]
+
+/-- Off the `x₄` prefix the reprogrammed oracle is `O`. -/
+theorem reprogramX4_apply_ne {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t ≠ preX4Transcript init ps) :
+    reprogramX4 O init ps ξ t = O t := by
+  simp [reprogramX4, ht]
+
+/-- Any input whose length differs from the `x₄` prefix — every other squeeze input of the deployed
+schedule — is untouched by the `x₄` reprogramming. -/
+theorem reprogramX4_apply_length {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length ≠ (preX4Transcript init ps).length) :
+    reprogramX4 O init ps ξ t = O t :=
+  reprogramX4_apply_ne O init ps ξ (fun h => ht (congrArg List.length h))
+
+/-- An input strictly shorter than the `x₄` prefix is untouched (the pre-`x₄` squeeze inputs). -/
+theorem reprogramX4_apply_short {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length < (preX4Transcript init ps).length) :
+    reprogramX4 O init ps ξ t = O t :=
+  reprogramX4_apply_length O init ps ξ ht.ne
+
+/-- An input strictly longer than the `x₄` prefix is untouched (the `ξ`/`z` and IPA-round inputs). -/
+theorem reprogramX4_apply_long {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (ξ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : (preX4Transcript init ps).length < t.length) :
+    reprogramX4 O init ps ξ t = O t :=
+  reprogramX4_apply_length O init ps ξ ht.ne'
+
+/-! **From the pointwise reprogramming to the challenge-level identity (issue #18's note).** The
+lemmas above pin `reprogramX4`'s behaviour at every squeeze input: it answers `ξ` at the `x₄` prefix
+(`reprogramX4_apply_x4`) and leaves every other input at `O` (`reprogramX4_apply_short`/`_long`,
+since the pre-`x₄` squeeze inputs are strictly shorter than the `x₄` prefix and the `ξ`/`z`/IPA-round
+inputs strictly longer — `preIpaTranscript_length_eq`, `roundTranscriptFin_length`). Composed with
+the squeeze seals `deriveChallenges_x{3,4}_eq`, these give, field by field, that running the deployed
+schedule under `reprogramX4` reproduces the honest run with `x₄` replaced by `ξ` — i.e. the
+`{ch with x4 := ξ}` events the multiopen rewinding ranges over are oracle-reprogramming events, the
+multiopen-squeeze analogue of `roChallenges_reprogramRounds` for the IPA rounds (issue #23).
+
+Packaging this as a single `Challenges`-record equality (as `roChallenges_reprogramRounds` does) is
+left implicit: each field projection forces whnf of the entire `deriveChallenges` record, and unlike
+the round case the batching challenge's inlined `x₄` prefix makes that packaging prohibitively
+expensive to elaborate. Downstream (`acceptedBatchFamily_of_rewinds`) consumes the per-run accept
+facts, not the record identity, so the pointwise lemmas above are the operative form. -/
+
+/-! ## Redrawing the compression challenge is reprogramming at the `x₁` squeeze
+
+The within-set rewinding (`Soundness.DeployedMultiopen`, the member-column decode) forks one squeeze
+earlier: redraw `x₁`, and the rewound prover re-sends the post-`x₁` proof fields — `q′`, `u`, and the
+IPA opening (`spliceMultiopen`) — so `x₃`/`x₄`/`ξ`/`z` and the round challenges re-randomize through
+their squeeze inputs (which absorb the fresh `q′`/`u`), while everything absorbed before `x₁` — the
+column commitments, every claimed evaluation (`adviceEvals_mem_preX1Transcript` and companions), hence
+the whole query list and the fingerprinted grouping — is shared across runs. `reprogramX1` is the
+one-point reprogramming at the sealed `x₁` prefix (`preX1Transcript`, `deriveChallenges_x1_eq`); as
+with `reprogramX4`, the pointwise apply lemmas are the operative form, and the run events the member
+decode ranges over are `x1RunChallenges`/`spliceMultiopen` records (`Soundness.DeployedMultiopen`). -/
+
+open Classical in
+/-- Reprogram the oracle at the `x₁` squeeze prefix of the fixed proof string, answering `χ` there
+and `O` elsewhere. -/
+noncomputable def reprogramX1 {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp) :
+    List (TranscriptElt Fp G) → Fp :=
+  fun t => if t = preX1Transcript init ps then χ else O t
+
+/-- At the `x₁` prefix the reprogrammed oracle answers `χ`. -/
+theorem reprogramX1_apply_x1 {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp) :
+    reprogramX1 O init ps χ (preX1Transcript init ps) = χ := by
+  simp [reprogramX1]
+
+/-- Off the `x₁` prefix the reprogrammed oracle is `O`. -/
+theorem reprogramX1_apply_ne {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t ≠ preX1Transcript init ps) :
+    reprogramX1 O init ps χ t = O t := by
+  simp [reprogramX1, ht]
+
+/-- Any input whose length differs from the `x₁` prefix — every other squeeze input of the deployed
+schedule (`preX2Transcript_length_eq` and the chain onward) — is untouched by the `x₁`
+reprogramming. -/
+theorem reprogramX1_apply_length {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length ≠ (preX1Transcript init ps).length) :
+    reprogramX1 O init ps χ t = O t :=
+  reprogramX1_apply_ne O init ps χ (fun h => ht (congrArg List.length h))
+
+/-- An input strictly shorter than the `x₁` prefix is untouched (the pre-`x₁` squeeze inputs). -/
+theorem reprogramX1_apply_short {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length < (preX1Transcript init ps).length) :
+    reprogramX1 O init ps χ t = O t :=
+  reprogramX1_apply_length O init ps χ ht.ne
+
+/-- An input strictly longer than the `x₁` prefix is untouched (the `x₂`/`x₃`/`x₄`/`ξ`/`z` and
+IPA-round inputs — on the rewound run these absorb the spliced post-`x₁` fields, and their lengths
+stay strictly beyond the `x₁` prefix). -/
+theorem reprogramX1_apply_long {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : (preX1Transcript init ps).length < t.length) :
+    reprogramX1 O init ps χ t = O t :=
+  reprogramX1_apply_length O init ps χ ht.ne'
+
 open scoped ENNReal in
 open Classical in
 /-- **Accept-measure monotonicity into the capstones' `hprob`.** The deployed accept (`DeployedAccepts`,

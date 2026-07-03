@@ -296,4 +296,209 @@ theorem deriveChallenges_ipaRound_eq_roundChallenge {shape : Shape} [Zero F] (fs
           (fun i => ps.ipaRounds ⟨i % shape.k, Nat.mod_lt _ j.pos⟩) j.val := by
   rw [deriveChallenges_ipaRound_eq, roundChallenge, roundTranscriptFin_eq_roundTranscript]
 
+/-! ## Sealing the multiopen squeeze points (issue #18's rewinding note)
+
+The multiopen rewinding (`Soundness.MultiopenDecode`) forks on the batching challenge `x₄`; the
+analogue of the round-by-round treatment above needs the same two ingredients at the multiopen
+squeeze points: the commit-before-challenge ordering (`q′` is absorbed before `x₃` is squeezed, the
+`u` family before `x₄`), and named squeeze prefixes so the oracle can be reprogrammed there
+(`Soundness.Forking.reprogramX4`). Mirroring `preIpaTranscript`, `preX3Transcript`/`preX4Transcript`
+are fully inlined (not a chain of `++`), so `deriveChallenges_x3_eq`/`_x4_eq` hold by `rfl` and a
+single `simp only [preX4Transcript, …]` unfolds the squeeze input in one step — the shape the
+reprogramming length proofs use. A refactor of the absorb order breaks the seals. -/
+
+/-- The transcript `deriveChallenges` has absorbed when `x₃` is squeezed: everything through the
+`x₂` marker, then the multiopen `q′` commitment and the `x₃` challenge marker. -/
+def preX3Transcript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
+    ++ absorbScalars ps.fixedEvals ++ [TranscriptElt.scalar ps.vanishingRandomEval]
+    ++ absorbScalars ps.permutationCommonEvals
+    ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
+    ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
+  let t := t ++ evalElts ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ [TranscriptElt.point ps.multiopenQPrime] ++ [.challenge]
+  t
+
+/-- The transcript at the `x₄` squeeze: the `x₃` prefix extended by the multiopen `u` evaluations
+and the `x₄` marker (inlined for `rfl` seals and one-step `simp`). -/
+def preX4Transcript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
+    ++ absorbScalars ps.fixedEvals ++ [TranscriptElt.scalar ps.vanishingRandomEval]
+    ++ absorbScalars ps.permutationCommonEvals
+    ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
+    ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
+  let t := t ++ evalElts ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ [TranscriptElt.point ps.multiopenQPrime] ++ [.challenge]
+  let t := t ++ absorbScalars ps.multiopenU ++ [.challenge]
+  t
+
+/-- The deployed `x₃` *is* the squeeze of the named `x₃` prefix — the multiopen analogue of
+`deriveChallenges_ipaRound_eq`. -/
+theorem deriveChallenges_x3_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    (deriveChallenges fs init ps).x3 = fs.squeeze (preX3Transcript init ps) := rfl
+
+/-- The deployed `x₄` *is* the squeeze of the named `x₄` prefix. -/
+theorem deriveChallenges_x4_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    (deriveChallenges fs init ps).x4 = fs.squeeze (preX4Transcript init ps) := rfl
+
+/-- Commit-before-challenge at `x₃`: the multiopen `q′` commitment is inside the `x₃` squeeze input,
+fixed before the challenge. -/
+theorem qPrime_mem_preX3Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) :
+    TranscriptElt.point ps.multiopenQPrime ∈ preX3Transcript init ps := by
+  simp [preX3Transcript]
+
+/-- Commit-before-challenge at `x₄`: every multiopen `u` evaluation is inside the `x₄` squeeze
+input, fixed before the challenge. -/
+theorem multiopenU_mem_preX4Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (i : Fin shape.numPointSets) :
+    TranscriptElt.scalar (ps.multiopenU i) ∈ preX4Transcript init ps := by
+  simp only [preX4Transcript, absorbScalars, List.mem_append, List.mem_ofFn]
+  exact Or.inl (Or.inr ⟨i, rfl⟩)
+
+/-- The pre-IPA base is the `x₄` prefix extended by the IPA `S` commitment and the `ξ`/`z` markers,
+so the multiopen squeezes sit strictly inside it. -/
+theorem preIpaTranscript_length_eq {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) :
+    (preIpaTranscript init ps).length = (preX4Transcript init ps).length + 3 := by
+  simp only [preIpaTranscript, preX4Transcript, List.length_append, List.length_cons,
+    List.length_nil]
+
+/-! ## Sealing the compression squeeze points `x₁`/`x₂`
+
+The within-set (`x₁`) rewinding forks one squeeze earlier than the `x₄` collapse: redraw `x₁` and the
+rewound prover re-sends the *post-`x₁`* proof fields (`q′`, `u`, the IPA opening), so `x₃`/`x₄`
+re-randomize through their squeeze inputs while everything absorbed before `x₁` — the column
+commitments and every claimed evaluation — is shared across runs. The seals here supply that ordering:
+`preX1Transcript`/`preX2Transcript` name the squeeze inputs (inlined for `rfl` seals, like
+`preX3Transcript`), the membership lemmas pin the claimed evaluations before `x₁`, and the length chain
+places the compression squeezes strictly inside the multiopen ones. `Soundness.Forking.reprogramX1` is
+the reprogramming at this prefix. -/
+
+/-- The transcript `deriveChallenges` has absorbed when `x₁` is squeezed: everything through the `x`
+marker, then all claimed evaluations and the `x₁` challenge marker. -/
+def preX1Transcript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
+    ++ absorbScalars ps.fixedEvals ++ [TranscriptElt.scalar ps.vanishingRandomEval]
+    ++ absorbScalars ps.permutationCommonEvals
+    ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
+    ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
+  let t := t ++ evalElts ++ [.challenge]
+  t
+
+/-- The transcript at the `x₂` squeeze: the `x₁` prefix extended by the `x₂` marker alone — nothing is
+absorbed between the two compression squeezes. -/
+def preX2Transcript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  let evalElts := absorbScalars2 ps.instanceEvals ++ absorbScalars2 ps.adviceEvals
+    ++ absorbScalars ps.fixedEvals ++ [TranscriptElt.scalar ps.vanishingRandomEval]
+    ++ absorbScalars ps.permutationCommonEvals
+    ++ (List.ofFn (fun p => (List.ofFn (fun s => absorbPermSet (ps.permutationSetEvals p s))).flatten)).flatten
+    ++ (List.ofFn (fun p => (List.ofFn (fun l => absorbLookup (ps.lookupEvals p l))).flatten)).flatten
+  let t := t ++ evalElts ++ [.challenge]
+  let t := t ++ [.challenge]
+  t
+
+/-- The deployed `x₁` *is* the squeeze of the named `x₁` prefix. -/
+theorem deriveChallenges_x1_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    (deriveChallenges fs init ps).x1 = fs.squeeze (preX1Transcript init ps) := rfl
+
+/-- The deployed `x₂` *is* the squeeze of the named `x₂` prefix — completing the compression pair;
+consumed at doc level by the `x₂`-stays-honest argument (`preX2Transcript_length_eq`), no in-tree
+proof consumer yet. -/
+theorem deriveChallenges_x2_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    (deriveChallenges fs init ps).x2 = fs.squeeze (preX2Transcript init ps) := rfl
+
+/-- Commit-before-challenge at `x₁`: every claimed advice evaluation is inside the `x₁` squeeze input,
+fixed before the compression challenge — so it is shared across `x₁` rewinds. -/
+theorem adviceEvals_mem_preX1Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (p : Fin shape.numProofs) (i : Fin shape.numAdviceQueries) :
+    TranscriptElt.scalar (ps.adviceEvals p i) ∈ preX1Transcript init ps := by
+  have hmem : TranscriptElt.scalar (ps.adviceEvals p i)
+      ∈ absorbScalars2 (F := F) (G := G) ps.adviceEvals := by
+    simp only [absorbScalars2, absorbScalars, List.mem_flatten, List.mem_ofFn]
+    exact ⟨_, ⟨p, rfl⟩, List.mem_ofFn.mpr ⟨i, rfl⟩⟩
+  simp only [preX1Transcript]
+  exact List.mem_append_left _ (List.mem_append_right _
+    (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hmem)))))))
+
+/-- Commit-before-challenge at `x₁`: every claimed instance evaluation is inside the `x₁` squeeze
+input. -/
+theorem instanceEvals_mem_preX1Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (p : Fin shape.numProofs) (i : Fin shape.numInstanceQueries) :
+    TranscriptElt.scalar (ps.instanceEvals p i) ∈ preX1Transcript init ps := by
+  have hmem : TranscriptElt.scalar (ps.instanceEvals p i)
+      ∈ absorbScalars2 (F := F) (G := G) ps.instanceEvals := by
+    simp only [absorbScalars2, absorbScalars, List.mem_flatten, List.mem_ofFn]
+    exact ⟨_, ⟨p, rfl⟩, List.mem_ofFn.mpr ⟨i, rfl⟩⟩
+  simp only [preX1Transcript]
+  exact List.mem_append_left _ (List.mem_append_right _
+    (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hmem)))))))
+
+/-- Commit-before-challenge at `x₁`: every claimed fixed evaluation is inside the `x₁` squeeze
+input. -/
+theorem fixedEvals_mem_preX1Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (i : Fin shape.numFixedQueries) :
+    TranscriptElt.scalar (ps.fixedEvals i) ∈ preX1Transcript init ps := by
+  have hmem : TranscriptElt.scalar (ps.fixedEvals i)
+      ∈ absorbScalars (F := F) (G := G) ps.fixedEvals := by
+    simp only [absorbScalars, List.mem_ofFn]
+    exact ⟨i, rfl⟩
+  simp only [preX1Transcript]
+  exact List.mem_append_left _ (List.mem_append_right _
+    (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_append_left _ (List.mem_append_right _ hmem))))))
+
+/-- The `x₂` prefix is the `x₁` prefix plus its marker: nothing is absorbed between the compression
+squeezes, so an `x₁` reprogram leaves the `x₂` input at a different length (and every later squeeze
+longer still). -/
+theorem preX2Transcript_length_eq {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) :
+    (preX2Transcript init ps).length = (preX1Transcript init ps).length + 1 := by
+  simp only [preX2Transcript, preX1Transcript, List.length_append, List.length_cons,
+    List.length_nil]
+
+/-- The `x₃` prefix is the `x₂` prefix extended by the `q′` commitment and the `x₃` marker — the
+rewound prover's fresh `q′` is exactly what re-randomizes `x₃` across `x₁` rewinds. -/
+theorem preX3Transcript_length_eq {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) :
+    (preX3Transcript init ps).length = (preX2Transcript init ps).length + 2 := by
+  simp only [preX3Transcript, preX2Transcript, List.length_append, List.length_cons,
+    List.length_nil]
+
 end Zcash.Snark
