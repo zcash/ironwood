@@ -12,8 +12,10 @@ decode layer: if rewinding supplies openings of the same batched commitment at e
 challenges, `batch_open_soundV` recovers the individual columns and proves that they open the claimed
 commitments and evaluations.
 
-This closes the witness-to-real-columns half of the constraint-side bridge. The separate fact that the
-deployed quotient check supplies `hquot` for those decoded columns remains outside this module.
+This closes the witness-to-real-columns half of the constraint-side bridge once the multiopen rewinding has
+produced the relevant batch openings. The separate facts that the deployed quotient check supplies `hquot`
+for those decoded columns, and that the `x₁`/`x₄` transcript rewinds produce the batch family, remain outside
+this module.
 
 ## Scope of the model
 
@@ -71,6 +73,22 @@ structure BatchOpeningsForWitness (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {nu
   value :
     ∀ r, commitGen b (batched r)
       = ∑ j : Fin numColumns, batchChallenge r ^ (j : ℕ) • columnEvals j
+
+/-- The exact multiopen-rewinding output the decoded-column capstone consumes, indexed by the accepting
+clean IPA transcript `t` it is rewound from.
+
+The index records the intended provenance but is not itself binding — no field constrains `witness` by
+`t`. The tie is enforced where the structure is consumed: the decoded capstones extract the transcript's
+own witness from `t`'s acceptance and either identify it with `witness` or return the
+`HasNontrivialRelation` branch (two distinct openings of the pinned `(P, b, v)` collide on `commit`,
+`hasNontrivialRelation_of_two_openings`). It is not a free function from arbitrary mathematical openings
+to columns. -/
+structure MultiopenRewindBatch (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
+    {numColumns : ℕ} (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (t : IpaTreeV Fp G urs.k) where
+  witness : Fin (2 ^ urs.k) → Fp
+  opens : IpaRelation urs P b v witness
+  batchOpenings : BatchOpeningsForWitness urs b columnCommitments columnEvals witness
 
 /-- The recovered per-column polynomials and their opening facts. -/
 structure DecodedColumnFamily (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {numColumns : ℕ}

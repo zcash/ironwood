@@ -154,9 +154,10 @@ open Polynomial in
 decoded into real columns. This is the Vesta specialization of
 `orchard_verifier_deployed_decoded_constraint_reduction`: the opening is still a binding reduction, but
 the gate side no longer asks for arbitrary witness-indexed decode functions. Instead, `hbatch` supplies the
-rewound batched openings containing the extracted witness, `batch_open_soundV` recovers the column
-polynomials, and `hquot`/`hgood` are stated for the canonical decode of the supplied batch
-(`decodedCols`; see the `MultiopenDecode` scope section).
+multiopen-rewinding output for the clean accepted IPA transcript, `batch_open_soundV` recovers the column
+polynomials, and `hquot`/`hgood` are stated for the canonical decode of the supplied batch (`decodedCols`;
+see the `MultiopenDecode` scope section). The batch's witness is identified with the transcript's own
+extracted witness, a mismatch yielding the relation branch.
 
 This is the endpoint to use for the issue #18 witness-to-columns bridge. The older
 `orchard_verifier_vesta_constraint_reduction` remains as a legacy, compatibility-shaped capstone. -/
@@ -173,20 +174,26 @@ theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Ve
     (hz : z ≠ 0)
     (haccepts : DeployedAccepts urs hk vk ps ch)
     (hFS : FiatShamirTree urs hk vk ps ch b z blind)
-    (hbatch : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
-      BatchOpeningsForWitness urs b columnCommitments columnEvals a)
-    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
-        (multiopenValue vk ps ch) a),
+    (hbatch : ∀ t, IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+      (multiopenValue vk ps ch) t →
+      MultiopenRewindBatch urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch)
+        columnCommitments columnEvals t)
+    (hquot : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t),
       quotientCheck
-        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
-    (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
-        (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        (combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates)
+        hpoly deg x)
+    (hgood : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t),
+      combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
         ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+      (combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
         - hpoly * (X ^ deg - 1)).eval x ≠ 0)
     {S : Prop}
     (hencodes : ∀ a cols,
