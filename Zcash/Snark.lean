@@ -37,6 +37,7 @@ import Zcash.Snark.Soundness.Forking.Extractor
 import Zcash.Snark.Soundness.Forking.Ordering
 import Zcash.Snark.Soundness.Forking.Assembly
 import Zcash.Snark.Soundness.MultiopenDecode
+import Zcash.Snark.Soundness.MultiopenDecodeFixture
 import Zcash.Snark.Soundness.DeployedMultiopen
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
