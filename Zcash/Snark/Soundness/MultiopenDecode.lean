@@ -91,17 +91,102 @@ structure MultiopenRewindBatch (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp
   batchOpenings : BatchOpeningsForWitness urs b columnCommitments columnEvals witness
 
 /-- Terminal form of the multiopen-rewinding output, for capstones whose forking ladder exposes only the
-final opened multiopen relation (post unshift/unblind). This is a *conditional* interface: no `x₁`/`x₄`
-rewinding data is threaded through the forking path yet, so the terminal capstones assume this output
-rather than derive it — they bind the gate check to decoded columns *given* the batch family, no more.
-The `∀`-witness shape costs nothing beyond a transcript-tied one: all openings of the pinned `(P, b, v)`
-share the same commitment and value, so a batch family for one witness transfers to any other by swapping
-the `current` slot. -/
+final opened multiopen relation (post unshift/unblind). The `∀`-witness shape costs nothing beyond a
+transcript-tied one — all openings of the pinned `(P, b, v)` share the same commitment and value, so a
+batch family for one witness transfers to any other by swapping the `current` slot; that claim is
+machine-checked (`multiopenRewindForRelation_of_batch`). The whole output is derivable from a family of
+accepting rewound IPA transcripts at distinct batching challenges
+(`multiopenRewindForRelation_of_acceptedFamily`), so the assumption the terminal capstones carry reduces
+to the accept-probability→transcripts step — that rewinding the deployed batching-challenge squeeze
+yields such a family — plus the flat-batch scope recorded in the module doc. -/
 abbrev MultiopenRewindForRelation (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
     {numColumns : ℕ} (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp) :
     Type _ :=
   ∀ a, IpaRelation urs P b v a →
     BatchOpeningsForWitness urs b columnCommitments columnEvals a
+
+/-- The `∀`-witness transfer, machine-checked: a batch family for one witness of the pinned `(P, b, v)`
+yields the terminal `MultiopenRewindForRelation` form. Any other opening of the same statement is
+swapped into the `current` slot — the current-slot equations only mention the shared commitment `P` and
+value `v`, which every opening satisfies. -/
+noncomputable def multiopenRewindForRelation_of_batch {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp} {numColumns : ℕ}
+    {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    {w : Fin (2 ^ urs.k) → Fp} (hw : IpaRelation urs P b v w)
+    (hb : BatchOpeningsForWitness urs b columnCommitments columnEvals w) :
+    MultiopenRewindForRelation urs P b v columnCommitments columnEvals := fun a hrel => by
+  classical
+  obtain ⟨z, hzinj, batched, cur, hcur, hcomm, hval⟩ := hb
+  refine
+    { batchChallenge := z
+      challengesDistinct := hzinj
+      batched := Function.update batched cur a
+      current := cur
+      current_eq := Function.update_self cur a batched
+      commitment := ?_
+      value := ?_ }
+  · intro r
+    rcases eq_or_ne r cur with hr | hr
+    · rw [hr, Function.update_self, hrel.1, ← hw.1, ← hcur]
+      exact hcomm cur
+    · rw [Function.update_of_ne hr]
+      exact hcomm r
+  · intro r
+    rcases eq_or_ne r cur with hr | hr
+    · have hia : commitGen b a = innerProduct a b := by
+        simp [innerProduct, commitGen, smul_eq_mul]
+      have hiw : commitGen b w = innerProduct w b := by
+        simp [innerProduct, commitGen, smul_eq_mul]
+      rw [hr, Function.update_self, hia, hrel.2, ← hw.2, ← hiw, ← hcur]
+      exact hval cur
+    · rw [Function.update_of_ne hr]
+      exact hval r
+
+/-- A family of accepting clean IPA transcripts at pairwise-distinct batching challenges, each for the
+power-form batched statement over shared column commitments/evaluations — the shape rewinding a flat
+power batch at its batching challenge produces. `current_P`/`current_v` pin the designated run to the
+deployed statement `(P, v)`. -/
+structure AcceptedBatchFamily (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
+    {numColumns : ℕ} (columnCommitments : Fin numColumns → G)
+    (columnEvals : Fin numColumns → Fp) where
+  batchChallenge : Fin numColumns → Fp
+  challengesDistinct : Function.Injective batchChallenge
+  trees : Fin numColumns → IpaTreeV Fp G urs.k
+  accepts : ∀ r, IpaAcceptV urs.g b
+    (∑ j : Fin numColumns, batchChallenge r ^ (j : ℕ) • columnCommitments j)
+    (∑ j : Fin numColumns, batchChallenge r ^ (j : ℕ) • columnEvals j) (trees r)
+  current : Fin numColumns
+  current_P : (∑ j : Fin numColumns, batchChallenge current ^ (j : ℕ) • columnCommitments j) = P
+  current_v : (∑ j : Fin numColumns, batchChallenge current ^ (j : ℕ) • columnEvals j) = v
+
+/-- Extraction turns an accepted batch family into the terminal rewinding output: `ipa_soundV`
+extracts each run's batched witness, the designated run's witness opens the pinned `(P, b, v)`
+(`current_P`/`current_v`), and the `∀`-witness form follows by the current-slot swap
+(`multiopenRewindForRelation_of_batch`). This derives the terminal capstones' `hbatch` from accepting
+rewound transcripts; what remains assumed upstream is the accept-probability→transcripts step for the
+deployed batching challenge, plus the flat-batch scope in the module doc. -/
+noncomputable def multiopenRewindForRelation_of_acceptedFamily {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp} {numColumns : ℕ}
+    {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    (fam : AcceptedBatchFamily urs P b v columnCommitments columnEvals) :
+    MultiopenRewindForRelation urs P b v columnCommitments columnEvals := by
+  classical
+  choose batched hbC hbe using fun r =>
+    ipa_soundV urs.g b _ _ (fam.trees r) (fam.accepts r)
+  have hw : IpaRelation urs P b v (batched fam.current) := by
+    refine ⟨?_, ?_⟩
+    · rw [commit_eq_commitGen, hbC fam.current, fam.current_P]
+    · have hib : innerProduct (batched fam.current) b = commitGen b (batched fam.current) := by
+        simp [innerProduct, commitGen, smul_eq_mul]
+      rw [hib, hbe fam.current, fam.current_v]
+  exact multiopenRewindForRelation_of_batch hw
+    { batchChallenge := fam.batchChallenge
+      challengesDistinct := fam.challengesDistinct
+      batched := batched
+      current := fam.current
+      current_eq := rfl
+      commitment := fun r => by rw [commit_eq_commitGen]; exact hbC r
+      value := hbe }
 
 /-- The recovered per-column polynomials and their opening facts. -/
 structure DecodedColumnFamily (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {numColumns : ℕ}
