@@ -68,4 +68,45 @@ theorem extractable_of_prob [Fintype α] [DecidableEq α] [Zero α] [Nonempty α
     gcongr
   exact absurd h (not_lt.mpr hmono)
 
+/-- **The single-squeeze forking count.** If one accepting challenge is in hand and the accept event's
+uniform measure beats `n / |α|`, then `n + 1` pairwise-distinct accepting challenges exist, with the given
+one in slot `0`. The one-challenge analogue of `extractable_of_prob` (there the event is a whole round
+*vector* and beating `kerr` forces the `(3,…,3)` tree; here beating `n/|α|` forces `n` rewound accepting
+values beside the current one) — the counting core of the multiopen `x₄` rewinding
+(`Soundness.DeployedMultiopen`). -/
+theorem exists_injective_accepting_of_measure [Fintype α] [DecidableEq α] [Nonempty α] {n : ℕ}
+    {acc : α → Prop} [DecidablePred acc] {x₀ : α} (hx₀ : acc x₀)
+    (hprob : (n : ℝ≥0∞) / Fintype.card α
+      < (PMF.uniformOfFintype α).toOuterMeasure (Finset.univ.filter acc)) :
+    ∃ ξ : Fin (n + 1) → α, Function.Injective ξ ∧ ξ 0 = x₀ ∧ ∀ r, acc (ξ r) := by
+  have hcard : n < (Finset.univ.filter acc).card := by
+    by_contra hle
+    push_neg at hle
+    have hmono : (PMF.uniformOfFintype α).toOuterMeasure (Finset.univ.filter acc)
+        ≤ (n : ℝ≥0∞) / Fintype.card α := by
+      rw [uniformOfFintype_toOuterMeasure_finset]
+      exact ENNReal.div_le_div_right (by exact_mod_cast hle) _
+    exact absurd hprob (not_lt.mpr hmono)
+  have hx₀mem : x₀ ∈ Finset.univ.filter acc := Finset.mem_filter.mpr ⟨Finset.mem_univ _, hx₀⟩
+  have herase : n ≤ ((Finset.univ.filter acc).erase x₀).card := by
+    rw [Finset.card_erase_of_mem hx₀mem]
+    omega
+  obtain ⟨S, hS, hScard⟩ := Finset.exists_subset_card_eq herase
+  let f : Fin n → α := fun i => (S.equivFin.symm (Fin.cast hScard.symm i) : α)
+  have hfinj : Function.Injective f := fun i j hij => by
+    have h1 := S.equivFin.symm.injective (Subtype.val_injective hij)
+    exact Fin.val_injective (by simpa using congrArg Fin.val h1)
+  have hfS : ∀ i, f i ∈ S := fun i => (S.equivFin.symm (Fin.cast hScard.symm i)).2
+  refine ⟨Fin.cons x₀ f, ?_, rfl, ?_⟩
+  · refine (Fin.cons_injective_iff).mpr ⟨?_, hfinj⟩
+    rintro ⟨i, hfi⟩
+    exact Finset.ne_of_mem_erase (hS (hfS i)) hfi
+  · intro r
+    cases r using Fin.cases with
+    | zero => simpa using hx₀
+    | succ i =>
+        have hmem := hS (hfS i)
+        have := Finset.mem_of_mem_erase hmem
+        simpa using (Finset.mem_filter.mp this).2
+
 end Zcash.Snark
