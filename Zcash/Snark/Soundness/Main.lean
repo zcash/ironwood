@@ -352,21 +352,37 @@ theorem orchard_verifier_deployed_constraint_reduction [DecidableEq G] [Inhabite
     exact Or.inl (hencodes a ⟨hrel', hsat⟩)
   · exact Or.inr hrel
 
+/-- Two distinct openings of the same commitment exhibit a nontrivial `(g, U, W)` relation: their
+difference is a nonzero kernel vector of `commit`. Lets the decoded capstones identify a supplied batch
+witness with the transcript's own extracted witness, or fall into the relation branch. -/
+theorem hasNontrivialRelation_of_two_openings (urs : URS G) {a a' : Fin (2 ^ urs.k) → Fp}
+    (hne : a ≠ a') (hcollision : commit urs a = commit urs a') :
+    HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  refine ⟨a - a', 0, 0, Or.inl (sub_ne_zero.mpr hne), ?_⟩
+  have hsub : commitGen (F := Fp) urs.g (a - a') = commit urs a - commit urs a' := by
+    simp only [commit, commitGen, Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
+  rw [hsub, hcollision]
+  simp
+
 open Polynomial in
 /-- The deployed Orchard verifier opening and constraint, with the multiopen witness decoded into real
 columns before the gate check is applied.
 
 Compared with `orchard_verifier_deployed_constraint_reduction`, `hquot`/`hgood` are no longer quantified
-over every mathematical opening of the pinned IPA relation. Instead, after the deployed accept extracts the
-current IPA witness `a`, `hbatch` supplies the rewound batched openings containing that witness, and
-`decodedColumnFamily_of_batch_openings` recovers the individual columns by `batch_open_soundV`. The gate
-check is then stated over those recovered columns, selected into the advice/instance slots the gate
-expressions read.
+over every mathematical opening of the pinned IPA relation. Instead, after the deployed accept peels to a
+clean accepting IPA transcript, `hbatch` supplies the multiopen-rewinding output for that transcript: a
+current IPA witness plus enough rewound batched openings containing it. `decodedColumnFamily_of_batch_openings`
+then recovers the individual columns by `batch_open_soundV`. The gate check is stated over those recovered
+columns, selected into the advice/instance slots the gate expressions read.
 
-This discharges the witness-to-real-columns half of the constraint-side bridge. The remaining hypothesis
-shape is deliberately explicit: `hquot` is still the separate quotient-check-from-deployed-assembly fact —
-stated for the canonical decode of the supplied batch (`decodedCols`), the family this proof constructs
-(the ∀-families form is jointly unsatisfiable; see the `MultiopenDecode` scope section). -/
+This discharges the witness-to-real-columns half of the constraint-side bridge once the multiopen rewinding
+output is supplied. The remaining hypothesis shape is deliberately explicit: `hbatch` is the `x₁`/`x₄`
+rewinding output for the accepted transcript, and `hquot` is still the separate
+quotient-check-from-deployed-assembly fact — stated for the canonical decode of the supplied batch
+(`decodedCols`), the family this proof constructs (the ∀-families form is jointly unsatisfiable; see the
+`MultiopenDecode` scope section). The batch's `witness` is identified with the transcript's own extracted
+witness: on mismatch the two openings of the pinned `(P, b, v)` collide on `commit` and the theorem
+returns the relation branch, so `hencodes` only ever receives the extracted witness. -/
 theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -379,20 +395,26 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [
     (hz : z ≠ 0)
     (haccepts : DeployedAccepts urs hk vk ps ch)
     (hFS : FiatShamirTree urs hk vk ps ch b z blind)
-    (hbatch : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
-      BatchOpeningsForWitness urs b columnCommitments columnEvals a)
-    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
-        (multiopenValue vk ps ch) a),
+    (hbatch : ∀ t, IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+      (multiopenValue vk ps ch) t →
+      MultiopenRewindBatch urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch)
+        columnCommitments columnEvals t)
+    (hquot : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t),
       quotientCheck
-        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
-    (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch) b
-        (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        (combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates)
+        hpoly deg x)
+    (hgood : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t),
+      combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
         ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+      (combineGates fixedCols
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
         - hpoly * (X ^ deg - 1)).eval x ≠ 0)
     {S : Prop}
     (hencodes : ∀ a cols,
@@ -405,19 +427,29 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [
     blind t ht with hclean | hrel
   · obtain ⟨a, hrel'⟩ := ipaRelation_of_acceptV urs b (deployedCommitment urs hk vk ps ch)
       (multiopenValue vk ps ch) (projTree t) hclean
-    have hsat : circuitSatViaGates fixedCols
-        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) adviceIndex)
-        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) instanceIndex)
-        y gates hpoly deg a :=
-      circuitSatViaGates_of_check fixedCols
-        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) adviceIndex)
-        (selectedPolysDecode (k := urs.k) (decodedCols (hbatch a hrel')) instanceIndex)
-        y gates hpoly deg a x (hquot a hrel') (hgood a hrel')
-    exact Or.inl (hencodes a (decodedCols (hbatch a hrel'))
-      { opens := hrel'
-        batchOpenings := hbatch a hrel'
-        decodedColumns := decodedCols_spec (hbatch a hrel')
-        satisfiesCircuit := hsat })
+    by_cases hw : (hbatch (projTree t) hclean).witness = a
+    · subst hw
+      have hsat : circuitSatViaGates fixedCols
+          (selectedPolysDecode (k := urs.k)
+            (decodedCols (hbatch (projTree t) hclean).batchOpenings) adviceIndex)
+          (selectedPolysDecode (k := urs.k)
+            (decodedCols (hbatch (projTree t) hclean).batchOpenings) instanceIndex)
+          y gates hpoly deg (hbatch (projTree t) hclean).witness :=
+        circuitSatViaGates_of_check fixedCols
+          (selectedPolysDecode (k := urs.k)
+            (decodedCols (hbatch (projTree t) hclean).batchOpenings) adviceIndex)
+          (selectedPolysDecode (k := urs.k)
+            (decodedCols (hbatch (projTree t) hclean).batchOpenings) instanceIndex)
+          y gates hpoly deg (hbatch (projTree t) hclean).witness x
+          (hquot (projTree t) hclean) (hgood (projTree t) hclean)
+      exact Or.inl (hencodes (hbatch (projTree t) hclean).witness
+        (decodedCols (hbatch (projTree t) hclean).batchOpenings)
+        { opens := hrel'
+          batchOpenings := (hbatch (projTree t) hclean).batchOpenings
+          decodedColumns := decodedCols_spec (hbatch (projTree t) hclean).batchOpenings
+          satisfiesCircuit := hsat })
+    · exact Or.inr (hasNontrivialRelation_of_two_openings urs hw
+        ((hbatch (projTree t) hclean).opens.1.trans hrel'.1.symm))
   · exact Or.inr hrel
 
 end Zcash.Snark
