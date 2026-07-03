@@ -81,41 +81,117 @@ structure DecodedColumnFamily (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {numCol
   value : ∀ i, commitGen b (coeffs i) = columnEvals i
   polynomial : ∀ i, cols i = coeffsToPoly (coeffs i)
 
+/-- The same decoded columns, tied back to the full family of rewound batched witnesses. -/
+structure DecodedColumnFamilyOfBatch {urs : URS G} {b : Fin (2 ^ urs.k) → Fp} {numColumns : ℕ}
+    {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    {currentWitness : Fin (2 ^ urs.k) → Fp}
+    (hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals currentWitness)
+    (cols : Fin numColumns → Polynomial Fp) where
+  decodedColumns : DecodedColumnFamily urs b columnCommitments columnEvals cols
+  reconstruct :
+    ∀ r, hbatch.batched r
+      = ∑ i : Fin numColumns, hbatch.batchChallenge r ^ (i : ℕ) • decodedColumns.coeffs i
+
+/-- The current extracted witness is the current batch-challenge combination of the decoded columns. -/
+theorem DecodedColumnFamilyOfBatch.currentWitness_eq {urs : URS G} {b : Fin (2 ^ urs.k) → Fp}
+    {numColumns : ℕ} {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    {currentWitness : Fin (2 ^ urs.k) → Fp}
+    {hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals currentWitness}
+    {cols : Fin numColumns → Polynomial Fp} (hdecoded : DecodedColumnFamilyOfBatch hbatch cols) :
+    currentWitness
+      = ∑ i : Fin numColumns, hbatch.batchChallenge hbatch.current ^ (i : ℕ)
+          • hdecoded.decodedColumns.coeffs i := by
+  calc
+    currentWitness = hbatch.batched hbatch.current := hbatch.current_eq.symm
+    _ = ∑ i : Fin numColumns, hbatch.batchChallenge hbatch.current ^ (i : ℕ)
+          • hdecoded.decodedColumns.coeffs i := hdecoded.reconstruct hbatch.current
+
+/-- Right inverse of the Vandermonde inverse: the row functional reconstructing a sample. -/
+theorem vandermonde_inv_right {n : ℕ} (z : Fin n → Fp) (hz : Function.Injective z) :
+    ∀ (i j : Fin n), (∑ k : Fin n, z i ^ (k : ℕ) * (Matrix.vandermonde z)⁻¹ k j)
+      = if i = j then 1 else 0 := by
+  have hdet : (Matrix.vandermonde z).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr hz
+  intro i j
+  have hmul : Matrix.vandermonde z * (Matrix.vandermonde z)⁻¹ = 1 :=
+    Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hdet)
+  have h2 := congrFun (congrFun hmul i) j
+  rw [Matrix.mul_apply] at h2
+  simpa only [Matrix.vandermonde_apply, Matrix.one_apply] using h2
+
+/-- Left inverse of the Vandermonde inverse, specialized to the explicit inverse coefficients. -/
+theorem vandermonde_inv_left {n : ℕ} (z : Fin n → Fp) (hz : Function.Injective z) :
+    ∀ (i j : Fin n), (∑ k : Fin n, (Matrix.vandermonde z)⁻¹ i k * z k ^ (j : ℕ))
+      = if i = j then 1 else 0 := by
+  have hdet : (Matrix.vandermonde z).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr hz
+  intro i j
+  have hmul : (Matrix.vandermonde z)⁻¹ * Matrix.vandermonde z = 1 :=
+    Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr hdet)
+  have h2 := congrFun (congrFun hmul i) j
+  rw [Matrix.mul_apply] at h2
+  simpa only [Matrix.vandermonde_apply, Matrix.one_apply] using h2
+
+/-- The explicit Vandermonde-decoded columns reconstruct each rewound batched witness. -/
+theorem batch_open_reconstruct_with_coeffs {m n : ℕ} (z : Fin n → Fp)
+    (a : Fin n → (Fin m → Fp)) (μ : Fin n → Fin n → Fp)
+    (hμ : ∀ (i j : Fin n), (∑ k : Fin n, z i ^ (k : ℕ) * μ k j)
+      = if i = j then 1 else 0)
+    (i : Fin n) :
+    (∑ j : Fin n, z i ^ (j : ℕ) • (∑ k : Fin n, μ j k • a k)) = a i := by
+  simp only [Finset.smul_sum, smul_smul]
+  rw [Finset.sum_comm]
+  simp only [← Finset.sum_smul, hμ, ite_smul, one_smul, zero_smul, Finset.sum_ite_eq,
+    Finset.mem_univ, if_true]
+
 /-- Recover the individual column polynomials from rewound batched openings. -/
 noncomputable def decodedColumnFamily_of_batch_openings {urs : URS G} {b : Fin (2 ^ urs.k) → Fp}
     {numColumns : ℕ} {columnCommitments : Fin numColumns → G}
     {columnEvals : Fin numColumns → Fp} {currentWitness : Fin (2 ^ urs.k) → Fp}
     (hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals currentWitness) :
     Σ cols : Fin numColumns → Polynomial Fp,
-      DecodedColumnFamily urs b columnCommitments columnEvals cols := by
-  classical
+      DecodedColumnFamilyOfBatch hbatch cols := by
   have haC :
       ∀ r, commitGen urs.g (hbatch.batched r)
         = ∑ j : Fin numColumns, hbatch.batchChallenge r ^ (j : ℕ) • columnCommitments j := by
     intro r
     rw [← commit_eq_commitGen urs (hbatch.batched r)]
     exact hbatch.commitment r
-  let hdecoded :=
-    batch_open_soundV urs.g b columnCommitments columnEvals hbatch.batchChallenge
-      hbatch.challengesDistinct hbatch.batched haC hbatch.value
-  let cols := Classical.choose hdecoded
-  have hcols : ∀ i, commitGen urs.g (cols i) = columnCommitments i ∧ commitGen b (cols i) = columnEvals i :=
-    Classical.choose_spec hdecoded
+  let μ : Matrix (Fin numColumns) (Fin numColumns) Fp :=
+    (Matrix.vandermonde hbatch.batchChallenge)⁻¹
+  let coeffs : Fin numColumns → (Fin (2 ^ urs.k) → Fp) :=
+    fun i => ∑ r, μ i r • hbatch.batched r
+  have hleft :
+      ∀ (i j : Fin numColumns), (∑ k : Fin numColumns,
+          μ i k * hbatch.batchChallenge k ^ (j : ℕ))
+        = if i = j then 1 else 0 := by
+    intro i j
+    simpa [μ] using vandermonde_inv_left hbatch.batchChallenge hbatch.challengesDistinct i j
+  have hright :
+      ∀ (i j : Fin numColumns), (∑ k : Fin numColumns,
+          hbatch.batchChallenge i ^ (k : ℕ) * μ k j)
+        = if i = j then 1 else 0 := by
+    intro i j
+    simpa [μ] using vandermonde_inv_right hbatch.batchChallenge hbatch.challengesDistinct i j
   exact
-    ⟨fun i => coeffsToPoly (cols i),
-      { coeffs := cols
-        commitment := by
-          intro i
-          rw [commit_eq_commitGen]
-          exact (hcols i).1
-        value := by
-          intro i
-          exact (hcols i).2
-        polynomial := by
-          intro i
-          rfl }⟩
+    ⟨fun i => coeffsToPoly (coeffs i),
+      { decodedColumns :=
+          { coeffs := coeffs
+            commitment := by
+              intro i
+              rw [commit_eq_commitGen]
+              exact batch_open_with_coeffs urs.g columnCommitments hbatch.batchChallenge
+                hbatch.batched μ hleft haC i
+            value := by
+              intro i
+              exact batch_open_with_coeffs b columnEvals hbatch.batchChallenge hbatch.batched μ
+                hleft hbatch.value i
+            polynomial := by
+              intro i
+              rfl }
+        reconstruct := by
+          intro r
+          exact (batch_open_reconstruct_with_coeffs hbatch.batchChallenge hbatch.batched μ hright r).symm }⟩
 
-/-- The canonical decoded columns of a batch family: the decode of
+/-- The canonical decoded columns of a batch family: the explicit Vandermonde decode of
 `decodedColumnFamily_of_batch_openings`, projected out. The decoded capstones state their
 `hquot`/`hgood` hypotheses about *this* family — the one their proofs construct — see the module doc's
 scope section for why quantifying over every decoded family instead is unsatisfiable. -/
@@ -126,13 +202,13 @@ noncomputable def decodedCols {urs : URS G} {b : Fin (2 ^ urs.k) → Fp} {numCol
     Fin numColumns → Polynomial Fp :=
   (decodedColumnFamily_of_batch_openings hbatch).1
 
-/-- The canonical decode is a decoded-column family: it opens the claimed commitments and
-evaluations. -/
+/-- The canonical decode is a decoded-column family for its batch: it opens the claimed
+commitments/evaluations and reconstructs every rewound batched witness (hence the current one). -/
 noncomputable def decodedCols_spec {urs : URS G} {b : Fin (2 ^ urs.k) → Fp} {numColumns : ℕ}
     {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
     {currentWitness : Fin (2 ^ urs.k) → Fp}
     (hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals currentWitness) :
-    DecodedColumnFamily urs b columnCommitments columnEvals (decodedCols hbatch) :=
+    DecodedColumnFamilyOfBatch hbatch (decodedCols hbatch) :=
   (decodedColumnFamily_of_batch_openings hbatch).2
 
 namespace DecodedColumnFamily
@@ -170,7 +246,7 @@ structure SnarkRelationWithDecodedColumns (urs : URS G) (P : G) (b : Fin (2 ^ ur
     (a : Fin (2 ^ urs.k) → Fp) (cols : Fin numColumns → Polynomial Fp) where
   opens : IpaRelation urs P b v a
   batchOpenings : BatchOpeningsForWitness urs b columnCommitments columnEvals a
-  decodedColumns : DecodedColumnFamily urs b columnCommitments columnEvals cols
+  decodedColumns : DecodedColumnFamilyOfBatch batchOpenings cols
   satisfiesCircuit :
     circuitSatViaGates fixedCols (selectedPolysDecode (k := urs.k) cols adviceIndex)
       (selectedPolysDecode (k := urs.k) cols instanceIndex) y gates hpoly deg a

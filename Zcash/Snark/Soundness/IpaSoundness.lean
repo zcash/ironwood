@@ -237,13 +237,7 @@ polynomial from its `n` samples. (The `n = 3` special case is `vandermonde3`.) F
 Vandermonde matrix (`det = ∏_{i<j}(z j − z i) ≠ 0` for distinct points). -/
 theorem vandermonde_inv {n : ℕ} (z : Fin n → F) (hz : Function.Injective z) :
     ∃ μ : Fin n → Fin n → F, ∀ (i j : Fin n), (∑ k, μ i k * z k ^ (j : ℕ)) = if i = j then 1 else 0 := by
-  have hdet : (Matrix.vandermonde z).det ≠ 0 := by
-    rw [Matrix.det_vandermonde, Finset.prod_ne_zero_iff]
-    intro i _
-    rw [Finset.prod_ne_zero_iff]
-    intro j hj
-    rw [Finset.mem_Ioi] at hj
-    exact sub_ne_zero.mpr (fun h => absurd (hz h) (ne_of_lt hj).symm)
+  have hdet : (Matrix.vandermonde z).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr hz
   refine ⟨fun i k => (Matrix.vandermonde z)⁻¹ i k, fun i j => ?_⟩
   have hmul : (Matrix.vandermonde z)⁻¹ * Matrix.vandermonde z = 1 :=
     Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr hdet)
