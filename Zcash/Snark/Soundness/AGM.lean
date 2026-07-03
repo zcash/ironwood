@@ -437,8 +437,10 @@ theorem augmentedRelationWitness_iff_hasNontrivialRelation {n : ℕ} (g : Fin n 
 relation predicate by choice. In a prime-order group a witness always exists propositionally, so this
 step carries no computational content. The genuine algebraic-prover discharge — obtaining the witness
 from prover-output representations, with no choice — is `Soundness.AlgebraicPeel`
-(`deployedToAcceptVWitness` / `algebraicRelationOfDeployedAccept`); this def remains only for the
-capstone paths not yet re-threaded through that data-carrying peel (issue #15). -/
+(`deployedToAcceptVWitness` / `algebraicRelationOfDeployedAccept`); this def remains the bridge for the
+forking capstones, whose relation branch is existential by the nature of rewinding-based extraction
+(the transcript is produced existentially from accept-probability), so no data witness is available
+there (issue #15). -/
 noncomputable def relationWitnessOfHasNontrivialRelation {n : ℕ} (g : Fin n → G) (U W : G)
     (hrel : HasNontrivialRelation (F := F) g U W) :
     AugmentedRelationWitness (F := F) g U W :=
