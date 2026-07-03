@@ -90,6 +90,19 @@ structure MultiopenRewindBatch (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp
   opens : IpaRelation urs P b v witness
   batchOpenings : BatchOpeningsForWitness urs b columnCommitments columnEvals witness
 
+/-- Terminal form of the multiopen-rewinding output, for capstones whose forking ladder exposes only the
+final opened multiopen relation (post unshift/unblind). This is a *conditional* interface: no `x₁`/`x₄`
+rewinding data is threaded through the forking path yet, so the terminal capstones assume this output
+rather than derive it — they bind the gate check to decoded columns *given* the batch family, no more.
+The `∀`-witness shape costs nothing beyond a transcript-tied one: all openings of the pinned `(P, b, v)`
+share the same commitment and value, so a batch family for one witness transfers to any other by swapping
+the `current` slot. -/
+abbrev MultiopenRewindForRelation (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
+    {numColumns : ℕ} (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp) :
+    Type _ :=
+  ∀ a, IpaRelation urs P b v a →
+    BatchOpeningsForWitness urs b columnCommitments columnEvals a
+
 /-- The recovered per-column polynomials and their opening facts. -/
 structure DecodedColumnFamily (urs : URS G) (b : Fin (2 ^ urs.k) → Fp) {numColumns : ℕ}
     (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)

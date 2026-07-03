@@ -481,6 +481,85 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [
   · exact Or.inr hrel
 
 open Polynomial in
+/-- Turn a final multiopen relation plus same-witness batch rewinds into the decoded-column SNARK
+relation. This is the terminal constraint-side bridge used by the probability/AGM capstones: the circuit is
+checked on columns recovered from the verifier-opened multiopen relation, not through an arbitrary
+`decodeAdvice`/`decodeInstance` function. `hquot`/`hgood` are stated for the canonical decode
+`decodedCols hbatch` — the family this proof constructs — and are dischargeable only with `x` the opened
+point (see the `MultiopenDecode` scope section). -/
+theorem decoded_constraint_of_relation_and_batch {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    {a : Fin (2 ^ urs.k) → Fp}
+    (hrel : IpaRelation urs P b v a)
+    (hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals a)
+    (hquot : quotientCheck
+      (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+        (selectedPolys (decodedCols hbatch) instanceIndex) y gates) hpoly deg x)
+    (hgood : combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+        (selectedPolys (decodedCols hbatch) instanceIndex) y gates ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+        (selectedPolys (decodedCols hbatch) instanceIndex) y gates
+          - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
+        fixedCols y gates hpoly deg a cols → S) :
+    S := by
+  have hsat : circuitSatViaGates fixedCols
+      (selectedPolysDecode (k := urs.k) (decodedCols hbatch) adviceIndex)
+      (selectedPolysDecode (k := urs.k) (decodedCols hbatch) instanceIndex) y gates hpoly deg a :=
+    circuitSatViaGates_of_check fixedCols
+      (selectedPolysDecode (k := urs.k) (decodedCols hbatch) adviceIndex)
+      (selectedPolysDecode (k := urs.k) (decodedCols hbatch) instanceIndex) y gates hpoly deg a x
+      hquot hgood
+  exact hencodes a (decodedCols hbatch)
+    { opens := hrel
+      batchOpenings := hbatch
+      decodedColumns := decodedCols_spec hbatch
+      satisfiesCircuit := hsat }
+
+open Polynomial in
+/-- Lift an opening-or-DLR terminal capstone to the decoded-column constraint endpoint, provided the
+multiopen batch rewinding output is available for the final relation witness. Conditional interface: the
+batch family is assumed via `MultiopenRewindForRelation` (see its docstring), and `hquot`/`hgood` are
+stated for the canonical decode of the batch supplied at each relation witness. -/
+theorem decoded_constraint_of_opening_or_relation {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hopening : (∃ a, IpaRelation urs P b v a) ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w)
+    (hbatch : MultiopenRewindForRelation urs P b v columnCommitments columnEvals)
+    (hquot : ∀ a (hrel : IpaRelation urs P b v a),
+      quotientCheck
+        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
+    (hgood : ∀ a (hrel : IpaRelation urs P b v a),
+      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
+        fixedCols y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases hopening with ⟨a, hrel⟩ | hrel
+  · exact Or.inl (decoded_constraint_of_relation_and_batch columnCommitments columnEvals adviceIndex
+      instanceIndex fixedCols y gates hpoly deg x hrel (hbatch a hrel) (hquot a hrel) (hgood a hrel)
+      hencodes)
+  · exact Or.inr hrel
+
+open Polynomial in
 /-- The decoded-column deployed capstone consuming one multiopen-forking output. This is the tighter
 closure surface for the witness-to-columns bridge: the caller supplies the deployed IPA tree, halo2's
 accept for it, and the batch openings for that same tree as one object — obtained from the forking
