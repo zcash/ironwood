@@ -2,6 +2,7 @@ import Mathlib
 import Zcash.Snark.Soundness.AGM.Adapter
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
+import Zcash.Snark.Soundness.DeployedMultiopen
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
 
@@ -604,6 +605,83 @@ theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Ves
     (P := deployedCommitment urs hk vk ps ch) (b := evalVector urs.k ch.x3)
     (v := multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
     y gates hpoly deg x hopen hbatch hquot hgood hencodes
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- **Deployed decoded constraint capstone with the batch produced by `x₄` rewinding.**
+`orchard_verifier_vesta_forking_constraint_deployed` with the multiopen-rewinding output no longer
+assumed: the batch columns are pinned to the deployed `x₄` aggregates
+(`x4BatchCommitments`/`x4BatchEvals` — the fingerprinted `constructIntermediateSets` grouping's own
+compressed point-set commitments and claimed set evaluations, plus the `q′`/`msm_eval` top slot), and
+`hbatch` is *derived* from the honest run's accepting clean transcript (`hcur`) plus the `x₄` rewinding
+measure (`hprob4`) via the multiopen forking floor (`deployedMultiopenRewind_of_x4Prob`,
+`Soundness.DeployedMultiopen`). The two probability hypotheses stack the two rewinding floors honestly:
+`hprob` forks the IPA rounds for the opening, `hprob4` forks the `x₄` squeeze for the batch — the
+`{ch with x4 := ξ}` runs are the `reprogramX4` oracle-reprogramming events (`Soundness.Forking`), and
+each run's accepting transcript is that run's own round-forking output. `hquot`/`hgood` are stated for
+the canonical decode of the derived batch, as everywhere on the decoded ladder. The constant rung's
+static-dichotomy caveat on `hprob` applies unchanged
+(`orchard_verifier_vesta_forking_opening_deployed`). -/
+theorem orchard_verifier_vesta_forking_constraint_deployed_x4 [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    {numAdvice numInstance : ℕ}
+    (adviceIndex : Fin numAdvice → Fin (deployedX4PairCount vk ps ch + 1))
+    (instanceIndex : Fin numInstance → Fin (deployedX4PairCount vk ps ch + 1))
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hcur : ∃ t : IpaTreeV Fp VestaG urs.k,
+      IpaAcceptV urs.g (evalVector urs.k ch.x3) (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t)
+    (hprob4 : ((deployedX4PairCount vk ps ch : ℝ≥0∞)) / Fintype.card Fp
+      < (PMF.uniformOfFintype Fp).toOuterMeasure (Finset.univ.filter (fun ξv =>
+          ∃ t : IpaTreeV Fp VestaG urs.k,
+            IpaAcceptV urs.g (evalVector urs.k ch.x3)
+              (deployedCommitment urs hk vk ps {ch with x4 := ξv})
+              (multiopenValue vk ps {ch with x4 := ξv}) t)))
+    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
+      quotientCheck
+        (combineGates fixedCols
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
+          y gates) hpoly deg x)
+    (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
+      combineGates fixedCols
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
+          y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
+          y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) (x4BatchCommitments urs hk vk ps ch)
+        (x4BatchEvals vk ps ch) adviceIndex instanceIndex fixedCols y gates hpoly deg a cols → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+  orchard_verifier_vesta_forking_constraint_deployed urs hk vk ps ch s
+    (x4BatchCommitments urs hk vk ps ch) (x4BatchEvals vk ps ch) adviceIndex instanceIndex
+    fixedCols y gates hpoly deg x hz hg0 hs hξ
+    (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4) hquot hgood hencodes hprob
 
 open scoped ENNReal in
 open Classical in
