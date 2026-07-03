@@ -247,6 +247,34 @@ theorem fiatShamirTree_of_forking [DecidableEq G] [Inhabited G] {shape : Shape} 
   obtain ⟨t, hFork⟩ := hForking hEq
   exact ⟨t, forkAccept_to_acceptV _ _ _ _ _ t hFork⟩
 
+/-- One multiopen-forking output: the deployed IPA transcript tree, halo2's accept for it, and the
+`x₁`/`x₄` batch-rewinding data for that same tree. -/
+structure MultiopenForkingOutput [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp)
+    {numColumns : ℕ} (columnCommitments : Fin numColumns → G)
+    (columnEvals : Fin numColumns → Fp) where
+  tree : DeployedIpaTreeV Fp G urs.k
+  rewind : MultiopenRewindBatch urs (deployedCommitment urs hk vk ps ch) b
+    (multiopenValue vk ps ch) columnCommitments columnEvals (projTree tree)
+  accepts : DeployedIpaAcceptV urs.g b urs.u urs.w z
+    (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind tree
+
+/-- The issue-18 residual as one explicit forking output, *data-producing*: from the deployed verifier
+equation it returns the deployed IPA tree together with the multiopen batch-rewinding data for that same
+tree. Compared with `FiatShamirTree`, this also carries the `x₁`/`x₄` multiopen rewinds needed to bind the
+extracted witness to real decoded columns. It returns data (a structure, not an `∃`) so the decoded
+capstone's `hquot`/`hgood` can be stated about the canonical decode of the returned batch — an existential
+output would force quantifying them over every batch, which is unsatisfiable (see the `MultiopenDecode`
+scope section). -/
+def FiatShamirMultiopenForking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+    (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
+    (ch : Challenges shape.k Fp) (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp)
+    {numColumns : ℕ} (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp) :
+    Type _ :=
+  DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps ch →
+    MultiopenForkingOutput urs hk vk ps ch b z blind columnCommitments columnEvals
+
 /-- The deployed Orchard verifier opening, as a binding **reduction**, with `P`/`v` **pinned** to the proof
 (`deployedCommitment`/`multiopenValue` from `(vk, ps, ch)`, not free parameters). From the deployed accept,
 `deployedAccepts_verifierEq` *proves* the explicit `DeployedIpaVerifierEq` form; the forking
@@ -450,6 +478,68 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [
           satisfiesCircuit := hsat })
     · exact Or.inr (hasNontrivialRelation_of_two_openings urs hw
         ((hbatch (projTree t) hclean).opens.1.trans hrel'.1.symm))
+  · exact Or.inr hrel
+
+open Polynomial in
+/-- The decoded-column deployed capstone consuming one multiopen-forking output. This is the tighter
+closure surface for the witness-to-columns bridge: the caller supplies the deployed IPA tree, halo2's
+accept for it, and the batch openings for that same tree as one object — obtained from the forking
+bridge as `hForkBatch (deployedAccepts_verifierEq …)` with
+`hForkBatch : FiatShamirMultiopenForking …` — instead of a separate witness-indexed decode function.
+The output's batch `witness` is identified with the transcript's own extracted witness (a mismatch
+collides on `commit` and yields the relation branch), and `hquot`/`hgood` are stated for the canonical
+decode of the output's batch. -/
+theorem orchard_verifier_deployed_decoded_constraint_reduction_of_multiopen_forking
+    [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
+    {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : z ≠ 0)
+    (out : MultiopenForkingOutput urs hk vk ps ch b z blind columnCommitments columnEvals)
+    (hquot : quotientCheck
+      (combineGates fixedCols
+        (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+        (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates)
+      hpoly deg x)
+    (hgood : combineGates fixedCols
+          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols
+          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
+        y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases deployed_to_acceptV hz urs.g b (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch)
+    blind out.tree out.accepts with hclean | hrel
+  · obtain ⟨a, hrel'⟩ := ipaRelation_of_acceptV urs b (deployedCommitment urs hk vk ps ch)
+      (multiopenValue vk ps ch) (projTree out.tree) hclean
+    by_cases hw : out.rewind.witness = a
+    · subst hw
+      have hsat : circuitSatViaGates fixedCols
+          (selectedPolysDecode (k := urs.k) (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolysDecode (k := urs.k) (decodedCols out.rewind.batchOpenings) instanceIndex)
+          y gates hpoly deg out.rewind.witness :=
+        circuitSatViaGates_of_check fixedCols
+          (selectedPolysDecode (k := urs.k) (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolysDecode (k := urs.k) (decodedCols out.rewind.batchOpenings) instanceIndex)
+          y gates hpoly deg out.rewind.witness x hquot hgood
+      exact Or.inl (hencodes out.rewind.witness (decodedCols out.rewind.batchOpenings)
+        { opens := hrel'
+          batchOpenings := out.rewind.batchOpenings
+          decodedColumns := decodedCols_spec out.rewind.batchOpenings
+          satisfiesCircuit := hsat })
+    · exact Or.inr (hasNontrivialRelation_of_two_openings urs hw
+        (out.rewind.opens.1.trans hrel'.1.symm))
   · exact Or.inr hrel
 
 end Zcash.Snark
