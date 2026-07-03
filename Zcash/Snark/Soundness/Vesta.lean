@@ -160,7 +160,10 @@ polynomials, and `hquot`/`hgood` are stated for the canonical decode of the supp
 see the `MultiopenDecode` scope section). The batch's witness is identified with the transcript's own
 extracted witness, a mismatch yielding the relation branch.
 
-This is the endpoint to use for the issue #18 witness-to-columns bridge. The older
+This was the first issue-#18 witness-to-columns endpoint; the tighter rungs are
+`orchard_verifier_vesta_forking_constraint_deployed_x4` (the batch columns pinned to the deployed
+aggregates, `hbatch` produced from the `x₄` accept measure) and, beneath the aggregates,
+`deployed_witness_member_binding` (`Soundness.DeployedMultiopen`). The older
 `orchard_verifier_vesta_constraint_reduction` remains as a legacy, compatibility-shaped capstone. -/
 theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
@@ -620,9 +623,11 @@ measure (`hprob4`) via the multiopen forking floor (`deployedMultiopenRewind_of_
 `hprob` forks the IPA rounds for the opening, `hprob4` forks the `x₄` squeeze for the batch — the
 `{ch with x4 := ξ}` runs are the `reprogramX4` oracle-reprogramming events (`Soundness.Forking`), and
 each run's accepting transcript is that run's own round-forking output. `hquot`/`hgood` are stated for
-the canonical decode of the derived batch, as everywhere on the decoded ladder. The constant rung's
-static-dichotomy caveat on `hprob` applies unchanged
-(`orchard_verifier_vesta_forking_opening_deployed`). -/
+the canonical decode of the derived batch, as everywhere on the decoded ladder. The batch columns here
+are the multiopen aggregates; `deployed_witness_member_binding` (`Soundness.DeployedMultiopen`)
+continues the chain, decoding them across `x₁` rewinds down to the grouping's member commitments — the
+actual queried column commitments. The constant rung's static-dichotomy caveat on `hprob` applies
+unchanged (`orchard_verifier_vesta_forking_opening_deployed`). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed_x4 [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)

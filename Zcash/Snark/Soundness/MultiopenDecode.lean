@@ -14,21 +14,21 @@ commitments and evaluations.
 
 This closes the witness-to-real-columns half of the constraint-side bridge once the multiopen rewinding has
 produced the relevant batch openings. The separate facts that the deployed quotient check supplies `hquot`
-for those decoded columns, and that the `x₁`/`x₄` transcript rewinds produce the batch family, remain outside
-this module.
+for those decoded columns, and that the `x₁`/`x₄` transcript rewinds produce the batch family, remain
+outside this module — the rewind production is discharged in `Soundness.DeployedMultiopen` (see the
+deployed-status section below), and the quotient-check half stays with the fingerprint.
 
 ## Scope of the model
 
-This decode layer models a *single-point, rotation-free* multiopen: every column is opened at the one
-evaluation vector `b`, batching is one flat challenge-power combination, and the recovered columns feed
-gate polynomials with no rotation structure (`Expr.toPoly` has no `X ↦ ωX` composition). The deployed
-assembly (`assembleQueries`/`constructIntermediateSets`) is richer on all three axes: queries hit rotated
-points `ωⁱ·x`, the collapse is two-level (`x₁` within point sets, then `x₄` across, with components the
-multiopen aggregates `qPrime`/`u_j`, not circuit columns), and the gate check lives at `ch.x` while the
-final opening is at `x₃`. Discharging `hbatch`/`hquot` against the deployed verifier therefore needs a
-generalization of this module — per-column opening points, a nested batch structure, and the `x`-to-`x₃`
-quotient transport — not only a rewinding lemma. Until then, the decoded capstones are exercised
-faithfully only by single-point, rotation-free instantiations.
+This decode layer states a *single-point* batch: every column is opened at the one evaluation vector
+`b`, and batching is one flat challenge-power combination. That flat power form is not a model boundary
+at the `x₄` level: `Soundness.DeployedMultiopen` *proves* the deployed statement is exactly this shape
+in the `x₄` squeeze, with the batch columns the fingerprinted `constructIntermediateSets` grouping's own
+aggregates (`qᵢ`, `q′`) — so `hbatch` is dischargeable against the deployed verifier with those
+aggregates as the columns. Reading *circuit* columns out of the aggregates is the `x₁` layer, closed by
+`deployed_witness_member_binding` (values heterogeneous per `x₁` rewind because `x₃` re-randomizes);
+per-column claimed evaluations at the rotated points `ωⁱ·x` plus the `x`-to-`x₃` quotient transport
+remain the `x₂`/`x₃`/fingerprint half — see the deployed status section below.
 
 To keep the hypotheses satisfiable, the decoded capstones state `hquot`/`hgood` for the *canonical*
 decode of the supplied batch (`decodedCols`), not for every family opening the same commitments: the
@@ -36,6 +36,71 @@ family set has `≥ 2^k − 2` free dimensions per column at a prime-order curve
 evaluation are pinned), so quantified over all of it the pair `hquot ∧ hgood` is jointly unsatisfiable —
 tweak one gate-read column by a kernel vector vanishing at the opened point and at `x`. For the same
 reason they are dischargeable only with `x` the opened point.
+
+## Deployed status (issue #18) — what is closed, what remains
+
+Issue #18's stated hole — bind the *extracted* IPA witness to the real circuit columns via
+`batch_open_soundV` — is closed. The two "irreducible Lean soundness" residuals this note used to
+record are now theorems, and the `x₁` layer beneath them is closed down to the member commitments
+(`Soundness.DeployedMultiopen`):
+
+1. **Un-batching over the deployed grouping — the `x₄` level is deployed, not modeled.** As a
+   function of the `x₄` squeeze, the pinned `deployedCommitment`/`multiopenValue` are *proven* flat
+   power batches over the fingerprinted `constructIntermediateSets` grouping's own aggregates
+   (`deployedCommitment_x4_batch`/`multiopenValue_x4_batch`), so `acceptedBatchFamily_of_rewinds`'s
+   `hP`/`hv` are discharged (`deployedMultiopenRewind_of_x4Rewinds`). The decode *consumes* the
+   fingerprint-validated grouping, per the issue-#21 principle — no "flat model = deployed" seam is
+   left at this level. The batch columns here are the multiopen aggregates (`qᵢ`, `q′`), not circuit
+   columns — each decoded aggregate's polynomial evaluates at the opened point to its claimed set
+   evaluation (`DecodedColumnFamily.eval_eq`) — and the fixture exercises the power form on a rotated
+   two-set instance.
+
+2. **The `x₄` accept-probability floor.** Producing the rewound family from an accept-*measure*
+   hypothesis is proven: `exists_injective_accepting_of_measure` (`Soundness.ForkingProbability`, the
+   single-squeeze counting form of the forking floor) and `deployedMultiopenRewind_of_x4Prob`. The
+   Vesta rung `orchard_verifier_vesta_forking_constraint_deployed_x4` consumes it end-to-end, the two
+   rewinding floors (`hprob` for the IPA rounds, `hprob4` for the `x₄` squeeze) stacked explicitly.
+   The runs are the `reprogramX4` reprogramming events (`Soundness.Forking`, sealed by
+   `TranscriptOrdering`); each run's accepting transcript inside `hprob4`'s event is that run's own
+   round-forking output (the codebase-wide floor, with the RO uniformity axiom, as everywhere);
+   `x4_cleanTree_of_deployedAccepts` feeds that per-run event from `DeployedAccepts`-level facts,
+   its fixed-`ps` caveat recorded on the lemma.
+
+3. **The `x₁` layer — closed to the member commitments.** The within-set algebra is proven — each
+   aggregate is an `x₁`-power batch of the member commitments the grouping routes to its set
+   (`compressSet_fst_eval`, `deployedX4Qs_getD_eval` — the two-level collapse in closed form), and the
+   cross-run un-batching with heterogeneous values is the canonical decode `x1DecodeCols` with its
+   spec (values stay per-run because `x₃` re-randomizes under `x₁` rewinds) — and so is the wiring.
+   The `x₁` squeeze prefix is sealed and reprogrammable (`preX1Transcript`/`preX2Transcript`,
+   `deriveChallenges_x1_eq`/`_x2_eq`, `Soundness.Forking.reprogramX1`, with every claimed evaluation
+   pinned before `x₁` — `adviceEvals_mem_preX1Transcript` and companions); the rewound runs are the
+   shared pre-`x₁` prefix with a re-sent continuation (`spliceMultiopen`/`x1RunChallenges` — the
+   fresh `q′`/`u` re-randomize `x₃`/`x₄` through their squeeze inputs); the query list and grouping
+   are *definitionally* shared across runs (`x1Run_assembleQueries`); each run's aggregate is the
+   run-`x₁`-power batch of the shared member commitments (`x1Run_x4Qs_getD_eval`); and
+   `deployed_witness_member_binding` closes the chain: the canonical member decode opens the *member
+   commitments* — the actual queried column commitments (advice, instance, fixed,
+   permutation/lookup products, vanishing) — reconstructs the honest aggregate witness at `ch.x1`,
+   and, composed with `DecodedColumnFamilyOfBatch.currentWitness_eq` for the `x₄` batch, exhibits the
+   extracted witness as the explicit two-level (`x₄`-then-`x₁`) power combination of member-column
+   witnesses. The honest run sits inside every family by structure eta (`honestX1Run`); the per-run
+   aggregate witnesses are each run's own `x₄`-level decode (the same stacked floors, per run), the
+   hypothesis shape `hwC`/`hwu` carries.
+
+**Delegated to the equivalence fingerprint — unchanged.** Per the principle raised in
+zcash/ironwood#21 (the `PermutationConstruction.lean:243` review thread, comment `r3493240277`:
+supply the Rust-produced object and check equivalence rather than reproduce the deployed computation
+in Lean; `Fingerprint.Match` is its in-tree home), the *faithfulness* obligations stay with the
+fingerprint (`Fingerprint.Match`, `MsmMatch`): the
+**gate check / `x`→`x₃` transport** — the "the gate check itself comes from `assemble.eval = 0`" half
+of `hquot` — is inside the fingerprinted MSM (`subProofExpressions`), i.e. #11/#13 territory. Likewise
+the per-column *claimed-eval* binding at the original rotated points `ωⁱ·x`: the `x₁` decode binds the
+member *commitments* and transports per-run set evaluations; tying those to the proof string's claimed
+per-point evaluations is the `r`-polynomial (`x₂`/`x₃`) content carried by the fingerprint, not
+re-proven here.
+
+Do **not** generalize the legacy raw endpoints
+(`orchard_verifier_vesta_opening_reduction`/`_constraint_reduction`), which stay compatibility-shaped.
 -/
 
 namespace Zcash.Snark
@@ -96,9 +161,10 @@ transcript-tied one — all openings of the pinned `(P, b, v)` share the same co
 batch family for one witness transfers to any other by swapping the `current` slot; that claim is
 machine-checked (`multiopenRewindForRelation_of_batch`). The whole output is derivable from a family of
 accepting rewound IPA transcripts at distinct batching challenges
-(`multiopenRewindForRelation_of_acceptedFamily`), so the assumption the terminal capstones carry reduces
-to the accept-probability→transcripts step — that rewinding the deployed batching-challenge squeeze
-yields such a family — plus the flat-batch scope recorded in the module doc. -/
+(`multiopenRewindForRelation_of_acceptedFamily`), and for the deployed statement over the fingerprinted
+grouping's aggregates it is *produced* from the honest run's transcript plus the `x₄` accept measure
+(`deployedMultiopenRewind_of_x4Prob`, `Soundness.DeployedMultiopen`) — the flat power form is proven
+there, no longer a scope boundary. -/
 abbrev MultiopenRewindForRelation (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp) (v : Fp)
     {numColumns : ℕ} (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp) :
     Type _ :=
@@ -163,8 +229,8 @@ structure AcceptedBatchFamily (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → Fp)
 extracts each run's batched witness, the designated run's witness opens the pinned `(P, b, v)`
 (`current_P`/`current_v`), and the `∀`-witness form follows by the current-slot swap
 (`multiopenRewindForRelation_of_batch`). This derives the terminal capstones' `hbatch` from accepting
-rewound transcripts; what remains assumed upstream is the accept-probability→transcripts step for the
-deployed batching challenge, plus the flat-batch scope in the module doc. -/
+rewound transcripts; the accept-probability→transcripts step for the deployed batching challenge is
+discharged by `deployedMultiopenRewind_of_x4Prob` (`Soundness.DeployedMultiopen`). -/
 noncomputable def multiopenRewindForRelation_of_acceptedFamily {urs : URS G} {P : G}
     {b : Fin (2 ^ urs.k) → Fp} {v : Fp} {numColumns : ℕ}
     {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
@@ -193,7 +259,9 @@ noncomputable def multiopenRewindForRelation_of_acceptedFamily {urs : URS G} {P 
 `P`/`v` are the statement as a function of that challenge — for the deployed verifier,
 `fun ξ => deployedCommitment urs hk vk ps {ch with x4 := ξ}` and the matching `multiopenValue`, the
 runs `Soundness.Forking.reprogramX4` (via its apply lemmas) identifies with oracle reprogramming — and
-`hP`/`hv` are the flat-batch power form, the model boundary the scope section above records. -/
+`hP`/`hv` are the flat-batch power form, *proven* for the deployed verifier over the fingerprinted
+grouping's aggregates (`deployedCommitment_x4_batch`/`multiopenValue_x4_batch`,
+`Soundness.DeployedMultiopen`, instantiated in `deployedMultiopenRewind_of_x4Rewinds`). -/
 noncomputable def acceptedBatchFamily_of_rewinds {urs : URS G} {b : Fin (2 ^ urs.k) → Fp}
     {numColumns : ℕ} {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
     (ξ : Fin numColumns → Fp) (hξinj : Function.Injective ξ)

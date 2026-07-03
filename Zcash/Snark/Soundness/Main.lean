@@ -260,13 +260,14 @@ structure MultiopenForkingOutput [DecidableEq G] [Inhabited G] {shape : Shape} (
   accepts : DeployedIpaAcceptV urs.g b urs.u urs.w z
     (deployedCommitment urs hk vk ps ch) (multiopenValue vk ps ch) blind tree
 
-/-- The issue-18 residual as one explicit forking output, *data-producing*: from the deployed verifier
+/-- The multiopen forking bridge as one explicit *data-producing* output: from the deployed verifier
 equation it returns the deployed IPA tree together with the multiopen batch-rewinding data for that same
 tree. Compared with `FiatShamirTree`, this also carries the `x₁`/`x₄` multiopen rewinds needed to bind the
-extracted witness to real decoded columns. It returns data (a structure, not an `∃`) so the decoded
-capstone's `hquot`/`hgood` can be stated about the canonical decode of the returned batch — an existential
-output would force quantifying them over every batch, which is unsatisfiable (see the `MultiopenDecode`
-scope section). -/
+extracted witness to real decoded columns — the batch data the `x₄` rewinding floor now produces
+(`deployedMultiopenRewind_of_x4Prob`, `Soundness.DeployedMultiopen`). It returns data (a structure, not an
+`∃`) so the decoded capstone's `hquot`/`hgood` can be stated about the canonical decode of the returned
+batch — an existential output would force quantifying them over every batch, which is unsatisfiable (see
+the `MultiopenDecode` scope section). -/
 def FiatShamirMultiopenForking [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (b : Fin (2 ^ urs.k) → Fp) (z blind : Fp)
