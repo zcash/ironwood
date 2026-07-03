@@ -13,6 +13,10 @@ verifier samples one challenge, so the relevant bound is the number of roots of 
 polynomial.
 
 * `quotientCheck` — the verifier's check at `x`: `numerator(x) = h(x) · (xⁿ − 1)`.
+* `szBadSet` — the Schwartz–Zippel bad set of a use site: the roots of the difference polynomial. A
+  challenge avoiding it is a *good* challenge (`not_mem_szBadSet`), and root counting bounds the set by
+  the degree (`szBadSet_card_le`) — the `d` of the `d / p` exclusion budget, whose uniform-measure form
+  lives in `Zcash.Snark.Soundness.GoodChallenge`.
 * `quotientCheck_sound` — if the identity fails as polynomials (the committed polynomials violate the
   constraint system), the check passes for at most `deg / |F|` of the challenges.
 * `quotientCheck_complete` — if it holds as polynomials, the check passes at every challenge.
@@ -37,6 +41,63 @@ combination; the verifier opens `h` to `numerator(x) / (xⁿ − 1)`. -/
 @[reducible] def quotientCheck (numerator h : Polynomial Fp) (n : ℕ) (x : Fp) : Prop :=
   numerator.eval x = h.eval x * (x ^ n - 1)
 
+/-! ## The Schwartz–Zippel bad set
+
+Each Schwartz–Zippel use site excludes the challenges at which a *failed* polynomial identity still
+evaluates to zero — the roots of the difference polynomial. `szBadSet` names that set, so the
+good-challenge condition the soundness path consumes is bad-set avoidance (`not_mem_szBadSet`) rather
+than a bare implication, and root counting (`szBadSet_card_le`) pins its size at the degree `d` of the
+`d / p` exclusion budget. The uniform-measure form — a fresh random-oracle squeeze lands in the bad set
+with probability `≤ d / p`, so the good-challenge condition is *derived* from challenge uniformity
+rather than assumed — is `Zcash.Snark.Soundness.GoodChallenge`; this file keeps the purely polynomial
+content. -/
+
+/-- The Schwartz–Zippel bad set of one use site: the roots of the difference polynomial `C`. A
+challenge is *good* for `C` when it avoids this set — for `C = 0` (the identity holds as polynomials)
+nothing is excluded, and otherwise exactly the `≤ natDegree C` roots are. -/
+noncomputable def szBadSet (C : Polynomial Fp) : Finset Fp := C.roots.toFinset
+
+/-- Membership in the bad set: `x` is bad for `C` exactly when the identity fails (`C ≠ 0`) and `x`
+fails to witness it (`C.eval x = 0`). -/
+theorem mem_szBadSet {C : Polynomial Fp} {x : Fp} :
+    x ∈ szBadSet C ↔ C ≠ 0 ∧ C.eval x = 0 := by
+  simp [szBadSet, Polynomial.mem_roots']
+
+/-- **The good-challenge condition, derived from bad-set avoidance.** `x ∉ szBadSet C` is exactly the
+`hgood` shape the constraint layer consumes: if the identity fails as polynomials, the challenge
+evaluation does not vanish. -/
+theorem not_mem_szBadSet {C : Polynomial Fp} {x : Fp} :
+    x ∉ szBadSet C ↔ (C ≠ 0 → C.eval x ≠ 0) := by
+  rw [mem_szBadSet, not_and]
+
+/-- **Root counting: the bad set is small.** One Schwartz–Zippel use site over `F_p` excludes at most
+`natDegree C` challenges — the `d` of the `d / p` budget (`uniformChallenge_szBadSet` in
+`Zcash.Snark.Soundness.GoodChallenge`). -/
+theorem szBadSet_card_le (C : Polynomial Fp) : (szBadSet C).card ≤ C.natDegree :=
+  le_trans (Multiset.toFinset_card_le _) (Polynomial.card_roots' C)
+
+/-- The concrete degree bound at the vanishing-check site: the bad set of the constraint difference
+`numerator − h · (Xⁿ − 1)` has at most `max (deg numerator) (deg h + n)` elements — the explicit `d`
+for the quotient identity's Schwartz–Zippel use. -/
+theorem szBadSet_quotient_card_le (numerator h : Polynomial Fp) (n : ℕ) :
+    (szBadSet (numerator - h * (X ^ n - 1))).card
+      ≤ max numerator.natDegree (h.natDegree + n) := by
+  refine (szBadSet_card_le _).trans ((Polynomial.natDegree_sub_le _ _).trans ?_)
+  refine max_le_max le_rfl (Polynomial.natDegree_mul_le.trans (Nat.add_le_add_left ?_ _))
+  exact (Polynomial.natDegree_sub_le _ _).trans (by simp)
+
+/-- When the identity fails, the accepting challenges are exactly the bad set: the verifier's check
+passes at `x` iff `x` is a root of the constraint difference. This is the set `quotientCheck_sound`
+counts and `Zcash.Snark.Soundness.GoodChallenge` measures. -/
+theorem quotientCheck_filter_eq_szBadSet (numerator h : Polynomial Fp) (n : ℕ)
+    (hne : numerator ≠ h * (X ^ n - 1)) :
+    (univ.filter fun x => quotientCheck numerator h n x)
+      = szBadSet (numerator - h * (X ^ n - 1)) := by
+  ext x
+  simp only [mem_filter, mem_univ, true_and, mem_szBadSet, sub_ne_zero, quotientCheck,
+    eval_sub, eval_mul, eval_pow, eval_X, eval_one, sub_eq_zero]
+  exact ⟨fun hx => ⟨hne, hx⟩, fun hx => hx.2⟩
+
 /-- Constraint soundness (Schwartz–Zippel, univariate). If the quotient identity fails as polynomials —
 `numerator ≠ h · (Xⁿ − 1)`, i.e. the committed polynomials violate the constraint system — then the
 verifier's check passes for at most a `deg / |F|` fraction of the challenges. So a violated constraint
@@ -45,23 +106,9 @@ theorem quotientCheck_sound (numerator h : Polynomial Fp) (n : ℕ)
     (hne : numerator ≠ h * (X ^ n - 1)) :
     ((univ.filter fun x => quotientCheck numerator h n x).card : ℚ≥0) / (scalarFieldOrder : ℚ≥0)
       ≤ ((numerator - h * (X ^ n - 1)).natDegree : ℚ≥0) / (scalarFieldOrder : ℚ≥0) := by
-  have hC : numerator - h * (X ^ n - 1) ≠ 0 := sub_ne_zero.mpr hne
-  have hset : (univ.filter fun x => quotientCheck numerator h n x)
-      = univ.filter fun x => (numerator - h * (X ^ n - 1)).eval x = 0 := by
-    apply Finset.filter_congr
-    intro x _
-    simp only [quotientCheck, eval_sub, eval_mul, eval_pow, eval_X, eval_one, sub_eq_zero]
-  rw [hset]
-  have hcard : (univ.filter fun x => (numerator - h * (X ^ n - 1)).eval x = 0).card
-      ≤ (numerator - h * (X ^ n - 1)).natDegree := by
-    have he : (univ.filter fun x => (numerator - h * (X ^ n - 1)).eval x = 0)
-        = (numerator - h * (X ^ n - 1)).roots.toFinset := by
-      ext x
-      simp only [mem_filter, mem_univ, true_and, Multiset.mem_toFinset,
-        Polynomial.mem_roots hC, IsRoot.def]
-    rw [he]
-    exact le_trans (Multiset.toFinset_card_le _) (Polynomial.card_roots' _)
+  rw [quotientCheck_filter_eq_szBadSet numerator h n hne]
   gcongr
+  exact_mod_cast szBadSet_card_le _
 
 /-- Completeness, the companion to `quotientCheck_sound`: if the quotient identity holds as polynomials,
 the verifier's check passes at every challenge. (Documented for the soundness/completeness pair; the

@@ -23,6 +23,7 @@ import Zcash.Snark.Soundness.Ipa.Consistency
 import Zcash.Snark.Soundness.Ipa.Soundness
 -- Constraint-system soundness (Schwartz-Zippel vanishing/quotient check) and end-to-end knowledge soundness.
 import Zcash.Snark.Soundness.Constraints.Vanishing
+import Zcash.Snark.Soundness.GoodChallenge
 import Zcash.Snark.Soundness.KnowledgeSoundness
 -- Deployed halo2-verifier soundness path: peel the deployed IPA (U/W/S apparatus) onto clean `ipa_soundV`,
 -- with commitment binding expressed as a discrete-log-relation reduction (#13).
