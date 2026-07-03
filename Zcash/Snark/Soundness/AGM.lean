@@ -56,6 +56,28 @@ chain (witness → hit → discrete log); the "hidden slot is hit with probabili
 computational force is now proved in `Soundness.AGMProbability`, and the residual computational
 force — that no feasible adversary *finds* a relation (discrete-log hardness) — remains the
 out-of-Lean assumption.
+
+## Layering: independent capstones by design
+
+The AGM layer is deliberately *not* one chained pipeline hanging off the forking capstones. It is
+three separate reductions, each with its own assumption base:
+
+* the deterministic relation-to-DL **adapter** (`soundnessOrDLAt_of_soundnessOrRelation`), which the
+  Vesta `_agm_dl` wrappers apply to the forking capstones' `∨ HasNontrivialRelation`;
+* the **probability wrapper** (`Soundness.AGMProbability`) — a standalone reduction bounding an
+  abstract relation-finder's advantage by the discrete-log advantage (reused for binding-signatures
+  and commitment binding too); and
+* the **algebraic-prover model** (`Soundness.AlgebraicPeel` / `AlgebraicCapstone`) — extraction of an
+  explicit witness from prover representations, at the deployed level.
+
+These are kept independent on purpose. Fusing them into a single end-to-end theorem would not
+discharge anything: chaining the forking capstone into the probability wrapper needs a *modeling
+seam* — identifying the deployed forking prover with the abstract adversary over the embedded basis —
+which is itself the AGM assumption, so a chain relocates that assumption into a hypothesis rather than
+removing it. Independence keeps each assumption set legible and auditable, mirrors the paper-level
+structure (rewinding, AGM relation-to-DL, and the algebraic model are distinct lemmas), and preserves
+reuse. A single "accepting prover ⇒ breaks DL" headline is only citation convenience; if ever added it
+must carry that seam as an explicit, named hypothesis.
 -/
 
 namespace Zcash.Snark
