@@ -34,7 +34,12 @@ with valid preimage `s c`.
 ## Residual (genuine assumptions, not prose)
 
 The adversary is the *abstract* algebraic relation-finder
-`A : (b : ι → G) → Option (AlgebraicRelationWitness b)`. What remains outside this file:
+`A : (b : ι → G) → Option (AlgebraicRelationWitness b)` — a total function, so **deterministic and
+computationally unbounded**. The theorems here are information-theoretic counting statements,
+universally quantified over such `A`; this is the standard shape: a randomized adversary is an
+average over its coin-fixings (each a deterministic `A`), so per-`A` bounds cover it, and efficiency
+lives outside Lean (the bounds are what a computational wrapper instantiates at an efficient
+adversary). What remains outside this file:
 (i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis — an assumption by definition);
 (ii) the AGM idealization; (iii) connecting the deployed Ironwood prover's outputs (representations
 through the IPA verifier equation) to this abstract `A` — issue #15. None of these is
@@ -211,8 +216,10 @@ theorem textbook_winProb_eq_succProb :
     ENNReal.mul_div_mul_left _ _
       (by exact_mod_cast Fintype.card_ne_zero) (ENNReal.natCast_ne_top _)]
 
-/-- Textbook single-generator discrete-log hardness at `B`: no reduction wins the DL game (secret
-`x`, challenge `x • B`, uniform coins) with probability more than `bound`. -/
+/-- Textbook single-generator discrete-log hardness at `B`, instantiated at *this* reduction: the
+reduction built from `A` wins the DL game (secret `x`, challenge `x • B`, uniform coins) with
+probability at most `bound`. DL hardness proper quantifies over all efficient solvers; consuming it
+in Lean means taking that bound at the one solver the proof constructs, which is this hypothesis. -/
 def TextbookDLAdvantageLE (bound : ℝ≥0∞) : Prop :=
   (PMF.uniformOfFintype (F × ι × (ι → F))).toOuterMeasure (winSet B A) ≤ bound
 
