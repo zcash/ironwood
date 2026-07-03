@@ -204,6 +204,46 @@ theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Ve
   orchard_verifier_deployed_decoded_constraint_reduction urs hk vk ps ch columnCommitments columnEvals
     adviceIndex instanceIndex fixedCols y gates hpoly deg x hz haccepts hFS hbatch hquot hgood hencodes
 
+open Polynomial in
+/-- Vesta specialization of
+`orchard_verifier_deployed_decoded_constraint_reduction_of_multiopen_forking`: the issue-18 bridge consumes
+one explicit multiopen-forking output carrying both the deployed IPA tree and the decoded-column batch data
+for that tree. -/
+theorem orchard_verifier_vesta_decoded_constraint_reduction_of_multiopen_forking
+    [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape}
+    (urs : URS VestaG) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG)
+    (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    {b : Fin (2 ^ urs.k) → Fp} {z blind : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → VestaG) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ) (x : Fp)
+    (hz : z ≠ 0)
+    (out : MultiopenForkingOutput urs hk vk ps ch b z blind columnCommitments columnEvals)
+    (hquot : quotientCheck
+      (combineGates fixedCols
+        (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+        (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates)
+      hpoly deg x)
+    (hgood : combineGates fixedCols
+          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
+        ≠ hpoly * (X ^ deg - 1) →
+      (combineGates fixedCols
+          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
+          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
+        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
+        (multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
+        y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+  orchard_verifier_deployed_decoded_constraint_reduction_of_multiopen_forking urs hk vk ps ch
+    columnCommitments columnEvals adviceIndex instanceIndex fixedCols y gates hpoly deg x hz out
+    hquot hgood hencodes
+
 /-- The powers evaluation vector's leading entry is `1` (`b 0 = x⁰ = 1`), discharging the IPA's `hb0`
 structural fact for the concrete deployed `b = evalVector`. -/
 theorem evalVector_zero {F : Type*} [Field F] (k : ℕ) (x : F) : evalVector k x 0 = 1 := by
