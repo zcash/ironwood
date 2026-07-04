@@ -103,7 +103,7 @@ theorem toy_relation_and_batch_discharged : True :=
     (fun _ : Fin 1 => (0 : Fp)) (fun _ => 0) (fun i : Fin 1 => i) (fun i : Fin 1 => i)
     (fun _ => 0) 0 toyGates 0 1 0 toy_opens toyBatch
     (by rw [toy_numerator toyBatch]; simp [quotientCheck])
-    (by rw [toy_numerator toyBatch]; intro h; simp at h)
+    (by rw [toy_numerator toyBatch]; simp [szBadSet])
     (fun _ _ _ => trivial)
 
 /-- Accepting transcripts for every batching challenge of the zero batch: the depth-`0` leaf `0`. -/
@@ -128,7 +128,7 @@ theorem toy_terminal_discharged :
     (Or.inl ⟨fun _ => 0, toy_opens⟩)
     (multiopenRewindForRelation_of_acceptedFamily toyFamily)
     (fun a hrel => by rw [toy_numerator]; simp [quotientCheck])
-    (fun a hrel => by rw [toy_numerator]; intro h; simp at h)
+    (fun a hrel => by rw [toy_numerator]; simp [szBadSet])
     (fun _ _ _ => trivial)
 
 /-! ## Multi-column, nonzero data
@@ -206,7 +206,7 @@ theorem toyProd_relation_and_batch_discharged : True :=
     (![2, 3, 6] : Fin 3 → Fp) (![2, 3, 6] : Fin 3 → Fp) ![0, 1] ![2]
     (fun _ => 0) 0 toyGatesProd 0 1 0 toyProd_opens toyBatchProd
     (by rw [toyProd_numerator toyBatchProd]; simp [quotientCheck])
-    (by rw [toyProd_numerator toyBatchProd]; intro h; simp at h)
+    (by rw [toyProd_numerator toyBatchProd]; simp [szBadSet])
     (fun _ _ _ => trivial)
 
 /-- Accepting leaf transcripts for the three batching challenges of the nonzero batch: the depth-`0`
@@ -234,7 +234,7 @@ theorem toyProd_terminal_discharged :
     (Or.inl ⟨fun _ => 2, toyProd_opens⟩)
     (multiopenRewindForRelation_of_acceptedFamily toyFamilyProd)
     (fun a hrel => by rw [toyProd_numerator]; simp [quotientCheck])
-    (fun a hrel => by rw [toyProd_numerator]; intro h; simp at h)
+    (fun a hrel => by rw [toyProd_numerator]; simp [szBadSet])
     (fun _ _ _ => trivial)
 
 /-! ## The deployed `x₄` power form on a rotated two-set instance

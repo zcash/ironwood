@@ -123,7 +123,9 @@ DLR/AGM layer — not formalized in Lean; `Soundness.AGM.Adapter` records only i
 not the proposition.
 Named
 assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
-(`hgood`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness (`hencodes`).
+(`hgood`, bad-set avoidance — its complement costs `≤ deg/p` of the uniform challenge measure,
+`Soundness.GoodChallenge`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
+(`hencodes`).
 `hquot`/`hgood` quantify over every mathematical opening of the pinned `(P, b, v)` and are unsatisfiable
 at Vesta for any decode that genuinely reads columns out of the witness — see the caveat on
 `orchard_verifier_deployed_constraint_reduction`; use
@@ -140,9 +142,8 @@ theorem orchard_verifier_vesta_constraint_reduction [Fact (HasseBound Vesta.curv
     (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
       quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
     (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
-      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+      x ∉ szBadSet (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch)
       (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S) :
@@ -191,14 +192,10 @@ theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Ve
         hpoly deg x)
     (hgood : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
         (multiopenValue vk ps ch) t),
-      combineGates fixedCols
+      x ∉ szBadSet (combineGates fixedCols
           (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
           (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols
-          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
-          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
@@ -230,14 +227,10 @@ theorem orchard_verifier_vesta_decoded_constraint_reduction_of_multiopen_forking
         (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
         (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates)
       hpoly deg x)
-    (hgood : combineGates fixedCols
+    (hgood : x ∉ szBadSet (combineGates fixedCols
           (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
           (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols
-          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
-          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
@@ -408,12 +401,9 @@ theorem orchard_verifier_vesta_forking_constraint [Fact (HasseBound Vesta.curve)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k xEval) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
@@ -460,12 +450,9 @@ theorem orchard_verifier_vesta_forking_constraint_agm_dl [Fact (HasseBound Vesta
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k xEval) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k xEval)
@@ -586,12 +573,9 @@ theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Ves
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
@@ -659,20 +643,13 @@ theorem orchard_verifier_vesta_forking_constraint_deployed_x4 [Fact (HasseBound 
           y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
-      combineGates fixedCols
+      x ∉ szBadSet (combineGates fixedCols
           (selectedPolys (decodedCols
             (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
           (selectedPolys (decodedCols
             (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
           y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols
-          (selectedPolys (decodedCols
-            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
-          (selectedPolys (decodedCols
-            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
-          y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch)
@@ -763,12 +740,9 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive [Fact (HasseBound Ves
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
@@ -875,12 +849,9 @@ theorem orchard_verifier_vesta_forking_constraint_rewind [Fact (HasseBound Vesta
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
         (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps)) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
@@ -962,12 +933,9 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind [Fact (HasseBo
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
         (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps)) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
@@ -1058,12 +1026,9 @@ theorem orchard_verifier_vesta_forking_constraint_deployed_agm_dl [Fact (HasseBo
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
@@ -1129,12 +1094,9 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive_agm_dl [Fact (HasseBo
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
         (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
@@ -1207,12 +1169,9 @@ theorem orchard_verifier_vesta_forking_constraint_rewind_agm_dl [Fact (HasseBoun
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
         (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps)) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
@@ -1290,12 +1249,9 @@ theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind_agm_dl
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps (roChallenges O init ps))
         (evalVector urs.k (roChallenges O init ps).x3) (multiopenValue vk ps (roChallenges O init ps)) a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps (roChallenges O init ps))

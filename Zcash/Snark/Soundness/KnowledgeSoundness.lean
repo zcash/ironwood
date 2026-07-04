@@ -86,20 +86,20 @@ def circuitSatViaGates {k : ℕ} (fixedCols : ℕ → Polynomial Fp)
   combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates = hpoly * (X ^ deg - 1)
 
 /-- `circuitSat`, derived from the deployed constraint check (not assumed). With the numerator the gate
-combination `combineGates …`, an accepting quotient check at the challenge `x` plus a good challenge
-(`x` not a root of the constraint difference — its complement the `≤ deg/p` Schwartz–Zippel bad set) gives
-`circuitSatViaGates …`: the witness's decoded columns satisfy the gates. So the circuit gate-satisfaction
-conjunct of `SnarkRelation` is discharged from acceptance via `constraint_identity_of_accept`, modulo only
-the multiopen decode. -/
+combination `combineGates …`, an accepting quotient check at the challenge `x` plus a good challenge —
+`x` avoids the Schwartz–Zippel bad set of the constraint difference, the event of uniform random-oracle
+measure `≥ 1 − deg/p` (`szBadSet_card_le`, `uniformChallenge_szGoodSet`) — gives `circuitSatViaGates …`:
+the witness's decoded columns satisfy the gates. So the circuit gate-satisfaction conjunct of
+`SnarkRelation` is discharged from acceptance via `constraint_identity_of_accept`, modulo only the
+multiopen decode. -/
 theorem circuitSatViaGates_of_check {k : ℕ} (fixedCols : ℕ → Polynomial Fp)
     (decodeAdvice decodeInstance : (Fin (2 ^ k) → Fp) → (ℕ → Polynomial Fp))
     (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
     (a : Fin (2 ^ k) → Fp) (x : Fp)
     (hcheck : quotientCheck
       (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
-    (hgood : combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0) :
+    (hgood : x ∉ szBadSet (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+      - hpoly * (X ^ deg - 1))) :
     circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg a :=
   constraint_identity_of_accept _ hpoly deg x hcheck hgood
 

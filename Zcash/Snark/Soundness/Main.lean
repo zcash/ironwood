@@ -326,9 +326,14 @@ theorem orchard_verifier_deployed_opening_reduction [DecidableEq G] [Inhabited G
 The constraint side mirrors the opening side. The verifier checks the gate identity only at the challenge
 `x` — a point check (`quotientCheck`, `numerator.eval x = h.eval x · (xⁿ−1)`). `circuitSatViaGates_of_check`
 lifts that point check to the polynomial identity `circuitSatViaGates` (the witness's decoded columns
-satisfy the gates) provided `x` avoids the Schwartz–Zippel bad set (`hgood`). So `circuitSat`, instantiated
-to the concrete `circuitSatViaGates`, is derived from the verifier's actual gate check rather than taken as
-an opaque hypothesis. -/
+satisfy the gates) provided `x` avoids the Schwartz–Zippel bad set (`hgood`, the shape
+`x ∉ szBadSet (numerator − h·(X^deg − 1))`). That good-challenge event is *derived* from challenge
+uniformity, not left qualitative: the bad set has at most `deg` elements (`szBadSet_card_le`), so under
+the random-oracle model the exclusion costs `≤ deg/p` per use site
+(`Soundness.GoodChallenge.uniformChallenge_szBadSet`, with the good side `≥ 1 − deg/p` in
+`uniformChallenge_szGoodSet`). So `circuitSat`, instantiated to the concrete `circuitSatViaGates`, is
+derived from the verifier's actual gate check rather than taken as an opaque hypothesis, and the
+challenge-exclusion budget it draws is a theorem of the uniform measure. -/
 
 open Polynomial in
 /-- The deployed Orchard verifier opening and constraint, as a binding **reduction**, with `P`/`v` **pinned**
@@ -344,7 +349,8 @@ formalized in Lean) that no adversary can *find* one; `Soundness.AGM.Adapter` re
 fixed-slot relation-to-DL core.
 
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate point-check (`hquot`), the SZ good
-challenge (`hgood`), and VK-correctness (`hencodes`).
+challenge (`hgood`, bad-set avoidance — its complement costs `≤ deg/p` of the uniform challenge measure,
+`Soundness.GoodChallenge`), and VK-correctness (`hencodes`).
 
 Caveat on the `hquot`/`hgood` shape (as for `hcirc` above): both quantify over *every* mathematical
 opening `a` of the pinned `(P, b, v)` — an affine subspace of dimension `≥ 2^k − 2` at a prime-order
@@ -363,9 +369,8 @@ theorem orchard_verifier_deployed_constraint_reduction [DecidableEq G] [Inhabite
     (hquot : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
       quotientCheck (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates) hpoly deg x)
     (hgood : ∀ a, IpaRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch) a →
-      combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+      x ∉ szBadSet (combineGates fixedCols (decodeAdvice a) (decodeInstance a) y gates
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a, SnarkRelation urs (deployedCommitment urs hk vk ps ch) b (multiopenValue vk ps ch)
       (circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg) a → S) :
@@ -437,14 +442,10 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction [DecidableEq G] [
         hpoly deg x)
     (hgood : ∀ t (hacc : IpaAcceptV urs.g b (deployedCommitment urs hk vk ps ch)
         (multiopenValue vk ps ch) t),
-      combineGates fixedCols
+      x ∉ szBadSet (combineGates fixedCols
           (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
           (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols
-          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) adviceIndex)
-          (selectedPolys (decodedCols (hbatch t hacc).batchOpenings) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b
@@ -501,11 +502,8 @@ theorem decoded_constraint_of_relation_and_batch {urs : URS G} {P : G}
     (hquot : quotientCheck
       (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
         (selectedPolys (decodedCols hbatch) instanceIndex) y gates) hpoly deg x)
-    (hgood : combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
-        (selectedPolys (decodedCols hbatch) instanceIndex) y gates ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
-        (selectedPolys (decodedCols hbatch) instanceIndex) y gates
-          - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+    (hgood : x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+        (selectedPolys (decodedCols hbatch) instanceIndex) y gates - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
@@ -543,12 +541,9 @@ theorem decoded_constraint_of_opening_or_relation {urs : URS G} {P : G}
         (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg x)
     (hgood : ∀ a (hrel : IpaRelation urs P b v a),
-      combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+      x ∉ szBadSet (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
           (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
-          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
@@ -585,14 +580,10 @@ theorem orchard_verifier_deployed_decoded_constraint_reduction_of_multiopen_fork
         (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
         (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates)
       hpoly deg x)
-    (hgood : combineGates fixedCols
+    (hgood : x ∉ szBadSet (combineGates fixedCols
           (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
           (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
-        ≠ hpoly * (X ^ deg - 1) →
-      (combineGates fixedCols
-          (selectedPolys (decodedCols out.rewind.batchOpenings) adviceIndex)
-          (selectedPolys (decodedCols out.rewind.batchOpenings) instanceIndex) y gates
-        - hpoly * (X ^ deg - 1)).eval x ≠ 0)
+        - hpoly * (X ^ deg - 1)))
     {S : Prop}
     (hencodes : ∀ a cols,
       SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) b

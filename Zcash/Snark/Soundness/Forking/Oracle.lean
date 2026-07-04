@@ -17,7 +17,8 @@ This module supplies the random-oracle primitives the forking development is fra
   forked query `t`.
 * `uniformChallenge` / `uniformChallenge_badSet` — the idealization that a fresh squeeze is uniform over
   `Fp`, hence lands in a finite "bad" set of size `d` with probability `d / p`. This is the Schwartz–Zippel
-  exclusion budget (issue #12) and the source of the forking-collision bounds.
+  exclusion budget — drawn per use site by `Soundness.GoodChallenge`, which derives the capstones'
+  good-challenge (`hgood`) exclusions from it (issue #12) — and the source of the forking-collision bounds.
 
 ## The distributional floor: the random-oracle uniformity axiom (accepted, not proved)
 
@@ -48,15 +49,17 @@ loss — is an out-of-Lean floor additional to this axiom; see the quantifier-sh
 capstones.)
 `uniformChallenge_badSet` is the one directly-consumed consequence — it
 supplies the `1/p` `ξ`-randomization budget in `Soundness.Forking.Rewind` (`blinder_shift_badSet_measure`,
-`Soundness.Vesta.blinder_value_recovery_badSet`).
+`Soundness.Vesta.blinder_value_recovery_badSet`) and the `deg/p` gate-check good-challenge budget in
+`Soundness.GoodChallenge` (`uniformChallenge_szBadSet`, the derived form of the capstones' `hgood`).
 
 Two further scope notes. **Existence-only:** beating `kerr` proves the extracted witness *exists* — a
 counting argument over the challenge space (`Soundness.Forking.Tree`, `Soundness.Forking.Probability`) —
 not that an expected-polynomial-time extractor computes it; the runtime/emulation half of literature
 knowledge soundness is not modeled, a gap distinct from the query-count factor above. **Uncomposed
-budgets:** the per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p` each) and the `3k/p` tree
-threshold are stated separately, not yet composed into one end-to-end bound — the composition belongs with
-the query-loss accounting, part of the same out-of-Lean floor.
+budgets:** the per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p` each; the gate-check good
+challenge, `deg/p` per use site, `Soundness.GoodChallenge`) and the `3k/p` tree threshold are stated
+separately, not yet composed into one end-to-end bound — the composition belongs with the query-loss
+accounting, part of the same out-of-Lean floor.
 -/
 
 namespace Zcash.Snark
@@ -89,8 +92,8 @@ theorem reprogram_ne {O : List (TranscriptElt F G) → F} {t t' : List (Transcri
 noncomputable def uniformChallenge : PMF Fp := PMF.uniformOfFintype Fp
 
 /-- A fresh squeeze lands in a finite bad set of size `d` with probability `d / p` (`p = card Fp`) — the
-Schwartz–Zippel exclusion budget the good-challenge arguments (issue #12) and the forking-collision bounds
-draw on. -/
+Schwartz–Zippel exclusion budget the derived good-challenge exclusions (`Soundness.GoodChallenge`,
+issue #12) and the forking-collision bounds draw on. -/
 theorem uniformChallenge_badSet (bad : Finset Fp) :
     uniformChallenge.toOuterMeasure bad = (bad.card : ℝ≥0∞) / Fintype.card Fp := by
   rw [uniformChallenge, PMF.toOuterMeasure_apply_finset]
