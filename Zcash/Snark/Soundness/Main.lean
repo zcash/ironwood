@@ -639,6 +639,49 @@ theorem decoded_constraint_of_opening_or_relation {urs : URS G} {P : G}
   · exact Or.inr hrel
 
 open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- **The opening-or-relation terminal bridge with the good challenge derived, not assumed** — the
+`_xgood` form of `decoded_constraint_of_opening_or_relation`, and the common terminal every deployed
+`_xgood` constraint capstone routes through. The fixed gate-check point `x` and its per-witness
+`hgood` are replaced by an accept event `accX` — the gate check holds at every accepting point
+(`hquot`) — whose uniform measure beats the vanishing-check budget (`hprobX`). At the extracted
+opening the good challenge is *produced* by the pigeonhole
+(`exists_accepting_good_challenge_quotient`, via `decoded_constraint_of_relation_and_batch_xgood`),
+so no `hgood` hypothesis appears; the relation branch passes straight through. What stays named is
+`hquot`'s content — the gate/`x`→`x₃` transport seam (#11/#13) — and the random-oracle uniformity
+axiom in `hprobX`. -/
+theorem decoded_constraint_of_opening_or_relation_xgood {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
+    (accX : Fp → Prop) [DecidablePred accX]
+    (hopening : (∃ a, IpaRelation urs P b v a) ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w)
+    (hbatch : MultiopenRewindForRelation urs P b v columnCommitments columnEvals)
+    (hquot : ∀ a (hrel : IpaRelation urs P b v a), ∀ xv, accX xv →
+      quotientCheck
+        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg xv)
+    (hprobX : ∀ a (hrel : IpaRelation urs P b v a),
+      ((max (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates).natDegree
+          (hpoly.natDegree + deg) : ℕ) : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+        < uniformChallenge.toOuterMeasure (Finset.univ.filter accX))
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
+        fixedCols y gates hpoly deg a cols → S) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  rcases hopening with ⟨a, hrel⟩ | hrel
+  · exact Or.inl (decoded_constraint_of_relation_and_batch_xgood columnCommitments columnEvals
+      adviceIndex instanceIndex fixedCols y gates hpoly deg accX hrel (hbatch a hrel)
+      (hquot a hrel) (hprobX a hrel) hencodes)
+  · exact Or.inr hrel
+
+open Polynomial in
 /-- The decoded-column deployed capstone consuming one multiopen-forking output. This is the tighter
 closure surface for the witness-to-columns bridge: the caller supplies the deployed IPA tree, halo2's
 accept for it, and the batch openings for that same tree as one object — obtained from the forking
