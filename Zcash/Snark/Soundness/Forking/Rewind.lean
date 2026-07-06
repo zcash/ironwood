@@ -254,6 +254,64 @@ theorem reprogramX1_apply_long {shape : Shape} (O : List (TranscriptElt Fp G) �
     reprogramX1 O init ps χ t = O t :=
   reprogramX1_apply_length O init ps χ ht.ne'
 
+/-! ## Redrawing the gate-check challenge is reprogramming at the `x` squeeze
+
+The good-challenge derivation (issue #12, `Soundness.GoodChallenge` and the `_xgood` capstone rungs)
+spends an accept measure over the vanishing-check challenge `x`. The runs it ranges over are
+reprogramming events at the sealed `x` prefix (`preXTranscript`, `deriveChallenges_x_eq` —
+`Soundness.TranscriptOrdering`): everything the Schwartz–Zippel difference polynomial is built from —
+the column commitments (`adviceCommitments_mem_preXTranscript`) and the quotient pieces
+(`hPieces_mem_preXTranscript`) — is absorbed before the `x` squeeze, so the polynomial is pinned
+across the rewound runs while `x` alone resamples. As with `reprogramX4`/`reprogramX1`, the pointwise
+apply lemmas are the operative form (the pre-`x` squeeze inputs are strictly shorter, the
+post-`x` inputs strictly longer — `preXTranscript_length_lt_preX1Transcript` and the length chain
+onward). -/
+
+open Classical in
+/-- Reprogram the oracle at the `x` squeeze prefix of the fixed proof string, answering `xv` there
+and `O` elsewhere. -/
+noncomputable def reprogramX {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp) :
+    List (TranscriptElt Fp G) → Fp :=
+  fun t => if t = preXTranscript init ps then xv else O t
+
+/-- At the `x` prefix the reprogrammed oracle answers `xv`. -/
+theorem reprogramX_apply_x {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp) :
+    reprogramX O init ps xv (preXTranscript init ps) = xv := by
+  simp [reprogramX]
+
+/-- Off the `x` prefix the reprogrammed oracle is `O`. -/
+theorem reprogramX_apply_ne {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t ≠ preXTranscript init ps) :
+    reprogramX O init ps xv t = O t := by
+  simp [reprogramX, ht]
+
+/-- Any input whose length differs from the `x` prefix — every other squeeze input of the deployed
+schedule — is untouched by the `x` reprogramming. -/
+theorem reprogramX_apply_length {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length ≠ (preXTranscript init ps).length) :
+    reprogramX O init ps xv t = O t :=
+  reprogramX_apply_ne O init ps xv (fun h => ht (congrArg List.length h))
+
+/-- An input strictly shorter than the `x` prefix is untouched (the `θ`/`β`/`γ`/`y` squeeze
+inputs). -/
+theorem reprogramX_apply_short {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : t.length < (preXTranscript init ps).length) :
+    reprogramX O init ps xv t = O t :=
+  reprogramX_apply_length O init ps xv ht.ne
+
+/-- An input strictly longer than the `x` prefix is untouched (the compression, multiopen, `ξ`/`z`,
+and IPA-round inputs — `preXTranscript_length_lt_preX1Transcript` and the length chain onward). -/
+theorem reprogramX_apply_long {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
+    (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (xv : Fp)
+    {t : List (TranscriptElt Fp G)} (ht : (preXTranscript init ps).length < t.length) :
+    reprogramX O init ps xv t = O t :=
+  reprogramX_apply_length O init ps xv ht.ne'
+
 open scoped ENNReal in
 open Classical in
 /-- **Accept-measure monotonicity into the capstones' `hprob`.** The deployed accept (`DeployedAccepts`,

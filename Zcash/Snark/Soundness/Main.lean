@@ -7,6 +7,7 @@ import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Deployed.Verification
 import Zcash.Snark.Soundness.Forking.Assembly
 import Zcash.Snark.Soundness.Multiopen.Decode
+import Zcash.Snark.Soundness.GoodChallenge
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -327,13 +328,19 @@ The constraint side mirrors the opening side. The verifier checks the gate ident
 `x` — a point check (`quotientCheck`, `numerator.eval x = h.eval x · (xⁿ−1)`). `circuitSatViaGates_of_check`
 lifts that point check to the polynomial identity `circuitSatViaGates` (the witness's decoded columns
 satisfy the gates) provided `x` avoids the Schwartz–Zippel bad set (`hgood`, the shape
-`x ∉ szBadSet (numerator − h·(X^deg − 1))`). That good-challenge event is *derived* from challenge
-uniformity, not left qualitative: the bad set has at most `deg` elements (`szBadSet_card_le`), so under
-the random-oracle model the exclusion costs `≤ deg/p` per use site
-(`Soundness.GoodChallenge.uniformChallenge_szBadSet`, with the good side `≥ 1 − deg/p` in
-`uniformChallenge_szGoodSet`). So `circuitSat`, instantiated to the concrete `circuitSatViaGates`, is
-derived from the verifier's actual gate check rather than taken as an opaque hypothesis, and the
-challenge-exclusion budget it draws is a theorem of the uniform measure. -/
+`x ∉ szBadSet (numerator − h·(X^deg − 1))`). Two families consume that event in two ways. The
+per-instance forms below still take `hgood` as a hypothesis — *priced*, not discharged: the bad set
+has at most `deg` elements (`szBadSet_card_le`), so the exclusion costs `≤ deg/p` of the uniform
+challenge measure (`Soundness.GoodChallenge.uniformChallenge_szBadSet`, good side `≥ 1 − deg/p` in
+`uniformChallenge_szGoodSet`). The `_xgood` forms *derive* it
+(`decoded_constraint_of_relation_and_batch_xgood` here; the Vesta
+`_deployed_xgood`/`_deployed_x4_xgood` rungs): they take an accept event whose measure beats the
+budget and produce the good challenge by pigeonhole
+(`exists_accepting_good_challenge_quotient`), so no `hgood` hypothesis appears in those signatures —
+what remains named there is the event's gate-check content (`hquot`, the gate/`x`→`x₃` transport
+seam, #11/#13). So `circuitSat`, instantiated to the concrete `circuitSatViaGates`, is derived from
+the verifier's actual gate check, with the challenge exclusion either priced per instance or spent
+from an accept measure. -/
 
 open Polynomial in
 /-- The deployed Orchard verifier opening and constraint, as a binding **reduction**, with `P`/`v` **pinned**
@@ -397,6 +404,35 @@ theorem hasNontrivialRelation_of_two_openings (urs : URS G) {a a' : Fin (2 ^ urs
     simp only [commit, commitGen, Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
   rw [hsub, hcollision]
   simp
+
+open Classical in
+/-- **Decode determinism up to the relation branch.** Two batch-opening families over the same
+`(b, columnCommitments, columnEvals)` decode to the *same* column polynomials, or the augmented
+generators admit a nontrivial relation: each decoded coefficient vector opens the pinned column
+commitment, so differing decodes collide on `commit`
+(`hasNontrivialRelation_of_two_openings`). This pins the constraint difference polynomial the
+good-challenge budget measures (`Soundness.GoodChallenge`): the decoded numerator is a function of
+the column commitments and claimed evaluations — data absorbed before the `x` squeeze — not of which
+rewound batch produced it, up to exhibiting the relation branch. In particular the family-quantified
+`hprobX` thresholds of the `_xgood` capstones name one polynomial per statement, not one per
+opening. -/
+theorem decodedCols_eq_or_relation {urs : URS G} {b : Fin (2 ^ urs.k) → Fp} {numColumns : ℕ}
+    {columnCommitments : Fin numColumns → G} {columnEvals : Fin numColumns → Fp}
+    {w₁ w₂ : Fin (2 ^ urs.k) → Fp}
+    (hb₁ : BatchOpeningsForWitness urs b columnCommitments columnEvals w₁)
+    (hb₂ : BatchOpeningsForWitness urs b columnCommitments columnEvals w₂) :
+    decodedCols hb₁ = decodedCols hb₂ ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  by_cases hco : ∀ i, (decodedCols_spec hb₁).decodedColumns.coeffs i
+      = (decodedCols_spec hb₂).decodedColumns.coeffs i
+  · left
+    funext i
+    rw [(decodedCols_spec hb₁).decodedColumns.polynomial i,
+      (decodedCols_spec hb₂).decodedColumns.polynomial i, hco i]
+  · right
+    obtain ⟨i, hne⟩ := not_forall.mp hco
+    exact hasNontrivialRelation_of_two_openings urs hne
+      (((decodedCols_spec hb₁).decodedColumns.commitment i).trans
+        ((decodedCols_spec hb₂).decodedColumns.commitment i).symm)
 
 open Polynomial in
 /-- The deployed Orchard verifier opening and constraint, with the multiopen witness decoded into real
@@ -521,6 +557,53 @@ theorem decoded_constraint_of_relation_and_batch {urs : URS G} {P : G}
       batchOpenings := hbatch
       decodedColumns := decodedCols_spec hbatch
       satisfiesCircuit := hsat }
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- **The terminal constraint bridge with the good challenge derived, not assumed** (the `_xgood`
+form of `decoded_constraint_of_relation_and_batch`). Instead of a fixed gate-check point `x` with
+its `hquot`/`hgood` pair, the caller supplies an accept *event* `accX` — `hquot` holds at every
+accepting point — whose uniform measure beats the vanishing-check budget
+`max (deg numerator) (deg hpoly + deg) / p`. The pigeonhole
+(`exists_accepting_good_challenge_quotient`) then *produces* an accepting challenge outside the
+Schwartz–Zippel bad set, and the fixed-point bridge closes at it: the `hgood` hypothesis is gone
+from this signature, replaced by the derived exclusion of `Soundness.GoodChallenge`.
+
+What remains named: `hquot`'s content — that the deployed gate check holds at every accepting
+challenge of the event — is the gate/`x`→`x₃` transport seam (#11/#13, per the #21 principle), and
+the measure hypothesis carries the random-oracle uniformity axiom like every `hprob`
+(`Soundness.RandomOracle`). The deployed instantiation of `accX` ranges over the `x`-squeeze
+reprogramming events (`Soundness.Forking.reprogramX`, sealed by
+`deriveChallenges_x_eq`). -/
+theorem decoded_constraint_of_relation_and_batch_xgood {urs : URS G} {P : G}
+    {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → G) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
+    (accX : Fp → Prop) [DecidablePred accX]
+    {a : Fin (2 ^ urs.k) → Fp}
+    (hrel : IpaRelation urs P b v a)
+    (hbatch : BatchOpeningsForWitness urs b columnCommitments columnEvals a)
+    (hquot : ∀ xv, accX xv → quotientCheck
+      (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+        (selectedPolys (decodedCols hbatch) instanceIndex) y gates) hpoly deg xv)
+    (hprobX : ((max (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+          (selectedPolys (decodedCols hbatch) instanceIndex) y gates).natDegree
+          (hpoly.natDegree + deg) : ℕ) : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+      < uniformChallenge.toOuterMeasure (Finset.univ.filter accX))
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs P b v columnCommitments columnEvals adviceIndex instanceIndex
+        fixedCols y gates hpoly deg a cols → S) :
+    S := by
+  obtain ⟨xv, haccv, hgoodv⟩ := exists_accepting_good_challenge_quotient
+    (combineGates fixedCols (selectedPolys (decodedCols hbatch) adviceIndex)
+      (selectedPolys (decodedCols hbatch) instanceIndex) y gates) hpoly deg hprobX
+  exact decoded_constraint_of_relation_and_batch columnCommitments columnEvals adviceIndex
+    instanceIndex fixedCols y gates hpoly deg xv hrel hbatch (hquot xv haccv) hgoodv hencodes
 
 open Polynomial in
 /-- Lift an opening-or-DLR terminal capstone to the decoded-column constraint endpoint, provided the

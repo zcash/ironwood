@@ -501,4 +501,64 @@ theorem preX3Transcript_length_eq {shape : Shape} (init : List (TranscriptElt F 
   simp only [preX3Transcript, preX2Transcript, List.length_append, List.length_cons,
     List.length_nil]
 
+/-! ## Sealing the gate-check squeeze point `x` (issue #12's derivation note)
+
+The good-challenge derivation (`Soundness.GoodChallenge`, the `_xgood` capstone rungs) spends an
+accept measure over the vanishing-check challenge `x`. Tying that measure's runs to the deployed
+schedule needs the same two ingredients as the round/multiopen/compression squeezes: the
+commit-before-challenge ordering (the column commitments and the quotient `h` pieces are absorbed
+before `x` is squeezed — exactly what pins the Schwartz–Zippel difference polynomial before the
+challenge samples), and a named squeeze prefix so the oracle can be reprogrammed there
+(`Soundness.Forking.reprogramX`). As with the other seals, `preXTranscript` is fully inlined so
+`deriveChallenges_x_eq` holds by `rfl`, and a refactor of the absorb order breaks it. -/
+
+/-- The transcript `deriveChallenges` has absorbed when `x` is squeezed: everything through the `y`
+marker, then the quotient `h` pieces and the `x` challenge marker. -/
+def preXTranscript {shape : Shape} (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    List (TranscriptElt F G) :=
+  let t := init ++ absorbPoints2 ps.adviceCommitments ++ [.challenge]
+  let t := t ++ absorbLookupPermuted ps.lookupPermutedInput ps.lookupPermutedTable ++ [.challenge]
+  let t := t ++ [.challenge]
+  let t := t ++ absorbPoints2 ps.permutationProduct ++ absorbPoints2 ps.lookupProduct
+    ++ [TranscriptElt.point ps.vanishingRandom] ++ [.challenge]
+  let t := t ++ absorbPoints ps.hPieces ++ [.challenge]
+  t
+
+/-- The deployed `x` *is* the squeeze of the named `x` prefix — the gate-check analogue of
+`deriveChallenges_ipaRound_eq`/`deriveChallenges_x4_eq`. -/
+theorem deriveChallenges_x_eq {shape : Shape} [Zero F] (fs : FiatShamir F G)
+    (init : List (TranscriptElt F G)) (ps : ProofString shape F G) :
+    (deriveChallenges fs init ps).x = fs.squeeze (preXTranscript init ps) := rfl
+
+/-- Commit-before-challenge at `x`: every quotient `h` piece is inside the `x` squeeze input, fixed
+before the vanishing-check challenge — the `hpoly` side of the Schwartz–Zippel difference is pinned
+before `x` samples. -/
+theorem hPieces_mem_preXTranscript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (i : Fin shape.numQuotientPieces) :
+    TranscriptElt.point (ps.hPieces i) ∈ preXTranscript init ps := by
+  simp only [preXTranscript, absorbPoints, List.mem_append, List.mem_ofFn]
+  exact Or.inl (Or.inr ⟨i, rfl⟩)
+
+/-- Commit-before-challenge at `x`: every advice column commitment is inside the `x` squeeze input —
+the columns the decode opens are pinned before the vanishing-check challenge samples. -/
+theorem adviceCommitments_mem_preXTranscript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) (p : Fin shape.numProofs) (i : Fin shape.numAdviceColumns) :
+    TranscriptElt.point (ps.adviceCommitments p i) ∈ preXTranscript init ps := by
+  have hmem : TranscriptElt.point (ps.adviceCommitments p i)
+      ∈ absorbPoints2 (F := F) (G := G) ps.adviceCommitments := by
+    simp only [absorbPoints2, absorbPoints, List.mem_flatten, List.mem_ofFn]
+    exact ⟨_, ⟨p, rfl⟩, List.mem_ofFn.mpr ⟨i, rfl⟩⟩
+  simp only [preXTranscript, List.mem_append]
+  tauto
+
+/-- The `x₁` prefix strictly extends the `x` prefix (by the claimed evaluations and the `x₁`
+marker): the gate-check squeeze sits strictly inside every later squeeze input, so an `x` reprogram
+leaves them untouched. -/
+theorem preXTranscript_length_lt_preX1Transcript {shape : Shape} (init : List (TranscriptElt F G))
+    (ps : ProofString shape F G) :
+    (preXTranscript init ps).length < (preX1Transcript init ps).length := by
+  simp only [preXTranscript, preX1Transcript, List.length_append, List.length_cons,
+    List.length_nil]
+  omega
+
 end Zcash.Snark

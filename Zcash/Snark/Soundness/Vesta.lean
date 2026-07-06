@@ -596,6 +596,69 @@ theorem orchard_verifier_vesta_forking_constraint_deployed [Fact (HasseBound Ves
 open Polynomial in
 open scoped ENNReal in
 open Classical in
+/-- **Deployed decoded constraint capstone with the good challenge derived, not assumed** — the
+`_xgood` form of `orchard_verifier_vesta_forking_constraint_deployed`. The fixed gate-check point
+`x` and its `hquot`/`hgood` pair are replaced by an accept event `accX` — the gate check holds at
+every accepting point (`hquot`) — whose uniform measure beats the vanishing-check budget (`hprobX`,
+threshold `max (deg numerator) (deg hpoly + deg) / p`; the family shape names one polynomial per
+statement up to the relation branch, `decodedCols_eq_or_relation`). The good challenge is then
+*produced* at the extracted opening by the pigeonhole
+(`exists_accepting_good_challenge_quotient`): the `hgood` hypothesis is gone from this signature,
+replaced by the derived exclusion of `Soundness.GoodChallenge` (issue #12).
+
+What stays named: `hquot`'s content — the deployed gate check holding at the event's accepting
+challenges — is the gate/`x`→`x₃` transport seam (#11/#13, per the #21 principle); the deployed
+`accX` instantiation ranges over the `x`-squeeze reprogramming events
+(`Soundness.Forking.reprogramX`, sealed by `deriveChallenges_x_eq`); both measure hypotheses carry
+the random-oracle uniformity axiom (`Soundness.RandomOracle`); and the constant rung's
+static-dichotomy caveat on `hprob` applies unchanged
+(`orchard_verifier_vesta_forking_opening_deployed`). -/
+theorem orchard_verifier_vesta_forking_constraint_deployed_xgood [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    {numColumns numAdvice numInstance : ℕ}
+    (columnCommitments : Fin numColumns → VestaG) (columnEvals : Fin numColumns → Fp)
+    (adviceIndex : Fin numAdvice → Fin numColumns) (instanceIndex : Fin numInstance → Fin numColumns)
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
+    (accX : Fp → Prop) [DecidablePred accX]
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hbatch : MultiopenRewindForRelation urs (deployedCommitment urs hk vk ps ch)
+      (evalVector urs.k ch.x3) (multiopenValue vk ps ch) columnCommitments columnEvals)
+    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a), ∀ xv, accX xv →
+      quotientCheck
+        (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates) hpoly deg xv)
+    (hprobX : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
+      ((max (combineGates fixedCols (selectedPolys (decodedCols (hbatch a hrel)) adviceIndex)
+          (selectedPolys (decodedCols (hbatch a hrel)) instanceIndex) y gates).natDegree
+          (hpoly.natDegree + deg) : ℕ) : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+        < uniformChallenge.toOuterMeasure (Finset.univ.filter accX))
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch) (evalVector urs.k ch.x3)
+        (multiopenValue vk ps ch) columnCommitments columnEvals adviceIndex instanceIndex fixedCols
+        y gates hpoly deg a cols → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  have hopen := orchard_verifier_vesta_forking_opening_deployed urs hk vk ps ch s hz hg0 hs hprob
+  rw [hξ, sub_zero] at hopen
+  rcases hopen with ⟨a, hrel⟩ | hrel
+  · exact Or.inl (decoded_constraint_of_relation_and_batch_xgood columnCommitments columnEvals
+      adviceIndex instanceIndex fixedCols y gates hpoly deg accX hrel (hbatch a hrel)
+      (hquot a hrel) (hprobX a hrel) hencodes)
+  · exact Or.inr hrel
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
 /-- **Deployed decoded constraint capstone with the batch produced by `x₄` rewinding.**
 `orchard_verifier_vesta_forking_constraint_deployed` with the multiopen-rewinding output no longer
 assumed: the batch columns are pinned to the deployed `x₄` aggregates
@@ -664,6 +727,71 @@ theorem orchard_verifier_vesta_forking_constraint_deployed_x4 [Fact (HasseBound 
     (x4BatchCommitments urs hk vk ps ch) (x4BatchEvals vk ps ch) adviceIndex instanceIndex
     fixedCols y gates hpoly deg x hz hg0 hs hξ
     (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4) hquot hgood hencodes hprob
+
+open Polynomial in
+open scoped ENNReal in
+open Classical in
+/-- The `x₄`-rewind deployed capstone with the good challenge derived, not assumed: the `_xgood` form
+of `orchard_verifier_vesta_forking_constraint_deployed_x4`, stacking three floors honestly — `hprob`
+forks the IPA rounds for the opening, `hprob4` forks the `x₄` squeeze for the batch, and `hprobX`
+spends the vanishing-check budget to *produce* the good gate-check challenge
+(`exists_accepting_good_challenge_quotient`), so the `hgood` hypothesis is gone from this signature.
+The caveats of the wrapped rungs apply unchanged (static dichotomy on `hprob`; `hquot`'s content the
+gate/`x`→`x₃` transport seam; all measure hypotheses under the random-oracle uniformity axiom). -/
+theorem orchard_verifier_vesta_forking_constraint_deployed_x4_xgood [Fact (HasseBound Vesta.curve)]
+    [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
+    (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
+    (s : Fin (2 ^ urs.k) → Fp)
+    {numAdvice numInstance : ℕ}
+    (adviceIndex : Fin numAdvice → Fin (deployedX4PairCount vk ps ch + 1))
+    (instanceIndex : Fin numInstance → Fin (deployedX4PairCount vk ps ch + 1))
+    (fixedCols : ℕ → Polynomial Fp)
+    (y : Fp) {ng : ℕ} (gates : Fin ng → Expr Fp) (hpoly : Polynomial Fp) (deg : ℕ)
+    (accX : Fp → Prop) [DecidablePred accX]
+    (hz : ch.z ≠ 0) (hg0 : urs.g 0 ≠ 0) (hs : commit urs s = ps.ipaS)
+    (hξ : ch.xi * innerProduct s (evalVector urs.k ch.x3) = 0)
+    (hcur : ∃ t : IpaTreeV Fp VestaG urs.k,
+      IpaAcceptV urs.g (evalVector urs.k ch.x3) (deployedCommitment urs hk vk ps ch)
+        (multiopenValue vk ps ch) t)
+    (hprob4 : ((deployedX4PairCount vk ps ch : ℝ≥0∞)) / Fintype.card Fp
+      < (PMF.uniformOfFintype Fp).toOuterMeasure (Finset.univ.filter (fun ξv =>
+          ∃ t : IpaTreeV Fp VestaG urs.k,
+            IpaAcceptV urs.g (evalVector urs.k ch.x3)
+              (deployedCommitment urs hk vk ps {ch with x4 := ξv})
+              (multiopenValue vk ps {ch with x4 := ξv}) t)))
+    (hquot : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a), ∀ xv, accX xv →
+      quotientCheck
+        (combineGates fixedCols
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
+          y gates) hpoly deg xv)
+    (hprobX : ∀ a (hrel : IpaRelation urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) a),
+      ((max (combineGates fixedCols
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) adviceIndex)
+          (selectedPolys (decodedCols
+            (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4 a hrel)) instanceIndex)
+          y gates).natDegree
+          (hpoly.natDegree + deg) : ℕ) : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+        < uniformChallenge.toOuterMeasure (Finset.univ.filter accX))
+    {S : Prop}
+    (hencodes : ∀ a cols,
+      SnarkRelationWithDecodedColumns urs (deployedCommitment urs hk vk ps ch)
+        (evalVector urs.k ch.x3) (multiopenValue vk ps ch) (x4BatchCommitments urs hk vk ps ch)
+        (x4BatchEvals vk ps ch) adviceIndex instanceIndex fixedCols y gates hpoly deg a cols → S)
+    (hprob : (kerr (Fintype.card Fp) shape.k : ℝ≥0∞) / Fintype.card (Fin shape.k → Fp)
+        < (PMF.uniformOfFintype (Fin shape.k → Fp)).toOuterMeasure
+            (Finset.univ.filter (fun χ => DeployedIpaVerifierEq (hk ▸ urs.g) urs.w urs.u vk ps
+              {ch with ipaRound := χ}))) :
+    S ∨ HasNontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+  orchard_verifier_vesta_forking_constraint_deployed_xgood urs hk vk ps ch s
+    (x4BatchCommitments urs hk vk ps ch) (x4BatchEvals vk ps ch) adviceIndex instanceIndex
+    fixedCols y gates hpoly deg accX hz hg0 hs hξ
+    (deployedMultiopenRewind_of_x4Prob urs hk vk ps ch hcur hprob4) hquot hprobX hencodes hprob
 
 open scoped ENNReal in
 open Classical in
@@ -769,6 +897,12 @@ The terminal readings, ordered by how much of the prover-as-oracle and rewinding
   accept on the *fixed* proof string, bridge proven for the constant strategy `proverOfRounds`. Their
   `hprob` is one proof's accept measure over the whole challenge space (the static dichotomy), not the
   Fiat–Shamir attack event: see the quantifier-shape caveat on each.
+* **Constant, good-challenge-derived** — the `_xgood` forms
+  (`_constraint_deployed_xgood`/`_constraint_deployed_x4_xgood` above): the fixed gate-check point and
+  its `hgood` hypothesis are replaced by an accept event whose measure beats the vanishing-check
+  budget; the good challenge is *produced* by the Schwartz–Zippel pigeonhole
+  (`Soundness.GoodChallenge`, issue #12), with the event's runs the `reprogramX` oracle-reprogramming
+  events at the sealed `x` prefix (`Soundness.TranscriptOrdering`).
 * **Staged (round-adaptive)** — `orchard_verifier_vesta_forking_opening_adaptive`/`_constraint_adaptive`:
   halo2's actual accept on the spliced proofs of an arbitrary prefix-respecting strategy `P : Prover`,
   bridge proven for every such strategy (`deployedVerifierEq_iff_flatAccept_adaptive`). Their `hprob` is an

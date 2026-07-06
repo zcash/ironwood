@@ -23,6 +23,11 @@ consequences of the one distributional idealization rather than unexamined assum
 * `quotientCheck_badSet_measure` — the acceptance-side reading (the random-oracle-measure twin of
   `quotientCheck_sound`): a committed-polynomial set that *violates* the constraint identity passes
   the verifier's point check on a set of challenges of measure at most `natDegree C / p`.
+* `exists_accepting_good_challenge` / `_quotient` — **the production step.** An accept event whose
+  uniform measure beats the budget contains an accepting challenge *outside* the bad set. This is
+  what the `_xgood` capstone rungs consume: the good challenge is *produced* from the accept
+  measure, so `hgood` disappears from those signatures — the x-site analogue of the forking floors
+  (`extractable_of_prob`, `exists_injective_accepting_of_measure`).
 
 ## Scope
 
@@ -30,12 +35,18 @@ The measure is `uniformChallenge`, the random-oracle idealization of one fresh s
 (`Zcash.Snark.Soundness.RandomOracle` — the accepted uniformity axiom, carried in the statements).
 The Schwartz–Zippel argument needs the difference polynomial pinned before the challenge is sampled,
 and the deployed schedule provides exactly that: `deriveChallenges` squeezes `x` from a transcript
-that has already absorbed the column and quotient commitments, so `C` is a function of the prefix
-the squeeze hashes. Like the other per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p`
-each), this `d / p` budget is stated per use site and not yet composed into one end-to-end bound —
-see the "uncomposed budgets" note in `Zcash.Snark.Soundness.RandomOracle`. Capstones whose `hgood`
-is quantified over a family (one instance per opening of the pinned statement) draw the budget once
-per instantiated site; the terminal decoded capstones take a single canonical difference polynomial.
+that has already absorbed the advice column commitments and the quotient `h` pieces
+(`adviceCommitments_mem_preXTranscript`/`hPieces_mem_preXTranscript`, sealed by
+`deriveChallenges_x_eq` in `Soundness.TranscriptOrdering`; instance data enters through the `init`
+prefix and the fixed columns through the VK), so `C` is a function of the prefix the squeeze hashes
+— pinned across the `x`-reprogramming runs (`Soundness.Forking.reprogramX`) and independent of which
+rewound batch decoded it, up to the relation branch (`decodedCols_eq_or_relation`,
+`Soundness.Main`). Like the other per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p`
+each), this `d / p` budget is stated per use site — the `_xgood` rungs compose it into their own
+accept-measure hypothesis, while the cross-budget composition stays with the "uncomposed budgets"
+note in `Zcash.Snark.Soundness.RandomOracle`. Capstones whose `hgood` is quantified over a family
+(one instance per opening of the pinned statement) draw the budget once per instantiated site; the
+terminal decoded capstones take a single canonical difference polynomial.
 -/
 
 namespace Zcash.Snark
@@ -97,5 +108,57 @@ theorem quotientCheck_badSet_measure (numerator h : Polynomial Fp) (n : ℕ)
       ≤ ((numerator - h * (X ^ n - 1)).natDegree : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞) := by
   rw [quotientCheck_filter_eq_szBadSet numerator h n hne]
   exact uniformChallenge_szBadSet _
+
+/-! ## Producing a good accepting challenge from an accept measure
+
+The lemmas above *price* the exclusion; the lemmas below *spend* it. An accept event whose uniform
+measure beats `m / p` has more than `m` accepting challenges, so if the bad set has at most `m`
+elements some accepting challenge avoids it — the good-challenge condition is produced from the
+accept measure rather than assumed. This is the x-site instance of the codebase-wide
+counting floors: `extractable_of_prob` forces the round-forking tree, and
+`exists_injective_accepting_of_measure` forces the `x₄` rewound family, from the same
+measure-beats-count shape. The `_xgood` capstone rungs (`Zcash.Snark.Soundness.Main`,
+`Zcash.Snark.Soundness.Vesta`) consume these, dropping the `hgood` hypothesis. -/
+
+/-- **The pigeonhole core.** If the accept event's uniform measure beats `m / p` and the bad set has
+at most `m` elements, some accepting challenge avoids the bad set: the accept set has more than `m`
+elements, so it cannot be contained in a set of at most `m`. -/
+theorem exists_accepting_avoiding_of_measure {acc : Fp → Prop} [DecidablePred acc]
+    {bad : Finset Fp} {m : ℕ} (hcard : bad.card ≤ m)
+    (hprob : (m : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+      < uniformChallenge.toOuterMeasure (Finset.univ.filter acc)) :
+    ∃ xv, acc xv ∧ xv ∉ bad := by
+  have hcount : bad.card < (Finset.univ.filter acc).card := by
+    have hm : m < (Finset.univ.filter acc).card := by
+      by_contra hle
+      have hmono : uniformChallenge.toOuterMeasure (Finset.univ.filter acc)
+          ≤ (m : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞) := by
+        rw [uniformChallenge_badSet]
+        exact ENNReal.div_le_div_right (by exact_mod_cast Nat.le_of_not_lt hle) _
+      exact absurd hprob (not_lt.mpr hmono)
+    exact lt_of_le_of_lt hcard hm
+  obtain ⟨xv, hmem, hnot⟩ := Finset.exists_mem_notMem_of_card_lt_card hcount
+  exact ⟨xv, (Finset.mem_filter.mp hmem).2, hnot⟩
+
+/-- **Good-challenge production at a Schwartz–Zippel site.** An accept measure beating
+`natDegree C / p` yields an accepting challenge outside `szBadSet C` — the capstones' `hgood`,
+derived from the accept measure rather than assumed. -/
+theorem exists_accepting_good_challenge {acc : Fp → Prop} [DecidablePred acc] (C : Polynomial Fp)
+    (hprob : (C.natDegree : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)
+      < uniformChallenge.toOuterMeasure (Finset.univ.filter acc)) :
+    ∃ xv, acc xv ∧ xv ∉ szBadSet C :=
+  exists_accepting_avoiding_of_measure (szBadSet_card_le C) hprob
+
+/-- Good-challenge production at the vanishing-check site, with the degree explicit: an accept
+measure beating `max (deg numerator) (deg h + n) / p` yields an accepting challenge that is good for
+the quotient difference. The threshold is the caller-computable `d` of `szBadSet_quotient_card_le`,
+so instantiations need not evaluate the difference polynomial's degree. -/
+theorem exists_accepting_good_challenge_quotient {acc : Fp → Prop} [DecidablePred acc]
+    (numerator h : Polynomial Fp) (n : ℕ)
+    (hprob : ((max numerator.natDegree (h.natDegree + n) : ℕ) : ℝ≥0∞)
+        / (Fintype.card Fp : ℝ≥0∞)
+      < uniformChallenge.toOuterMeasure (Finset.univ.filter acc)) :
+    ∃ xv, acc xv ∧ xv ∉ szBadSet (numerator - h * (X ^ n - 1)) :=
+  exists_accepting_avoiding_of_measure (szBadSet_quotient_card_le numerator h n) hprob
 
 end Zcash.Snark

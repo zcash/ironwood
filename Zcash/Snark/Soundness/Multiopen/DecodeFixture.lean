@@ -13,9 +13,11 @@ section) breaks this file instead of passing silently.
 The first instance is the smallest single-point, rotation-free one in the model's documented scope:
 `k = 0` (one URS generator, over `G := Fp` itself, where `commit` has trivial kernel), one column, all
 data zero — the zero column satisfies the one-gate circuit `advice 0` with zero quotient at the opened
-point. Both terminal entry points are exercised: `decoded_constraint_of_relation_and_batch` on a bare
-batch, and `decoded_constraint_of_opening_or_relation` with its `hbatch` *derived* from a family of
-accepting IPA transcripts (`multiopenRewindForRelation_of_acceptedFamily`), not assumed.
+point. The terminal entry points are exercised: `decoded_constraint_of_relation_and_batch` on a bare
+batch, `decoded_constraint_of_opening_or_relation` with its `hbatch` *derived* from a family of
+accepting IPA transcripts (`multiopenRewindForRelation_of_acceptedFamily`), not assumed, and the
+`_xgood` form with its good challenge *derived* from a full-measure accept event rather than
+supplied as an `hgood` hypothesis.
 
 The second instance (`Prod` section) is multi-column with nonzero data: three columns `2, 3, 6` at
 distinct batching challenges `0, 1, 2`, a two-advice/one-instance gate `a₀·a₁ − i₀` satisfied with zero
@@ -129,6 +131,27 @@ theorem toy_terminal_discharged :
     (multiopenRewindForRelation_of_acceptedFamily toyFamily)
     (fun a hrel => by rw [toy_numerator]; simp [quotientCheck])
     (fun a hrel => by rw [toy_numerator]; simp [szBadSet])
+    (fun _ _ _ => trivial)
+
+/-- The `_xgood` terminal endpoint discharged concretely: no `hgood`-shaped hypothesis is supplied at
+all — the good challenge is *derived* from a full-measure accept event (`accX := fun _ => True`,
+whose measure `1` beats the toy budget `1 / p`). The regression guard that the
+derived-good-challenge hypothesis shapes (`hquot` at every accepting point, the `hprobX` threshold)
+stay satisfiable. -/
+theorem toy_xgood_discharged : True :=
+  decoded_constraint_of_relation_and_batch_xgood (urs := toyUrs)
+    (fun _ : Fin 1 => (0 : Fp)) (fun _ => 0) (fun i : Fin 1 => i) (fun i : Fin 1 => i)
+    (fun _ => 0) 0 toyGates 0 1 (fun _ => True) toy_opens toyBatch
+    (fun xv _ => by rw [toy_numerator toyBatch]; simp [quotientCheck])
+    (by
+      rw [toy_numerator toyBatch]
+      have hmax : max (0 : Polynomial Fp).natDegree ((0 : Polynomial Fp).natDegree + 1) = 1 := by
+        simp
+      rw [hmax, Finset.filter_true, uniformChallenge_badSet, Finset.card_univ,
+        ENNReal.div_self (Nat.cast_ne_zero.mpr Fintype.card_ne_zero) (ENNReal.natCast_ne_top _),
+        ENNReal.div_lt_iff (Or.inl (Nat.cast_ne_zero.mpr Fintype.card_ne_zero))
+          (Or.inl (ENNReal.natCast_ne_top _)), one_mul]
+      exact_mod_cast Fintype.one_lt_card)
     (fun _ _ _ => trivial)
 
 /-! ## Multi-column, nonzero data

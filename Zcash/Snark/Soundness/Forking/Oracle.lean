@@ -17,8 +17,9 @@ This module supplies the random-oracle primitives the forking development is fra
   forked query `t`.
 * `uniformChallenge` / `uniformChallenge_badSet` — the idealization that a fresh squeeze is uniform over
   `Fp`, hence lands in a finite "bad" set of size `d` with probability `d / p`. This is the Schwartz–Zippel
-  exclusion budget — drawn per use site by `Soundness.GoodChallenge`, which derives the capstones'
-  good-challenge (`hgood`) exclusions from it (issue #12) — and the source of the forking-collision bounds.
+  exclusion budget — priced per use site by `Soundness.GoodChallenge` and *spent* by the `_xgood`
+  capstone rungs, which derive the good challenge from an accept measure beating it (issue #12) — and
+  the source of the forking-collision bounds.
 
 ## The distributional floor: the random-oracle uniformity axiom (accepted, not proved)
 
@@ -50,15 +51,18 @@ capstones.)
 `uniformChallenge_badSet` is the one directly-consumed consequence — it
 supplies the `1/p` `ξ`-randomization budget in `Soundness.Forking.Rewind` (`blinder_shift_badSet_measure`,
 `Soundness.Vesta.blinder_value_recovery_badSet`) and the `deg/p` gate-check good-challenge budget in
-`Soundness.GoodChallenge` (`uniformChallenge_szBadSet`, the derived form of the capstones' `hgood`).
+`Soundness.GoodChallenge` (`uniformChallenge_szBadSet`; spent by the `_xgood` rungs via
+`exists_accepting_good_challenge_quotient`, which derive the good challenge their per-instance
+`hgood` siblings assume).
 
 Two further scope notes. **Existence-only:** beating `kerr` proves the extracted witness *exists* — a
 counting argument over the challenge space (`Soundness.Forking.Tree`, `Soundness.Forking.Probability`) —
 not that an expected-polynomial-time extractor computes it; the runtime/emulation half of literature
 knowledge soundness is not modeled, a gap distinct from the query-count factor above. **Uncomposed
-budgets:** the per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p` each; the gate-check good
-challenge, `deg/p` per use site, `Soundness.GoodChallenge`) and the `3k/p` tree threshold are stated
-separately, not yet composed into one end-to-end bound — the composition belongs with the query-loss
+budgets:** the per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p` each) and the `3k/p` tree
+threshold are stated separately, not yet composed into one end-to-end bound. The `_xgood` rungs compose
+the gate-check `deg/p` budget into their own accept-measure hypothesis (`Soundness.GoodChallenge`), but
+the cross-budget composition — rounds × `x₄` × `x` × the `1/p` exclusions — belongs with the query-loss
 accounting, part of the same out-of-Lean floor.
 -/
 
