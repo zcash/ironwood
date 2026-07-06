@@ -705,15 +705,16 @@ open Classical in
 `x` and its `hquot`/`hgood` pair are replaced by an accept event `accX` — the gate check holds at
 every accepting point (`hquot`) — whose uniform measure beats the vanishing-check budget (`hprobX`,
 threshold `max (deg numerator) (deg hpoly + deg) / p`; the family shape names one polynomial per
-statement up to the relation branch, `decodedCols_eq_or_relation`). The good challenge is then
+statement up to the relation branch — the separately-proven `decodedCols_eq_or_relation`). The good challenge is then
 *produced* at the extracted opening by the pigeonhole
 (`exists_accepting_good_challenge_quotient`): the `hgood` hypothesis is gone from this signature,
 replaced by the derived exclusion of `Soundness.GoodChallenge` (issue #12).
 
 What stays named: `hquot`'s content — the deployed gate check holding at the event's accepting
-challenges — is the gate/`x`→`x₃` transport seam (#11/#13, per the #21 principle); the deployed
-`accX` instantiation ranges over the `x`-squeeze reprogramming events
-(`Soundness.Forking.reprogramX`, sealed by `deriveChallenges_x_eq`); both measure hypotheses carry
+challenges — is the gate/`x`→`x₃` transport seam (#11/#33, per the #21 principle); `accX` is a free
+predicate here — a deployed instantiation over the `x`-squeeze reprogramming events
+(`Soundness.Forking.reprogramX`, sealed by `deriveChallenges_x_eq`) is left to #33 and is nontrivial,
+since the decoded `C` comes from *post-*`x` rewinds; both measure hypotheses carry
 the random-oracle uniformity axiom (`Soundness.RandomOracle`); and the constant rung's
 static-dichotomy caveat on `hprob` applies unchanged
 (`orchard_verifier_vesta_forking_opening_deployed`). -/
@@ -1001,7 +1002,7 @@ open Classical in
 `accX` and its budget-beating measure (`hprobX`) replace the fixed point and `hgood`. This is the
 attack-event rung whose `hprob` carries no static-dichotomy caveat; the good challenge is produced
 through `decoded_constraint_of_opening_or_relation_xgood`, with `hquot`'s content the residual
-gate/`x`→`x₃` transport seam (#11/#13). -/
+gate/`x`→`x₃` transport seam (#11/#33). -/
 theorem orchard_verifier_vesta_forking_constraint_adaptive_xgood [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -1058,11 +1059,12 @@ The terminal readings, ordered by how much of the prover-as-oracle and rewinding
   `_adaptive_rewind_xgood`, and each `_agm_dl_xgood`): the fixed gate-check point and its `hgood`
   hypothesis are replaced by an accept event whose measure beats the vanishing-check budget, and the
   good challenge is *produced* by the Schwartz–Zippel pigeonhole (`Soundness.GoodChallenge`, issue
-  #12) at the common terminal `decoded_constraint_of_opening_or_relation_xgood`. The event's runs are
-  the `reprogramX` oracle-reprogramming events at the sealed `x` prefix
-  (`Soundness.TranscriptOrdering`); `hquot`'s content — the deployed gate check at those points —
-  stays as the gate/`x`→`x₃` transport seam (#11/#13). The per-instance `hgood` rungs remain as the
-  priced modular interface beneath them.
+  #12) at the common terminal `decoded_constraint_of_opening_or_relation_xgood`. `accX` is a free
+  predicate at these rungs; the `reprogramX` seal (`Soundness.TranscriptOrdering`) is forward-looking
+  #33 infrastructure a future rung would use to state it over deployed `x`-squeeze events (nontrivial,
+  as the decoded `C` comes from post-`x` rewinds). `hquot`'s content — the deployed gate check at the
+  accepting challenges — stays as the gate/`x`→`x₃` transport seam (#11/#33). The per-instance
+  `hgood` rungs remain as the priced modular interface beneath them.
 * **Staged (round-adaptive)** — `orchard_verifier_vesta_forking_opening_adaptive`/`_constraint_adaptive`:
   halo2's actual accept on the spliced proofs of an arbitrary prefix-respecting strategy `P : Prover`,
   bridge proven for every such strategy (`deployedVerifierEq_iff_flatAccept_adaptive`). Their `hprob` is an
@@ -1171,7 +1173,7 @@ open Classical in
 constant rung with the good challenge derived, not assumed — the accept event `accX` and its
 budget-beating measure (`hprobX`) replace the fixed point and `hgood`, and the good challenge is
 produced through `decoded_constraint_of_opening_or_relation_xgood`. Static-dichotomy caveat on
-`hprob` and the `hquot` gate/`x`→`x₃` transport seam (#11/#13) carry over from the wrapped rung. -/
+`hprob` and the `hquot` gate/`x`→`x₃` transport seam (#11/#33) carry over from the wrapped rung. -/
 theorem orchard_verifier_vesta_forking_constraint_rewind_xgood [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
@@ -1317,7 +1319,7 @@ attack-event endpoint of the ladder — staged strategy over reprogrammed-oracle
 challenge derived, not assumed. `accX` and its budget-beating measure (`hprobX`) replace the fixed
 point and `hgood`; the good challenge is produced through
 `decoded_constraint_of_opening_or_relation_xgood`. No static-dichotomy caveat (the `hprob` is the
-adaptive attack event); the residual is `hquot`'s gate/`x`→`x₃` transport content (#11/#13) and the
+adaptive attack event); the residual is `hquot`'s gate/`x`→`x₃` transport content (#11/#33) and the
 uniformity axiom. -/
 theorem orchard_verifier_vesta_forking_constraint_adaptive_rewind_xgood [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)

@@ -137,7 +137,12 @@ theorem toy_terminal_discharged :
 all — the good challenge is *derived* from a full-measure accept event (`accX := fun _ => True`,
 whose measure `1` beats the toy budget `1 / p`). The regression guard that the
 derived-good-challenge hypothesis shapes (`hquot` at every accepting point, the `hprobX` threshold)
-stay satisfiable. -/
+stay satisfiable.
+
+`C = 0` here (the identity holds), and that is *forced*, not incidental: any satisfiable `_xgood`
+instance has the identity holding as polynomials. If `C ≠ 0`, `hquot` (the gate check at every
+accepting point) confines the accept set to the `≤ deg`-element bad set, contradicting `hprobX`
+(measure `> deg/p`). So `C = 0` is full coverage — a "nonzero-`C`" `_xgood` fixture cannot exist. -/
 theorem toy_xgood_discharged : True :=
   decoded_constraint_of_relation_and_batch_xgood (urs := toyUrs)
     (fun _ : Fin 1 => (0 : Fp)) (fun _ => 0) (fun i : Fin 1 => i) (fun i : Fin 1 => i)

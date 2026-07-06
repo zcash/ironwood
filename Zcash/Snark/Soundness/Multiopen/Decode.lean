@@ -93,7 +93,7 @@ supply the Rust-produced object and check equivalence rather than reproduce the 
 in Lean; `Fingerprint.Match` is its in-tree home), the *faithfulness* obligations stay with the
 fingerprint (`Fingerprint.Match`, `MsmMatch`): the
 **gate check / `x`→`x₃` transport** — the "the gate check itself comes from `assemble.eval = 0`" half
-of `hquot` — is inside the fingerprinted MSM (`subProofExpressions`), i.e. #11/#13 territory. Likewise
+of `hquot` — is inside the fingerprinted MSM (`subProofExpressions`), i.e. #11/#33 territory. Likewise
 the per-column *claimed-eval* binding at the original rotated points `ωⁱ·x`: the `x₁` decode binds the
 member *commitments* and transports per-run set evaluations; tying those to the proof string's claimed
 per-point evaluations is the `r`-polynomial (`x₂`/`x₃`) content carried by the fingerprint, not

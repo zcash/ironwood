@@ -38,10 +38,13 @@ and the deployed schedule provides exactly that: `deriveChallenges` squeezes `x`
 that has already absorbed the advice column commitments and the quotient `h` pieces
 (`adviceCommitments_mem_preXTranscript`/`hPieces_mem_preXTranscript`, sealed by
 `deriveChallenges_x_eq` in `Soundness.TranscriptOrdering`; instance data enters through the `init`
-prefix and the fixed columns through the VK), so `C` is a function of the prefix the squeeze hashes
-— pinned across the `x`-reprogramming runs (`Soundness.Forking.reprogramX`) and independent of which
-rewound batch decoded it, up to the relation branch (`decodedCols_eq_or_relation`,
-`Soundness.Main`). Like the other per-hypothesis exclusions (`z ≠ 0` and the `ξ`-recovery, `1/p`
+prefix and the fixed columns through the VK), so `C` is a function of the prefix the squeeze hashes.
+(Two separately-proven supporting facts, not consumed by the `_xgood` proofs: `decodedCols_eq_or_relation`
+(`Soundness.Main`) records that the decoded columns — hence `C` — are determined by the pinned
+commitments up to the relation branch; and the `reprogramX` seal (`Soundness.TranscriptOrdering`) is
+forward-looking #33 infrastructure for stating `accX` over deployed `x`-squeeze events, whose wiring
+is nontrivial since `C` is recovered from post-`x` rewinds.) Like the other per-hypothesis exclusions
+(`z ≠ 0` and the `ξ`-recovery, `1/p`
 each), this `d / p` budget is stated per use site — the `_xgood` rungs compose it into their own
 accept-measure hypothesis, while the cross-budget composition stays with the "uncomposed budgets"
 note in `Zcash.Snark.Soundness.RandomOracle`. Capstones whose `hgood` is quantified over a family

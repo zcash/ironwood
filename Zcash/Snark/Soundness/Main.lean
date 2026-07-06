@@ -338,7 +338,7 @@ challenge measure (`Soundness.GoodChallenge.uniformChallenge_szBadSet`, good sid
 budget and produce the good challenge by pigeonhole
 (`exists_accepting_good_challenge_quotient`), so no `hgood` hypothesis appears in those signatures —
 what remains named there is the event's gate-check content (`hquot`, the gate/`x`→`x₃` transport
-seam, #11/#13). So `circuitSat`, instantiated to the concrete `circuitSatViaGates`, is derived from
+seam, #11/#33). So `circuitSat`, instantiated to the concrete `circuitSatViaGates`, is derived from
 the verifier's actual gate check, with the challenge exclusion either priced per instance or spent
 from an accept measure. -/
 
@@ -571,11 +571,13 @@ Schwartz–Zippel bad set, and the fixed-point bridge closes at it: the `hgood` 
 from this signature, replaced by the derived exclusion of `Soundness.GoodChallenge`.
 
 What remains named: `hquot`'s content — that the deployed gate check holds at every accepting
-challenge of the event — is the gate/`x`→`x₃` transport seam (#11/#13, per the #21 principle), and
+challenge of the event — is the gate/`x`→`x₃` transport seam (#11/#33, per the #21 principle), and
 the measure hypothesis carries the random-oracle uniformity axiom like every `hprob`
-(`Soundness.RandomOracle`). The deployed instantiation of `accX` ranges over the `x`-squeeze
-reprogramming events (`Soundness.Forking.reprogramX`, sealed by
-`deriveChallenges_x_eq`). -/
+(`Soundness.RandomOracle`). `accX` is a free predicate here; a deployed instantiation would state it
+over the `x`-squeeze reprogramming events (`Soundness.Forking.reprogramX`, sealed by
+`deriveChallenges_x_eq`), but that wiring is left to #33 and is nontrivial — the decoded `C` is
+recovered from *post-*`x` (`x₁`/`x₄`) rewinds, so reprogramming the early `x` cascades downstream and
+`C` is not obviously fixed across the event. -/
 theorem decoded_constraint_of_relation_and_batch_xgood {urs : URS G} {P : G}
     {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
     {numColumns numAdvice numInstance : ℕ}
@@ -649,7 +651,7 @@ open Classical in
 opening the good challenge is *produced* by the pigeonhole
 (`exists_accepting_good_challenge_quotient`, via `decoded_constraint_of_relation_and_batch_xgood`),
 so no `hgood` hypothesis appears; the relation branch passes straight through. What stays named is
-`hquot`'s content — the gate/`x`→`x₃` transport seam (#11/#13) — and the random-oracle uniformity
+`hquot`'s content — the gate/`x`→`x₃` transport seam (#11/#33) — and the random-oracle uniformity
 axiom in `hprobX`. -/
 theorem decoded_constraint_of_opening_or_relation_xgood {urs : URS G} {P : G}
     {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
