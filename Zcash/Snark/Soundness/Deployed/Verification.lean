@@ -1,5 +1,5 @@
 import Zcash.Snark.Verifier.Assemble
-import Zcash.Snark.Soundness.DeployedFold
+import Zcash.Snark.Soundness.Deployed.Fold
 
 /-!
 # The deployed accept entails halo2's explicit IPA verifier equation (structural faithfulness)

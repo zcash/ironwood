@@ -1,10 +1,10 @@
-import Zcash.Snark.Soundness.DeployedIpa
-import Zcash.Snark.Soundness.BindingReduction
+import Zcash.Snark.Soundness.Deployed.Ipa
+import Zcash.Snark.Soundness.Deployed.Binding
 
 /-!
 # Peeling the deployed IPA onto the clean recursive IPA, as a binding reduction
 
-`Zcash.Snark.Soundness.DeployedIpa` modelled halo2's deployed IPA — the clean recursion plus the `U`/`W`
+`Zcash.Snark.Soundness.Deployed.Ipa` modelled halo2's deployed IPA — the clean recursion plus the `U`/`W`
 apparatus (`S`/`ξ` stays in the verifier equation, not the tree) — as `DeployedIpaAcceptV`. This module peels
 that apparatus off onto the clean `IpaAcceptV`, so
 the deployed opening reduces to `ipa_soundV`, expressing commitment binding as a discrete-log-relation (DLR)

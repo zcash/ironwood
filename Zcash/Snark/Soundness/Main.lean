@@ -3,8 +3,8 @@ import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.IpaSoundness
-import Zcash.Snark.Soundness.DeployedIpaPeel
-import Zcash.Snark.Soundness.DeployedVerification
+import Zcash.Snark.Soundness.Deployed.IpaPeel
+import Zcash.Snark.Soundness.Deployed.Verification
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -17,7 +17,7 @@ theorems are named with a `_conditional` suffix to avoid overclaiming: they are 
 soundness. The deployed `_opening` / `_constraint` theorems below derive the IPA opening (via `ipa_soundV`,
 after peeling the `U`/`W` apparatus) and the gate constraint from the accept, with `P`/`v` **pinned** to
 the proof's `multiopenCommitment`/`multiopenValue`. The accept is **proven** to entail the explicit
-closed-form `DeployedIpaVerifierEq` (`deployedAccepts_verifierEq`, via `Zcash.Snark.Soundness.DeployedVerification`
+closed-form `DeployedIpaVerifierEq` (`deployedAccepts_verifierEq`, via `Zcash.Snark.Soundness.Deployed.Verification`
 — an implication, the direction soundness consumes; the accept also comprises the rejection guards);
 fidelity of that closed form to halo2's Rust is the §1 transcription (`assembleFinalMsm`/`ipaFold`, checked
 by the fingerprint), not re-proved here. The residual `FiatShamirTree` bridge is the Fiat–Shamir
@@ -26,7 +26,7 @@ the leaf `g`-representation of the folded commitment, and the adjusted-commitmen
 `P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms into the opened commitment — which needs a
 representation of the adversary point `S`, so it is not a deterministic rewrite) — all issue #11.
 Commitment binding is load-bearing *in the proof* (the `U`/`W` separation is derived from a discrete-log
-relation reduction, `Zcash.Snark.Soundness.DeployedIpaPeel`), so the deployed conclusion is
+relation reduction, `Zcash.Snark.Soundness.Deployed.IpaPeel`), so the deployed conclusion is
 `SnarkRelation ∨ HasNontrivialRelation` — a *reduction*: it exhibits a discrete-log relation rather than
 asserting soundness outright. A relation always *exists* in a prime-order group, so at the concrete curve this
 disjunction is propositionally `True` and the *statement* is vacuous; the soundness force is the DLR/AGM

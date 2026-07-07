@@ -19,13 +19,15 @@ import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
 import Zcash.Snark.Soundness.CommitFold
-import Zcash.Snark.Soundness.BindingReduction
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Soundness.IpaSoundness
-import Zcash.Snark.Soundness.DeployedFold
-import Zcash.Snark.Soundness.DeployedIpa
-import Zcash.Snark.Soundness.DeployedIpaPeel
-import Zcash.Snark.Soundness.DeployedVerification
+-- Deployed halo2-verifier soundness path: peel the deployed IPA (U/W/S apparatus) onto clean `ipa_soundV`,
+-- with commitment binding expressed as a discrete-log-relation reduction (#13).
+import Zcash.Snark.Soundness.Deployed.Binding
+import Zcash.Snark.Soundness.Deployed.Fold
+import Zcash.Snark.Soundness.Deployed.Ipa
+import Zcash.Snark.Soundness.Deployed.IpaPeel
+import Zcash.Snark.Soundness.Deployed.Verification
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Vesta

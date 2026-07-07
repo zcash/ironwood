@@ -26,7 +26,7 @@ not logically but by DLR hardness — no feasible adversary can *find* one — c
 `ipa_soundV`.
 
 This file supplies the binding-free scaffolding (the tree, its projection, and the deployed accept
-predicate); the peeling itself is in `Zcash.Snark.Soundness.DeployedIpaPeel`.
+predicate); the peeling itself is in `Zcash.Snark.Soundness.Deployed.IpaPeel`.
 -/
 
 namespace Zcash.Snark

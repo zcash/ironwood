@@ -95,7 +95,7 @@ theorem accepting_fold_eq_foldVec {m : ℕ} (gLo gHi : Fin m → G) (aLo aHi a' 
 The two results below state the trust boundary underlying commitment binding: rather than assuming the
 commitment is binding outright, binding is modelled as a reduction to DLR hardness at the URS generators.
 The deployed binding reduction extends them to the `U`, `W` generators
-(`Zcash.Snark.Soundness.BindingReduction`), in place of an independence assumption. Discharging the
+(`Zcash.Snark.Soundness.Deployed.Binding`), in place of an independence assumption. Discharging the
 resulting relation against DLR hardness — the computational / AGM layer, not in this development — is what
 would yield unconditional binding.
 
