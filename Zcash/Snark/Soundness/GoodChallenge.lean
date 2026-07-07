@@ -1,13 +1,13 @@
 import Mathlib
-import Zcash.Snark.Soundness.Constraints
-import Zcash.Snark.Soundness.RandomOracle
+import Zcash.Snark.Soundness.Constraints.Vanishing
+import Zcash.Snark.Soundness.Forking.Oracle
 
 /-!
 # Schwartz–Zippel good-challenge exclusions from challenge uniformity
 
 The constraint layer consumes good-challenge hypotheses (`hgood`): the vanishing-check challenge
 avoids the Schwartz–Zippel bad set `szBadSet C` — the roots of the constraint difference
-`C = numerator − h · (Xⁿ − 1)` (`Zcash.Snark.Soundness.Constraints`). This module derives those
+`C = numerator − h · (Xⁿ − 1)` (`Zcash.Snark.Soundness.Constraints.Vanishing`). This module derives those
 exclusions from challenge uniformity under the random-oracle model (issue #12), so they are budgeted
 consequences of the one distributional idealization rather than unexamined assumptions:
 
@@ -32,22 +32,22 @@ consequences of the one distributional idealization rather than unexamined assum
 ## Scope
 
 The measure is `uniformChallenge`, the random-oracle idealization of one fresh squeeze
-(`Zcash.Snark.Soundness.RandomOracle` — the accepted uniformity axiom, carried in the statements).
+(`Zcash.Snark.Soundness.Forking.Oracle` — the accepted uniformity axiom, carried in the statements).
 The Schwartz–Zippel argument needs the difference polynomial pinned before the challenge is sampled,
 and the deployed schedule provides exactly that: `deriveChallenges` squeezes `x` from a transcript
 that has already absorbed the advice column commitments and the quotient `h` pieces
 (`adviceCommitments_mem_preXTranscript`/`hPieces_mem_preXTranscript`, sealed by
-`deriveChallenges_x_eq` in `Soundness.TranscriptOrdering`; instance data enters through the `init`
+`deriveChallenges_x_eq` in `Soundness.Forking.Ordering`; instance data enters through the `init`
 prefix and the fixed columns through the VK), so `C` is a function of the prefix the squeeze hashes.
 (Two separately-proven supporting facts, not consumed by the `_xgood` proofs: `decodedCols_eq_or_relation`
 (`Soundness.Main`) records that the decoded columns — hence `C` — are determined by the pinned
-commitments up to the relation branch; and the `reprogramX` seal (`Soundness.TranscriptOrdering`) is
+commitments up to the relation branch; and the `reprogramX` seal (`Soundness.Forking.Ordering`) is
 forward-looking #33 infrastructure for stating `accX` over deployed `x`-squeeze events, whose wiring
 is nontrivial since `C` is recovered from post-`x` rewinds.) Like the other per-hypothesis exclusions
 (`z ≠ 0` and the `ξ`-recovery, `1/p`
 each), this `d / p` budget is stated per use site — the `_xgood` rungs compose it into their own
 accept-measure hypothesis, while the cross-budget composition stays with the "uncomposed budgets"
-note in `Zcash.Snark.Soundness.RandomOracle`. Capstones whose `hgood` is quantified over a family
+note in `Zcash.Snark.Soundness.Forking.Oracle`. Capstones whose `hgood` is quantified over a family
 (one instance per opening of the pinned statement) draw the budget once per instantiated site; the
 terminal decoded capstones take a single canonical difference polynomial.
 -/

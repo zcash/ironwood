@@ -573,7 +573,7 @@ from this signature, replaced by the derived exclusion of `Soundness.GoodChallen
 What remains named: `hquot`'s content — that the deployed gate check holds at every accepting
 challenge of the event — is the gate/`x`→`x₃` transport seam (#11/#33, per the #21 principle), and
 the measure hypothesis carries the random-oracle uniformity axiom like every `hprob`
-(`Soundness.RandomOracle`). `accX` is a free predicate here; a deployed instantiation would state it
+(`Soundness.Forking.Oracle`). `accX` is a free predicate here; a deployed instantiation would state it
 over the `x`-squeeze reprogramming events (`Soundness.Forking.reprogramX`, sealed by
 `deriveChallenges_x_eq`), but that wiring is left to #33 and is nontrivial — the decoded `C` is
 recovered from *post-*`x` (`x₁`/`x₄`) rewinds, so reprogramming the early `x` cascades downstream and

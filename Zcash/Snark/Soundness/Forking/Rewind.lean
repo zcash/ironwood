@@ -259,7 +259,7 @@ theorem reprogramX1_apply_long {shape : Shape} (O : List (TranscriptElt Fp G) �
 The good-challenge derivation (issue #12, `Soundness.GoodChallenge` and the `_xgood` capstone rungs)
 spends an accept measure over the vanishing-check challenge `x`. The runs it ranges over are
 reprogramming events at the sealed `x` prefix (`preXTranscript`, `deriveChallenges_x_eq` —
-`Soundness.TranscriptOrdering`): everything the Schwartz–Zippel difference polynomial is built from —
+`Soundness.Forking.Ordering`): everything the Schwartz–Zippel difference polynomial is built from —
 the column commitments (`adviceCommitments_mem_preXTranscript`) and the quotient pieces
 (`hPieces_mem_preXTranscript`) — is absorbed before the `x` squeeze, so the polynomial is pinned
 across the rewound runs while `x` alone resamples. As with `reprogramX4`/`reprogramX1`, the pointwise

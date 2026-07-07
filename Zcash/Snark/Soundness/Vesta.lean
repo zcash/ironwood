@@ -715,7 +715,7 @@ challenges — is the gate/`x`→`x₃` transport seam (#11/#33, per the #21 pri
 predicate here — a deployed instantiation over the `x`-squeeze reprogramming events
 (`Soundness.Forking.reprogramX`, sealed by `deriveChallenges_x_eq`) is left to #33 and is nontrivial,
 since the decoded `C` comes from *post-*`x` rewinds; both measure hypotheses carry
-the random-oracle uniformity axiom (`Soundness.RandomOracle`); and the constant rung's
+the random-oracle uniformity axiom (`Soundness.Forking.Oracle`); and the constant rung's
 static-dichotomy caveat on `hprob` applies unchanged
 (`orchard_verifier_vesta_forking_opening_deployed`). -/
 theorem orchard_verifier_vesta_forking_constraint_deployed_xgood [Fact (HasseBound Vesta.curve)]
@@ -1060,7 +1060,7 @@ The terminal readings, ordered by how much of the prover-as-oracle and rewinding
   hypothesis are replaced by an accept event whose measure beats the vanishing-check budget, and the
   good challenge is *produced* by the Schwartz–Zippel pigeonhole (`Soundness.GoodChallenge`, issue
   #12) at the common terminal `decoded_constraint_of_opening_or_relation_xgood`. `accX` is a free
-  predicate at these rungs; the `reprogramX` seal (`Soundness.TranscriptOrdering`) is forward-looking
+  predicate at these rungs; the `reprogramX` seal (`Soundness.Forking.Ordering`) is forward-looking
   #33 infrastructure a future rung would use to state it over deployed `x`-squeeze events (nontrivial,
   as the decoded `C` comes from post-`x` rewinds). `hquot`'s content — the deployed gate check at the
   accepting challenges — stays as the gate/`x`→`x₃` transport seam (#11/#33). The per-instance
