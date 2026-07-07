@@ -1,7 +1,7 @@
 import Zcash.Snark.Soundness.Main
-import Zcash.Snark.Soundness.RandomOracle
-import Zcash.Snark.Soundness.ForkingExtractor
-import Zcash.Snark.Soundness.TranscriptOrdering
+import Zcash.Snark.Soundness.Forking.Oracle
+import Zcash.Snark.Soundness.Forking.Extractor
+import Zcash.Snark.Soundness.Forking.Ordering
 
 /-!
 # The deployed verifier under random-oracle rewinding
@@ -37,9 +37,9 @@ def roChallenges {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
 
 The forking layer redraws the IPA round-challenge vector `χ` and evaluates the verifier at
 `{ch with ipaRound := χ}`; the random-oracle model rewinds by *reprogramming* the oracle
-(`Soundness.RandomOracle.reprogram`) at round prefixes and re-running the schedule. These are the same
+(`Soundness.Forking.Oracle.reprogram`) at round prefixes and re-running the schedule. These are the same
 operation, and `roChallenges_reprogramRounds` proves it, consuming the round-by-round transcript ordering
-(`Soundness.TranscriptOrdering`, issue #23): the round prefixes are pairwise distinct and longer than every
+(`Soundness.Forking.Ordering`, issue #23): the round prefixes are pairwise distinct and longer than every
 pre-IPA squeeze input (`roundTranscriptFin_length`/`_injective`), so reprogramming them changes exactly the
 round challenges (`deriveChallenges_ipaRound_eq`, the seal) and nothing upstream. This puts the ordering
 module on the Fiat-Shamir path: the `_rewind` capstones (`Soundness.Vesta`) state their accept probability
@@ -106,7 +106,7 @@ replaced by `χ`: the pre-IPA challenges are untouched (their squeeze inputs are
 `reprogramRounds_apply_short`), and round `j`'s challenge is the reprogrammed answer `χ j` — by the
 transcript-ordering seal `deriveChallenges_ipaRound_eq`. This is the vector-semantics ⇔ rewinding
 identification the forking layer's `{ch with ipaRound := χ}` events rest on, and the load-bearing consumer
-of `Soundness.TranscriptOrdering` (issue #23). -/
+of `Soundness.Forking.Ordering` (issue #23). -/
 theorem roChallenges_reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp G) → Fp)
     (init : List (TranscriptElt Fp G)) (ps : ProofString shape Fp G) (χ : Fin shape.k → Fp) :
     roChallenges (reprogramRounds O init ps χ) init ps
@@ -381,9 +381,9 @@ random-oracle half (the accept *probability* is over uniform rewindable challeng
 the **algebra half**: `deployedVerifierEq_iff_flatAccept` proves halo2's actual `DeployedIpaVerifierEq` is
 `flatAccept (proverOfRounds …)` at the challenge vector, so `hbridge` is a *theorem* for the deployed verifier,
 not an assumption. The round-by-round ordering behind the prefix-respecting `Prover` shape is likewise a
-theorem (`Soundness.TranscriptOrdering`, sealed to the deployed schedule by `deriveChallenges_ipaRound_eq`;
+theorem (`Soundness.Forking.Ordering`, sealed to the deployed schedule by `deriveChallenges_ipaRound_eq`;
 `proverRoundPoint_proverOfRounds` below reads the fixed round points off `proverOfRounds` on every challenge
-path). The residual is then only the random-oracle uniformity axiom (`RandomOracle`). -/
+path). The residual is then only the random-oracle uniformity axiom (`Forking.Oracle`). -/
 
 /-- The prover-strategy tree the deployed non-interactive proof realises: at each IPA round it commits the
 proof's **fixed** round points `(Lⱼ, Rⱼ)` (they are written in the proof string, so the continuation ignores
@@ -512,7 +512,7 @@ with the eval vector `evalVector shape.k ch.x3` and the adjusted commitment `mul
 the deterministic content of the prover-as-oracle bridge, now a **theorem**, not an assumption: chaining
 `deployedVerifierEq_cf` (the verifier equation is `CF = 0`), `flatAccept_proverOfRounds` (`flatAccept` of the
 tree is that same `CF = 0`), and `foldAllFin_evalVector` (the `U`-coefficient is `computeB`). The only residual
-is the random-oracle uniformity axiom on the accept *measure* (`RandomOracle`). -/
+is the random-oracle uniformity axiom on the accept *measure* (`Forking.Oracle`). -/
 theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G) (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :
@@ -539,7 +539,7 @@ string at that path (pre-IPA fields fixed, IPA fields the path outputs), and
 pair) is the accept probability of an adaptive strategy — the object rewinding produces — rather than of one
 fixed proof. What remains is the execution-semantics identification (that a rewound random-oracle adversary
 *induces* such a staged strategy, with its RO-query loss) and the random-oracle uniformity axiom. Issue #23's
-transcript-ordering and reprogramming content is internalized by `TranscriptOrdering`,
+transcript-ordering and reprogramming content is internalized by `Forking.Ordering`,
 `roChallenges_reprogramRounds`, and the Vesta `_adaptive_rewind` capstones. -/
 
 /-- A strategy's outputs along one challenge path: the round points `(Lⱼ, Rⱼ)` it commits and the final
@@ -645,10 +645,10 @@ execution-semantics floor). The abstract theorems —
 retain `hbridge` as that *modular* hypothesis (they are stated over an abstract `accepts`/`Q`): its
 deterministic content is a theorem for every staged strategy, and the round-by-round transcript ordering
 behind the prefix-respecting shape (issue #23) is likewise proven and sealed to the deployed derivation
-(`Soundness.TranscriptOrdering`, `deriveChallenges_ipaRound_eq`; `proverRoundPoint_proverOfRounds` for the
+(`Soundness.Forking.Ordering`, `deriveChallenges_ipaRound_eq`; `proverRoundPoint_proverOfRounds` for the
 tree side). Its execution-semantics content is the residual prover-as-oracle floor — that a rewound
 random-oracle adversary *induces* such a staged strategy — alongside the random-oracle uniformity axiom on
-the accept *probability* (the uniform measure of `hprob`, `RandomOracle`) — that the challenges are
+the accept *probability* (the uniform measure of `hprob`, `Forking.Oracle`) — that the challenges are
 uniform, independent, rewindable random-oracle draws. -/
 
 open scoped ENNReal in
@@ -668,7 +668,7 @@ folds along each challenge path to `flatAccept Q`. The deterministic content of 
 rewired to consume that identity; doing so also needs the `S`-opening fact `commit urs s = ps.ipaS`). With
 `hbridge` supplied, the residual is *only* the random-oracle uniformity axiom on the accept probability — every
 other link (extraction, root-consistency, value placement, the `u`-vs-`u⁻¹` convention) is a theorem, as is
-the round-by-round transcript ordering (`Soundness.TranscriptOrdering`, sealed by
+the round-by-round transcript ordering (`Soundness.Forking.Ordering`, sealed by
 `deriveChallenges_ipaRound_eq`). This is the granular replacement for the monolithic `FiatShamirTree`. -/
 theorem deployed_forking_soundness_of_bridge [DecidableEq G] [Inhabited G] (urs : URS G)
     (b : Fin (2 ^ urs.k) → Fp) (v ξ z blind : Fp) (aMulti aDep s : Fin (2 ^ urs.k) → Fp)

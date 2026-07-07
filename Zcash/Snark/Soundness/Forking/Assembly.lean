@@ -1,5 +1,5 @@
-import Zcash.Snark.Soundness.DeployedVerification
-import Zcash.Snark.Soundness.DeployedIpaPeel
+import Zcash.Snark.Soundness.Deployed.Verification
+import Zcash.Snark.Soundness.Deployed.IpaPeel
 
 /-!
 # Structural special-soundness assembly (eliminating the monolithic `FiatShamirTree`)
@@ -19,7 +19,7 @@ leaf check. Bridging them:
 
 1. **round-sum recursion** (`roundSum_cons`) — `roundSum` peels one `([uⱼ⁻¹]Lⱼ + [uⱼ]Rⱼ)` term per round.
 2. **generator/value fold recursion** — `foldAll`, `foldGens`, `computeS_cons` already give the `g`/`b`
-   one-round fold (`Soundness.DeployedFold`, `Soundness.IpaSoundness`).
+   one-round fold (`Soundness.Deployed.Fold`, `Soundness.IpaSoundness`).
 3. **`computeB` one-round recursion** (`computeB_cons`) — the `b`-value fold (the `[-c·b·z]U` coefficient).
 4. **one-round closed-form fold** (`CF_cons`) — combine 1–3: with the round point in its `(g,U,W)`
    representation, the closed form at challenge `u₀` equals the closed form of the folded instance
@@ -33,7 +33,7 @@ leaf check. Bridging them:
 
 Steps 1–5 are proven below: the closed-form verifier equation folds round by round into the recursive tree
 structure and reconciles to the `DeployedIpaAcceptV` leaf. Step 6's special-soundness *extraction* is now
-likewise proven on the live flat path — `Soundness.ForkingExtractor.produceDeployed` /
+likewise proven on the live flat path — `Soundness.Forking.Extractor.produceDeployed` /
 `deployed_forking_tree` recover the round points' `(g,U,W)` representation by Vandermonde from
 decomposition-free `DeployedForkValid` certificates; the *posited* node decomposition survives only on the
 legacy `ForkAccept`/`FiatShamirForking` route (`Soundness.Main`). What stays the irreducible residual is

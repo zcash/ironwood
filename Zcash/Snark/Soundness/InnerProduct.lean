@@ -107,7 +107,7 @@ the witness — opens the plain `P` to `v − ξ·⟨s, b⟩`. This is *uncondit
 of `P` for the supplied `S`-opening `s` (distinct `S`-openings shift it while exhibiting a `g`-relation —
 binding pins it), whatever the blinder is. The verifier never checks `s`; `S` is prover-supplied. So the
 soundness content lives in how `v − ξ·⟨s, b⟩` relates to the claimed value, which the caller must pin (see
-`ipaRelation_unblind` for the honest-prover case, and `Soundness.Forking` for the `ξ`-randomization that
+`ipaRelation_unblind` for the honest-prover case, and `Soundness.Forking.Rewind` for the `ξ`-randomization that
 bounds a malicious blinder). -/
 theorem ipaRelation_unblind_value (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v ξ : F)
     (s a : Fin (2 ^ urs.k) → F)
@@ -122,7 +122,7 @@ theorem ipaRelation_unblind_value (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) →
 (`⟨s, b⟩ = 0` — halo2's prover sets `s_poly[0] -= s(x₃)` so `s(x₃) = 0`), stripping `[ξ]S` leaves the opened
 value at the claimed `v`. This is the `⟨s, b⟩ = 0` specialization of `ipaRelation_unblind_value`; a malicious
 prover need not satisfy it, which is exactly why `[ξ]S`'s soundness rests on `ξ` being drawn after `S`
-(`Soundness.Forking`), not on this hypothesis. With `ipaRelation_unshift` it reconciles the adjusted
+(`Soundness.Forking.Rewind`), not on this hypothesis. With `ipaRelation_unshift` it reconciles the adjusted
 commitment `P' = P − [v]g₀ + [ξ]S` with the plain `P`. -/
 theorem ipaRelation_unblind (urs : URS G) (P : G) (b : Fin (2 ^ urs.k) → F) (v ξ : F)
     (s a : Fin (2 ^ urs.k) → F) (hs : innerProduct s b = 0)

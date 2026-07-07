@@ -5,7 +5,7 @@ import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.IpaSoundness
 import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Deployed.Verification
-import Zcash.Snark.Soundness.ForkingAssembly
+import Zcash.Snark.Soundness.Forking.Assembly
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -26,7 +26,7 @@ forking **plus the special-soundness extraction content**: the node `L`/`R`↦va
 the leaf `g`-representation of the folded commitment, and the adjusted-commitment step
 `P' = P − [v]g₀ + [ξ]S` (folding the value and `S`/`ξ` terms into the opened commitment — which needs a
 representation of the adversary point `S`, so it is not a deterministic rewrite) — all discharged on the
-live forking path (`Soundness.Forking`, `ForkingAssembly`, `ForkingExtractor`); this legacy bridge keeps
+live forking path (`Soundness.Forking.Rewind`, `Forking.Assembly`, `Forking.Extractor`); this legacy bridge keeps
 them bundled.
 Commitment binding is load-bearing *in the proof* (the `U`/`W` separation is derived from a discrete-log
 relation reduction, `Zcash.Snark.Soundness.Deployed.IpaPeel`), so the deployed conclusion is
@@ -203,7 +203,7 @@ MSM↔equation correspondence is discharged separately
 (`deployed_to_acceptV`) — but `S`/`ξ` is not peeled, it lives in (d). `b`/`z`/`blind` are bridge-mediated
 (the protocol fixes `b = evalVector urs.k ch.x3` — whose per-round fold telescopes to the leaf
 `b₀ = computeB ch.x3 ·` — and `z = ch.z`); only `P`/`v` are pinned. All of (a)–(d) are discharged on the
-live forking path (`Soundness.Forking` and the Vesta `_rewind`/`_adaptive_rewind` capstones); this legacy
+live forking path (`Soundness.Forking.Rewind` and the Vesta `_rewind`/`_adaptive_rewind` capstones); this legacy
 bridge keeps them bundled, with the execution-semantics identification the remaining out-of-Lean floor. -/
 def FiatShamirTree [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

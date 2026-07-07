@@ -1,5 +1,5 @@
 import Zcash.Snark.Verifier.FiatShamir
-import Zcash.Snark.Soundness.ForkingExtractor
+import Zcash.Snark.Soundness.Forking.Extractor
 
 /-!
 # Round-by-round Fiat-Shamir transcript ordering (issue #23)
@@ -12,8 +12,8 @@ at round `j`, appends the round point `(Lⱼ, Rⱼ)` to the running transcript a
         (t, us ++ [squeeze t])) (t₀, [])
 
 This module makes the online ordering that `foldl` enforces explicit and proves it — the transcript-ordering
-half of the prover-as-oracle bridge (`Soundness.Forking`): the deployed schedule's own derivation
-has the dependency structure the `Prover`/rewinding tree (`Soundness.ForkingExtractor.Prover`) assumes.
+half of the prover-as-oracle bridge (`Soundness.Forking.Rewind`): the deployed schedule's own derivation
+has the dependency structure the `Prover`/rewinding tree (`Soundness.Forking.Extractor.Prover`) assumes.
 
 * `roundTranscript` — the transcript prefix `uⱼ` is squeezed from (the running `t` above, at step `j`).
 * `roundTranscript_succ` — round `j+1`'s transcript is round `j`'s extended by exactly `(L_{j+1}, R_{j+1})`
@@ -107,7 +107,7 @@ theorem ipaFold_transcript {ι : Type*} (fs : FiatShamir F G) (rp : ι → G × 
 
 /-! ## The Prover-tree side: each round point is prefix-determined (issue #23, bullet 4)
 
-`Soundness.ForkingExtractor.Prover` is `node (L R : G) (cont : F → Prover d)`: the round point `(L, R)` is a
+`Soundness.Forking.Extractor.Prover` is `node (L R : G) (cont : F → Prover d)`: the round point `(L, R)` is a
 field of the node — fixed — while `cont` takes the round challenge. So the *type* already forbids `(Lⱼ, Rⱼ)`
 depending on `uⱼ`; below we read that off as a theorem, matching the transcript ordering above.
 -/

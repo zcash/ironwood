@@ -11,7 +11,7 @@ rather than a fresh verifier coin. The hash is Blake2b (`transcript.rs`, persona
 `"Halo2-Transcript"`). Per project scope the hash is hand-waved *here*: this module models it as an abstract
 `squeeze` function (`FiatShamir`) and does not formalize Blake2b. The random-oracle idealization of the
 squeeze — reprogramming and the uniform-challenge bound the forking argument draws on — is separate, in
-`Zcash.Snark.Soundness.RandomOracle`.
+`Zcash.Snark.Soundness.Forking.Oracle`.
 
 ## What is pinned down
 

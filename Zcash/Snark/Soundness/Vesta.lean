@@ -1,6 +1,6 @@
 import Mathlib
 import Zcash.Snark.Soundness.Main
-import Zcash.Snark.Soundness.Forking
+import Zcash.Snark.Soundness.Forking.Rewind
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
 
@@ -549,7 +549,7 @@ The terminal readings, ordered by how much of the prover-as-oracle and rewinding
 * **Constant, rewound** — the `_rewind` forms below state the constant rung's accept events over
   **reprogrammed-oracle runs** (`reprogramRounds`), deriving the `{ch with ipaRound := χ}` round-vector
   surgery from the rewinding primitive via `roChallenges_reprogramRounds` — the transcript-ordering module
-  (`Soundness.TranscriptOrdering`, issue #23) on the Fiat-Shamir path.
+  (`Soundness.Forking.Ordering`, issue #23) on the Fiat-Shamir path.
 * **Staged, rewound** — the `_adaptive_rewind` forms below state the staged rung over reprogrammed-oracle
   runs on each strategy-spliced proof. `roChallenges_spliceIpa_pre` proves those splices share the fixed
   pre-IPA challenge prefix with `ps`; `roChallenges_reprogramRounds` then supplies the per-path round vector.

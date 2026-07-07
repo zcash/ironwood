@@ -135,7 +135,7 @@ forking bridge act on halo2's actual IPA equation, with `P`/`v` the pinned `mult
 Zero-challenge caveat: halo2's batch inversion leaves zero-valued round challenges as zero, so Lean's
 total inverse (`0⁻¹ = 0`) matches the deployed equation at this point. The forking extractor still requires
 the three sibling challenges at each node to be nonzero, because the Vandermonde recovery and `u⁻¹` fold
-need cancellable challenges; `TreeExtraction.kerr` pays the extra bad challenge per round by requiring four
+need cancellable challenges; `Forking.Tree.kerr` pays the extra bad challenge per round by requiring four
 good first challenges before erasing zero. -/
 def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)

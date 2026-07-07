@@ -7,7 +7,7 @@ This module establishes, by a counting/averaging induction over the `d` rounds, 
 accepting set of challenge vectors is large enough — more than the threshold count `kerr` — then a full
 `(3,…,3)`-tree of accepting challenge vectors exists (`Extractable`). It is self-contained: the multi-round
 existence *is* the `kerr` count below, not an iteration of the per-round cubic bound in
-`Soundness.ForkingProbability`.
+`Soundness.Forking.Probability`.
 
 `kerr (card α) d` is a tree-existence threshold as a count out of `(card α)^d`; as a fraction it is `3d/N`
 (`N = card α`), a **conservative upper bound** on that threshold (the tight value is `1 − (1 − 3/N)^d`). The

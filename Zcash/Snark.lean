@@ -15,7 +15,6 @@ import Zcash.Snark.Verifier.Expressions
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Verifier.FiatShamir
 import Zcash.Snark.Fingerprint.Match
-import Zcash.Snark.Soundness.RandomOracle
 import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
@@ -30,11 +29,13 @@ import Zcash.Snark.Soundness.Deployed.Fold
 import Zcash.Snark.Soundness.Deployed.Ipa
 import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Deployed.Verification
-import Zcash.Snark.Soundness.ForkingAssembly
+-- Fiat-Shamir forking development: random-oracle discharge (#11) and round-by-round soundness (#23).
+import Zcash.Snark.Soundness.Forking.Oracle
+import Zcash.Snark.Soundness.Forking.Tree
+import Zcash.Snark.Soundness.Forking.Probability
+import Zcash.Snark.Soundness.Forking.Extractor
+import Zcash.Snark.Soundness.Forking.Ordering
+import Zcash.Snark.Soundness.Forking.Assembly
 import Zcash.Snark.Soundness.Main
+import Zcash.Snark.Soundness.Forking.Rewind
 import Zcash.Snark.Soundness.Vesta
-import Zcash.Snark.Soundness.Forking
-import Zcash.Snark.Soundness.ForkingProbability
-import Zcash.Snark.Soundness.TreeExtraction
-import Zcash.Snark.Soundness.ForkingExtractor
-import Zcash.Snark.Soundness.TranscriptOrdering

@@ -1,7 +1,7 @@
 import Zcash.Snark.Soundness.IpaSoundness
-import Zcash.Snark.Soundness.DeployedIpaPeel
-import Zcash.Snark.Soundness.TreeExtraction
-import Zcash.Snark.Soundness.ForkingProbability
+import Zcash.Snark.Soundness.Deployed.IpaPeel
+import Zcash.Snark.Soundness.Forking.Tree
+import Zcash.Snark.Soundness.Forking.Probability
 
 /-!
 # The deployed special-soundness extractor (Fiat-Shamir forking, part 2)
@@ -220,7 +220,7 @@ theorem deployed_forking_tree {U W : G} {z : F} (hz : z ≠ 0) {d : ℕ}
 
 /-! ## The prover-as-oracle-function model: from the abstract forking tree to `DeployedForkValid`
 
-`extractable_of_prob` (`Soundness.ForkingProbability`) gives a *bare* `(3,…,3)` challenge tree (`Extractable`)
+`extractable_of_prob` (`Soundness.Forking.Probability`) gives a *bare* `(3,…,3)` challenge tree (`Extractable`)
 once the accept probability beats the knowledge error. To feed `produceDeployed`/`deployed_forking_tree`, that
 abstract tree must be filled with the prover's round points and openings — the data a `DForkCert` records.
 
