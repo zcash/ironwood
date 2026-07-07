@@ -1,5 +1,5 @@
 import Mathlib
-import Zcash.Snark.Soundness.InnerProduct
+import Zcash.Snark.Soundness.Ipa.InnerProduct
 
 /-!
 # The commitment respects the IPA round fold

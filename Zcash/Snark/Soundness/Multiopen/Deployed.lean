@@ -1,11 +1,11 @@
 import Mathlib
 import Zcash.Snark.Soundness.Main
-import Zcash.Snark.Soundness.ForkingProbability
+import Zcash.Snark.Soundness.Forking.Probability
 
 /-!
 # The deployed multiopen statement is a flat power batch in the `x₄` collapse
 
-The decoded-column layer (`Soundness.MultiopenDecode`) consumes batched openings in flat power form —
+The decoded-column layer (`Soundness.Multiopen.Decode`) consumes batched openings in flat power form —
 `P = Σⱼ ξʲ • Cⱼ` and `v = Σⱼ ξʲ • eⱼ` at distinct batching challenges `ξ` — and until now that form was a
 *model boundary*: `acceptedBatchFamily_of_rewinds` carried the power shape of the deployed statement as
 the assumptions `hP`/`hv`. This module discharges them against the deployed verifier. As a function of the
@@ -32,20 +32,20 @@ Downstream, `deployedMultiopenRewind_of_x4Rewinds` instantiates `acceptedBatchFa
 the honest run) yields the terminal `MultiopenRewindForRelation` for the pinned deployed statement over
 the deployed aggregates. `deployedMultiopenRewind_of_x4Prob` derives that family from an accept-*measure*
 hypothesis via the single-squeeze counting form of the forking floor
-(`exists_injective_accepting_of_measure`, `Soundness.ForkingProbability`) — the multiopen instance of the
+(`exists_injective_accepting_of_measure`, `Soundness.Forking.Probability`) — the multiopen instance of the
 codebase-wide rewinding-extraction floor, carrying the same random-oracle uniformity axiom as every
-`hprob` (`Soundness.RandomOracle`).
+`hprob` (`Soundness.Forking.Oracle`).
 
 The `x₁` layer then closes the chain down to the *member* commitments — the actual queried column
 commitments (advice, instance, fixed, permutation/lookup products, vanishing). The rewound `x₁` runs
 share the pre-`x₁` prefix and re-send the post-`x₁` continuation (`spliceMultiopen`/`x1RunChallenges`;
-`reprogramX1` at the sealed `preX1Transcript`, `Soundness.Forking`/`TranscriptOrdering`); the query
+`reprogramX1` at the sealed `preX1Transcript`, `Soundness.Forking.Rewind`/`Forking.Ordering`); the query
 list and grouping are *definitionally* shared across runs (`x1Run_assembleQueries`); each run's
 aggregate is the run-`x₁`-power batch of the shared members (`x1Run_x4Qs_getD_eval`); and
 `deployed_witness_member_binding` exhibits the extracted witness as the explicit two-level
 (`x₄`-then-`x₁`) power combination of member-column witnesses opening the member commitments, via the
 canonical decodes at both levels. Per-member claimed evaluations at the original rotated points and
-the gate/`x`→`x₃` transport remain the fingerprint-delegated half (`Soundness.MultiopenDecode`, the
+the gate/`x`→`x₃` transport remain the fingerprint-delegated half (`Soundness.Multiopen.Decode`, the
 deployed-status section).
 -/
 
@@ -420,7 +420,7 @@ slot — the terminal multiopen-rewinding output for the pinned deployed stateme
 aggregates. This is `acceptedBatchFamily_of_rewinds` with the flat power form now *proven*
 (`deployedCommitment_x4_batch`/`multiopenValue_x4_batch`) rather than assumed: no flat-batch scope
 hypothesis is left at this level. The runs are the `reprogramX4` reprogramming events
-(`Soundness.Forking`); producing them from an accept measure is `deployedMultiopenRewind_of_x4Prob`. -/
+(`Soundness.Forking.Rewind`); producing them from an accept measure is `deployedMultiopenRewind_of_x4Prob`. -/
 noncomputable def deployedMultiopenRewind_of_x4Rewinds [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp}
@@ -477,11 +477,11 @@ open Classical in
 transcript and the accept measure of the `x₄`-rewound runs beats `pairCount / p` — the single-squeeze
 counting threshold — then the terminal multiopen-rewinding output for the pinned deployed statement
 exists over the deployed aggregates. The measure hypothesis carries the same random-oracle uniformity
-axiom as every `hprob` (`Soundness.RandomOracle`); the runs are the `reprogramX4` reprogramming events;
+axiom as every `hprob` (`Soundness.Forking.Oracle`); the runs are the `reprogramX4` reprogramming events;
 each run's accepting transcript is the per-run round-forking output (produced upstream, e.g. by the
 `FiatShamirTree` bridges or the round-forking ladder). This is the multiopen instance of the
 codebase-wide rewinding-extraction floor — `extractable_of_prob` is the multi-round analogue, and
-`exists_injective_accepting_of_measure` (`Soundness.ForkingProbability`) is the counting core. -/
+`exists_injective_accepting_of_measure` (`Soundness.Forking.Probability`) is the counting core. -/
 noncomputable def deployedMultiopenRewind_of_x4Prob [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) {b : Fin (2 ^ urs.k) → Fp}
@@ -514,8 +514,8 @@ re-sends everything absorbed *after* `x₁` — the quotient commitment `q′`, 
 inputs absorb the fresh continuation), while `x₂` stays the honest one (nothing is absorbed between
 the compression squeezes, `preX2Transcript_length_eq`) and everything absorbed before `x₁` is shared:
 the column commitments, every claimed evaluation (`adviceEvals_mem_preX1Transcript` and companions,
-`Soundness.TranscriptOrdering`), hence the whole query list and the fingerprinted grouping. The runs
-are `reprogramX1` reprogramming events (`Soundness.Forking`) on the spliced strings. What varies per
+`Soundness.Forking.Ordering`), hence the whole query list and the fingerprinted grouping. The runs
+are `reprogramX1` reprogramming events (`Soundness.Forking.Rewind`) on the spliced strings. What varies per
 run is exactly the `x₁`-power weighting of the *same* member commitments — the shape
 `x1DecodeCols` un-batches. -/
 
@@ -844,7 +844,7 @@ it and the per-run value data). Then the canonical member decode
   run opens at its own `x₃`).
 
 Per-member claimed evaluations at the original rotated points and the gate/`x`→`x₃` transport remain
-the fingerprint-delegated half (`Soundness.MultiopenDecode`, the deployed-status section). -/
+the fingerprint-delegated half (`Soundness.Multiopen.Decode`, the deployed-status section). -/
 theorem deployed_witness_member_binding [DecidableEq G] [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

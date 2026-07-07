@@ -1,6 +1,6 @@
 import Mathlib
 import Zcash.Snark.Soundness.Main
-import Zcash.Snark.Soundness.DeployedMultiopen
+import Zcash.Snark.Soundness.Multiopen.Deployed
 
 /-!
 # Fixture: the decoded-column hypotheses are dischargeable
@@ -22,7 +22,7 @@ distinct batching challenges `0, 1, 2`, a two-advice/one-instance gate `a₀·a�
 quotient, and both terminal endpoints discharged again — so the decoded shapes are exercised beyond the
 degenerate all-zero point.
 
-The third instance (`Rot` section) exercises the deployed `x₄` power form (`Soundness.DeployedMultiopen`)
+The third instance (`Rot` section) exercises the deployed `x₄` power form (`Soundness.Multiopen.Deployed`)
 on a minimal *rotated-query* deployed instance: one proof, one advice column queried at rotations `0`
 and `1` (points `x` and `ωx`), plus the vanishing queries — two point sets, so the fingerprinted
 `constructIntermediateSets` grouping is genuinely multi-set and rotated. The `x₄` pair count and the
@@ -246,7 +246,7 @@ column and `{x}` for the vanishing pair — so the `x₄` collapse has two `(q�
 three columns: the `{x}` aggregate (`random + x₁·h`, evaluating to `7`), the `{x, ωx}` aggregate (the
 advice commitment `10`), and the quotient commitment `q′ = 5` on top. The counts and values are
 *computed* (`decide`), and the power-form theorem instantiates — exercising
-`Soundness.DeployedMultiopen` against a rotated deployed grouping. -/
+`Soundness.Multiopen.Deployed` against a rotated deployed grouping. -/
 
 /-- Shape of the rotated toy: `k = 0`, one proof, one advice column with two advice queries, no
 lookups/permutations/quotient pieces, two point sets. -/

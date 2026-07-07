@@ -29,7 +29,7 @@ still conclude the existential `HasNontrivialRelation` — but that is **inheren
 *produces* the transcript existentially from accept-probability (`extractable_of_prob` /
 `deployed_forking_tree`), so an explicit witness there is not available by the nature of
 rewinding-based extraction. The algebraic-prover content is precisely "given the transcript with
-representations, the relation is explicit", which is what this module and `AlgebraicCapstone`
+representations, the relation is explicit", which is what this module and `AGM.Capstone`
 establish.
 -/
 

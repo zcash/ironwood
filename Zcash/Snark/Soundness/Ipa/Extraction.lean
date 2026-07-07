@@ -1,5 +1,5 @@
 import Mathlib
-import Zcash.Snark.Soundness.InnerProduct
+import Zcash.Snark.Soundness.Ipa.InnerProduct
 
 /-!
 # The full IPA extractor: composing the round extractor over all `k` rounds
@@ -16,7 +16,7 @@ and the leaves carry the fully-folded scalars.
 * `extract` / `extract_correct` — the extractor recovers the witness exactly, by induction on `k`, using
   `roundExtract_correct` at every node. This is the IPA's special soundness over all rounds, and it is
   binding-free — it takes `Consistent` as a hypothesis. (Deriving that consistency from acceptance is what
-  the explicit `Zcash.Snark.CommitmentBinding` later supplies, in `Zcash.Snark.Soundness.CommitFold`.)
+  the explicit `Zcash.Snark.CommitmentBinding` later supplies, in `Zcash.Snark.Soundness.Ipa.CommitFold`.)
 -/
 
 namespace Zcash.Snark

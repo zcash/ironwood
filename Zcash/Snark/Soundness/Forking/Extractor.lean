@@ -1,4 +1,4 @@
-import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.Ipa.Soundness
 import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Forking.Tree
 import Zcash.Snark.Soundness.Forking.Probability

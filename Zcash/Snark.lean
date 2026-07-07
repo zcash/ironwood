@@ -15,13 +15,15 @@ import Zcash.Snark.Verifier.Expressions
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Verifier.FiatShamir
 import Zcash.Snark.Fingerprint.Match
-import Zcash.Snark.Soundness.InnerProduct
-import Zcash.Snark.Soundness.Extraction
-import Zcash.Snark.Soundness.Constraints
-import Zcash.Snark.Soundness.CommitFold
-import Zcash.Snark.Soundness.Consistency
+-- Inner-product-argument knowledge soundness (the clean IPA opening).
+import Zcash.Snark.Soundness.Ipa.InnerProduct
+import Zcash.Snark.Soundness.Ipa.CommitFold
+import Zcash.Snark.Soundness.Ipa.Extraction
+import Zcash.Snark.Soundness.Ipa.Consistency
+import Zcash.Snark.Soundness.Ipa.Soundness
+-- Constraint-system soundness (Schwartz-Zippel vanishing/quotient check) and end-to-end knowledge soundness.
+import Zcash.Snark.Soundness.Constraints.Vanishing
 import Zcash.Snark.Soundness.KnowledgeSoundness
-import Zcash.Snark.Soundness.IpaSoundness
 -- Deployed halo2-verifier soundness path: peel the deployed IPA (U/W/S apparatus) onto clean `ipa_soundV`,
 -- with commitment binding expressed as a discrete-log-relation reduction (#13).
 import Zcash.Snark.Soundness.Deployed.Binding
@@ -36,9 +38,10 @@ import Zcash.Snark.Soundness.Forking.Probability
 import Zcash.Snark.Soundness.Forking.Extractor
 import Zcash.Snark.Soundness.Forking.Ordering
 import Zcash.Snark.Soundness.Forking.Assembly
-import Zcash.Snark.Soundness.MultiopenDecode
-import Zcash.Snark.Soundness.MultiopenDecodeFixture
-import Zcash.Snark.Soundness.DeployedMultiopen
+-- Multiopen decode: bind the extracted IPA witness to the verifier's opened columns (#18).
+import Zcash.Snark.Soundness.Multiopen.Decode
+import Zcash.Snark.Soundness.Multiopen.DecodeFixture
+import Zcash.Snark.Soundness.Multiopen.Deployed
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
 import Zcash.Snark.Soundness.Vesta

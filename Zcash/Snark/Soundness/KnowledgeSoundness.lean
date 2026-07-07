@@ -1,8 +1,8 @@
 import Mathlib
-import Zcash.Snark.Soundness.InnerProduct
-import Zcash.Snark.Soundness.Extraction
-import Zcash.Snark.Soundness.Constraints
-import Zcash.Snark.Soundness.CommitFold
+import Zcash.Snark.Soundness.Ipa.InnerProduct
+import Zcash.Snark.Soundness.Ipa.Extraction
+import Zcash.Snark.Soundness.Constraints.Vanishing
+import Zcash.Snark.Soundness.Ipa.CommitFold
 
 /-!
 # Knowledge soundness, end to end
@@ -61,7 +61,7 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 witness `a` (fixing the earlier flaw where the constraint was on free, unrelated polynomials).
 `circuitSat` is the circuit-satisfaction predicate — its intended instantiation is `circuitSatViaGates`
 ("the witness's decoded columns satisfy the `y`-combined gates"). This raw relation is intentionally
-generic; the deployed decoded-column capstone in `Soundness.MultiopenDecode` /
+generic; the deployed decoded-column capstone in `Soundness.Multiopen.Decode` /
 `orchard_verifier_deployed_decoded_constraint_reduction` pins the decode to the extracted witness via
 `batch_open_soundV`.
 

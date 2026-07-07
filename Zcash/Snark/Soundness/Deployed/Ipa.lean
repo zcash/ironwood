@@ -1,4 +1,4 @@
-import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.Ipa.Soundness
 
 /-!
 # The deployed IPA's `U`/`W` apparatus, peeled to the clean recursive IPA

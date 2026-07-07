@@ -2,7 +2,7 @@ import Mathlib
 import Zcash.Snark.Soundness.AGM.Adapter
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
-import Zcash.Snark.Soundness.DeployedMultiopen
+import Zcash.Snark.Soundness.Multiopen.Deployed
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
 
@@ -163,7 +163,7 @@ extracted witness, a mismatch yielding the relation branch.
 This was the first issue-#18 witness-to-columns endpoint; the tighter rungs are
 `orchard_verifier_vesta_forking_constraint_deployed_x4` (the batch columns pinned to the deployed
 aggregates, `hbatch` produced from the `x₄` accept measure) and, beneath the aggregates,
-`deployed_witness_member_binding` (`Soundness.DeployedMultiopen`). The older
+`deployed_witness_member_binding` (`Soundness.Multiopen.Deployed`). The older
 `orchard_verifier_vesta_constraint_reduction` remains as a legacy, compatibility-shaped capstone. -/
 theorem orchard_verifier_vesta_decoded_constraint_reduction [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
@@ -619,12 +619,12 @@ assumed: the batch columns are pinned to the deployed `x₄` aggregates
 compressed point-set commitments and claimed set evaluations, plus the `q′`/`msm_eval` top slot), and
 `hbatch` is *derived* from the honest run's accepting clean transcript (`hcur`) plus the `x₄` rewinding
 measure (`hprob4`) via the multiopen forking floor (`deployedMultiopenRewind_of_x4Prob`,
-`Soundness.DeployedMultiopen`). The two probability hypotheses stack the two rewinding floors honestly:
+`Soundness.Multiopen.Deployed`). The two probability hypotheses stack the two rewinding floors honestly:
 `hprob` forks the IPA rounds for the opening, `hprob4` forks the `x₄` squeeze for the batch — the
-`{ch with x4 := ξ}` runs are the `reprogramX4` oracle-reprogramming events (`Soundness.Forking`), and
+`{ch with x4 := ξ}` runs are the `reprogramX4` oracle-reprogramming events (`Soundness.Forking.Rewind`), and
 each run's accepting transcript is that run's own round-forking output. `hquot`/`hgood` are stated for
 the canonical decode of the derived batch, as everywhere on the decoded ladder. The batch columns here
-are the multiopen aggregates; `deployed_witness_member_binding` (`Soundness.DeployedMultiopen`)
+are the multiopen aggregates; `deployed_witness_member_binding` (`Soundness.Multiopen.Deployed`)
 continues the chain, decoding them across `x₁` rewinds down to the grouping's member commitments — the
 actual queried column commitments. The constant rung's static-dichotomy caveat on `hprob` applies
 unchanged (`orchard_verifier_vesta_forking_opening_deployed`). -/

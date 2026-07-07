@@ -1,4 +1,4 @@
-import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.Ipa.Soundness
 import Zcash.Snark.Verifier.Ipa
 
 /-!

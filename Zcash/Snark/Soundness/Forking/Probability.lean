@@ -73,7 +73,7 @@ uniform measure beats `n / |α|`, then `n + 1` pairwise-distinct accepting chall
 one in slot `0`. The one-challenge analogue of `extractable_of_prob` (there the event is a whole round
 *vector* and beating `kerr` forces the `(3,…,3)` tree; here beating `n/|α|` forces `n` rewound accepting
 values beside the current one) — the counting core of the multiopen `x₄` rewinding
-(`Soundness.DeployedMultiopen`). -/
+(`Soundness.Multiopen.Deployed`). -/
 theorem exists_injective_accepting_of_measure [Fintype α] [DecidableEq α] [Nonempty α] {n : ℕ}
     {acc : α → Prop} [DecidablePred acc] {x₀ : α} (hx₀ : acc x₀)
     (hprob : (n : ℝ≥0∞) / Fintype.card α

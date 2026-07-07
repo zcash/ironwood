@@ -1,9 +1,9 @@
-import Zcash.Snark.Soundness.CommitFold
+import Zcash.Snark.Soundness.Ipa.CommitFold
 
 /-!
 # Binding as a discrete-log-relation reduction over the augmented generators
 
-`Zcash.Snark.Soundness.CommitFold` models commitment binding at the URS generators `g` as a reduction to
+`Zcash.Snark.Soundness.Ipa.CommitFold` models commitment binding at the URS generators `g` as a reduction to
 discrete-log-relation (DLR) hardness (`relation_of_collision`, `commitmentBinding_iff_no_relation`):
 breaking binding produces a nontrivial relation among the `g`, which DLR hardness forbids.
 

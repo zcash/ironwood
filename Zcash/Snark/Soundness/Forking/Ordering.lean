@@ -298,7 +298,7 @@ theorem deriveChallenges_ipaRound_eq_roundChallenge {shape : Shape} [Zero F] (fs
 
 /-! ## Sealing the multiopen squeeze points (issue #18's rewinding note)
 
-The multiopen rewinding (`Soundness.MultiopenDecode`) forks on the batching challenge `x₄`; the
+The multiopen rewinding (`Soundness.Multiopen.Decode`) forks on the batching challenge `x₄`; the
 analogue of the round-by-round treatment above needs the same two ingredients at the multiopen
 squeeze points: the commit-before-challenge ordering (`q′` is absorbed before `x₃` is squeezed, the
 `u` family before `x₄`), and named squeeze prefixes so the oracle can be reprogrammed there

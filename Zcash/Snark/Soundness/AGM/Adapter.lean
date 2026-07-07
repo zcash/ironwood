@@ -67,7 +67,7 @@ three separate reductions, each with its own assumption base:
 * the **probability wrapper** (`Soundness.AGM.Probability`) — a standalone reduction bounding an
   abstract relation-finder's advantage by the discrete-log advantage (reused for binding-signatures
   and commitment binding too); and
-* the **algebraic-prover model** (`Soundness.AGM.Peel` / `AlgebraicCapstone`) — extraction of an
+* the **algebraic-prover model** (`Soundness.AGM.Peel` / `AGM.Capstone`) — extraction of an
   explicit witness from prover representations, at the deployed level.
 
 These are kept independent on purpose. Fusing them into a single end-to-end theorem would not

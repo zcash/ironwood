@@ -123,14 +123,14 @@ theorem roChallenges_reprogramRounds {shape : Shape} (O : List (TranscriptElt Fp
 
 /-! ## Redrawing the batching challenge is reprogramming at the `x₄` squeeze
 
-The multiopen rewinding (`Soundness.MultiopenDecode`, issue #18's note) forks on the batching
+The multiopen rewinding (`Soundness.Multiopen.Decode`, issue #18's note) forks on the batching
 challenge: redraw `x₄`, re-run, and collect accepting runs at distinct values. `reprogramX4` is the
 one-point analogue of `reprogramRounds` at the sealed `x₄` prefix (`preX4Transcript`,
 `deriveChallenges_x4_eq`), and its pointwise apply lemmas (`reprogramX4_apply_x4`/`_short`/`_long`)
 give the identification field by field: re-running the deployed schedule under it is exactly the
 honest run with `x₄` replaced — every other squeeze input has a different length, so nothing else
 moves. Both halves of what the `{ch with x4 := ξ}` runs then owe the terminal capstones are theorems
-(`Soundness.DeployedMultiopen`): the flat-batch power form of the deployed statement in `x₄` is proven
+(`Soundness.Multiopen.Deployed`): the flat-batch power form of the deployed statement in `x₄` is proven
 over the fingerprinted grouping's aggregates (`deployedCommitment_x4_batch`/`multiopenValue_x4_batch`),
 and the accept-probability step is the single-squeeze counting floor
 (`exists_injective_accepting_of_measure`, consumed by `deployedMultiopenRewind_of_x4Prob`) — the same
@@ -198,7 +198,7 @@ facts, not the record identity, so the pointwise lemmas above are the operative 
 
 /-! ## Redrawing the compression challenge is reprogramming at the `x₁` squeeze
 
-The within-set rewinding (`Soundness.DeployedMultiopen`, the member-column decode) forks one squeeze
+The within-set rewinding (`Soundness.Multiopen.Deployed`, the member-column decode) forks one squeeze
 earlier: redraw `x₁`, and the rewound prover re-sends the post-`x₁` proof fields — `q′`, `u`, and the
 IPA opening (`spliceMultiopen`) — so `x₃`/`x₄`/`ξ`/`z` and the round challenges re-randomize through
 their squeeze inputs (which absorb the fresh `q′`/`u`), while everything absorbed before `x₁` — the
@@ -206,7 +206,7 @@ column commitments, every claimed evaluation (`adviceEvals_mem_preX1Transcript` 
 the whole query list and the fingerprinted grouping — is shared across runs. `reprogramX1` is the
 one-point reprogramming at the sealed `x₁` prefix (`preX1Transcript`, `deriveChallenges_x1_eq`); as
 with `reprogramX4`, the pointwise apply lemmas are the operative form, and the run events the member
-decode ranges over are `x1RunChallenges`/`spliceMultiopen` records (`Soundness.DeployedMultiopen`). -/
+decode ranges over are `x1RunChallenges`/`spliceMultiopen` records (`Soundness.Multiopen.Deployed`). -/
 
 open Classical in
 /-- Reprogram the oracle at the `x₁` squeeze prefix of the fixed proof string, answering `χ` there

@@ -17,7 +17,7 @@ The fingerprint MSM's `g`-part is this commitment, so the layer is expressed dir
 * `evalVector` / `innerProduct` — `b = (1, x, …, x^{n−1})` and `⟨a, b⟩` (the polynomial at `x`).
 * `IpaRelation` — the opening relation `⟨a, G⟩ = P ∧ ⟨a, b⟩ = v` the IPA is an argument of knowledge for.
 * `innerProduct_add_left` — `⟨·, b⟩` is additive in its left argument; together with `commit`'s linearity
-  (`commitGen_add_left` / `commitGen_smul_left` in `Zcash.Snark.Soundness.CommitFold`, via
+  (`commitGen_add_left` / `commitGen_smul_left` in `Zcash.Snark.Soundness.Ipa.CommitFold`, via
   `commit_eq_commitGen`) this is the algebra the round extractor folds with.
 
 The IPA's witness fold is 2-special-sound per round: from two accepting transcripts that share the round commitments

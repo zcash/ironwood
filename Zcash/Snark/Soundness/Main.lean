@@ -1,12 +1,12 @@
 import Mathlib
 import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Verifier.Assemble
-import Zcash.Snark.Soundness.Consistency
-import Zcash.Snark.Soundness.IpaSoundness
+import Zcash.Snark.Soundness.Ipa.Consistency
+import Zcash.Snark.Soundness.Ipa.Soundness
 import Zcash.Snark.Soundness.Deployed.IpaPeel
 import Zcash.Snark.Soundness.Deployed.Verification
 import Zcash.Snark.Soundness.Forking.Assembly
-import Zcash.Snark.Soundness.MultiopenDecode
+import Zcash.Snark.Soundness.Multiopen.Decode
 
 /-!
 # Soundness composition: conditional, and the deployed accept condition
@@ -264,7 +264,7 @@ structure MultiopenForkingOutput [DecidableEq G] [Inhabited G] {shape : Shape} (
 equation it returns the deployed IPA tree together with the multiopen batch-rewinding data for that same
 tree. Compared with `FiatShamirTree`, this also carries the `x₁`/`x₄` multiopen rewinds needed to bind the
 extracted witness to real decoded columns — the batch data the `x₄` rewinding floor now produces
-(`deployedMultiopenRewind_of_x4Prob`, `Soundness.DeployedMultiopen`). It returns data (a structure, not an
+(`deployedMultiopenRewind_of_x4Prob`, `Soundness.Multiopen.Deployed`). It returns data (a structure, not an
 `∃`) so the decoded capstone's `hquot`/`hgood` can be stated about the canonical decode of the returned
 batch — an existential output would force quantifying them over every batch, which is unsatisfiable (see
 the `MultiopenDecode` scope section). -/
