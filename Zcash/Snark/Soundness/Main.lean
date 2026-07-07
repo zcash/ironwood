@@ -34,7 +34,7 @@ relation reduction, `Zcash.Snark.Soundness.Deployed.IpaPeel`), so the deployed c
 asserting soundness outright. A relation always *exists* in a prime-order group, so at the concrete curve this
 disjunction is propositionally `True` and the *statement* is vacuous; the soundness force is the
 computational DLR/AGM layer — no feasible adversary can *find* the relation — which is **not** formalized
-in Lean: `Soundness.AGM` records only its deterministic core (the fixed-slot relation-to-DL adapter, the
+in Lean: `Soundness.AGM.Adapter` records only its deterministic core (the fixed-slot relation-to-DL adapter, the
 fixed-slot DL challenge game, and the finite hit-slot accounting) — not the proposition.
 
 ## Assumptions (the conditional family)
@@ -258,7 +258,7 @@ rather than asserting soundness outright). A relation always *exists* in a prime
 concrete curve this disjunction is propositionally `True`
 and the theorem is vacuous *as a statement* (provable as `Or.inr` without the hypotheses); its content is
 the constructive extraction plus the computational DLR/AGM assumption that no efficient adversary can
-*find* the relation — not formalized in Lean; `Soundness.AGM` records only the deterministic fixed-slot
+*find* the relation — not formalized in Lean; `Soundness.AGM.Adapter` records only the deterministic fixed-slot
 relation-to-DL core and its augmented `(g,U,W)` specialization. Commitment
 binding is load-bearing in the *proof structure*, not the Vesta statement.
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), and
@@ -310,7 +310,7 @@ reaches the forking bridge through the *proven* `deployedAccepts_verifierEq`. Th
 `S ∨ HasNontrivialRelation g U W` — a reduction (it exhibits a discrete-log relation, not soundness
 outright); a relation always *exists* at a prime-order curve, so this disjunction is propositionally `True`
 and the theorem is vacuous as a *statement*, the force being the computational DLR/AGM layer (not
-formalized in Lean) that no adversary can *find* one; `Soundness.AGM` records only its deterministic
+formalized in Lean) that no adversary can *find* one; `Soundness.AGM.Adapter` records only its deterministic
 fixed-slot relation-to-DL core.
 
 Named assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate point-check (`hquot`), the SZ good

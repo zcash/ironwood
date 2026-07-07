@@ -97,7 +97,7 @@ commitment is binding outright, binding is modelled as a reduction to DLR hardne
 The deployed binding reduction extends them to the `U`, `W` generators
 (`Zcash.Snark.Soundness.Deployed.Binding`), in place of an independence assumption. Discharging the
 resulting relation against DLR hardness is the computational / AGM layer, which is *not* in this
-development; `Soundness.AGM` records its deterministic algebraic core — `relationWitnessOfCollision`
+development; `Soundness.AGM.Adapter` records its deterministic algebraic core — `relationWitnessOfCollision`
 and the fixed-slot `discreteLogOfCollisionAtChallenge` adapter (challenge slot fixed before the
 collision is seen) — while the probabilistic wrapper and the algebraic-prover model remain outside
 Lean.

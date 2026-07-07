@@ -1,5 +1,5 @@
 import Mathlib
-import Zcash.Snark.Soundness.AGM
+import Zcash.Snark.Soundness.AGM.Adapter
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
 import CompElliptic.Curves.Pasta
@@ -88,7 +88,7 @@ the forking bridge (`hFS`), either the SNARK relation holds for the pinned
 discrete-log relation. The `U`/`W` separation is derived (`deployed_to_acceptV`), not bundled. Caveat: a
 relation always *exists* in Vesta's prime-order group, so this `∨ HasNontrivialRelation` statement is
 propositionally `True` (vacuous at the curve); the force is the computational DLR/AGM layer — no feasible
-adversary can *find* the relation — which is **not** formalized: `Soundness.AGM` records only its
+adversary can *find* the relation — which is **not** formalized: `Soundness.AGM.Adapter` records only its
 deterministic algebraic core (the fixed-slot relation-to-DL adapter and the augmented `(g,U,W)`
 specialization). Named assumptions:
 the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the circuit side (`hcirc`), the Hasse bound (`Fact (HasseBound Vesta.curve)`), and VK-correctness
@@ -118,7 +118,7 @@ deployed tree reached through the *proven* `deployedAccepts_verifierEq`, and `ci
 `circuitSatViaGates`) from the verifier's gate point-check `hquot` lifted by Schwartz–Zippel (`hgood`). The
 conclusion is `S ∨ HasNontrivialRelation g U W` — a relation always *exists* in Vesta's prime-order group,
 so this statement is propositionally `True` (vacuous at the curve); the force is the computational
-DLR/AGM layer — not formalized in Lean; `Soundness.AGM` records only its deterministic fixed-slot core —
+DLR/AGM layer — not formalized in Lean; `Soundness.AGM.Adapter` records only its deterministic fixed-slot core —
 not the proposition.
 Named
 assumptions: the residual bridge (`hFS`, superseded by the forking path), `z ≠ 0`, the gate check (`hquot`), the SZ good challenge
@@ -221,7 +221,7 @@ the **true** opened value `multiopenValue − ξ·⟨s,b⟩`, with no `⟨s,b⟩
 `hbridge` (the irreducible random-oracle floor), plus the antecedents `z ≠ 0`, the nonzero generator `hg0`, and
 the accept probability `hprob` beating the knowledge error `kerr/Nᵏ`. The `∨ HasNontrivialRelation` caveat is
 unchanged — vacuous at Vesta's prime order, with force in the computational DLR/AGM layer outside Lean
-(`Soundness.AGM` records only its deterministic fixed-slot core). -/
+(`Soundness.AGM.Adapter` records only its deterministic fixed-slot core). -/
 theorem orchard_verifier_vesta_forking_opening [Fact (HasseBound Vesta.curve)] [DecidableEq VestaG]
     [Inhabited VestaG] {shape : Shape} (urs : URS VestaG) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -258,7 +258,7 @@ named failure event `RelationMissesSlot`. Caveat: like the capstone it wraps, th
 propositionally `True` at Vesta's prime order (a relation missing the slot always *exists*), so the
 statement is vacuous; the content is the deterministic extraction chain, and the force — hitting a
 uniformly placed hidden slot, and that no feasible adversary finds a relation at all — remains
-outside Lean (see `Soundness.AGM`). -/
+outside Lean (see `Soundness.AGM.Adapter`). -/
 theorem orchard_verifier_vesta_forking_opening_agm_dl [Fact (HasseBound Vesta.curve)]
     [DecidableEq VestaG] [Inhabited VestaG] {shape : Shape} (urs : URS VestaG)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp VestaG) (ps : ProofString shape Fp VestaG)
@@ -299,7 +299,7 @@ The deployed-curve residual is the explicit prover-as-oracle bridge `hbridge` (a
 discharged. The original `FiatShamirTree` reductions
 (`orchard_verifier_vesta_opening_reduction`/`_constraint`) remain as the coarser legacy endpoints. The
 `∨ HasNontrivialRelation` caveat is unchanged — vacuous at Vesta's prime order, with force in the
-computational DLR/AGM layer outside Lean (`Soundness.AGM` records only its deterministic fixed-slot
+computational DLR/AGM layer outside Lean (`Soundness.AGM.Adapter` records only its deterministic fixed-slot
 core). `hquot`/`hgood` retain the ∀-openings shape —
 unsatisfiable at Vesta for any decode that genuinely reads the witness (see
 `orchard_verifier_deployed_constraint_reduction`'s caveat; issue #18). -/
@@ -811,11 +811,11 @@ slot `challenge` — fixed *before* the relation is seen — with known logs eve
 (`FixedSlotEmbedding`), the relation branch becomes the discrete log of that slot, or the named
 failure event `RelationMissesSlot`.
 
-Standing caveat (inherited from the wrapped capstones; see `Soundness.AGM`'s module docs): at Vesta's
+Standing caveat (inherited from the wrapped capstones; see `Soundness.AGM.Adapter`'s module docs): at Vesta's
 prime order the trichotomy is propositionally `True` — a relation missing the slot always *exists* —
 so these are vacuous *as statements*; their content is the deterministic extraction chain. The
 hit-probability half of the computational force — a uniformly placed hidden slot is hit with
-probability ≥ `1/|ι|` — is now formalized in `Soundness.AGMProbability`; the residual out-of-Lean
+probability ≥ `1/|ι|` — is now formalized in `Soundness.AGM.Probability`; the residual out-of-Lean
 force is discrete-log hardness (no feasible adversary finds a relation) together with the
 algebraic-prover model that produces the witness. -/
 

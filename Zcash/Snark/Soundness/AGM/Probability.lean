@@ -1,13 +1,13 @@
-import Zcash.Snark.Soundness.AGM
-import Zcash.Snark.Soundness.ForkingProbability
+import Zcash.Snark.Soundness.AGM.Adapter
+import Zcash.Snark.Soundness.Forking.Probability
 
 /-!
 # The AGM probability wrapper: relation-finder ⇒ discrete-log solver
 
-`Soundness.AGM` proves the *deterministic* fixed-slot extractor (`discreteLogOfBasis_of_relation`)
+`Soundness.AGM.Adapter` proves the *deterministic* fixed-slot extractor (`discreteLogOfBasis_of_relation`)
 and the *finite* hit accounting (`challengeHitCount_pos`, `challengeHitCount_le_total`). This module
 supplies the probabilistic step those set up, closing the "random-slot / probability wrapper" that
-`Soundness.AGM` previously stated only in prose.
+`Soundness.AGM.Adapter` previously stated only in prose.
 
 ## The experiment (perfect simulation by construction)
 
@@ -22,7 +22,7 @@ with valid preimage `s c`.
 
 * `hitProb_ge_inv_card` — a uniform challenge slot hits any fixed nontrivial relation with
   probability ≥ `1 / |ι|` (the caveat's claim, now a theorem; reuses
-  `uniformOfFintype_toOuterMeasure_finset` from `ForkingProbability` and `challengeHitCount_pos`).
+  `uniformOfFintype_toOuterMeasure_finset` from `Forking.Probability` and `challengeHitCount_pos`).
 * `reduction_advantage_ge` — the advantage-preserving reduction
   `Pr[relation found] / |ι| ≤ Pr[reduction outputs a valid discrete log]`, over the uniform product
   `(ι → F) × ι`. Pure finite counting: every relation-finding `s` contributes at least one hitting
@@ -55,7 +55,7 @@ variable {F G : Type*} [Field F] [AddCommGroup G] [Module F G]
 
 /-- Over a uniformly sampled challenge slot, a fixed nontrivial relation is hit — its coefficient at
 that slot is nonzero — with probability at least `1 / |ι|`. This is the finite hit accounting of
-`Soundness.AGM` (`challengeHitCount_pos`) turned into the probability statement, via the uniform-event
+`Soundness.AGM.Adapter` (`challengeHitCount_pos`) turned into the probability statement, via the uniform-event
 identity `uniformOfFintype_toOuterMeasure_finset`. -/
 theorem hitProb_ge_inv_card {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
     {basis : ι → G} (r : AlgebraicRelationWitness (F := F) basis) :

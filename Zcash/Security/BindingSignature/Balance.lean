@@ -1,5 +1,5 @@
 import Mathlib
-import Zcash.Snark.Soundness.AGM
+import Zcash.Snark.Soundness.AGM.Adapter
 
 /-!
 # Binding-signature balance: shared algebraic core
@@ -49,7 +49,7 @@ balance` below: `intBalance_eq_zero_of_lt`, discharged per pool by `orchard_natA
 
 ## DLR-to-DL handoff
 
-For the two-slot binding pair, the generic fixed-slot AGM game (`Zcash.Snark.Soundness.AGM`)
+For the two-slot binding pair, the generic fixed-slot AGM game (`Zcash.Snark.Soundness.AGM.Adapter`)
 degenerates: placing the DL challenge at the `V` slot over `base := R` leaves `R` itself as the only
 non-challenge slot (known log `1`), so no auxiliary base or known-log embedding is needed, and the
 relation branch collapses directly to `dlog_R V` given `R ≠ 0` (`dlog_of_hasNontrivialRelation`,
@@ -61,7 +61,7 @@ consumers of the generic layer.
 
 * The probabilistic / oracle-machine wrapper (adversary success accounting) and the algebraic-prover
   model in which relation witnesses come from prover-output representations rather than from the
-  existential relation branch — see the module docs of `Zcash.Snark.Soundness.AGM` and issue #15.
+  existential relation branch — see the module docs of `Zcash.Snark.Soundness.AGM.Adapter` and issue #15.
 -/
 
 namespace Zcash.Security.BindingSignature

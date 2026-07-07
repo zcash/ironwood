@@ -19,7 +19,6 @@ import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
 import Zcash.Snark.Soundness.CommitFold
-import Zcash.Snark.Soundness.AGM
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.KnowledgeSoundness
 import Zcash.Snark.Soundness.IpaSoundness
@@ -40,7 +39,10 @@ import Zcash.Snark.Soundness.Forking.Assembly
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Forking.Rewind
 import Zcash.Snark.Soundness.Vesta
-import Zcash.Snark.Soundness.AGMProbability
-import Zcash.Snark.Soundness.AGMProbabilityVesta
-import Zcash.Snark.Soundness.AlgebraicPeel
-import Zcash.Snark.Soundness.AlgebraicCapstone
+-- AGM binding reduction: route each deployed `HasNontrivialRelation` branch through the fixed-slot
+-- discrete-log adapter and the algebraic-prover model (#15).
+import Zcash.Snark.Soundness.AGM.Adapter
+import Zcash.Snark.Soundness.AGM.Probability
+import Zcash.Snark.Soundness.AGM.ProbabilityVesta
+import Zcash.Snark.Soundness.AGM.Peel
+import Zcash.Snark.Soundness.AGM.Capstone

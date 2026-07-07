@@ -1,12 +1,12 @@
-import Zcash.Snark.Soundness.AlgebraicPeel
-import Zcash.Snark.Soundness.Forking
+import Zcash.Snark.Soundness.AGM.Peel
+import Zcash.Snark.Soundness.Forking.Rewind
 
 /-!
 # Deployed capstone from an algebraic prover (issue #15, at the deployed level)
 
-`Soundness.AlgebraicPeel` extracts an explicit relation witness from the algebraic prover's
+`Soundness.AGM.Peel` extracts an explicit relation witness from the algebraic prover's
 representations. This module wires that up to the deployed opening: `deployedAlgebraicRelation` is the
-data-carrying analogue of `Soundness.Forking.deployed_forking_relation`, concluding the multiopen
+data-carrying analogue of `Soundness.Forking.Rewind.deployed_forking_relation`, concluding the multiopen
 inner-product opening **or** an explicit `AugmentedRelationWitness` — with no `Classical.choice`.
 
 ## The boundary with the Fiat–Shamir/forking layer
@@ -20,7 +20,7 @@ model contributes — and what this module makes precise — is that **once the 
 its representations** (the AGM hypothesis, here the data `AlgebraicDeployedAcceptV`), the relation is
 an *explicit* function of those representations, not a `Classical.choice` of an existential.
 `deployedAlgebraicRelationWitness` exposes it in the `AlgebraicRelationWitness` form that
-`Soundness.AGMProbability`'s discrete-log reduction consumes.
+`Soundness.AGM.Probability`'s discrete-log reduction consumes.
 -/
 
 open Classical
@@ -54,7 +54,7 @@ noncomputable def deployedAlgebraicRelation [DecidableEq G] [Inhabited G] (urs :
   | inr hrel => exact PSum.inr hrel
 
 /-- The same, with the relation branch in the `AlgebraicRelationWitness (augmentedBasis …)` form that
-`Soundness.AGMProbability`'s reduction (`relSet` / `succSet`) consumes — the explicit adversary output
+`Soundness.AGM.Probability`'s reduction (`relSet` / `succSet`) consumes — the explicit adversary output
 of the discrete-log reduction, sourced from the prover's representations. -/
 noncomputable def deployedAlgebraicRelationWitness [DecidableEq G] [Inhabited G] (urs : URS G)
     (b : Fin (2 ^ urs.k) → Fp) (v ξ z blind : Fp) (aMulti aDep s : Fin (2 ^ urs.k) → Fp)

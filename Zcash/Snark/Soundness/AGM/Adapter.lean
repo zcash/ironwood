@@ -1,4 +1,4 @@
-import Zcash.Snark.Soundness.BindingReduction
+import Zcash.Snark.Soundness.Deployed.Binding
 
 /-!
 # Algebraic-group-model layer: fixed-slot DL reductions for the relation branches
@@ -26,7 +26,7 @@ the deterministic adapter recovers the challenge's discrete log.
   relation hitting that slot (`hits`).
 * The finite accounting behind the probability wrapper: a nontrivial relation hits at least one slot
   (`nonzeroCoeffSlots_nonempty`, `challengeHitCount_pos`), and at most all of them
-  (`challengeHitCount_le_total`). This is consumed by `Soundness.AGMProbability`, which **formalizes**
+  (`challengeHitCount_le_total`). This is consumed by `Soundness.AGM.Probability`, which **formalizes**
   the probability statement — a uniformly placed challenge slot is hit with probability ≥ `1 / |ι|`
   (`hitProb_ge_inv_card`), the advantage-preserving reduction `Pr[relation]/|ι| ≤ Pr[DL solved]`
   (`reduction_advantage_ge`), and binding from discrete-log hardness (`relation_prob_le_of_DL`).
@@ -35,14 +35,14 @@ the deterministic adapter recovers the challenge's discrete log.
 
 ## What is *not* formalized — and the standing vacuity caveat
 
-The probability wrapper *is* now formalized (`Soundness.AGMProbability`), and the algebraic-*prover*
-model is provided at the peel level by `Soundness.AlgebraicPeel`: with the prover's representations
+The probability wrapper *is* now formalized (`Soundness.AGM.Probability`), and the algebraic-*prover*
+model is provided at the peel level by `Soundness.AGM.Peel`: with the prover's representations
 supplied as data (`AlgebraicDeployedAcceptV`), the deployed peel returns an **explicit**
 `AugmentedRelationWitness` — its coefficients the prover's representation difference — with no
 `Classical.choice` (`deployedToAcceptVWitness`, `algebraicRelationOfDeployedAccept`). What remains
 outside Lean: (i) discrete-log hardness itself (the `DLAdvantageLE` hypothesis there — an assumption
 by definition); and (ii) the AGM idealization. The algebraic prover is wired to the deployed opening
-in `Soundness.AlgebraicCapstone` (`deployedAlgebraicRelation`). The top-level *forking* capstones
+in `Soundness.AGM.Capstone` (`deployedAlgebraicRelation`). The top-level *forking* capstones
 still conclude the existential `HasNontrivialRelation` (with `relationWitnessOfHasNontrivialRelation`
 the bridge there), but that is inherent — the forking layer produces the transcript existentially from
 accept-probability, so an explicit witness at that level is not available by the nature of
@@ -53,7 +53,7 @@ curve — with at least two known-log slots a relation missing the challenge slo
 the `RelationMissesSlot` branch is available without any hypothesis, exactly as `Or.inr` discharges
 the original `∨ HasNontrivialRelation` capstones. The formal content is the deterministic extraction
 chain (witness → hit → discrete log); the "hidden slot is hit with probability ≥ `1/|ι|`" half of the
-computational force is now proved in `Soundness.AGMProbability`, and the residual computational
+computational force is now proved in `Soundness.AGM.Probability`, and the residual computational
 force — that no feasible adversary *finds* a relation (discrete-log hardness) — remains the
 out-of-Lean assumption.
 
@@ -64,10 +64,10 @@ three separate reductions, each with its own assumption base:
 
 * the deterministic relation-to-DL **adapter** (`soundnessOrDLAt_of_soundnessOrRelation`), which the
   Vesta `_agm_dl` wrappers apply to the forking capstones' `∨ HasNontrivialRelation`;
-* the **probability wrapper** (`Soundness.AGMProbability`) — a standalone reduction bounding an
+* the **probability wrapper** (`Soundness.AGM.Probability`) — a standalone reduction bounding an
   abstract relation-finder's advantage by the discrete-log advantage (reused for binding-signatures
   and commitment binding too); and
-* the **algebraic-prover model** (`Soundness.AlgebraicPeel` / `AlgebraicCapstone`) — extraction of an
+* the **algebraic-prover model** (`Soundness.AGM.Peel` / `AlgebraicCapstone`) — extraction of an
   explicit witness from prover representations, at the deployed level.
 
 These are kept independent on purpose. Fusing them into a single end-to-end theorem would not
@@ -192,7 +192,7 @@ noncomputable def challengeHitCount {ι : Type*} [Fintype ι] [DecidableEq ι] {
 
 /-- The random-slot wrapper has a nonzero finite support of successful challenge placements: a
 uniformly placed challenge slot is hit with probability at least `1 / |ι|`. The probability statement
-is formalized in `Soundness.AGMProbability` (`hitProb_ge_inv_card`), which consumes this lemma. -/
+is formalized in `Soundness.AGM.Probability` (`hitProb_ge_inv_card`), which consumes this lemma. -/
 theorem challengeHitCount_pos {ι : Type*} [Fintype ι] [DecidableEq ι] {basis : ι → G}
     (r : AlgebraicRelationWitness (F := F) basis) :
     0 < r.challengeHitCount := by
@@ -312,7 +312,7 @@ abbrev Solution {Params ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- The extraction-success event: the found relation has a nonzero coefficient at the game's
 pre-fixed challenge slot. Over a uniformly placed slot this happens with probability at least
 `challengeHitCount / |ι| ≥ 1 / |ι|` (`challengeHitCount_pos`); the probability accounting is
-formalized in `Soundness.AGMProbability`. -/
+formalized in `Soundness.AGM.Probability`. -/
 def hits {Params ι : Type*} [Fintype ι] [DecidableEq ι]
     (game : DLChallengeGame (F := F) (G := G) Params ι)
     (r : AlgebraicRelationWitness (F := F) game.input.basis) : Prop :=
@@ -326,7 +326,7 @@ theorem hits_iff_mem_nonzeroCoeffSlots {Params ι : Type*} [Fintype ι] [Decidab
 
 /-- Conditional extraction: a relation that hits the pre-fixed challenge slot solves the game. A
 relation that misses it does **not** — that failure branch is the price of a faithful fixed-slot
-game, and is what the probability wrapper in `Soundness.AGMProbability` averages away over the slot
+game, and is what the probability wrapper in `Soundness.AGM.Probability` averages away over the slot
 placement. -/
 def solveFromRelation {Params ι : Type*} [Fintype ι] [DecidableEq ι]
     (game : DLChallengeGame (F := F) (G := G) Params ι)
@@ -458,7 +458,7 @@ theorem augmentedRelationWitness_iff_hasNontrivialRelation {n : ℕ} (g : Fin n 
 /-- Proof-level plumbing, **not** an adversary run: extract an explicit witness from the existential
 relation predicate by choice. In a prime-order group a witness always exists propositionally, so this
 step carries no computational content. The genuine algebraic-prover discharge — obtaining the witness
-from prover-output representations, with no choice — is `Soundness.AlgebraicPeel`
+from prover-output representations, with no choice — is `Soundness.AGM.Peel`
 (`deployedToAcceptVWitness` / `algebraicRelationOfDeployedAccept`); this def remains the bridge for the
 forking capstones, whose relation branch is existential by the nature of rewinding-based extraction
 (the transcript is produced existentially from accept-probability), so no data witness is available
@@ -510,7 +510,7 @@ def discreteLogOfAugmentedRelationAtChallenge {n : ℕ} (B : G) (g : Fin n → G
 coefficient at the pre-fixed challenge slot. Note that (like `HasNontrivialRelation` itself) this
 event holds propositionally whenever at least two other slots exist in a prime-order group, so the
 trichotomy below is vacuous *as a statement*; its content is the extraction chain in the middle
-branch. This existential is *not* the event `Soundness.AGMProbability` bounds — it holds with
+branch. This existential is *not* the event `Soundness.AGM.Probability` bounds — it holds with
 probability `1`. That module instead bounds the probability, over a uniformly placed slot, that the
 adversary's *returned* relation misses the challenge slot (the miss half of the found-relation
 hit/miss event, complement of `succSet`), whose finite input is `challengeHitCount_pos`. -/
@@ -526,7 +526,7 @@ for a challenge slot fixed *before* the relation is seen and embedded with known
 Caveat (same as the capstones it wraps): at a prime-order curve the disjunction is propositionally
 `True` — the failure branch always *exists* — so the statement itself is vacuous; the content is the
 deterministic extraction. The hit-probability half of the computational force (a hidden
-uniformly-placed slot is hit with probability ≥ 1/|ι|) is formalized in `Soundness.AGMProbability`;
+uniformly-placed slot is hit with probability ≥ 1/|ι|) is formalized in `Soundness.AGM.Probability`;
 the residual is discrete-log hardness (no feasible adversary finds a relation), an out-of-Lean
 assumption. -/
 theorem soundnessOrDLAt_of_soundnessOrRelation {n : ℕ} (B : G) (g : Fin n → G) (U W : G)

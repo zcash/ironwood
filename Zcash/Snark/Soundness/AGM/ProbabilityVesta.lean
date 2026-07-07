@@ -1,10 +1,10 @@
 import Zcash.Snark.Soundness.Vesta
-import Zcash.Snark.Soundness.AGMProbability
+import Zcash.Snark.Soundness.AGM.Probability
 
 /-!
 # Deployed-curve instantiation of the AGM probability wrapper (Vesta)
 
-The generic probability wrapper (`Soundness.AGMProbability`) specializes to the deployed *index
+The generic probability wrapper (`Soundness.AGM.Probability`) specializes to the deployed *index
 shapes* — the augmented basis index `AugmentedIndex (2 ^ urs.k)` and the URS index `Fin (2 ^ urs.k)` —
 over the Vesta group `VestaG` with scalar field `Fp`. This is the concrete-curve endpoint of the
 "relation-finder ⇒ discrete-log solver" reduction that discharges the `∨ HasNontrivialRelation`
