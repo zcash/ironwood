@@ -1,0 +1,304 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Glossary - The Ironwood Book</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-1235b096.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "rust";
+            window.path_to_searchindex_js = "../searchindex-9637960c.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-aff24c6d.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The Ironwood Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
+<p>Coined terms and shorthand used across the <a href="proof-map.html">proof map</a> and the Lean
+soundness proofs. Anchors point to a module + name under <code>Zcash/Snark/</code>.</p>
+<style>
+.iw-glossary { margin: 1.3rem 0; display: grid; gap: 26px; }
+.iw-glossary section { display: grid; gap: 9px; }
+.iw-glossary .grp {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .11em; opacity: .55; margin: 0;
+}
+.iw-glossary .g {
+  border: 1px solid var(--table-border-color, rgba(128,140,170,.28));
+  border-left: 3px solid var(--links, #0e8fa3);
+  border-radius: 8px; padding: 9px 13px;
+  background: var(--quote-bg, rgba(128,140,170,.05));
+}
+.iw-glossary .g-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 6px 16px; flex-wrap: wrap;
+}
+.iw-glossary .term { font-weight: 650; }
+.iw-glossary .term code { font-weight: 650; }
+.iw-glossary .anchor {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: .78em; opacity: .6; white-space: nowrap;
+}
+.iw-glossary .def { margin-top: 3px; line-height: 1.5; opacity: .9; }
+</style>
+<div class="iw-glossary">
+<section>
+<div class="grp">The fingerprint</div>
+<div class="g"><div class="g-head"><span class="term">fingerprint</span><span class="anchor">Verifier.Assemble.assemble · Fingerprint.Match.msmMatch_eval</span></div><div class="def">The whole verifier collapsed into one multi-scalar multiplication; the proof accepts exactly when that MSM is the group identity. Checked equal to the Rust verifier's captured MSM, for the specific circuit under analysis. The map's <em>pinned to Rust</em> node.</div></div>
+<div class="g"><div class="g-head"><span class="term">conditional vs deployed</span><span class="anchor">Main.DeployedAccepts</span></div><div class="def"><em>Conditional</em> capstones take an opaque <code>accepts : Prop</code> — a scaffold, not finished soundness; <em>deployed</em> capstones take the concrete accept (assembled MSM = identity).</div></div>
+<div class="g"><div class="g-head"><span class="term">verifier equation</span><span class="anchor">Main.deployedAccepts_verifierEq</span></div><div class="def">halo2's explicit IPA verifier equation, recovered from the compact <code>MSM = 0</code> accept — the readable form the IPA argument consumes.</div></div>
+</section>
+<section>
+<div class="grp">Fiat–Shamir &amp; rewinding</div>
+<div class="g"><div class="g-head"><span class="term">forking lemma</span><span class="anchor">Forking.Probability.extractable_of_prob</span></div><div class="def">Rewinding the random oracle to get three accepting continuations per round at distinct, nonzero challenges; assembled into the transcript tree the extractor consumes. Proven (an averaging argument) once the accept probability beats the knowledge error <code>kerr/Nᵏ</code>.</div></div>
+<div class="g"><div class="g-head"><span class="term">rewind</span><span class="anchor">Forking.Rewind.roChallenges_reprogramRounds</span></div><div class="def">Re-running the schedule with the oracle reprogrammed at a round prefix: redrawing the IPA round vector is exactly reprogramming the deployed oracle (<code>roChallenges_reprogramRounds</code>) — the bridge from the forking measure to the deployed rewound runs, and the load-bearing consumer of <em>transcript ordering</em>. The <code>_rewind</code> capstones state the accept probability over these runs.</div></div>
+<div class="g"><div class="g-head"><span class="term">prover strategy</span><span class="anchor">Forking.Rewind.deployedVerifierEq_iff_flatAccept</span></div><div class="def">halo2's verifier equation recast as the accept predicate of a concrete prover strategy read off the proof — the <em>proven</em> half of the prover-as-oracle bridge; only the random-oracle measure underneath stays a floor.</div></div>
+<div class="g"><div class="g-head"><span class="term">round-by-round soundness</span><span class="anchor">Forking.Ordering</span></div><div class="def">The transcript-ordering guarantee: each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges.</div></div>
+</section>
+<section>
+<div class="grp">Peel &amp; IPA extraction</div>
+<div class="g"><div class="g-head"><span class="term">U / W</span><span class="anchor">Deployed.Binding</span></div><div class="def">The auxiliary generators the deployed verifier folds into the MSM alongside the main <code>g</code> basis — the fold and blinding terms.</div></div>
+<div class="g"><div class="g-head"><span class="term">peel</span><span class="anchor">Deployed.IpaPeel.deployed_to_acceptV</span></div><div class="def">Stripping the <code>U</code>/<code>W</code> terms off the deployed transcript tree to recover a clean, <code>g</code>-only IPA tree — or, failing that, a discrete-log relation.</div></div>
+<div class="g"><div class="g-head"><span class="term">three-special-soundness</span><span class="anchor">Ipa.Soundness.ipa_soundV</span></div><div class="def">Extraction of the witness from three accepting transcripts at pairwise-distinct, nonzero challenges per round.</div></div>
+<div class="g"><div class="g-head"><span class="term">adjusted commitment</span><span class="anchor">Ipa.InnerProduct.ipaRelation_unshift · ipaRelation_unblind_value</span></div><div class="def">Folding the claimed value and synthetic blinder into the opened commitment: <code>P′ = P − [v]g₀ + [ξ]S</code>. The un-shift/un-blind lemmas move an opening of <code>P′</code> back to the actual multiopen commitment at its true value — the value-placement step <code>deployed_forking_relation</code> performs on the equation-to-tree edge.</div></div>
+</section>
+<section>
+<div class="grp">Binding &amp; the AGM</div>
+<div class="g"><div class="g-head"><span class="term">HasNontrivialRelation</span><span class="anchor">Deployed.Binding.HasNontrivialRelation</span></div><div class="def">A nontrivial discrete-log relation on <code>(g, U, W)</code>. One always exists at prime order, so the <code>∨</code>-branch is vacuous <em>as a statement</em>; the force is the computational assumption that no efficient adversary can <em>find</em> one.</div></div>
+<div class="g"><div class="g-head"><span class="term">algebraic relation · gap</span><span class="anchor">AGM.Capstone.deployedAlgebraicRelationWitness</span></div><div class="def">The data-carrying relation witness the discrete-log reduction consumes — an explicit function of the prover's representations, no <code>Classical.choice</code>. Reached from the forking side's <em>existential</em> relation only across a <em>gap</em>: an uncomposed modeling identification (issue #15), drawn on the map as its own edge kind. The other gap reads the sampled-basis probability bound at the deployed URS.</div></div>
+<div class="g"><div class="g-head"><span class="term">fixed-slot</span><span class="anchor">AGM.Adapter.FixedSlotEmbedding</span></div><div class="def">The AGM trick: hide a discrete-log challenge in one basis slot fixed before the adversary runs; a found relation hitting that slot yields the discrete log.</div></div>
+<div class="g"><div class="g-head"><span class="term">DL reduction bound</span><span class="anchor">AGM.Probability.relation_prob_le_of_textbookDL</span></div><div class="def">The random-slot accounting: the planted slot is hit with probability at least <code>1/|basis|</code> of the finder's, so relation-finding probability is bounded by a multiple of the discrete-log advantage — where DL-hardness enters as an explicit, priced hypothesis.</div></div>
+</section>
+<section>
+<div class="grp">Constraints &amp; multiopen</div>
+<div class="g"><div class="g-head"><span class="term">circuit satisfaction</span><span class="anchor">KnowledgeSoundness.circuitSatViaGates</span></div><div class="def">The decoded columns satisfy the circuit gates — the constraint half of the SNARK relation, paired with the IPA opening.</div></div>
+<div class="g"><div class="g-head"><span class="term">batch rewinds</span><span class="anchor">Multiopen.Deployed.deployedMultiopenRewind_of_x4Prob</span></div><div class="def">The <code>x₄</code> forking floor: given an accepting honest run, an accept measure beating the pair-count bound extracts an injective family of accepting <code>x₄</code>-rewound runs — one IPA witness per run, the batch the decode inverts.</div></div>
+<div class="g"><div class="g-head"><span class="term">decoded columns</span><span class="anchor">Multiopen.Decode.decodedCols</span></div><div class="def">The <code>x₄</code>-level columns recovered from the batched multiopen witness by Vandermonde inversion of rewound openings — the point-set aggregates (<code>qᵢ</code>, <code>q′</code>), not yet circuit columns; the <code>x₁</code> unbatch reads the member commitments out of them.</div></div>
+<div class="g"><div class="g-head"><span class="term">challenge batch (x₄) · challenge unbatch (x₁)</span><span class="anchor">Multiopen.Deployed.deployedCommitment_x4_batch · deployed_witness_member_binding</span></div><div class="def">The multiopen batching layers: <code>x₄</code> folds all opening claims into one by powers of the challenge; <code>x₁</code> bundles the commitments queried at each point set into an aggregate, which the unbatch opens back to the individual member commitments — pinning the extracted witness as the two-level power combination of their column witnesses.</div></div>
+<div class="g"><div class="g-head"><span class="term">bad set</span><span class="anchor">Constraints.Vanishing.szBadSet · GoodChallenge</span></div><div class="def">The challenge values that fool the gate check — the roots of the constraint-difference polynomial; a uniform random-oracle challenge lands in it with probability ≤ <code>d/p</code> (Schwartz–Zippel). A challenge outside it is the map's <em>sound challenge</em>.</div></div>
+</section>
+<section>
+<div class="grp">Capstones &amp; hypotheses</div>
+<div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor">Soundness/Vesta.lean · GoodChallenge</span></div><div class="def">The top-level <code>orchard_verifier_vesta_*</code> theorems, forming a ladder of increasingly strong variants (conditional → reductions → forking → deployed / adaptive / rewind), each in an <code>opening</code> and a <code>constraint</code> form. The map's <em>verifier soundness</em> node is the base capstone. Two wrappers sit on top (not a full product across rungs): <code>_agm_dl</code> — the map's <em>AGM soundness</em> — routes the relation branch through the fixed-slot adapter to the trichotomy <em>opening ∨ discrete-log solution ∨ soundness loss</em>, that branch bounded separately in the probability layer; <code>_xgood</code> derives <code>hgood</code> (the <em>sound challenge</em>) instead of assuming it.</div></div>
+<div class="g"><div class="g-head"><span class="term">quotient check</span><span class="anchor">hquot · Soundness/Vesta.lean</span></div><div class="def">The verifier's gate/quotient point-check, plus carrying the gate challenge <code>x</code> over to the multiopen point <code>x₃</code>. Carried as the capstone hypothesis <code>hquot</code>; still open.</div></div>
+<div class="g"><div class="g-head"><span class="term">sound challenge</span><span class="anchor">hgood · Soundness/Vesta.lean</span></div><div class="def">The challenge avoids the Schwartz–Zippel bad set, so the point-check at <code>x</code> implies the full gate identity. Carried as the capstone hypothesis <code>hgood</code>; discharged by the SZ territory's <code>_xgood</code> wrapper.</div></div>
+<div class="g"><div class="g-head"><span class="term">accept probability</span><span class="anchor">hprob · Soundness/Vesta.lean</span></div><div class="def">The accepting-proof probability beats the knowledge error <code>kerr/Nᵏ</code> — enough for the forking lemma to extract. Carried as the capstone hypothesis <code>hprob</code>; the measure-side random-oracle floor.</div></div>
+<div class="g"><div class="g-head"><span class="term">structural residuals</span><span class="anchor">hz · hg0 · hs · hξ · Soundness/Vesta.lean</span></div><div class="def">The remaining structural capstone hypotheses: <code>z ≠ 0</code> (every rung), <code>g₀ ≠ 0</code> (every forking rung), the S-opening <code>commit s = ipaS</code> (deployed/adaptive/rewind rungs), and value recovery <code>ξ·⟨s,b⟩ = 0</code> (constraint rungs only). Assumed in-Lean, priced rather than discharged.</div></div>
+<div class="g"><div class="g-head"><span class="term">high-level relation · VK correctness</span><span class="anchor">hencodes · Verifier.Assemble</span></div><div class="def">The two gaps the composition does not yet cross: on the output side, <code>hencodes</code> — gate satisfaction (<code>SnarkRelation</code>) implies the intended high-level statement; on the input side, VK correctness — the verifying key fed to the verifier faithfully encodes the real deployed circuit. Both outside Lean; not started.</div></div>
+</section>
+</div>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../formal-verification/proof-map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../formal-verification/proof-map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-9576a2db.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid-eefea253.min.js"></script>
+        <script src="../mermaid-init-ccf746f1.js"></script>
+        <script src="../todo-e74d2c27.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ironwood Soundness · Proof Structure Map</title>
+<style>
+  :root {
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface-2: #f6f8fc;
+    --ink: #16203a;
+    --muted: #5a6784;
+    --line: #d4dbe8;
+    --accent: #0e8fa3;
+    --c-proven: #2f9e63;
+    --c-hyp: #c9861a;
+    --c-floor: #c2503c;
+    --c-incoming: #0e8fa3;
+    --c-object: #7683a0;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 28px rgba(22,32,58,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0f1e; --surface: #111a2e; --surface-2: #0e1728; --ink: #dde5f4;
+      --muted: #8795ae; --line: #263248; --accent: #2cc3d6;
+      --c-proven: #46b979; --c-hyp: #e0a63c; --c-floor: #e0715b; --c-incoming: #2cc3d6; --c-object: #8695b2;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f7; --surface: #ffffff; --surface-2: #f6f8fc; --ink: #16203a;
+    --muted: #5a6784; --line: #d4dbe8; --accent: #0e8fa3;
+    --c-proven: #2f9e63; --c-hyp: #c9861a; --c-floor: #c2503c; --c-incoming: #0e8fa3; --c-object: #7683a0;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 28px rgba(22,32,58,.08);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0f1e; --surface: #111a2e; --surface-2: #0e1728; --ink: #dde5f4;
+    --muted: #8795ae; --line: #263248; --accent: #2cc3d6;
+    --c-proven: #46b979; --c-hyp: #e0a63c; --c-floor: #e0715b; --c-incoming: #2cc3d6; --c-object: #8695b2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+
+  header.top {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 22px;
+  }
+  header.top h1 { font-size: 18px; font-weight: 640; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  header.top p { margin: 3px 0 0; color: var(--muted); font-size: 13px; max-width: 64ch; }
+  .state {
+    margin-left: auto; align-self: center;
+    font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+    background: var(--surface-2); white-space: nowrap;
+  }
+
+  .layout { display: grid; grid-template-columns: 1fr 336px; gap: 0; }
+  @media (max-width: 1040px) { .layout { grid-template-columns: 1fr; } }
+
+  .stage { min-width: 0; padding: 12px 12px 18px; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 6px 12px; }
+  .toolbar .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-right: 2px; }
+  .chip {
+    font: inherit; font-size: 12.5px; cursor: pointer;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+    display: inline-flex; align-items: center; gap: 7px; transition: border-color .15s, background .15s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+  .chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .chip:focus-visible, .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .mapwrap { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  svg.map { display: block; width: 100%; min-width: 0; height: auto; }
+
+  .terr { fill: var(--th); opacity: .5; stroke: var(--ts); stroke-width: 1; stroke-dasharray: 3 5; rx: 16; }
+  .terr-label { font-size: 15px; text-transform: uppercase; letter-spacing: .14em; font-weight: 700; fill: var(--ts); opacity: 1; }
+  .terr-tag { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--ts); opacity: .8; }
+  .map-title { font-size: 25px; font-weight: 650; fill: var(--ink); letter-spacing: .015em; }
+
+  .edge { fill: none; stroke-width: 2; opacity: .55; transition: opacity .15s, stroke-width .15s; }
+  .edge.entails { stroke: var(--ink); }
+  .edge.discharges { stroke: var(--accent); stroke-dasharray: 7 5; }
+  .edge.rests { stroke: var(--c-floor); stroke-dasharray: 1.5 5; stroke-linecap: round; }
+  .edge.gap { stroke: var(--c-hyp); stroke-dasharray: 7 3 1.5 3; }
+  .edge.hot { opacity: 1; stroke-width: 3; }
+  .edge.dim { opacity: .05; }
+
+  .node { cursor: pointer; }
+  .node rect { transition: opacity .15s; }
+  .node .box { fill: var(--nf); stroke: var(--ns); stroke-width: 1.75; rx: 9; filter: drop-shadow(0 1px 1px rgba(0,0,0,.05)); }
+  .node .label { font-size: 16.5px; fill: var(--ink); dominant-baseline: middle; }
+  .node.goal .box { fill: var(--accent); stroke: var(--accent); }
+  .node.goal .label { fill: #fff; font-weight: 640; }
+  .node.dim { opacity: .2; }
+  .node .anchor { font-size: 11px; fill: var(--muted); dominant-baseline: middle; }
+
+  body.journey-embed header.top,
+  body.journey-embed .toolbar,
+  body.journey-embed .rail { display: none; }
+  body.journey-embed .layout { display: block; }
+  body.journey-embed .stage { padding: 0; }
+  body.journey-embed { height: 100vh; overflow: hidden; }
+  body.journey-embed .layout,
+  body.journey-embed .stage,
+  body.journey-embed .mapwrap { height: 100%; min-height: 0; }
+  body.journey-embed .mapwrap {
+    display: grid; place-items: center; overflow: hidden;
+    border: 0; border-radius: 0; box-shadow: none; background: var(--surface-2);
+  }
+  body.journey-embed svg.map { width: 100%; min-width: 0; height: 100%; }
+  body.journey-embed .node { cursor: default; transition: opacity .35s ease; }
+  body.journey-embed .node.journey-hidden { opacity: .045; }
+  body.journey-embed .node.journey-past { opacity: .32; }
+  body.journey-embed .node.journey-current { opacity: 1; }
+  body.journey-embed .node.journey-current .box {
+    stroke-width: 3;
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 38%, transparent));
+    animation: journey-pulse 2.2s ease-in-out infinite;
+  }
+  body.journey-embed .edge { transition: opacity .35s ease, stroke-width .35s ease; }
+  body.journey-embed .edge.journey-hidden { opacity: .025; }
+  body.journey-embed .edge.journey-past { opacity: .2; }
+  body.journey-embed .edge.journey-current { opacity: 1; stroke-width: 3; }
+
+  @keyframes journey-pulse {
+    0%, 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 22%, transparent)); }
+    50% { filter: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 52%, transparent)); }
+  }
+
+  .rail { border-left: 1px solid var(--line); padding: 14px 18px 26px; min-width: 0; }
+  @media (max-width: 1040px) { .rail { border-left: none; border-top: 1px solid var(--line); } }
+  .rail h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 10px; }
+  .legend { display: grid; gap: 9px; margin-bottom: 20px; }
+  .legend .row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+  .legend .swatch { width: 26px; height: 0; border-top-width: 3px; border-top-style: solid; flex: none; }
+  .legend .sq { width: 15px; height: 15px; border-radius: 4px; border: 1.75px solid; flex: none; }
+  .legend .muted { color: var(--muted); }
+
+  .detail { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .detail .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 3px 9px; border-radius: 999px; border: 1px solid; margin-bottom: 10px; }
+  .detail .title { font-family: ui-monospace, monospace; font-size: 15px; font-weight: 600; margin: 0 0 2px; text-wrap: balance; }
+  .detail .anchor { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); word-break: break-word; margin-bottom: 12px; }
+  .detail .anchor a.src { color: inherit; text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--line); }
+  .detail .anchor a.src:hover { color: var(--accent); text-decoration-color: var(--accent); }
+  .detail .role { font-size: 13.5px; margin: 0 0 14px; }
+  .detail .conns { display: grid; gap: 7px; }
+  .detail .conns .c { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+  .detail .conns .verb { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); flex: none; min-width: 100px; white-space: nowrap; }
+  .detail .conns .verb.discharges { color: var(--accent); }
+  .detail .conns .verb.rests { color: var(--c-floor); }
+  .detail .conns .verb.gap { color: var(--c-hyp); }
+  .detail .conns .to { font-family: ui-monospace, monospace; }
+  .detail .conns .via { font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--muted); opacity: .85; overflow-wrap: anywhere; }
+  .detail .empty { color: var(--muted); font-size: 13px; }
+  .detail .hint { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+  .tag { font-family: ui-monospace, monospace; font-size: 11px; color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Ironwood Soundness · Proof Structure Map</h1>
+    <p>How the deployed Ironwood SNARK-verifier soundness proof fits together — the theorems, the
+       assumptions they still carry, and what remains outside Lean.</p>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="stage">
+    <div class="toolbar" id="filters">
+      <span class="lbl">Show</span>
+      <button class="chip" data-f="all" aria-pressed="true">All</button>
+      <button class="chip" data-f="proven"><span class="dot" style="background:var(--c-proven)"></span>Proven</button>
+      <button class="chip" data-f="hyp"><span class="dot" style="background:var(--c-hyp)"></span>Hypothesis</button>
+      <button class="chip" data-f="floor"><span class="dot" style="background:var(--c-floor)"></span>Out-of-Lean</button>
+      <button class="chip" data-f="object"><span class="dot" style="background:var(--c-object)"></span>Definitions</button>
+    </div>
+    <div class="mapwrap">
+      <svg class="map" id="map" viewBox="0 0 1920 1090" role="img"
+           aria-label="Connected map of the Ironwood soundness proof structure"></svg>
+    </div>
+  </div>
+
+  <aside class="rail">
+    <h2>Legend</h2>
+    <div class="legend">
+      <div class="row"><span class="swatch" style="border-top-color:var(--ink)"></span><span><b>entails</b> — B follows from A (implication, or the construction A feeds)</span></div>
+      <div class="row"><span class="swatch" style="border-top-color:var(--accent);border-top-style:dashed"></span><span><b>discharges</b> — A proves away assumption B</span></div>
+      <div class="row"><span class="swatch" style="border-top-color:var(--c-floor);border-top-style:dotted"></span><span><b>rests on</b> — B is an assumption needed by A (an in-Lean hypothesis, or an out-of-Lean floor)</span></div>
+      <div class="row"><span class="swatch" style="border-top-color:var(--c-hyp);border-top-style:dashed"></span><span><b>gap</b> — A has a gap that would be fixed by B (an uncomposed modeling identification, not a stated assumption)</span></div>
+      <div class="row" style="margin-top:6px"><span class="sq" style="border-color:var(--c-proven);background:color-mix(in srgb,var(--c-proven) 12%,var(--surface))"></span><span>Proven theorem</span></div>
+      <div class="row"><span class="sq" style="border-color:var(--c-hyp);background:color-mix(in srgb,var(--c-hyp) 12%,var(--surface))"></span><span>Hypothesis in statement</span></div>
+      <div class="row"><span class="sq" style="border-color:var(--c-floor);background:color-mix(in srgb,var(--c-floor) 12%,var(--surface))"></span><span>Out-of-Lean assumption</span></div>
+      <div class="row"><span class="sq" style="border-color:var(--c-object);background:color-mix(in srgb,var(--c-object) 10%,var(--surface))"></span><span class="muted">Definition — a claim (Prop) or construction (data)</span></div>
+      <div class="row"><span class="sq" style="border-color:var(--accent);background:var(--accent)"></span><span>Top-level result (verifier soundness)</span></div>
+    </div>
+
+    <h2>Detail</h2>
+    <div class="detail" id="detail">
+      <p class="empty">Hover or click a node to see what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
+      <p class="hint">The spine runs down the left: <span class="mono">accepting proof &#8594; verifier equation &#8594; deployed tree &#8594; peel &#8594; IPA opening &#8594; SnarkRelation</span>. The tinted territories are the machinery that discharges its assumptions.</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+const SVGNS = "http://www.w3.org/2000/svg";
+const journeyEmbed = new URLSearchParams(window.location.search).get('mode') === 'journey';
+document.body.classList.toggle('journey-embed', journeyEmbed);
+const COL = c => 130 + c * 236;
+const ROW = r => 96 + r * 116;
+
+const territories = [
+  { id:'faith', label:'Faithfulness',               cells:[[0,0],[1,0]],                   h:'#b0873a' },
+  { id:'ss',    label:'Special Soundness',          cells:[[1,5],[1,6],[2,6]],             h:'#c15f86', labelDx:44 },
+  { id:'caps',  label:'Capstones',                 cells:[[3,6],[3,7]],                   h:'#8a78e8', labelSide:'right' },
+  { id:'fs',   label:'Fiat–Shamir · Random Oracle', cells:[[2,1],[3,1],[2,2],[3,2],[2,3]], h:'#6f7bd6' },
+  { id:'dec',  label:'Multiopen Decode', cells:[[6,3],[7,3],[6,4],[7,4]],       h:'var(--c-proven)', labelSide:'right' },
+  { id:'sz',   label:'Schwartz–Zippel', cells:[[6,6],[7,6]],                   h:'var(--c-incoming)' },
+  { id:'agm',  label:'AGM → Discrete Log', cells:[[0,7],[1,7],[0,8],[1,8]],       h:'#a06fb0' },
+  { id:'floor',label:'Assumptions · outside Lean',    cells:[[2,8],[3,8],[4,8],[5,8],[6,8]], h:'var(--c-floor)' },
+];
+
+const nodes = [
+  { id:'assemble', c:0,r:0, label:'assembled MSM', status:'object',
+    anchor:'Verifier.Assemble.assemble',
+    role:'The whole verifier collapsed into one multi-scalar multiplication — the fingerprint, reproduced line-for-line from halo2.' },
+  { id:'fingerprint', c:1,r:0, label:'pinned to Rust', status:'proven',
+    anchor:'Fingerprint.Match.msmMatch_eval',
+    role:'The fingerprint match (msmMatch_eval): the Lean-assembled MSM is compared coefficient-for-coefficient against the Rust verifier’s captured MSM, and a match implies equal evaluations. The deployed check is the numeric fixture match (fingerprint_matches, native_decide) — agreement on one captured proof, full stop: an empirical anchor, not a universal equivalence, and the fixture’s group bases are opaque tags, so Vesta-point faithfulness lives in the Rust capture. Backed by a Fiat–Shamir schedule check and VK/shape faithfulness; multi-action and negative/tamper fixtures are incoming (#27).' },
+  { id:'accept', c:0,r:1, label:'accepting proof', status:'object',
+    anchor:'Main.DeployedAccepts',
+    role:'The concrete accept condition: the assembled MSM evaluates to the group identity. The premise everything hangs from.' },
+  { id:'verifierEq', c:0,r:2, label:'verifier equation', status:'proven',
+    anchor:'Main.deployedAccepts_verifierEq',
+    role:'halo2’s explicit IPA verifier equation, recovered from the accept: deployedAccepts_verifierEq unpacks the compact MSM = 0 into the explicit equation the IPA soundness argument consumes. One direction — the accept also carries the rejection guards.' },
+  { id:'deployedTree', c:0,r:3, label:'deployed tree', status:'object',
+    anchor:'Deployed.Ipa.DeployedIpaAcceptV',
+    role:'The deployed IPA transcript tree, still carrying the auxiliary U/W terms the MSM mixes in — the fold and blinding generators beyond the main g basis.' },
+  { id:'peel', c:0,r:4, label:'peel U/W', status:'proven',
+    anchor:'Deployed.IpaPeel.deployed_to_acceptV',
+    role:'A commitment-binding step (deployed_to_acceptV) doing two separable things: the z≠0 value-on-U strip removes the auxiliary U and W terms (the fold and blinding generators beyond the main g basis), and the binding dichotomy (separate_or_relation) leaves either a clean, g-only IPA tree or — if binding fails — a discrete-log relation, lifted back to the fixed URS basis (relation_of_foldGens) so it lands on the DL-hard generators.' },
+  { id:'clean', c:1,r:5, label:'clean IPA tree', status:'object',
+    anchor:'Ipa.Soundness.IpaAcceptV',
+    role:'A clean IPA transcript tree over the URS generators, ready for special-soundness extraction.' },
+  { id:'relation', c:0,r:5, label:'relation (g,U,W)', status:'object',
+    anchor:'Deployed.Binding.HasNontrivialRelation',
+    role:'The bad branch of the peel: a nontrivial discrete-log relation on the augmented generators (g, U, W). A relation always exists in a prime-order group, so as a statement this branch is trivially true — its real content is the computational claim that no efficient adversary can find one, the DL-hardness the AGM reduction leans on.' },
+  { id:'ipa_soundV', c:1,r:6, label:'ipa_soundV', status:'proven',
+    anchor:'Ipa.Soundness.ipa_soundV',
+    role:'Three-special-soundness extraction: from a transcript tree with three accepting branches at pairwise-distinct, nonzero challenges per round, recover the witness — binding-free.' },
+  { id:'IpaRelation', c:2,r:6, label:'IPA opening', status:'object',
+    anchor:'Ipa.InnerProduct.IpaRelation',
+    role:'The extracted opening: commit a = P and ⟨a,b⟩ = v.' },
+  { id:'SnarkRelation', c:3,r:6, label:'SnarkRelation', status:'object',
+    anchor:'KnowledgeSoundness.SnarkRelation',
+    role:'The SNARK relation — literally a Lean structure with two fields, i.e. a conjunction: opens, the IPA opening (from special soundness) ∧ satisfiesCircuit, circuit satisfaction (from the gate-check side). The deployed path pairs the two directly; there is no separate combiner. The decoded rungs use the enriched SnarkRelationWithDecodedColumns, which additionally pins the decoded columns.' },
+  { id:'circuitSat', c:4,r:6, label:'circuit satisfaction', status:'object',
+    anchor:'KnowledgeSoundness.circuitSatViaGates',
+    role:'The circuit-satisfaction half of the SNARK relation: the decoded columns satisfy the y-combined gate/quotient identity (circuitSatViaGates). Produced by the gate-check lift, then paired with the IPA opening. Covers the gate identity only — the permutation and lookup arguments’ semantic soundness is separate, in-progress work (#21: structural grand-product/lookup lemmas, with the grand-product telescoping, final lookup assembly, and their Schwartz–Zippel bridge still open) and is not yet wired into this chain.' },
+  { id:'capstones', c:3,r:7, label:'verifier soundness', status:'goal',
+    anchor:'Vesta.orchard_verifier_vesta_*',
+    role:'The base capstone — the top-level orchard_verifier_vesta_* family (in Vesta.lean). An accepting proof concludes IPA opening ∨ a nontrivial relation exists (a discrete-log relation on (g, U, W)) — conditional verifier soundness over the concrete Vesta curve; the constraint form additionally derives circuit satisfaction (the full SNARK relation).<br><br>They form a ladder, each rung assuming less than the one before:<br>• conditional — a scaffold over an opaque accept (assumes the extraction and circuit satisfaction); not finished soundness.<br>• reductions — the concrete deployed accept, but still assume the Fiat–Shamir tree bridge and the per-opening hypotheses.<br>• forking — replaces that bridge with the random-oracle forking, so the structural facts are proven rather than assumed.<br>• deployed → adaptive → rewind — how the prover and oracle are modeled inside the forking capstones: a fixed deployed proof string, then an arbitrary prefix-respecting prover, then the accept probability taken over reprogrammed-oracle (rewound) runs.<br><br>Each forking rung comes in an "opening" form (extracts the IPA witness) and a "constraint" form (also derives circuit satisfaction and takes hencodes). The wrappers are not a full product: _xgood (derives hgood, at the cost of hprobX) exists on the constraint forms, _x4 (derives hbatch from hcur and hprob4) on the deployed constraint, and _agm_dl (relation → discrete log ∨ soundness loss), the map\'s AGM soundness, across the family — 36 theorems in all.' },
+  { id:'gateLift', c:5,r:5, label:'gate-check lift', status:'proven',
+    anchor:'KnowledgeSoundness.circuitSatViaGates_of_check',
+    role:'Lifts the verifier’s gate point-check at x to the full polynomial identity — circuit satisfaction — given a good challenge and the real columns (circuitSatViaGates_of_check).' },
+  { id:'hquot', c:5,r:4, label:'quotient check', status:'hyp',
+    anchor:'hquot',
+    role:'The gate/quotient point-check content (the hypothesis hquot), and carrying the gate challenge x over to the multiopen evaluation point x₃. Still an open hypothesis.' },
+  { id:'structural', c:5,r:7, label:'structural residuals', status:'hyp',
+    anchor:'hz · hg0 · hs · hξ',
+    role:'The capstone hypotheses that stay structural residuals: z ≠ 0 (hz) on every rung; the URS generator g₀ ≠ 0 (hg0) on every forking rung; the S-opening commit s = ipaS (hs) only on the deployed/adaptive/rewind rungs — the abstract forking rungs bake it into hbridge instead; and value recovery ξ·⟨s,b⟩ = 0 (hξ) only on the constraint rungs (the openings conclude the shifted value unconditionally). Assumed in-Lean, not yet discharged.' },
+  { id:'hgood', c:5,r:6, label:'sound challenge', status:'hyp',
+    anchor:'hgood',
+    role:'The challenge avoids the Schwartz–Zippel bad set, so the gate point-check at x implies the full gate identity. Assumed here as the hypothesis hgood; derived by the SZ territory.' },
+  { id:'rewind', c:3,r:1, label:'rewind', status:'proven',
+    anchor:'Forking.Rewind.roChallenges_reprogramRounds',
+    role:'Reprogramming the random oracle at a round prefix and re-running the schedule: redrawing the IPA round vector is exactly reprogramming the deployed oracle (roChallenges_reprogramRounds). The bridge that turns the abstract forking measure into the deployed rewound runs the _rewind / _adaptive_rewind capstone rungs consume — the load-bearing consumer of transcript ordering.' },
+  { id:'proverStrategy', c:1,r:2, label:'prover strategy', status:'proven',
+    anchor:'Forking.Rewind.deployedVerifierEq_iff_flatAccept',
+    role:'Recasts the halo2 verifier equation as the accept predicate of a concrete prover strategy read off the proof (deployedVerifierEq_iff_flatAccept). The proven — not assumed — half of the prover-as-oracle bridge: the deterministic content is a theorem, and only the random-oracle measure underneath stays a floor.' },
+  { id:'forking', c:2,r:2, label:'forking lemma', status:'proven',
+    anchor:'Forking.Probability.extractable_of_prob',
+    role:'The multi-round forking lemma (extractable_of_prob) — an averaging argument, proven: if the accept probability beats the knowledge error kerr/Nᵏ, rewinding the random oracle yields three accepting continuations per round at distinct, nonzero challenges. What remains is the accept-probability hypothesis and the Blake2b-as-RO idealization it rests on.' },
+  { id:'treeAssembly', c:2,r:3, label:'tree assembly', status:'proven',
+    anchor:'Forking.Extractor.deployed_forking_tree · produceDeployed',
+    role:'Assembles the forked transcripts into the deployed IPA tree on the live path (deployed_forking_tree / produceDeployed): the round points get their (g,U,W) representation recovered by Vandermonde from decomposition-free certificates, and the recovered root is proved equal to the threaded deployed commitment — root-consistent extraction, no posited decomposition. The legacy forkAccept_to_acceptV route is not used on the deployed spine.' },
+  { id:'hprob', c:2,r:1, label:'accept probability', status:'hyp',
+    anchor:'hprob · Vesta forking capstones',
+    role:'The accept probability beats the knowledge error kerr/Nᵏ — the hypothesis hprob in the Vesta forking capstones. The measure-side random-oracle floor.' },
+  { id:'ordering', c:3,r:2, label:'round-by-round soundness', status:'proven',
+    anchor:'Forking.Ordering.roundPoint_mem_roundTranscript',
+    role:'The transcript-ordering guarantee (roundPoint_mem_roundTranscript): each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges — round-by-round soundness. The backbone under sound forking, the sealed x₁/x₄ prefixes the decode uses, and the x-fixed-before-sampling the Schwartz–Zippel argument needs.' },
+  { id:'x4floor', c:6,r:3, label:'batch rewinds', status:'object',
+    anchor:'Multiopen.Deployed.deployedMultiopenRewind_of_x4Prob',
+    role:'The x₄ forking floor (deployedMultiopenRewind_of_x4Prob): given an accepting honest run, once the accept measure of the x₄-rewound runs beats the pair-count bound, it extracts an injective family of accepting rewound openings — one IPA witness per run — that the decode inverts by Vandermonde. The multiopen analog of the rewind step.' },
+  { id:'x4batch', c:7,r:3, label:'challenge batch', status:'proven',
+    anchor:'Multiopen.Deployed.deployedCommitment_x4_batch',
+    role:'The verifier folds all the opening claims into one (deployedCommitment_x4_batch) using powers of the challenge x₄; this collapse is proved to be exactly the power-weighted batch the decode inverts.' },
+  { id:'decode', c:6,r:4, label:'decode columns', status:'object',
+    anchor:'Multiopen.Decode.decodedColumnFamily_of_batch_openings · decodedCols',
+    role:'The decoded x₄-level columns (decodedColumnFamily_of_batch_openings · decodedCols), recovered from the batch rewinds by Vandermonde inversion and bundled with their opening certificate. What this level recovers are the multiopen point-set aggregates (qᵢ, q′) — not yet circuit columns: the member commitments are read out by the x₁ unbatch, and the per-point claimed evaluations plus the x→x₃ transport stay delegated to the fingerprint half (hquot). The reconstruction algebra is the theorem batch_open_reconstruct_with_coeffs.' },
+  { id:'member_binding', c:7,r:4, label:'challenge unbatch', status:'proven',
+    anchor:'deployed_witness_member_binding',
+    role:'The x₁ layer bundles the commitments queried at each point set into one aggregate (deployed_witness_member_binding); this unbundles them back to the individual queried member commitments (advice, instance, fixed, permutation/lookup products, vanishing) and pins the extracted witness as the explicit two-level (x₄ then x₁) power combination of their column witnesses.' },
+  { id:'szBadSet', c:7,r:6, label:'SZ bad set', status:'proven',
+    anchor:'Constraints.Vanishing.szBadSet_card_le',
+    role:'The Schwartz–Zippel count (szBadSet_card_le): the bad x-values are the roots of the constraint-difference polynomial, so at most degree-many are bad — the bound that makes a good challenge findable.' },
+  { id:'goodChallenge', c:6,r:6, label:'good challenge', status:'proven',
+    anchor:'GoodChallenge.exists_accepting_good_challenge_quotient · Vesta.*_xgood',
+    role:'A uniform RO challenge hits the bad set with probability ≤ d/p, so a good accepting x is derived (exists_accepting_good_challenge_quotient) rather than assumed — no hgood input.' },
+  { id:'algRel', c:0,r:6, label:'algebraic relation', status:'object',
+    anchor:'AGM.Capstone.deployedAlgebraicRelationWitness',
+    role:'The data-carrying AlgebraicRelationWitness the discrete-log reduction consumes — an explicit function of the prover representations, with no Classical.choice. Reached only by identifying the deployed prover with the abstract algebraic relation-finder (issue #15): a modeling assumption, not composed with the forking extraction, which yields only the existential relation.' },
+  { id:'adapter', c:0,r:7, label:'fixed-slot', status:'object',
+    anchor:'AGM.Adapter.FixedSlotEmbedding',
+    role:'The fixed-slot embedding (FixedSlotEmbedding) hides a discrete-log challenge in one basis slot fixed before the adversary runs; a found relation hitting that slot yields the discrete log, extracted deterministically by discreteLogOfBasis_of_relation.' },
+  { id:'dlrep', c:0,r:8, label:'DL solution', status:'object',
+    anchor:'AGM.Adapter.DiscreteLogRepresentation',
+    role:'A solved discrete log (DiscreteLogRepresentation), extracted from a relation that hits the planted slot — the reduction’s output. Producing one would break the DL-hardness assumption, which is exactly why finding the relation is assumed infeasible.' },
+  { id:'missesSlot', c:1,r:8, label:'soundness loss', status:'object',
+    anchor:'AGM.Adapter.RelationMissesSlot',
+    role:'Soundness loss (RelationMissesSlot): the escape case — a nontrivial relation that misses the planted slot, so the AGM reduction extracts no discrete log. As a proposition it holds trivially at prime order — the bounded quantity is the probability that the adversary returns a relation landing here, which the probability wrapper averages away.' },
+  { id:'dlbound', c:1,r:7, label:'DL reduction bound', status:'proven',
+    anchor:'AGM.Probability.relation_prob_le_of_textbookDL',
+    role:'The random-slot accounting (relation_prob_le_of_textbookDL): the planted slot is hit with probability at least 1/|basis| of the finder’s, so the probability of finding a relation is bounded by a multiple of the discrete-log advantage. This is where DL-hardness enters as an explicit, priced hypothesis. Stated over a sampled basis, not the deployed URS — reading it at the URS is the uniform-basis modeling assumption (issue #15).' },
+  { id:'agm_dl', c:2,r:7, label:'AGM soundness', status:'proven',
+    anchor:'Vesta.*_agm_dl',
+    role:'AGM soundness — the _agm_dl capstones (also in Vesta.lean), the AGM-model sharpening of the base capstone. It takes the base capstone\'s IPA opening ∨ a nontrivial relation and routes the relation branch through the fixed-slot adapter, concluding the trichotomy: IPA opening ∨ a discrete-log solution ∨ a soundness loss (the relation misses the planted slot). That soundness-loss branch is not discharged here — it is bounded only in the separate probability layer (the DL reduction bound, over a sampled basis), where DL-hardness prices it. Like the base capstone, the disjunction is propositionally true at prime order; the content is the deterministic extraction chain.' },
+  { id:'DLhard', c:2,r:8, label:'DL-hardness', status:'floor',
+    anchor:'AGM.Probability.TextbookDLAdvantageLE',
+    role:'Discrete-log hardness on Vesta. The bound is stated in Lean (TextbookDLAdvantageLE); that it actually holds for Vesta is the computational assumption, not a Lean theorem.' },
+  { id:'blake2b', c:3,r:8, label:'Blake2b = RO', status:'floor',
+    anchor:'Forking.Oracle.uniformChallenge',
+    role:'Blake2b modeled as a random oracle. The oracle model itself — reprogramming, uniform challenges — is mechanized (Forking.Oracle); identifying the deployed Blake2b transcript with that oracle is the idealization.' },
+  { id:'hlrel', c:4,r:8, label:'high-level relation', status:'floor',
+    anchor:'hencodes',
+    role:'Semantic adequacy (hencodes): SnarkRelation — the witness satisfies the gates — implies the intended high-level Ironwood statement (note well-formed, values balance, nullifier derived, spend authorized). An assumed hypothesis over a free Prop; the composition otherwise stops at SnarkRelation. The output-side gap. Not started.' },
+  { id:'vkfaith', c:6,r:8, label:'VK correctness', status:'floor',
+    anchor:'Verifier.Assemble',
+    role:'The input-side gap: the verifying key and circuit description fed to the verifier faithfully encode the real deployed Ironwood circuit. Dual to the high-level relation on the output side; VK derivation in Lean is not started.' },
+  { id:'hasse', c:5,r:8, label:'Vesta order ⇐ Hasse', status:'floor',
+    anchor:'HasseBound · Vesta.vestaOrder_of_hasse',
+    role:'The Vesta group order, proven from the assumed Hasse bound.' },
+];
+
+// Each edge is [from, to, kind, via?] where `via` names the Lean lemma/def that
+// justifies the step (edge-level traceability): the producing theorem for `entails`,
+// the discharging lemma for `discharges`. `rests`/`gap` carry none — a floor or an
+// uncomposed modeling gap has no discharging lemma, and that absence is the point.
+const edges = [
+  ['assemble','fingerprint','entails','msmMatch_eval'],
+  ['assemble','accept','entails','DeployedAccepts'],
+  ['accept','verifierEq','entails','deployedAccepts_verifierEq'],
+  ['verifierEq','proverStrategy','entails','deployedVerifierEq_iff_flatAccept'],
+  ['proverStrategy','forking','entails','extractable_of_prob'],
+  ['ordering','rewind','entails','roChallenges_reprogramRounds'],
+  ['rewind','forking','entails','extractable_of_prob'],
+  ['ordering','x4floor','entails','deployedMultiopenRewind_of_x4Prob'],
+  ['forking','treeAssembly','entails','deployed_forking_tree'],
+  ['treeAssembly','deployedTree','entails','produceDeployed'],
+  ['forking','hprob','rests'],
+  ['forking','blake2b','rests'],
+  ['deployedTree','peel','entails','deployed_to_acceptV'],
+  ['peel','clean','entails','separate_or_relation'],
+  ['peel','relation','entails','separate_or_relation'],
+  ['clean','ipa_soundV','entails','ipa_soundV'],
+  ['ipa_soundV','IpaRelation','entails','ipa_soundV'],
+  ['IpaRelation','SnarkRelation','entails','SnarkRelation.opens'],
+  ['gateLift','circuitSat','entails','circuitSatViaGates_of_check'],
+  ['circuitSat','SnarkRelation','entails','SnarkRelation.satisfiesCircuit'],
+  ['gateLift','hquot','rests'],
+  ['gateLift','hgood','rests'],
+  ['decode','gateLift','entails','circuitSatViaGates_of_check'],
+  ['x4batch','x4floor','entails','deployedMultiopenRewind_of_x4Prob'],
+  ['x4floor','decode','entails','decodedColumnFamily_of_batch_openings'],
+  ['decode','member_binding','entails','deployed_witness_member_binding'],
+  ['IpaRelation','x4floor','entails','multiopenRewindForRelation_of_acceptedFamily'],
+  ['szBadSet','goodChallenge','entails','exists_accepting_good_challenge_quotient'],
+  ['goodChallenge','hgood','discharges','exists_accepting_good_challenge_quotient'],
+  ['SnarkRelation','capstones','entails','orchard_verifier_vesta_*'],
+  ['capstones','agm_dl','entails','orchard_verifier_vesta_*_agm_dl'],
+  ['relation','algRel','gap'],
+  ['algRel','adapter','entails','FixedSlotEmbedding'],
+  ['adapter','dlrep','entails','discreteLogOfBasis_of_relation'],
+  ['adapter','missesSlot','entails','RelationMissesSlot'],
+  ['adapter','dlbound','entails','relation_prob_le_of_textbookDL'],
+  ['dlbound','DLhard','rests'],
+  ['dlbound','agm_dl','gap'],
+  ['capstones','hlrel','rests'],
+  ['capstones','structural','rests'],
+  ['capstones','vkfaith','rests'],
+  ['capstones','hasse','rests'],
+];
+
+const statusColor = { proven:'--c-proven', hyp:'--c-hyp', floor:'--c-floor', object:'--c-object', goal:'--accent' };
+const statusName  = { proven:'Proven', hyp:'Hypothesis', floor:'Out-of-Lean assumption', object:'Definition', goal:'Top-level' };
+const relPhrase = {
+  'out-entails':    ['→', 'entails'],
+  'out-discharges': ['→', 'discharges'],
+  'out-rests':      ['→', 'rests on'],
+  'in-entails':     ['←', 'follows from'],
+  'in-discharges':  ['←', 'discharged by'],
+  'in-rests':       ['←', 'relied on by'],
+  'out-gap':        ['⇢', 'gap fixed by'],
+  'in-gap':         ['⇠', 'fixes gap in'],
+};
+
+const byId = {};
+nodes.forEach(n => {
+  n.cx = COL(n.c); n.cy = ROW(n.r);
+  const ch = n.label.length;
+  n.w = Math.max(126, Math.min(216, ch * 10.2 + 30));
+  n.h = 46;
+  byId[n.id] = n;
+});
+
+const adj = {};
+nodes.forEach(n => adj[n.id] = []);
+edges.forEach((e,i) => {
+  adj[e[0]].push({ i, other:e[1], kind:e[2], dir:'out', via:e[3] });
+  adj[e[1]].push({ i, other:e[0], kind:e[2], dir:'in', via:e[3] });
+});
+
+const svg = document.getElementById('map');
+function el(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+const defs = el('defs', {});
+[['entails','var(--ink)'],['discharges','var(--accent)'],['rests','var(--c-floor)'],['gap','var(--c-hyp)']].forEach(([k,c]) => {
+  const m = el('marker', { id:'ar-'+k, viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:'7.5', markerHeight:'7.5', orient:'auto-start-reverse' });
+  m.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:c }));
+  defs.appendChild(m);
+});
+svg.appendChild(defs);
+
+const mapTitle = el('text', { x:960, y:46, 'text-anchor':'middle', class:'map-title' });
+mapTitle.textContent = 'Formal Verification of Ironwood';
+svg.appendChild(mapTitle);
+
+const terrLayer = el('g', {});
+const terrLabelLayer = el('g', {});
+const nodeAt = {};
+nodes.forEach(n => { nodeAt[n.c + ',' + n.r] = n; });
+territories.forEach(t => {
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  t.cells.forEach(([c,r]) => {
+    const n = nodeAt[c + ',' + r];
+    const cx = n ? n.cx : COL(c), cy = n ? n.cy : ROW(r);
+    const hw = n ? n.w/2 : 90, hh = n ? n.h/2 : 23;
+    x0=Math.min(x0,cx-hw); y0=Math.min(y0,cy-hh);
+    x1=Math.max(x1,cx+hw); y1=Math.max(y1,cy+hh);
+  });
+  const pad=20;
+  const g = el('g', {});
+  const rect = el('rect', { x:x0-pad, y:y0-pad-14, width:(x1-x0)+pad*2, height:(y1-y0)+pad*2+14, class:'terr' });
+  rect.style.setProperty('--th', `color-mix(in srgb, ${t.h} 10%, var(--surface))`);
+  rect.style.setProperty('--ts', t.h);
+  g.appendChild(rect);
+  const labX = (t.labelSide === 'right' ? x1+pad-14 : x0-pad+14) + (t.labelDx || 0);
+  const lab = el('text', { x:labX, y:y0-pad-14+22, class:'terr-label' });
+  if (t.labelSide === 'right') lab.setAttribute('text-anchor', 'end');
+  lab.style.setProperty('--ts', t.h);
+  lab.textContent = t.label;
+  terrLabelLayer.appendChild(lab);
+  if (t.tag) {
+    const tg = el('text', { x:x1+pad-14, y:y0-pad-14+22, 'text-anchor':'end', class:'terr-tag' });
+    tg.style.setProperty('--ts', t.h);
+    tg.textContent = t.tag;
+    terrLabelLayer.appendChild(tg);
+  }
+  terrLayer.appendChild(g);
+});
+svg.appendChild(terrLayer);
+
+function borderPoint(n, tx, ty) {
+  const dx = tx - n.cx, dy = ty - n.cy;
+  if (dx === 0 && dy === 0) return { x:n.cx, y:n.cy };
+  const hw = n.w/2 + 3, hh = n.h/2 + 3;
+  const s = 1 / Math.max(Math.abs(dx)/hw, Math.abs(dy)/hh);
+  return { x:n.cx + dx*s, y:n.cy + dy*s };
+}
+const edgeLayer = el('g', {});
+const edgeEls = edges.map((e) => {
+  const a = byId[e[0]], b = byId[e[1]];
+  const s = borderPoint(a, b.cx, b.cy), t = borderPoint(b, a.cx, a.cy);
+  const mx=(s.x+t.x)/2, my=(s.y+t.y)/2;
+  let nx=t.y-s.y, ny=-(t.x-s.x); const len=Math.hypot(nx,ny)||1;
+  const dist=Math.hypot(t.x-s.x,t.y-s.y); const off=Math.min(46, dist*0.13);
+  const cx=mx+nx/len*off, cy=my+ny/len*off;
+  const p = el('path', { class:'edge '+e[2], d:`M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`, 'marker-end':`url(#ar-${e[2]})` });
+  edgeLayer.appendChild(p);
+  return p;
+});
+svg.appendChild(edgeLayer);
+svg.appendChild(terrLabelLayer);
+
+const nodeLayer = el('g', {});
+nodes.forEach(n => {
+  const g = el('g', { class:'node '+n.status, tabindex:'0', role:'button', 'data-id':n.id,
+    'aria-label':`${n.label} — ${statusName[n.status]}` });
+  const cvar = statusColor[n.status];
+  const rect = el('rect', { class:'box', x:n.cx-n.w/2, y:n.cy-n.h/2, width:n.w, height:n.h });
+  if (n.status !== 'goal') {
+    rect.style.setProperty('--nf', `color-mix(in srgb, var(${cvar}) 11%, var(--surface))`);
+    rect.style.setProperty('--ns', `var(${cvar})`);
+  }
+  g.appendChild(rect);
+  const lab = el('text', { class:'label mono', x:n.cx, y:n.cy + (n.tag?-5:0), 'text-anchor':'middle' });
+  lab.textContent = n.label;
+  g.appendChild(lab);
+  if (n.tag) {
+    const tg = el('text', { class:'anchor mono', x:n.cx, y:n.cy+13, 'text-anchor':'middle' });
+    tg.textContent = n.tag;
+    g.appendChild(tg);
+  }
+  nodeLayer.appendChild(g);
+  n._g = g;
+});
+svg.appendChild(nodeLayer);
+
+const detail = document.getElementById('detail');
+let pinned = null, activeFilter = 'all', journeyActive = false;
+
+function applyFilter() {
+  nodes.forEach(n => {
+    const show = activeFilter === 'all' || n.status === activeFilter;
+    n._g.classList.toggle('dim', !show);
+  });
+  edgeEls.forEach((p,i) => {
+    const [a,b] = edges[i];
+    const show = activeFilter === 'all' || byId[a].status === activeFilter || byId[b].status === activeFilter;
+    p.classList.toggle('dim', !show);
+    p.classList.remove('hot');
+  });
+}
+
+function highlight(id) {
+  const near = new Set([id]);
+  const eidx = new Set();
+  adj[id].forEach(a => { near.add(a.other); eidx.add(a.i); });
+  nodes.forEach(n => n._g.classList.toggle('dim', !near.has(n.id)));
+  edgeEls.forEach((p,i) => { p.classList.toggle('hot', eidx.has(i)); p.classList.toggle('dim', !eidx.has(i)); });
+}
+
+function applyJourneyStage(payload) {
+  journeyActive = true;
+  pinned = null;
+  const focus = new Set(payload.focus || []);
+  const revealed = new Set(payload.revealed || payload.focus || []);
+  nodes.forEach(n => {
+    n._g.classList.remove('dim');
+    n._g.classList.toggle('journey-current', focus.has(n.id));
+    n._g.classList.toggle('journey-past', !focus.has(n.id) && revealed.has(n.id));
+    n._g.classList.toggle('journey-hidden', !revealed.has(n.id));
+  });
+  edgeEls.forEach((p, i) => {
+    const [a, b] = edges[i];
+    const bothRevealed = revealed.has(a) && revealed.has(b);
+    const touchesCurrent = focus.has(a) || focus.has(b);
+    p.classList.remove('dim', 'hot');
+    p.classList.toggle('journey-current', bothRevealed && touchesCurrent);
+    p.classList.toggle('journey-past', bothRevealed && !touchesCurrent);
+    p.classList.toggle('journey-hidden', !bothRevealed);
+  });
+}
+
+function renderDetail(id) {
+  const n = byId[id];
+  const cvar = statusColor[n.status];
+  const conns = adj[id]
+    .slice()
+    .sort((a, b) => (a.dir === b.dir ? 0 : a.dir === 'in' ? -1 : 1))
+    .map(a => {
+      const [arrow, word] = relPhrase[a.dir + '-' + a.kind];
+      const via = a.via ? ` <span class="via">${a.via}</span>` : '';
+      return `<div class="c"><span class="verb ${a.kind}">${arrow} ${word}</span><span class="to">${byId[a.other].label}${via}</span></div>`;
+    }).join('');
+  detail.innerHTML = `
+    <span class="badge" style="color:var(${cvar});border-color:var(${cvar})">${statusName[n.status]}${n.tag?` · <span class="tag">${n.tag}</span>`:''}</span>
+    <p class="title">${n.label}</p>
+    <p class="anchor"><a class="src" target="_blank" rel="noopener" href="https://github.com/search?q=repo%3Azcash%2Fironwood+${encodeURIComponent(n.anchor.split('·')[0].trim().split('.').pop().replace(/[*]/g,''))}&type=code">${n.anchor}</a></p>
+    <p class="role">${n.role}</p>
+    <div class="conns">${conns || '<span class="empty">No connections.</span>'}</div>`;
+}
+
+nodes.forEach(n => {
+  const g = n._g;
+  const enter = () => { if (journeyActive || activeFilter!=='all') return; highlight(n.id); renderDetail(n.id); };
+  const leave = () => {
+    if (journeyActive || activeFilter!=='all') return;
+    if (pinned) { highlight(pinned); renderDetail(pinned); }
+    else { clearHi(); }
+  };
+  g.addEventListener('pointerenter', enter);
+  g.addEventListener('pointerleave', leave);
+  g.addEventListener('focus', enter);
+  g.addEventListener('blur', leave);
+  g.addEventListener('click', (e) => { if (journeyActive) return; e.stopPropagation(); pinned = (pinned===n.id)?null:n.id; if(pinned){highlight(pinned);renderDetail(pinned);} else {clearHi(); if(activeFilter!=='all') applyFilter();} });
+  g.addEventListener('keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); g.click(); } });
+});
+
+function clearHi() {
+  nodes.forEach(n => n._g.classList.remove('dim'));
+  edgeEls.forEach(p => { p.classList.remove('hot'); p.classList.remove('dim'); });
+  detail.innerHTML = `<p class="empty">Hover or click a node to see what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
+    <p class="hint">The spine runs down the left: <span class="mono">accepting proof → verifier equation → deployed tree → peel → IPA opening → SnarkRelation</span>. The tinted territories are the machinery that discharges its assumptions.</p>`;
+}
+
+svg.addEventListener('click', () => { if (journeyActive) return; pinned = null; clearHi(); if(activeFilter!=='all') applyFilter(); });
+
+document.getElementById('filters').addEventListener('click', (e) => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  activeFilter = b.dataset.f; pinned = null;
+  document.querySelectorAll('#filters .chip').forEach(c => c.setAttribute('aria-pressed', c===b ? 'true':'false'));
+  if (activeFilter === 'all') clearHi(); else applyFilter();
+});
+
+// Theme sync: the embedding book page posts its active theme (mdBook toggle).
+window.addEventListener('message', (e) => {
+  const t = e.data && e.data.iwtheme;
+  if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+  if (e.data && e.data.iwjourney) applyJourneyStage(e.data.iwjourney);
+});
+if (journeyEmbed) window.parent.postMessage({ iwjourneyReady: true }, '*');
+</script>
+</body>
+</html>

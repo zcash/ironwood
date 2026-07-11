@@ -1,0 +1,481 @@
+{
+  "version": 1,
+  "defaultSource": "proofStack",
+  "sources": {
+    "proofStack": {
+      "label": "PR #31 stack head",
+      "ref": "91735cd092a8b09956cd31878d71c5b0d056aa94",
+      "fetch": "pull/31/head"
+    }
+  },
+  "prs": {
+    "21": {
+      "label": "PR #21",
+      "title": "Permutation and lookup structural soundness",
+      "url": "https://github.com/zcash/ironwood/pull/21",
+      "sha": "aecfc1c",
+      "lane": "merged"
+    },
+    "20": {
+      "label": "PR #20",
+      "title": "Binding reduction",
+      "url": "https://github.com/zcash/ironwood/pull/20",
+      "sha": "c76ff1b",
+      "lane": "stack"
+    },
+    "24": {
+      "label": "PR #24",
+      "title": "Fiat-Shamir forking and round soundness",
+      "url": "https://github.com/zcash/ironwood/pull/24",
+      "sha": "f7dfb8b",
+      "lane": "stack"
+    },
+    "28": {
+      "label": "PR #28",
+      "title": "AGM binding reduction",
+      "url": "https://github.com/zcash/ironwood/pull/28",
+      "sha": "f0f275d",
+      "lane": "stack"
+    },
+    "30": {
+      "label": "PR #30",
+      "title": "Bind the IPA witness to verifier columns",
+      "url": "https://github.com/zcash/ironwood/pull/30",
+      "sha": "f62e3b2",
+      "lane": "stack"
+    },
+    "31": {
+      "label": "PR #31",
+      "title": "Schwartz-Zippel good challenges",
+      "url": "https://github.com/zcash/ironwood/pull/31",
+      "sha": "91735cd",
+      "lane": "stack"
+    },
+    "27": {
+      "label": "PR #27",
+      "title": "Multi-action fixture support",
+      "url": "https://github.com/zcash/ironwood/pull/27",
+      "sha": "2575fe0",
+      "lane": "parallel"
+    }
+  },
+  "description": "The logical route from the deployed verifier to the formal soundness endpoint.",
+  "stages": [
+    {
+      "id": "faithfulness",
+      "chapter": "Faithfulness",
+      "title": "Pin Lean to the deployed verifier",
+      "claim": "The Lean assembler and a captured Rust verifier MSM agree coefficient-for-coefficient on the checked fixture.",
+      "summary": "The proof starts by fixing the object under study: the verifier's final multi-scalar multiplication. MsmMatch transfers a checked coefficient match to equality of group evaluations, but the deployed evidence remains fixture-based rather than a universal Rust-to-Lean equivalence.",
+      "nodes": [
+        "assemble",
+        "fingerprint",
+        "vkfaith"
+      ],
+      "theorems": [
+        {
+          "symbol": "assemble",
+          "path": "Zcash/Snark/Verifier/Assemble.lean"
+        },
+        {
+          "symbol": "msmMatch_eval",
+          "path": "Zcash/Snark/Fingerprint/Match.lean"
+        },
+        {
+          "symbol": "fingerprint_matches",
+          "path": "Zcash/Snark/Fingerprint/Fixture.lean"
+        }
+      ],
+      "prs": [
+        "27"
+      ],
+      "proves": [
+        "The checked Lean and captured Rust MSM coefficients match.",
+        "A matching MSM has the same group evaluation under any supplied URS."
+      ],
+      "residuals": [
+        "Rust capture provenance and opaque-tag to Vesta-point faithfulness.",
+        "Deriving the deployed verifying key and circuit description inside Lean."
+      ],
+      "durationMs": 9000
+    },
+    {
+      "id": "accept-equation",
+      "chapter": "Verifier",
+      "title": "Turn acceptance into the IPA equation",
+      "claim": "An accepting assembled MSM yields halo2's explicit IPA verifier equation.",
+      "summary": "DeployedAccepts is the concrete MSM-equals-identity premise. deployedAccepts_verifierEq unfolds that compact check into the equation consumed by the soundness argument while retaining the verifier's rejection guards.",
+      "nodes": [
+        "assemble",
+        "accept",
+        "verifierEq"
+      ],
+      "theorems": [
+        {
+          "symbol": "DeployedAccepts",
+          "path": "Zcash/Snark/Soundness/Main.lean"
+        },
+        {
+          "symbol": "deployedAccepts_verifierEq",
+          "path": "Zcash/Snark/Soundness/Main.lean"
+        }
+      ],
+      "prs": [
+        "20"
+      ],
+      "proves": [
+        "The compact deployed accept implies the explicit verifier equation.",
+        "The soundness development now reasons about the equation actually assembled by the verifier."
+      ],
+      "residuals": [
+        "The empirical verifier-fingerprint boundary from the preceding stage.",
+        "Fiat-Shamir challenges still need an oracle/rewinding interpretation."
+      ],
+      "durationMs": 8000
+    },
+    {
+      "id": "forking",
+      "chapter": "Fiat-Shamir",
+      "title": "Rewind the oracle and assemble a tree",
+      "claim": "Enough accepting reprogrammed runs produce three distinct nonzero accepting continuations at every IPA round.",
+      "summary": "Transcript-ordering lemmas seal each round prefix before its challenge. The verifier equation becomes a concrete prover-strategy predicate, the counting forking lemma produces the branching executions, and deployed_forking_tree assembles them into the transcript tree used by special soundness.",
+      "nodes": [
+        "verifierEq",
+        "proverStrategy",
+        "ordering",
+        "rewind",
+        "hprob",
+        "forking",
+        "treeAssembly",
+        "blake2b"
+      ],
+      "theorems": [
+        {
+          "symbol": "deployedVerifierEq_iff_flatAccept",
+          "path": "Zcash/Snark/Soundness/Forking/Rewind.lean"
+        },
+        {
+          "symbol": "roundPoint_mem_roundTranscript",
+          "path": "Zcash/Snark/Soundness/Forking/Ordering.lean"
+        },
+        {
+          "symbol": "extractable_of_prob",
+          "path": "Zcash/Snark/Soundness/Forking/Probability.lean"
+        },
+        {
+          "symbol": "deployed_forking_tree",
+          "path": "Zcash/Snark/Soundness/Forking/Extractor.lean"
+        }
+      ],
+      "prs": [
+        "24"
+      ],
+      "proves": [
+        "Round messages precede the challenges they must not influence.",
+        "The probability threshold yields the full accepting tree required by extraction."
+      ],
+      "residuals": [
+        "Blake2b and challenge decoding are idealized as a uniform random oracle.",
+        "Adversary execution, oracle-query loss, and expected polynomial extraction are not composed."
+      ],
+      "durationMs": 10000
+    },
+    {
+      "id": "peel",
+      "chapter": "Binding reduction",
+      "title": "Peel the auxiliary generators",
+      "claim": "The deployed tree reduces to either a clean g-only IPA tree or a nontrivial relation over (g, U, W).",
+      "summary": "The deployed equation carries the U and W terms used for values and blinding. deployed_to_acceptV removes them when z is nonzero. Failure to separate them is exposed explicitly as the relation branch rather than hidden behind a binding axiom.",
+      "nodes": [
+        "treeAssembly",
+        "deployedTree",
+        "peel",
+        "clean",
+        "relation",
+        "structural"
+      ],
+      "theorems": [
+        {
+          "symbol": "deployed_to_acceptV",
+          "path": "Zcash/Snark/Soundness/Deployed/IpaPeel.lean"
+        },
+        {
+          "symbol": "relation_of_foldGens",
+          "path": "Zcash/Snark/Soundness/Deployed/IpaPeel.lean"
+        }
+      ],
+      "prs": [
+        "20"
+      ],
+      "proves": [
+        "The auxiliary-generator terms are removed on the clean branch.",
+        "Binding failure is retained as an explicit relation on the deployed augmented basis."
+      ],
+      "residuals": [
+        "The capstones retain z != 0 and other rung-specific structural premises.",
+        "The relation branch needs a computational reduction, not a propositional impossibility claim."
+      ],
+      "durationMs": 8500
+    },
+    {
+      "id": "ipa-opening",
+      "chapter": "Special soundness",
+      "title": "Extract the IPA opening",
+      "claim": "A clean ternary transcript tree determines one witness that opens the commitment at the claimed inner product.",
+      "summary": "ipa_soundV applies three-special-soundness recursively. Distinct nonzero challenges make the Vandermonde reconstruction invertible, producing one coefficient vector shared by the commitment and value equations.",
+      "nodes": [
+        "clean",
+        "ipa_soundV",
+        "IpaRelation"
+      ],
+      "theorems": [
+        {
+          "symbol": "IpaAcceptV",
+          "path": "Zcash/Snark/Soundness/Ipa/Soundness.lean"
+        },
+        {
+          "symbol": "ipa_soundV",
+          "path": "Zcash/Snark/Soundness/Ipa/Soundness.lean"
+        }
+      ],
+      "prs": [
+        "20",
+        "24"
+      ],
+      "proves": [
+        "The extracted vector commits to the verifier's pinned commitment.",
+        "The same vector has the extracted inner product value."
+      ],
+      "residuals": [
+        "This is existence-only extraction, not a runtime theorem for an efficient extractor.",
+        "The alternative relation branch remains computationally meaningful."
+      ],
+      "durationMs": 8000
+    },
+    {
+      "id": "agm",
+      "chapter": "AGM to discrete log",
+      "title": "Price the relation branch",
+      "claim": "An explicit algebraic relation either solves the planted discrete log or misses its fixed slot; relation-finding probability is bounded separately.",
+      "summary": "The deterministic fixed-slot adapter is formalized, as is the sampled-basis probability accounting. The forking layer still yields an existential relation, while the probability layer consumes an explicit algebraic-prover witness, so those layers are shown as a gap rather than silently composed.",
+      "nodes": [
+        "relation",
+        "algRel",
+        "adapter",
+        "dlrep",
+        "missesSlot",
+        "dlbound",
+        "agm_dl",
+        "DLhard"
+      ],
+      "theorems": [
+        {
+          "symbol": "deployedAlgebraicRelationWitness",
+          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean"
+        },
+        {
+          "symbol": "soundnessOrDLAt_of_soundnessOrRelation",
+          "path": "Zcash/Snark/Soundness/AGM/Adapter.lean"
+        },
+        {
+          "symbol": "relation_prob_le_of_textbookDL",
+          "path": "Zcash/Snark/Soundness/AGM/Probability.lean"
+        }
+      ],
+      "prs": [
+        "28"
+      ],
+      "proves": [
+        "The fixed-slot relation-to-discrete-log transformation is deterministic.",
+        "The sampled-basis relation advantage is bounded by the discrete-log advantage."
+      ],
+      "residuals": [
+        "Identify the deployed prover with the explicit algebraic relation finder.",
+        "Identify the sampled basis distribution with the deployed URS and assume Vesta DL hardness."
+      ],
+      "durationMs": 10000
+    },
+    {
+      "id": "multiopen",
+      "chapter": "Multiopen",
+      "title": "Recover the verifier's opened columns",
+      "claim": "Rewinding x4 recovers the point-set aggregates; rewinding x1 binds those aggregates to the queried member commitments.",
+      "summary": "The deployed x4 commitment is proved to be the power batch inverted by the Vandermonde decode. The x1 layer then exposes the individual advice, instance, fixed, permutation, lookup, and vanishing commitments inside each aggregate.",
+      "nodes": [
+        "ordering",
+        "IpaRelation",
+        "x4batch",
+        "x4floor",
+        "decode",
+        "member_binding",
+        "hprob"
+      ],
+      "theorems": [
+        {
+          "symbol": "deployedCommitment_x4_batch",
+          "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+        },
+        {
+          "symbol": "deployedMultiopenRewind_of_x4Prob",
+          "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+        },
+        {
+          "symbol": "decodedColumnFamily_of_batch_openings",
+          "path": "Zcash/Snark/Soundness/Multiopen/Decode.lean"
+        },
+        {
+          "symbol": "deployed_witness_member_binding",
+          "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+        }
+      ],
+      "prs": [
+        "30"
+      ],
+      "proves": [
+        "The x4 decode yields the deployed point-set aggregates, not modeled stand-ins.",
+        "The x1 unbatch pins the extracted witness to the actual queried member commitments."
+      ],
+      "residuals": [
+        "The x4 accept-measure premise and an accepting current run remain explicit.",
+        "Per-point claimed evaluations and x-to-x3 quotient transport remain in hquot."
+      ],
+      "durationMs": 10000
+    },
+    {
+      "id": "constraints",
+      "chapter": "Constraints",
+      "title": "Lift the point check to circuit satisfaction",
+      "claim": "Outside the Schwartz-Zippel bad set, the quotient point check implies the full combined gate identity.",
+      "summary": "The bad-set theorem bounds roots of the constraint-difference polynomial. The xgood capstones spend an accept-measure budget to select a good accepting challenge, removing hgood while keeping the actual quotient-check content in hquot.",
+      "nodes": [
+        "decode",
+        "szBadSet",
+        "goodChallenge",
+        "hgood",
+        "gateLift",
+        "hquot",
+        "circuitSat"
+      ],
+      "theorems": [
+        {
+          "symbol": "szBadSet_card_le",
+          "path": "Zcash/Snark/Soundness/Constraints/Vanishing.lean"
+        },
+        {
+          "symbol": "exists_accepting_good_challenge_quotient",
+          "path": "Zcash/Snark/Soundness/GoodChallenge.lean"
+        },
+        {
+          "symbol": "circuitSatViaGates_of_check",
+          "path": "Zcash/Snark/Soundness/KnowledgeSoundness.lean"
+        }
+      ],
+      "prs": [
+        "31",
+        "21"
+      ],
+      "proves": [
+        "A good challenge turns the verifier's point identity into the full gate polynomial identity.",
+        "The xgood family derives bad-set avoidance from an explicit probability budget."
+      ],
+      "residuals": [
+        "hquot still carries the fingerprint-to-gate-check and x-to-x3 transport content.",
+        "Permutation/lookup grand-product telescoping and final lookup assembly are not wired into this relation."
+      ],
+      "durationMs": 9500
+    },
+    {
+      "id": "compose",
+      "chapter": "Capstones",
+      "title": "Compose opening and circuit satisfaction",
+      "claim": "The extracted opening and gate identity form SnarkRelation, which the Vesta capstone family exposes at the verifier boundary.",
+      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, x4, and AGM/DL variants.",
+      "nodes": [
+        "IpaRelation",
+        "circuitSat",
+        "SnarkRelation",
+        "capstones",
+        "structural",
+        "hprob",
+        "hquot",
+        "hgood",
+        "hasse"
+      ],
+      "theorems": [
+        {
+          "symbol": "SnarkRelation",
+          "path": "Zcash/Snark/Soundness/KnowledgeSoundness.lean"
+        },
+        {
+          "symbol": "orchard_verifier_vesta_forking_constraint_adaptive_rewind_xgood",
+          "path": "Zcash/Snark/Soundness/Vesta.lean"
+        }
+      ],
+      "prs": [
+        "20",
+        "24",
+        "28",
+        "30",
+        "31"
+      ],
+      "proves": [
+        "The opening and constraint branches refer to the same pinned verifier statement.",
+        "The capstone family makes each modeled adversary and residual hypothesis explicit."
+      ],
+      "residuals": [
+        "Different capstones retain different structural and probability premises.",
+        "SnarkRelation is not yet the intended high-level Ironwood security statement."
+      ],
+      "durationMs": 9500
+    },
+    {
+      "id": "boundary",
+      "chapter": "Trust boundary",
+      "title": "Stop at the exact formal boundary",
+      "claim": "The formal chain reaches SnarkRelation and explicit reduction disjunctions; it does not erase the remaining modeling and composition gaps.",
+      "summary": "The final view keeps hypotheses and out-of-Lean assumptions visible. This is the honest endpoint: a large mechanized core with named inputs, probability budgets, computational assumptions, and uncomposed execution semantics rather than an all-green claim of end-to-end verification.",
+      "nodes": [
+        "capstones",
+        "structural",
+        "hprob",
+        "hquot",
+        "hgood",
+        "algRel",
+        "dlbound",
+        "DLhard",
+        "blake2b",
+        "hlrel",
+        "vkfaith",
+        "hasse"
+      ],
+      "theorems": [
+        {
+          "symbol": "orchard_verifier_vesta_forking_constraint_adaptive_rewind_agm_dl_xgood",
+          "path": "Zcash/Snark/Soundness/Vesta.lean"
+        },
+        {
+          "symbol": "blinder_value_recovery_badSet",
+          "path": "Zcash/Snark/Soundness/Vesta.lean"
+        }
+      ],
+      "prs": [
+        "20",
+        "24",
+        "28",
+        "30",
+        "31",
+        "27",
+        "21"
+      ],
+      "proves": [
+        "Every mechanized bridge shown in the map has a concrete Lean anchor.",
+        "The endpoint records reduction outcomes and residual premises without hiding them."
+      ],
+      "residuals": [
+        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, AGM/URS identifications, and DL hardness.",
+        "Runtime extraction, real-adversary execution, oracle-query loss, and combined error budgeting."
+      ],
+      "durationMs": 11000
+    }
+  ]
+}

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ironwood Soundness Proof Journey</title>
+<style>
+  :root {
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface-2: #f6f8fc;
+    --ink: #16203a;
+    --muted: #5a6784;
+    --line: #d4dbe8;
+    --accent: #0e8fa3;
+    --proven: #2f9e63;
+    --hyp: #c9861a;
+    --floor: #c2503c;
+    --stack: #5369b8;
+    --parallel: #aa667f;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 28px rgba(22,32,58,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0f1e; --surface: #111a2e; --surface-2: #0e1728; --ink: #dde5f4;
+      --muted: #8795ae; --line: #263248; --accent: #2cc3d6; --proven: #46b979;
+      --hyp: #e0a63c; --floor: #e0715b; --stack: #8fa2ef; --parallel: #d58aa5;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f7; --surface: #ffffff; --surface-2: #f6f8fc; --ink: #16203a;
+    --muted: #5a6784; --line: #d4dbe8; --accent: #0e8fa3; --proven: #2f9e63;
+    --hyp: #c9861a; --floor: #c2503c; --stack: #5369b8; --parallel: #aa667f;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 28px rgba(22,32,58,.08);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0f1e; --surface: #111a2e; --surface-2: #0e1728; --ink: #dde5f4;
+    --muted: #8795ae; --line: #263248; --accent: #2cc3d6; --proven: #46b979;
+    --hyp: #e0a63c; --floor: #e0715b; --stack: #8fa2ef; --parallel: #d58aa5;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45; -webkit-font-smoothing: antialiased;
+  }
+  button, select, input { font: inherit; }
+  button, select { color: var(--ink); }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  .journey-head {
+    padding: 18px 22px 14px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .journey-head h1 { font-size: 19px; font-weight: 680; margin: 0; letter-spacing: 0; }
+  .journey-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; max-width: 72ch; }
+  .transport {
+    display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; gap: 14px; align-items: center;
+    padding: 10px 22px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .transport-buttons { display: flex; align-items: center; gap: 6px; }
+  .icon-button {
+    width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0;
+    border: 1px solid var(--line); background: var(--surface); border-radius: 6px;
+    cursor: pointer; font-size: 17px; line-height: 1;
+  }
+  .icon-button:hover, .icon-button:focus-visible { border-color: var(--accent); color: var(--accent); }
+  .play-button { width: 58px; font-size: 12px; font-weight: 650; }
+  .progress-wrap { min-width: 0; }
+  .progress-meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .progress-meta span { color: var(--muted); font-size: 11px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+  .speed {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 6px;
+    padding: 6px 26px 6px 8px; font-size: 12px; cursor: pointer;
+  }
+
+  .workspace { display: block; }
+  .map-pane { min-width: 0; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  .map-pane iframe { display: block; width: 100%; height: clamp(620px, 56.8vw, 900px); border: 0; }
+  .story {
+    min-width: 0; background: var(--surface); padding: 20px 22px 24px;
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .9fr) minmax(260px, 1fr);
+    gap: 22px 34px; align-items: start;
+  }
+  .story-copy, .story-evidence, .story-outcomes { min-width: 0; }
+  .chapter { color: var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: .09em; font-weight: 700; }
+  .story h2 { font-size: 22px; line-height: 1.18; letter-spacing: 0; margin: 6px 0 10px; text-wrap: balance; }
+  .claim { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 0 0 14px; font-weight: 620; font-size: 14px; }
+  .summary { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; }
+  .story h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 17px 0 7px; }
+  .links, .facts { display: grid; gap: 7px; }
+  .theorem-link {
+    display: block; color: var(--ink); text-decoration: none; font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    overflow-wrap: anywhere;
+  }
+  .theorem-link::before { content: "#"; color: var(--accent); margin-right: 7px; }
+  .theorem-link:hover { color: var(--accent); text-decoration: underline; }
+  .pr-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pr {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 8px; color: var(--ink); text-decoration: none;
+    font-size: 11.5px; background: var(--surface-2);
+  }
+  .pr::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--stack); }
+  .pr.merged::before { background: var(--proven); }
+  .pr.parallel::before { background: var(--parallel); }
+  .pr:hover { border-color: var(--accent); }
+  .pr code { color: var(--muted); font-size: 10px; }
+  .fact { display: grid; grid-template-columns: 10px 1fr; gap: 8px; align-items: start; font-size: 12.5px; }
+  .fact::before { content: ""; width: 8px; height: 8px; margin-top: 5px; border-radius: 2px; background: var(--proven); }
+  .facts.residual .fact::before { background: var(--hyp); }
+  .stage-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  .timeline {
+    display: flex; gap: 0; overflow-x: auto; padding: 13px 18px 16px;
+    background: var(--surface); border-bottom: 1px solid var(--line); scrollbar-width: thin;
+  }
+  .timeline-step {
+    position: relative; flex: 1 0 142px; min-width: 142px; border: 0; background: transparent;
+    color: var(--muted); text-align: left; padding: 23px 10px 0; cursor: pointer; font-size: 11.5px;
+    line-height: 1.25;
+  }
+  .timeline-step::before {
+    content: ""; position: absolute; left: 10px; right: -10px; top: 8px;
+    height: 2px; background: var(--line);
+  }
+  .timeline-step::after {
+    content: ""; position: absolute; left: 10px; top: 3px; width: 10px; height: 10px;
+    border: 2px solid var(--line); border-radius: 50%; background: var(--surface);
+  }
+  .timeline-step:last-child::before { right: calc(100% - 20px); }
+  .timeline-step.past::before, .timeline-step.past::after { border-color: var(--proven); background: var(--proven); }
+  .timeline-step.current { color: var(--ink); font-weight: 650; }
+  .timeline-step.current::after { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .timeline-step:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .error { padding: 32px; color: var(--floor); font-weight: 650; }
+  :root:fullscreen, :root:fullscreen body { height: 100%; }
+  :root:fullscreen body { overflow: hidden; }
+  :root:fullscreen .journey-head,
+  :root:fullscreen .story { display: none; }
+  :root:fullscreen .workspace { height: calc(100vh - 126px); min-height: 0; }
+  :root:fullscreen .map-pane,
+  :root:fullscreen .map-pane iframe { height: 100%; }
+  @media (max-width: 1080px) {
+    .map-pane iframe { height: 640px; }
+    .story { grid-template-columns: minmax(0, 1fr) minmax(280px, .85fr); }
+    .story-copy { grid-row: span 2; }
+  }
+  @media (max-width: 720px) {
+    .journey-head { padding: 14px; }
+    .transport { grid-template-columns: 1fr auto; padding: 9px 12px; }
+    .transport-buttons { grid-column: 1; }
+    .progress-wrap { grid-column: 1 / -1; grid-row: 2; }
+    .speed { grid-column: 2; grid-row: 1; }
+    .map-pane iframe { height: 560px; }
+    .story { display: block; padding: 18px 16px 22px; }
+    .story-evidence, .story-outcomes { margin-top: 20px; }
+    .story h2 { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="journey-head">
+  <div>
+    <h1>Ironwood Soundness Proof Journey</h1>
+    <p id="mode-description">The logical route from the deployed verifier to the formal soundness endpoint.</p>
+  </div>
+</header>
+
+<div class="transport">
+  <div class="transport-buttons">
+    <button class="icon-button" id="previous" type="button" title="Previous stage" aria-label="Previous stage">&#8592;</button>
+    <button class="icon-button play-button" id="play" type="button" title="Play timeline" aria-label="Play timeline">Play</button>
+    <button class="icon-button" id="next" type="button" title="Next stage" aria-label="Next stage">&#8594;</button>
+    <button class="icon-button" id="fullscreen" type="button" title="Enter full screen" aria-label="Enter full screen">&#9974;</button>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-meta"><span id="stage-count">Stage 1</span><span id="stage-time">0:00</span></div>
+    <input id="scrubber" type="range" min="0" max="0" step="any" value="0" aria-label="Timeline playhead">
+  </div>
+  <select class="speed" id="speed" aria-label="Playback speed" title="Playback speed">
+    <option value="0.75">0.75x</option>
+    <option value="1" selected>1x</option>
+    <option value="1.5">1.5x</option>
+    <option value="2">2x</option>
+  </select>
+</div>
+
+<nav class="timeline" id="timeline" aria-label="Proof stages"></nav>
+
+<main class="workspace" id="workspace">
+  <section class="map-pane" aria-label="Animated proof map">
+    <iframe id="proof-map" src="proof-map-embed.html?mode=journey" title="Animated Ironwood proof structure map" allowfullscreen></iframe>
+  </section>
+  <aside class="story" id="story">
+    <div class="story-copy">
+      <div class="chapter" id="chapter"></div>
+      <h2 id="stage-title">Loading proof journey</h2>
+      <p class="claim" id="claim"></p>
+      <p class="summary" id="summary"></p>
+    </div>
+    <div class="story-evidence">
+      <section id="theorem-section">
+        <h3>Lean anchors</h3>
+        <div class="links" id="theorems"></div>
+      </section>
+      <section id="pr-section">
+        <h3>Delivery</h3>
+        <div class="pr-list" id="prs"></div>
+      </section>
+    </div>
+    <div class="story-outcomes">
+      <section>
+        <h3>Established here</h3>
+        <div class="facts" id="proves"></div>
+      </section>
+      <section>
+        <h3>Still carried</h3>
+        <div class="facts residual" id="residuals"></div>
+      </section>
+    </div>
+  </aside>
+</main>
+<div class="stage-live" id="stage-live" aria-live="polite"></div>
+
+<script>
+const DATA_URL = 'proof-journey-data.json';
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const els = {
+  modeDescription: document.getElementById('mode-description'),
+  previous: document.getElementById('previous'),
+  play: document.getElementById('play'),
+  next: document.getElementById('next'),
+  fullscreen: document.getElementById('fullscreen'),
+  scrubber: document.getElementById('scrubber'),
+  speed: document.getElementById('speed'),
+  count: document.getElementById('stage-count'),
+  time: document.getElementById('stage-time'),
+  map: document.getElementById('proof-map'),
+  story: document.getElementById('story'),
+  chapter: document.getElementById('chapter'),
+  title: document.getElementById('stage-title'),
+  claim: document.getElementById('claim'),
+  summary: document.getElementById('summary'),
+  theorems: document.getElementById('theorems'),
+  theoremSection: document.getElementById('theorem-section'),
+  prs: document.getElementById('prs'),
+  prSection: document.getElementById('pr-section'),
+  proves: document.getElementById('proves'),
+  residuals: document.getElementById('residuals'),
+  timeline: document.getElementById('timeline'),
+  live: document.getElementById('stage-live')
+};
+
+let data;
+let stageIndex = 0;
+let playing = false;
+let frameId = null;
+let stageStartedAt = 0;
+let stageProgress = 0;
+let progressiveView = false;
+let lastActiveNode = -1;
+let mapReady = false;
+let playbackStarted = false;
+let resumeAfterVisibility = false;
+
+function applyTheme(theme) {
+  if (theme !== 'dark' && theme !== 'light') return;
+  document.documentElement.dataset.theme = theme;
+  if (els.map.contentWindow) els.map.contentWindow.postMessage({iwtheme: theme}, '*');
+}
+
+window.addEventListener('message', event => {
+  if (event.data && event.data.iwjourneyReady) {
+    mapReady = true;
+    if (data) sendMapStage();
+  }
+  applyTheme(event.data && event.data.iwtheme);
+});
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+
+function stages() { return data.stages; }
+function stage() { return stages()[stageIndex]; }
+
+function parseHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#/, ''));
+  const parts = raw.split(':');
+  const requestedStage = parts.length > 1 ? parts[1] : parts[0];
+  const found = stages().findIndex(item => item.id === requestedStage);
+  stageIndex = found >= 0 ? found : 0;
+  return Boolean(raw);
+}
+
+function writeHash() {
+  history.replaceState(null, '', `#${stage().id}`);
+}
+
+function theoremUrl(item) {
+  const source = data.sources[item.source || data.defaultSource];
+  return `https://github.com/zcash/ironwood/blob/${source.ref}/${item.path}`;
+}
+
+function renderTimeline() {
+  els.timeline.innerHTML = stages().map((item, index) =>
+    `<button type="button" class="timeline-step" data-index="${index}" title="${escapeHtml(item.title)}">${escapeHtml(item.chapter)}</button>`
+  ).join('');
+  els.scrubber.max = String(stages().length);
+}
+
+function renderedFacts(items) {
+  return items.map(item => `<div class="fact"><span>${escapeHtml(item)}</span></div>`).join('');
+}
+
+function activeNodeIndex() {
+  const count = stage().nodes.length;
+  return Math.min(count - 1, Math.floor(Math.min(stageProgress, .999999) * count));
+}
+
+function sendMapStage() {
+  if (!mapReady || !els.map.contentWindow) return;
+  const prior = stages().slice(0, stageIndex).flatMap(item => item.nodes);
+  const activeIndex = activeNodeIndex();
+  const currentNodes = progressiveView
+    ? stage().nodes.slice(Math.max(0, activeIndex - 1), activeIndex + 1)
+    : stage().nodes;
+  const stageNodes = progressiveView ? stage().nodes.slice(0, activeIndex + 1) : stage().nodes;
+  els.map.contentWindow.postMessage({
+    iwjourney: {
+      focus: currentNodes,
+      revealed: [...new Set([...prior, ...stageNodes])]
+    }
+  }, '*');
+  const theme = document.documentElement.dataset.theme;
+  if (theme) els.map.contentWindow.postMessage({ iwtheme: theme }, '*');
+}
+
+function formatTime(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function updatePlaybackFrame(forceMap = false) {
+  const activeIndex = activeNodeIndex();
+  els.count.textContent = `Stage ${stageIndex + 1} of ${stages().length}  |  Step ${activeIndex + 1} of ${stage().nodes.length}`;
+  els.time.textContent = `${formatTime(stageProgress * stage().durationMs)} / ${formatTime(stage().durationMs)}`;
+  els.scrubber.value = String(stageIndex + stageProgress);
+  if (forceMap || activeIndex !== lastActiveNode) {
+    lastActiveNode = activeIndex;
+    sendMapStage();
+  }
+}
+
+function updateTimelineState() {
+  els.timeline.querySelectorAll('.timeline-step').forEach((button, index) => {
+    button.classList.toggle('past', index < stageIndex);
+    button.classList.toggle('current', index === stageIndex);
+    button.setAttribute('aria-current', index === stageIndex ? 'step' : 'false');
+  });
+  const current = els.timeline.querySelector('.timeline-step.current');
+  if (current && playbackStarted) current.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block:'nearest', inline:'center'});
+}
+
+function renderStage(announce = true) {
+  const item = stage();
+  els.modeDescription.textContent = data.description;
+  els.chapter.textContent = item.chapter;
+  els.title.textContent = item.title;
+  els.claim.textContent = item.claim;
+  els.summary.textContent = item.summary;
+  els.theorems.innerHTML = item.theorems.map(theorem =>
+    `<a class="theorem-link" target="_blank" rel="noopener" href="${theoremUrl(theorem)}">${escapeHtml(theorem.symbol)}</a>`
+  ).join('');
+  els.theoremSection.hidden = item.theorems.length === 0;
+  els.prs.innerHTML = item.prs.map(id => {
+    const pr = data.prs[id];
+    return `<a class="pr ${escapeHtml(pr.lane)}" target="_blank" rel="noopener" href="${escapeHtml(pr.url)}" title="${escapeHtml(pr.title)}"><span>${escapeHtml(pr.label)}</span><code>${escapeHtml(pr.sha)}</code></a>`;
+  }).join('');
+  els.prSection.hidden = item.prs.length === 0;
+  els.proves.innerHTML = renderedFacts(item.proves);
+  els.residuals.innerHTML = renderedFacts(item.residuals);
+  els.previous.disabled = stageIndex === 0;
+  els.next.disabled = stageIndex === stages().length - 1;
+  updateTimelineState();
+  lastActiveNode = -1;
+  updatePlaybackFrame(true);
+  writeHash();
+  if (!reducedMotion) {
+    els.story.animate([
+      {opacity: .58, transform: 'translateY(4px)'},
+      {opacity: 1, transform: 'translateY(0)'}
+    ], {duration: 260, easing: 'ease-out'});
+  }
+  if (announce) els.live.textContent = `${item.chapter}: ${item.title}`;
+}
+
+function animationTick(timestamp) {
+  if (!playing) return;
+  const effectiveDuration = stage().durationMs / Number(els.speed.value);
+  stageProgress = (timestamp - stageStartedAt) / effectiveDuration;
+  if (stageProgress >= 1) {
+    stageIndex = stageIndex >= stages().length - 1 ? 0 : stageIndex + 1;
+    stageProgress = 0;
+    stageStartedAt = timestamp;
+    progressiveView = true;
+    renderStage();
+  } else {
+    updatePlaybackFrame();
+  }
+  frameId = requestAnimationFrame(animationTick);
+}
+
+function setPlaying(next) {
+  playing = next;
+  playbackStarted = playbackStarted || next;
+  progressiveView = progressiveView || next;
+  els.play.textContent = playing ? 'Pause' : 'Play';
+  els.play.title = playing ? 'Pause timeline' : 'Play timeline';
+  els.play.setAttribute('aria-label', els.play.title);
+  if (frameId !== null) cancelAnimationFrame(frameId);
+  frameId = null;
+  if (playing) {
+    const effectiveDuration = stage().durationMs / Number(els.speed.value);
+    stageStartedAt = performance.now() - stageProgress * effectiveDuration;
+    lastActiveNode = -1;
+    updatePlaybackFrame(true);
+    frameId = requestAnimationFrame(animationTick);
+  }
+}
+
+function goTo(index, userInitiated = true) {
+  stageIndex = Math.max(0, Math.min(index, stages().length - 1));
+  if (userInitiated) setPlaying(false);
+  stageProgress = 0;
+  progressiveView = false;
+  renderStage();
+}
+
+function bindEvents() {
+  els.previous.addEventListener('click', () => goTo(stageIndex - 1));
+  els.next.addEventListener('click', () => goTo(stageIndex + 1));
+  els.play.addEventListener('click', () => setPlaying(!playing));
+  els.fullscreen.addEventListener('click', async () => {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const active = Boolean(document.fullscreenElement);
+    els.fullscreen.title = active ? 'Exit full screen' : 'Enter full screen';
+    els.fullscreen.setAttribute('aria-label', els.fullscreen.title);
+  });
+  els.scrubber.addEventListener('input', () => {
+    const raw = Math.max(0, Math.min(Number(els.scrubber.value), stages().length));
+    const nextIndex = Math.min(stages().length - 1, Math.floor(raw));
+    const nextProgress = raw >= stages().length ? 1 : raw - nextIndex;
+    const changedStage = nextIndex !== stageIndex;
+    setPlaying(false);
+    progressiveView = true;
+    stageIndex = nextIndex;
+    stageProgress = nextProgress;
+    if (changedStage) renderStage();
+    else updatePlaybackFrame(true);
+  });
+  els.speed.addEventListener('change', () => {
+    if (!playing) return;
+    const effectiveDuration = stage().durationMs / Number(els.speed.value);
+    stageStartedAt = performance.now() - stageProgress * effectiveDuration;
+  });
+  els.timeline.addEventListener('click', event => {
+    const button = event.target.closest('[data-index]');
+    if (button) goTo(Number(button.dataset.index));
+  });
+  els.map.addEventListener('load', () => { mapReady = true; sendMapStage(); });
+  try {
+    if (els.map.contentDocument && els.map.contentDocument.readyState === 'complete') mapReady = true;
+  } catch (error) {
+    mapReady = false;
+  }
+  document.addEventListener('keydown', event => {
+    if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
+    if (event.key === 'ArrowLeft') goTo(stageIndex - 1);
+    if (event.key === 'ArrowRight') goTo(stageIndex + 1);
+    if (event.key === ' ') { event.preventDefault(); setPlaying(!playing); }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      resumeAfterVisibility = playing;
+      if (playing) setPlaying(false);
+    } else if (resumeAfterVisibility) {
+      resumeAfterVisibility = false;
+      setPlaying(true);
+    }
+  });
+}
+
+async function init() {
+  try {
+    const response = await fetch(DATA_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    data = await response.json();
+    const hadHash = parseHash();
+    renderTimeline();
+    bindEvents();
+    renderStage(false);
+    if (!reducedMotion && !hadHash) setTimeout(() => setPlaying(true), 1200);
+  } catch (error) {
+    document.getElementById('workspace').innerHTML = `<p class="error">Could not load the proof journey data: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+init();
+
+function reportHeight() {
+  window.parent.postMessage({iwjourneyHeight: document.documentElement.scrollHeight}, '*');
+}
+new ResizeObserver(reportHeight).observe(document.body);
+window.addEventListener('load', reportHeight);
+</script>
+</body>
+</html>
