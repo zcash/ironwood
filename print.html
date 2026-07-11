@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-9637960c.js";
+            window.path_to_searchindex_js = "searchindex-37acc81b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-aff24c6d.js"></script>
@@ -202,7 +202,7 @@ and accurately document the scope of what is and is not formally verified.</p>
 submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
 <p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span> is the project to deploy a new shielded value pool for Zcash: the
@@ -271,10 +271,10 @@ and authorization hashes.</p>
 the pools that version supports (<em>Sapling</em>, <em>Orchard</em>, and <em>Ironwood</em>), that allows a
 transaction to be signed and then have its anchor updated later. This can improve
 privacy by leaking less information about when the transaction was signed.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="preliminaries"><a class="header" href="#preliminaries">Preliminaries</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="quantum-recoverability"><a class="header" href="#quantum-recoverability">Quantum Recoverability</a></h1>
 <p>Quantum recoverability is the note-level change that defines <em>Ironwood-pool</em>
@@ -359,10 +359,10 @@ transition has the information it needs to recover those funds.</p>
 <ul>
 <li><a href="https://zips.z.cash/zip-2005">ZIP 2005: Ironwood Quantum Recoverability</a></li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="design"><a class="header" href="#design">Design</a></h1>
 <p>This page summarizes the main design decisions behind <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span>.</p>
@@ -608,7 +608,7 @@ production protocol specification:</p>
 version —the Orchard-protocol Action circuit plus one new constraint, the
 cross-address restriction— is used for both the <em>Orchard</em> and <em>Ironwood pools</em>,
 with its own proving and verifying keys.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="transaction-format"><a class="header" href="#transaction-format">Transaction Format</a></h1>
 <p>Version 6 follows the version 5 transaction format, with an <em>Ironwood-pool</em> bundle
@@ -667,7 +667,7 @@ shown above, and is instead committed in the <strong>authorization digest</stron
 keeps both the txid and the signature sighash independent of the anchor, so
 that a spend can be signed before the anchor it is finalized against —the
 note-commitment-tree root— exists.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="action-circuit"><a class="header" href="#action-circuit">Action Circuit</a></h1>
 <p>From NU6.3, both the <em>Orchard</em> and <em>Ironwood pools</em> use a single Action circuit
@@ -763,7 +763,7 @@ with an instance that includes the <span class="katex"><span class="katex-html" 
 restricted statement with a cross-address output. The builder, PCZT,
 and signer layers add a same-receiver structural check so that honest
 participants do not construct a restricted bundle that would fail to prove.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="orchard--to-ironwood-pool-migration"><a class="header" href="#orchard--to-ironwood-pool-migration"><em>Orchard-</em> to <em>Ironwood-pool</em> Migration</a></h1>
 <p>Moving existing <em>Orchard-pool</em> funds into the <em>Ironwood pool</em> is an ordinary
@@ -774,10 +774,101 @@ balance (value leaves the <em>Orchard pool</em>, which the value rule permits), 
 <em>Ironwood-pool</em> side has a negative value balance (value enters the <em>Ironwood
 pool</em>); the two net to the fee.</p>
 <p><em>Exact wallet migration mechanics to be described.</em></p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="formal-verification"><a class="header" href="#formal-verification">Formal Verification</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<p>Ironwood's formal verification is a Lean 4 development (over Mathlib) in this repository:
+verifier soundness for the deployed Halo 2 verifier under <code>Zcash/Snark/</code>, and the protocol
+security-property layers (binding-signature balance, key binding, and the ledger-model
+security games) under <code>Zcash/Security/</code>. This page documents two development-wide
+conventions: how security breaks are represented, and what the development is allowed to
+trust.</p>
+<h2 id="breaks-as-computed-data"><a class="header" href="#breaks-as-computed-data">Breaks as computed data</a></h2>
+<p>The security arguments are reduction-style: a theorem shows that a violation of a protocol
+property <em>exhibits</em> a concrete break of an underlying primitive — a discrete-log relation, a
+hash collision, a commitment-opening collision. Hardness assumptions are consumed only at
+the computational layer, against the exhibited break.</p>
+<p>Care is needed in how "exhibits" is stated. In a prime-order group, a nontrivial
+discrete-log relation between any two elements always <em>exists</em>; for any compressing hash,
+collisions always <em>exist</em> by pigeonhole. So a <code>Prop</code> that existentially quantifies over the
+break data ("there exist distinct inputs with equal outputs") is simply <em>true</em> at every
+instantiation of interest. A theorem concluding <code>property ∨ ∃-break</code> is then vacuous, and a
+hypothesis <code>¬ ∃-break</code> is unsatisfiable. Proof irrelevance makes this unrecoverable: even
+when a proof constructs the break honestly, a consumer of the statement cannot extract it.</p>
+<p>The convention:</p>
+<ul>
+<li><strong>Break events are structures carrying the breaking data</strong> (the colliding queries, the
+relation coefficients), with <code>Prop</code> certificates attached. Examples:
+<code>RandomOracle.Collision</code> and <code>RandomOracle.CollisionUpToSign</code> (the ±-collision shape produced by
+coordinate-extractor arguments — and the Merkle tree-hash collision computed by <code>Merkle.collisionOfWrongLeaf</code> is a <code>Collision</code> directly), <code>Ledger.NoteCommitBreak</code>, and
+<code>BindingSignature.NontrivialRelation</code> (the discrete-log relation computed from a
+non-balancing verifying bundle).</li>
+<li><strong>Reductions are plain computable <code>def</code>s</strong> producing them, such as
+<code>Merkle.collisionOfWrongLeaf</code>, <code>noteCommitBreakOfNe</code>, and the
+<code>NontrivialRelation.ofImbalance</code> family (through to the per-pool Orchard and Sapling
+bundle capstones, whose balance statements are the contrapositives under discrete-log
+relation hardness). A structure with data fields
+cannot be inhabited by proof-irrelevant existence, and a plain <code>def</code> cannot conjure the
+data from mere existence via choice — the compiler enforces this, so <code>noncomputable</code> is
+not permitted for these definitions.</li>
+<li>Efficiency of a reduction is the one property Lean cannot express; it is established by
+inspection. The constructions here are straight-line manipulations of their inputs.</li>
+<li>Predicates over <em>named</em> witnesses (for example, a key-binding break of two specific
+witnesses) keep their content as <code>Prop</code>s: the breaking pair is bound in the statement
+rather than existentially closed.</li>
+</ul>
+<p>The principle's scope is <strong>computational reductions</strong>: it applies wherever the argument is
+that an efficient adversary achieving some effect would thereby violate a computational
+assumption. For that argument to have content, the reduction must be the kind of object an
+adversary's output can be fed through — a computable function producing the break the
+assumption forbids. It is not a constructivism requirement on the development at large.
+<code>Classical.choice</code> is used throughout Mathlib and throughout the <code>Prop</code>-valued reasoning
+here, and Lean is not intended to support purely constructive proofs. The point is that
+choice must not be what <em>produces the break data</em>: a <code>noncomputable</code> reduction could
+satisfy its type by using classical choice to "find" the break, proving nothing about
+efficient adversaries. Ordinary theorems, and the <code>Prop</code> certificate fields inside break
+structures, remain freely classical.</p>
+<h2 id="trust-discipline"><a class="header" href="#trust-discipline">Trust discipline</a></h2>
+<p>Following the pattern of CompElliptic's
+<a href="https://github.com/daira/CompElliptic#trust-discipline">trust discipline</a>, the development
+distinguishes general theorems from concrete, closed computational facts, and holds them to
+different trust standards.</p>
+<p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) must
+rest only on the standard classical axioms <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code>.
+No <code>sorry</code>, no additional axioms, no compiler trust.</p>
+<p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
+(which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
+the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
+captured fingerprint match <code>fingerprint_matches</code>: a single numeric check that the Lean
+verifier's assembled multi-scalar multiplication equals the Rust verifier's on a captured
+proof. The CompElliptic dependency applies the same discipline to its concrete
+curve-arithmetic facts (cardinalities, primality certificates). Such facts are independently
+re-checkable (another implementation, or hand computation, would compute the same result),
+so a miscompiled or buggy oracle could in principle be caught by disagreement.</p>
+<p>These boundaries are <em>checked at build time</em>, not merely documented:</p>
+<ul>
+<li><code>Zcash.Snark.Fingerprint.TrustBoundary</code> pins the fingerprint match: <code>assert_no_sorry</code>
+walks the elaborated dependency graph, so a <code>sorry</code> hidden in any transitive dependency
+fails the build; and a <code>#guard_msgs</code>-pinned <code>#print axioms</code> freezes the exact axiom set,
+so a newly introduced axiom fails the build. The pin also documents precisely <em>which</em>
+compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
+(<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global
+<code>Lean.ofReduceBool</code>. Pinning it keeps that claim verified rather than remembered, which
+is the point of the discipline: unpinned claims about the trusted base drift silently as
+toolchains change.</li>
+<li><code>Zcash.Security.Ledger.TrustBoundary</code> and
+<code>Zcash.Security.BindingSignature.TrustBoundary</code> pin the break reductions the same way.
+The ledger reductions rest on <code>propext</code> and <code>Quot.sound</code> only; the binding-signature
+relation reductions additionally record <code>Classical.choice</code>, entering only through erased
+<code>Prop</code> certificate fields — in both cases the definitions compile as plain <code>def</code>s, so the
+break data cannot have been conjured from mere propositional existence.</li>
+<li>CI builds both as part of the default targets, and <code>fingerprint_matches</code>'s
+<code>native_decide</code> compiles and runs the verifier, so anything <code>noncomputable</code> on the
+assembled-verifier path fails the build.</li>
+</ul>
+<p>Coined terms and shorthand for the development, including the two conventions above, are
+collected in the <a href="formal-verification/glossary.html">glossary</a>.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
 <p>Follow the verifier-soundness argument in logical order, with the stacked and parallel PR provenance
@@ -821,7 +912,7 @@ attached to the stage where each mechanized layer enters.</p>
   });
 })();
 </script>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-map"><a class="header" href="#proof-map">Proof Map</a></h1>
 <p>One connected picture of the verifier-soundness proof.</p>
@@ -861,11 +952,11 @@ attached to the stage where each mechanized layer enters.</p>
   new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 })();
 </script>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
 <p>Coined terms and shorthand used across the <a href="formal-verification/proof-map.html">proof map</a> and the Lean
-soundness proofs. Anchors point to a module + name under <code>Zcash/Snark/</code>.</p>
+development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 <style>
 .iw-glossary { margin: 1.3rem 0; display: grid; gap: 26px; }
 .iw-glossary section { display: grid; gap: 9px; }
@@ -914,7 +1005,7 @@ soundness proofs. Anchors point to a module + name under <code>Zcash/Snark/</cod
 </section>
 <section>
 <div class="grp">Binding &amp; the AGM</div>
-<div class="g"><div class="g-head"><span class="term">HasNontrivialRelation</span><span class="anchor">Deployed.Binding.HasNontrivialRelation</span></div><div class="def">A nontrivial discrete-log relation on <code>(g, U, W)</code>. One always exists at prime order, so the <code>∨</code>-branch is vacuous <em>as a statement</em>; the force is the computational assumption that no efficient adversary can <em>find</em> one.</div></div>
+<div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">Security.BindingSignature.NontrivialRelation</span></div><div class="def">A nontrivial discrete-log relation, carried as data with its coefficients explicit. One always exists at prime order, so an ∃-closed <code>Prop</code> version (or an <code>∨</code>-branch concluding it) is vacuous <em>as a statement</em>; the reductions <em>compute</em> one from a break, and the force is the computational assumption that no efficient adversary can <em>find</em> one.</div></div>
 <div class="g"><div class="g-head"><span class="term">algebraic relation · gap</span><span class="anchor">AGM.Capstone.deployedAlgebraicRelationWitness</span></div><div class="def">The data-carrying relation witness the discrete-log reduction consumes — an explicit function of the prover's representations, no <code>Classical.choice</code>. Reached from the forking side's <em>existential</em> relation only across a <em>gap</em>: an uncomposed modeling identification (issue #15), drawn on the map as its own edge kind. The other gap reads the sampled-basis probability bound at the deployed URS.</div></div>
 <div class="g"><div class="g-head"><span class="term">fixed-slot</span><span class="anchor">AGM.Adapter.FixedSlotEmbedding</span></div><div class="def">The AGM trick: hide a discrete-log challenge in one basis slot fixed before the adversary runs; a found relation hitting that slot yields the discrete log.</div></div>
 <div class="g"><div class="g-head"><span class="term">DL reduction bound</span><span class="anchor">AGM.Probability.relation_prob_le_of_textbookDL</span></div><div class="def">The random-slot accounting: the planted slot is hit with probability at least <code>1/|basis|</code> of the finder's, so relation-finding probability is bounded by a multiple of the discrete-log advantage — where DL-hardness enters as an explicit, priced hypothesis.</div></div>
@@ -936,8 +1027,13 @@ soundness proofs. Anchors point to a module + name under <code>Zcash/Snark/</cod
 <div class="g"><div class="g-head"><span class="term">structural residuals</span><span class="anchor">hz · hg0 · hs · hξ · Soundness/Vesta.lean</span></div><div class="def">The remaining structural capstone hypotheses: <code>z ≠ 0</code> (every rung), <code>g₀ ≠ 0</code> (every forking rung), the S-opening <code>commit s = ipaS</code> (deployed/adaptive/rewind rungs), and value recovery <code>ξ·⟨s,b⟩ = 0</code> (constraint rungs only). Assumed in-Lean, priced rather than discharged.</div></div>
 <div class="g"><div class="g-head"><span class="term">high-level relation · VK correctness</span><span class="anchor">hencodes · Verifier.Assemble</span></div><div class="def">The two gaps the composition does not yet cross: on the output side, <code>hencodes</code> — gate satisfaction (<code>SnarkRelation</code>) implies the intended high-level statement; on the input side, VK correctness — the verifying key fed to the verifier faithfully encodes the real deployed circuit. Both outside Lean; not started.</div></div>
 </section>
+<section>
+<div class="grp">Conventions</div>
+<div class="g"><div class="g-head"><span class="term">breaks as computed data</span><span class="anchor">Security.RandomOracle · Security/Ledger · Security/BindingSignature</span></div><div class="def">Break events are structures carrying the breaking data (colliding queries, relation coefficients); the reductions producing them are plain computable <code>def</code>s. An ∃-closed break <code>Prop</code> is vacuously true at the instantiations of interest (relations always exist at prime order; compressing hashes always have collisions), so the content lives in the data, protected by compiler-checked computability and pinned axiom sets. See <a href="formal-verification/../formal-verification.html#breaks-as-computed-data">Breaks as computed data</a>.</div></div>
+<div class="g"><div class="g-head"><span class="term">checked trust boundary</span><span class="anchor">Fingerprint.TrustBoundary · Ledger.TrustBoundary · BindingSignature.TrustBoundary</span></div><div class="def">Build-time pins on what a theorem may rest on: <code>assert_no_sorry</code> over the elaborated dependency graph plus a <code>#guard_msgs</code>-pinned <code>#print axioms</code>, so a stray <code>sorry</code> or a new axiom fails the build instead of silently widening the trusted base. See <a href="formal-verification/../formal-verification.html#trust-discipline">Trust discipline</a>.</div></div>
+</section>
 </div>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "formal-verification.html", "user.html"]</script>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 
                     </main>
 
