@@ -11,6 +11,11 @@
       "label": "PR #28 code head",
       "ref": "580a49a7ad3ed4ec5d9fc0e5e3a9316369be55f3",
       "fetch": "pull/28/head"
+    },
+    "fsStack": {
+      "label": "PR #56 FS-to-AGM handoff",
+      "ref": "ef8d8fdc9526720f583eb46597cbdf6d2ea3a076",
+      "fetch": "pull/56/head"
     }
   },
   "prs": {
@@ -54,6 +59,13 @@
       "title": "Schwartz-Zippel good challenges",
       "url": "https://github.com/zcash/ironwood/pull/31",
       "sha": "91735cd",
+      "lane": "stack"
+    },
+    "56": {
+      "label": "PR #56",
+      "title": "Fully adaptive Fiat-Shamir adversary",
+      "url": "https://github.com/zcash/ironwood/pull/56",
+      "sha": "ef8d8fd",
       "lane": "stack"
     },
     "27": {
@@ -181,7 +193,7 @@
       ],
       "residuals": [
         "Blake2b and challenge decoding are idealized as a uniform random oracle.",
-        "Adversary execution, oracle-query loss, and expected polynomial extraction are not composed."
+        "This #24 tree theorem is a consumer; the computed adversary, query-loss, and certificate producer are composed in the AGM stage."
       ],
       "durationMs": 10000
     },
@@ -217,7 +229,7 @@
         "Binding failure is retained as an explicit relation on the deployed augmented basis."
       ],
       "residuals": [
-        "The capstones retain z != 0 and other rung-specific structural premises.",
+        "The legacy propositional capstones retain z != 0 and other rung-specific structural premises.",
         "The relation branch needs a computational reduction, not a propositional impossibility claim."
       ],
       "durationMs": 8500
@@ -252,7 +264,7 @@
         "The same vector has the extracted inner product value."
       ],
       "residuals": [
-        "This is existence-only extraction, not a runtime theorem for an efficient extractor.",
+        "ipa_soundV consumes a completed tree; the deployed FS path constructs that tree in the AGM stage.",
         "The alternative relation branch remains computationally meaningful."
       ],
       "durationMs": 8000
@@ -261,12 +273,12 @@
       "id": "agm",
       "chapter": "AGM to discrete log",
       "title": "Price the relation branch",
-      "claim": "Each deployed algebraic instance computes either an opening or an explicit relation; the basis-indexed instance family exposes only those relation-producing runs to the DL probability bound.",
-      "summary": "PR #28 defines the AlgebraicProver interface and proves proof-level existence of AlgebraicDForkCert together with DeployedForkValid from supplied Extractable data. A per-basis DeployedAlgebraicForkingInstance packages that certificate and the remaining deployed statement data; deployedAlgebraicRelationFinder runs a supplied basis-indexed family and maps missing or opening results to none. fixedSlotExtractOrMiss retains the exact relation in both outcomes, and orchard_deployed_relation_set_eq_relSet proves that the resulting relation event is exactly the event consumed by the Vesta DL bound. The FS-adversary producer that populates this family remains PR #56's integration boundary.",
+      "claim": "The algebraic Fiat-Shamir game produces PR #28's deployed instances, states binding as a computable value mismatch against the carried aggregate opening (never as nonexistence of an opening, which holds vacuously in a prime-order group), and feeds every mismatch run's explicit relation to the plain-DL probability bound.",
+      "summary": "PR #28 defines AlgebraicDForkCert, the deployed AGM instance, and the fixed-slot relation-to-DL reduction. PR #56 supplies the executable adaptive side: every adversary-emitted group point carries a basis representation; recursiveAlgebraicFork computes the fork tree from an oracle table and finite tape; algebraicForkCertAttempt_valid proves the resulting certificate valid; and computedDeployedAlgebraicInstance packages it for PR #28. The final theorem bounds the real binding probability by query loss, the z = 0 slice, and the plain-DL term.",
       "nodes": [
         "relation",
         "fsAdversary",
-        "algProver",
+        "recursiveExtractor",
         "algCert",
         "algInstance",
         "algRel",
@@ -280,14 +292,14 @@
       ],
       "theorems": [
         {
-          "symbol": "AlgebraicProver",
-          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
-          "source": "agmStack"
+          "symbol": "recursiveAlgebraicFork",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Recursive.lean",
+          "source": "fsStack"
         },
         {
-          "symbol": "algebraicProverAccept_forkValid",
-          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
-          "source": "agmStack"
+          "symbol": "recursiveForkFailure_measure_le",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Recursive.lean",
+          "source": "fsStack"
         },
         {
           "symbol": "toDForkCert",
@@ -338,22 +350,49 @@
           "symbol": "orchard_deployed_relation_prob_le_of_generatorRO_textbookDL",
           "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
           "source": "agmStack"
+        },
+        {
+          "symbol": "AlgebraicWfProof",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
+          "source": "fsStack"
+        },
+        {
+          "symbol": "algebraicForkCertAttempt_valid",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
+          "source": "fsStack"
+        },
+        {
+          "symbol": "computedDeployedAlgebraicInstance",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
+          "source": "fsStack"
+        },
+        {
+          "symbol": "binding_prob_le_of_textbookDL",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
+          "source": "fsStack"
+        },
+        {
+          "symbol": "binding_prob_le_of_generatorRO_textbookDL",
+          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
+          "source": "fsStack"
         }
       ],
       "prs": [
-        "28"
+        "28",
+        "56"
       ],
       "proves": [
-        "The AlgebraicProver and AlgebraicDForkCert interfaces require every prover round point to carry its representation over (g,U,W).",
-        "Each supplied DeployedAlgebraicForkingInstance runs deterministically into an IPA opening or explicit relation; the basis-indexed finder discards openings and exposes only the relation event.",
+        "Every group point in the adaptive Fiat-Shamir adversary's proof output carries its representation over (g,U,W).",
+        "The recursive extractor computes an AlgebraicDForkCert from explicit oracle and tape coins, and every returned certificate records real accepting runs.",
+        "Every computed certificate is valid for PR #28's deployed instance, with no Classical.choice at the producer boundary.",
+        "On a real binding run - acceptance while the accepted value disagrees with the carried aggregate opening - every produced instance yields an explicit relation: the kernel's relation branch, or the commitment collision between its clean opening and the carried opening.",
+        "The full real binding probability is bounded by extraction loss, the z = 0 slice, and the fixed-slot DL term.",
         "The fixed-slot relation-to-discrete-log transformation is deterministic and its miss refers to the same relation.",
-        "The deployed producer's computed relation branch is exactly relSet, not an unrelated abstract event.",
-        "For distinct parameter queries, a uniform group-valued generator oracle induces exactly the sampled-basis PMF, where the relation event is bounded by the discrete-log advantage."
+        "For distinct parameter queries, the Fiat-Shamir binding event in the uniform generator-RO model is bounded by the discrete-log advantage."
       ],
       "residuals": [
-        "PR #56 must turn the operational Fiat-Shamir adversary into representation-carrying deployed instances and relate its accept event to their computed relation event.",
-        "Identify halo2's concrete hash-to-curve with the modeled generator random oracle and assume Vesta DL hardness.",
-        "Algebraic certificate construction remains proof-level through propositional Extractable data; the explicit-instance AGM endpoint itself is computable."
+        "Identify deployed Blake2b and halo2's concrete hash-to-curve with their modeled random oracles, and assume Vesta DL hardness.",
+        "The extractor has an unconditional worst-case pointwise run bound and, under fork spread, a formalized expected-run bound; only the unconditional field-uniform AFK expected-time bound that removes fork spread is not formalized."
       ],
       "durationMs": 10000
     },
@@ -453,9 +492,9 @@
     {
       "id": "compose",
       "chapter": "Capstones",
-      "title": "Compose opening and circuit satisfaction",
-      "claim": "The extracted opening and gate identity form SnarkRelation, which the Vesta capstone family exposes at the verifier boundary.",
-      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, and x4 variants; the explicit-certificate AGM/DL endpoint is tracked separately.",
+      "title": "Compose legacy opening and circuit satisfaction",
+      "claim": "The extracted opening and gate identity form SnarkRelation, which the legacy propositional Vesta capstone family exposes at the verifier boundary.",
+      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The legacy opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, and x4 variants; the computed explicit-certificate AGM/DL endpoint is tracked separately.",
       "nodes": [
         "IpaRelation",
         "circuitSat",
@@ -484,11 +523,11 @@
         "31"
       ],
       "proves": [
-        "The opening and constraint branches refer to the same pinned verifier statement.",
-        "The capstone family makes each modeled adversary and residual hypothesis explicit."
+        "The legacy opening and constraint branches refer to the same pinned verifier statement.",
+        "The legacy capstone family makes each modeled adversary and residual hypothesis explicit."
       ],
       "residuals": [
-        "Different capstones retain different structural and probability premises.",
+        "Different legacy capstones retain different structural and probability premises.",
         "SnarkRelation is not yet the intended high-level Ironwood security statement."
       ],
       "durationMs": 9500

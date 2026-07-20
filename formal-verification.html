@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-5a6cfa0e.js";
+            window.path_to_searchindex_js = "searchindex-78cdcc6e.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-aff24c6d.js"></script>
@@ -211,7 +211,11 @@ bundle capstones, whose balance statements are the contrapositives under discret
 relation hardness). A structure with data fields
 cannot be inhabited by proof-irrelevant existence, and a plain <code>def</code> cannot conjure the
 data from mere existence via choice — the compiler enforces this, so <code>noncomputable</code> is
-not permitted for these definitions.</li>
+not permitted for these definitions. One scoped exception: the arbitrary-domain
+adversary reduction (<code>globalReachSet</code>, <code>splitFamilyRand</code>) is <code>noncomputable</code>, solely
+because it materializes a <code>Fintype</code> instance for the Vesta curve group
+(<code>Fintype.ofFinite</code>); the witness data those endpoints produce still flows through the
+same computable relation kernels.</li>
 <li>Efficiency of a reduction is the one property Lean cannot express; it is established by
 inspection. The constructions here are straight-line manipulations of their inputs.</li>
 <li>Predicates over <em>named</em> witnesses (for example, a key-binding break of two specific
@@ -234,9 +238,12 @@ structures, remain freely classical.</p>
 <a href="https://github.com/daira/CompElliptic#trust-discipline">trust discipline</a>, the development
 distinguishes general theorems from concrete, closed computational facts, and holds them to
 different trust standards.</p>
-<p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) must
-rest only on the standard classical axioms <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code>.
-No <code>sorry</code>, no additional axioms, no compiler trust.</p>
+<p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) rest, in
+their abstract form over an arbitrary <code>Fp</code>-module, only on the standard classical axioms
+<code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
+trust. Instantiated at the concrete Vesta curve they additionally inherit one compiler-trust
+axiom: CompElliptic's curve point-count, a closed computational fact discharged by <code>native_decide</code>
+(below). The per-theorem <code>#print axioms</code> pins record exactly which endpoints carry it.</p>
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
@@ -257,6 +264,11 @@ compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per
 <code>Lean.ofReduceBool</code>. Pinning it keeps that claim verified rather than remembered, which
 is the point of the discipline: unpinned claims about the trusted base drift silently as
 toolchains change.</li>
+<li><code>Zcash.Snark.Soundness.AGM.TrustBoundary</code>, <code>Zcash.Snark.Soundness.TrustBoundary</code>, and
+<code>Zcash.Snark.Soundness.Deployed.TrustBoundary</code> pin the AGM/Fiat–Shamir soundness stack —
+the executable forking extractor, the knowledge-soundness and binding endpoints across
+all adversary models, and the DL capstones — with the same <code>assert_no_sorry</code> +
+guarded-<code>#print axioms</code> discipline.</li>
 <li><code>Zcash.Security.Ledger.TrustBoundary</code> and
 <code>Zcash.Security.BindingSignature.TrustBoundary</code> pin the break reductions the same way.
 The ledger reductions rest on <code>propext</code> and <code>Quot.sound</code> only; the binding-signature
