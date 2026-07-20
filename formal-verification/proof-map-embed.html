@@ -236,7 +236,7 @@ const territories = [
   { id:'dec',  label:'Multiopen Decode', cells:[[6,3],[7,3],[6,4],[7,4]],       h:'var(--c-proven)', labelSide:'right' },
   { id:'sz',   label:'Schwartz–Zippel', cells:[[6,6],[7,6]],                   h:'var(--c-incoming)' },
   { id:'agm',  label:'AGM → Discrete Log', cells:[[0,7],[1,7],[0,8],[1,8]],       h:'#a06fb0' },
-  { id:'floor',label:'Assumptions · outside Lean',    cells:[[2,8],[3,8],[4,8],[5,8],[6,8]], h:'var(--c-floor)' },
+  { id:'floor',label:'Assumptions · outside Lean',    cells:[[2,8],[3,8],[4,8],[5,8]], h:'var(--c-floor)' },
 ];
 
 const nodes = [
@@ -354,12 +354,9 @@ const nodes = [
   { id:'hlrel', c:4,r:8, label:'high-level relation', status:'floor',
     anchor:'hencodes',
     role:'Semantic adequacy (hencodes): SnarkRelation — the witness satisfies the gates — implies the intended high-level Ironwood statement (note well-formed, values balance, nullifier derived, spend authorized). An assumed hypothesis over a free Prop; the composition otherwise stops at SnarkRelation. The output-side gap. Not started.' },
-  { id:'vkfaith', c:6,r:8, label:'VK correctness', status:'floor',
+  { id:'vkfaith', c:5,r:8, label:'VK correctness', status:'floor',
     anchor:'Verifier.Assemble',
     role:'The input-side gap: the verifying key and circuit description fed to the verifier faithfully encode the real deployed Ironwood circuit. Dual to the high-level relation on the output side; VK derivation in Lean is not started.' },
-  { id:'hasse', c:5,r:8, label:'Vesta order ⇐ Hasse', status:'floor',
-    anchor:'HasseBound · Vesta.vestaOrder_of_hasse',
-    role:'The Vesta group order, proven from the assumed Hasse bound.' },
 ];
 
 // Each edge is [from, to, kind, via?] where `via` names the Lean lemma/def that
@@ -408,7 +405,6 @@ const edges = [
   ['capstones','hlrel','rests'],
   ['capstones','structural','rests'],
   ['capstones','vkfaith','rests'],
-  ['capstones','hasse','rests'],
 ];
 
 const statusColor = { proven:'--c-proven', hyp:'--c-hyp', floor:'--c-floor', object:'--c-object', goal:'--accent' };

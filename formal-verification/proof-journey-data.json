@@ -398,8 +398,7 @@
         "structural",
         "hprob",
         "hquot",
-        "hgood",
-        "hasse"
+        "hgood"
       ],
       "theorems": [
         {
@@ -445,8 +444,7 @@
         "DLhard",
         "blake2b",
         "hlrel",
-        "vkfaith",
-        "hasse"
+        "vkfaith"
       ],
       "theorems": [
         {
