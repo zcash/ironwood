@@ -6,6 +6,11 @@
       "label": "PR #31 stack head",
       "ref": "91735cd092a8b09956cd31878d71c5b0d056aa94",
       "fetch": "pull/31/head"
+    },
+    "agmStack": {
+      "label": "PR #28 code head",
+      "ref": "580a49a7ad3ed4ec5d9fc0e5e3a9316369be55f3",
+      "fetch": "pull/28/head"
     }
   },
   "prs": {
@@ -34,7 +39,7 @@
       "label": "PR #28",
       "title": "AGM binding reduction",
       "url": "https://github.com/zcash/ironwood/pull/28",
-      "sha": "f0f275d",
+      "sha": "580a49a",
       "lane": "stack"
     },
     "30": {
@@ -256,42 +261,99 @@
       "id": "agm",
       "chapter": "AGM to discrete log",
       "title": "Price the relation branch",
-      "claim": "An explicit algebraic relation either solves the planted discrete log or misses its fixed slot; relation-finding probability is bounded separately.",
-      "summary": "The deterministic fixed-slot adapter is formalized, as is the sampled-basis probability accounting. The forking layer still yields an existential relation, while the probability layer consumes an explicit algebraic-prover witness, so those layers are shown as a gap rather than silently composed.",
+      "claim": "Each deployed algebraic instance computes either an opening or an explicit relation; the basis-indexed instance family exposes only those relation-producing runs to the DL probability bound.",
+      "summary": "PR #28 defines the AlgebraicProver interface and proves proof-level existence of AlgebraicDForkCert together with DeployedForkValid from supplied Extractable data. A per-basis DeployedAlgebraicForkingInstance packages that certificate and the remaining deployed statement data; deployedAlgebraicRelationFinder runs a supplied basis-indexed family and maps missing or opening results to none. fixedSlotExtractOrMiss retains the exact relation in both outcomes, and orchard_deployed_relation_set_eq_relSet proves that the resulting relation event is exactly the event consumed by the Vesta DL bound. The FS-adversary producer that populates this family remains PR #56's integration boundary.",
       "nodes": [
         "relation",
+        "fsAdversary",
+        "algProver",
+        "algCert",
+        "algInstance",
         "algRel",
         "adapter",
         "dlrep",
         "missesSlot",
         "dlbound",
         "agm_dl",
-        "DLhard"
+        "DLhard",
+        "h2cRO"
       ],
       "theorems": [
         {
-          "symbol": "deployedAlgebraicRelationWitness",
-          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean"
+          "symbol": "AlgebraicProver",
+          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
+          "source": "agmStack"
         },
         {
-          "symbol": "soundnessOrDLAt_of_soundnessOrRelation",
-          "path": "Zcash/Snark/Soundness/AGM/Adapter.lean"
+          "symbol": "algebraicProverAccept_forkValid",
+          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
+          "source": "agmStack"
         },
         {
-          "symbol": "relation_prob_le_of_textbookDL",
-          "path": "Zcash/Snark/Soundness/AGM/Probability.lean"
+          "symbol": "toDForkCert",
+          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "DeployedAlgebraicForkingInstance",
+          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "deployedAlgebraicRelationFinder",
+          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "deployedAlgebraicForkingRelation",
+          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "orchardDeployedAlgebraicForkingFixedSlot",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "fixedSlotExtractOrMiss",
+          "path": "Zcash/Snark/Soundness/AGM/Adapter.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "orchard_deployed_relation_set_eq_relSet",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "orchard_deployed_relation_prob_eq_of_uniformURS",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "orchard_uniformURSIdentification_of_generatorRO",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
+        },
+        {
+          "symbol": "orchard_deployed_relation_prob_le_of_generatorRO_textbookDL",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
         }
       ],
       "prs": [
         "28"
       ],
       "proves": [
-        "The fixed-slot relation-to-discrete-log transformation is deterministic.",
-        "The sampled-basis relation advantage is bounded by the discrete-log advantage."
+        "The AlgebraicProver and AlgebraicDForkCert interfaces require every prover round point to carry its representation over (g,U,W).",
+        "Each supplied DeployedAlgebraicForkingInstance runs deterministically into an IPA opening or explicit relation; the basis-indexed finder discards openings and exposes only the relation event.",
+        "The fixed-slot relation-to-discrete-log transformation is deterministic and its miss refers to the same relation.",
+        "The deployed producer's computed relation branch is exactly relSet, not an unrelated abstract event.",
+        "For distinct parameter queries, a uniform group-valued generator oracle induces exactly the sampled-basis PMF, where the relation event is bounded by the discrete-log advantage."
       ],
       "residuals": [
-        "Identify the deployed prover with the explicit algebraic relation finder.",
-        "Identify the sampled basis distribution with the deployed URS and assume Vesta DL hardness."
+        "PR #56 must turn the operational Fiat-Shamir adversary into representation-carrying deployed instances and relate its accept event to their computed relation event.",
+        "Identify halo2's concrete hash-to-curve with the modeled generator random oracle and assume Vesta DL hardness.",
+        "Algebraic certificate construction remains proof-level through propositional Extractable data; the explicit-instance AGM endpoint itself is computable."
       ],
       "durationMs": 10000
     },
@@ -300,7 +362,7 @@
       "chapter": "Multiopen",
       "title": "Recover the verifier's opened columns",
       "claim": "Rewinding x4 recovers the point-set aggregates; rewinding x1 binds those aggregates to the queried member commitments.",
-      "summary": "The deployed x4 commitment is proved to be the power batch inverted by the Vandermonde decode. The x1 layer then exposes the individual advice, instance, fixed, permutation, lookup, and vanishing commitments inside each aggregate.",
+      "summary": "The x4 rewind floor produces a transfer from the pinned IPA opening to the power-batched openings consumed by the Vandermonde decode. The x1 layer then exposes the individual advice, instance, fixed, permutation, lookup, and vanishing commitments inside each aggregate.",
       "nodes": [
         "ordering",
         "IpaRelation",
@@ -318,6 +380,10 @@
         {
           "symbol": "deployedMultiopenRewind_of_x4Prob",
           "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+        },
+        {
+          "symbol": "MultiopenRewindForRelation",
+          "path": "Zcash/Snark/Soundness/Multiopen/Decode.lean"
         },
         {
           "symbol": "decodedColumnFamily_of_batch_openings",
@@ -389,7 +455,7 @@
       "chapter": "Capstones",
       "title": "Compose opening and circuit satisfaction",
       "claim": "The extracted opening and gate identity form SnarkRelation, which the Vesta capstone family exposes at the verifier boundary.",
-      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, x4, and AGM/DL variants.",
+      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, and x4 variants; the explicit-certificate AGM/DL endpoint is tracked separately.",
       "nodes": [
         "IpaRelation",
         "circuitSat",
@@ -443,13 +509,15 @@
         "dlbound",
         "DLhard",
         "blake2b",
+        "h2cRO",
         "hlrel",
         "vkfaith"
       ],
       "theorems": [
         {
-          "symbol": "orchard_verifier_vesta_forking_constraint_adaptive_rewind_agm_dl_xgood",
-          "path": "Zcash/Snark/Soundness/Vesta.lean"
+          "symbol": "orchard_deployed_relation_prob_le_of_generatorRO_textbookDL",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
+          "source": "agmStack"
         },
         {
           "symbol": "blinder_value_recovery_badSet",
@@ -470,7 +538,7 @@
         "The endpoint records reduction outcomes and residual premises without hiding them."
       ],
       "residuals": [
-        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, AGM/URS identifications, and DL hardness.",
+        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, generator hash-to-curve-as-RO, the AGM idealization, and DL hardness.",
         "Runtime extraction, real-adversary execution, oracle-query loss, and combined error budgeting."
       ],
       "durationMs": 11000

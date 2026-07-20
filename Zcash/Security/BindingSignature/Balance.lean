@@ -32,12 +32,10 @@ binding hypothesis. Instead we phrase binding as a reduction:
   ∃-closed relation Prop would be vacuous, since a relation always exists in a prime-order
   group.
 
-  "The bundle balances" then reduces to the discrete-log relation problem (DLR) — a statement about
-  efficient adversaries, supplied by the algebraic group model or a DLR hardness assumption at the
-  computational layer. This is the shape of the spec's argument: *if you can unbalance, you can
-  solve DL*. The relation and discrete-log problems are tightly equivalent (Jaeger and Tessaro,
-  https://eprint.iacr.org/2020/1213 Lemma 3 in general, but this case is very simple), so this is
-  no stronger than DL.
+  `Zcash.Snark.Soundness.AGM.BindingSignature` turns the computed Orchard and Sapling relations into
+  plain-DL solutions: *if you can unbalance, you can solve DL*. DLR and DL are tightly equivalent
+  (Jaeger and Tessaro, https://eprint.iacr.org/2020/1213, Lemma 3), so this assumes no more than DL
+  hardness.
 
 The range / no-overflow lift from field balance to integer balance is already built (`§ Integer
 balance` below: `intBalance_eq_zero_of_lt`, discharged per pool by `orchard_natAbs_lt` /
@@ -48,8 +46,8 @@ computational, not algebraic:
 
 * **RedDSA extractability** (`bvk = bsk • R` from a verifying binding signature) — assumed, not
   proved (its proof needs a random oracle + forking); supplied as the `hExtract` hypothesis.
-* **DLR hardness** — the assumption the reduction discharges against to conclude actual balance
-  (the discrete-log relation problem, tightly equivalent to DL).
+* **Discrete-log hardness** — consumed by the AGM layer after the computed relation-to-DL handoff;
+  alternatively one may assume DLR hardness directly at this lower layer.
 -/
 
 namespace Zcash.Security.BindingSignature

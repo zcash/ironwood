@@ -102,7 +102,7 @@
   .node { cursor: pointer; }
   .node rect { transition: opacity .15s; }
   .node .box { fill: var(--nf); stroke: var(--ns); stroke-width: 1.75; rx: 9; filter: drop-shadow(0 1px 1px rgba(0,0,0,.05)); }
-  .node .label { font-size: 16.5px; fill: var(--ink); dominant-baseline: middle; }
+  .node .label { font-size: 16.5px; font-weight: 650; fill: var(--ink); dominant-baseline: middle; }
   .node.goal .box { fill: var(--accent); stroke: var(--accent); }
   .node.goal .label { fill: #fff; font-weight: 640; }
   .node.dim { opacity: .2; }
@@ -202,7 +202,7 @@
   <aside class="rail">
     <h2>Legend</h2>
     <div class="legend">
-      <div class="row"><span class="swatch" style="border-top-color:var(--ink)"></span><span><b>entails</b> — B follows from A (implication, or the construction A feeds)</span></div>
+      <div class="row"><span class="swatch" style="border-top-color:var(--ink)"></span><span><b>entails</b> — B follows from its incoming input(s); converging arrows are joint unless the node describes alternate routes</span></div>
       <div class="row"><span class="swatch" style="border-top-color:var(--accent);border-top-style:dashed"></span><span><b>discharges</b> — A proves away assumption B</span></div>
       <div class="row"><span class="swatch" style="border-top-color:var(--c-floor);border-top-style:dotted"></span><span><b>rests on</b> — B is an assumption needed by A (an in-Lean hypothesis, or an out-of-Lean floor)</span></div>
       <div class="row"><span class="swatch" style="border-top-color:var(--c-hyp);border-top-style:dashed"></span><span><b>gap</b> — A has a gap that would be fixed by B (an uncomposed modeling identification, not a stated assumption)</span></div>
@@ -231,12 +231,13 @@ const ROW = r => 96 + r * 116;
 const territories = [
   { id:'faith', label:'Faithfulness',               cells:[[0,0],[1,0]],                   h:'#b0873a' },
   { id:'ss',    label:'Special Soundness',          cells:[[1,5],[1,6],[2,6]],             h:'#c15f86', labelDx:44 },
-  { id:'caps',  label:'Capstones',                 cells:[[3,6],[3,7]],                   h:'#8a78e8', labelSide:'right' },
-  { id:'fs',   label:'Fiat–Shamir · Random Oracle', cells:[[2,1],[3,1],[2,2],[3,2],[2,3]], h:'#6f7bd6' },
+  { id:'caps',  label:'Capstones',                 cells:[[3,6],[3,7]],                   h:'#8a78e8', labelSide:'right', padRight:10 },
+  { id:'fs',   label:'Fiat–Shamir · Random Oracle', cells:[[2,1],[3,1],[2,2],[3,2],[2,3]], h:'#6f7bd6', headroom:32 },
   { id:'dec',  label:'Multiopen Decode', cells:[[6,3],[7,3],[6,4],[7,4]],       h:'var(--c-proven)', labelSide:'right' },
   { id:'sz',   label:'Schwartz–Zippel', cells:[[6,6],[7,6]],                   h:'var(--c-incoming)' },
-  { id:'agm',  label:'AGM → Discrete Log', cells:[[0,7],[1,7],[0,8],[1,8]],       h:'#a06fb0' },
-  { id:'floor',label:'Assumptions · outside Lean',    cells:[[2,8],[3,8],[4,8],[5,8]], h:'var(--c-floor)' },
+  { id:'agmBoundary', label:'FS Adversary–AGM handoff', cells:[[4,1],[4,2],[4,3],[4,4]], h:'#a06fb0', labelSide:'right', headroom:32 },
+  { id:'agm',  label:'AGM relation → DL reduction', cells:[[0,7],[1,7],[0,8],[1,8]], h:'#a06fb0', headroom:24, padRight:32 },
+  { id:'floor',label:'Assumptions · outside Lean',    cells:[[2,8],[3,8],[4,8],[5,8],[6,8]], h:'var(--c-floor)' },
 ];
 
 const nodes = [
@@ -269,23 +270,23 @@ const nodes = [
     role:'Three-special-soundness extraction: from a transcript tree with three accepting branches at pairwise-distinct, nonzero challenges per round, recover the witness — binding-free.' },
   { id:'IpaRelation', c:2,r:6, label:'IPA opening', status:'object',
     anchor:'Ipa.InnerProduct.IpaRelation',
-    role:'The extracted opening: commit a = P and ⟨a,b⟩ = v.' },
+    role:'The extracted opening: commit a = P and ⟨a,b⟩ = v. The ordinary ipa_soundV route and the computed AGM-soundness route are alternate producers of this same relation, not joint inputs.' },
   { id:'SnarkRelation', c:3,r:6, label:'SnarkRelation', status:'object',
     anchor:'KnowledgeSoundness.SnarkRelation',
     role:'The SNARK relation — literally a Lean structure with two fields, i.e. a conjunction: opens, the IPA opening (from special soundness) ∧ satisfiesCircuit, circuit satisfaction (from the gate-check side). The deployed path pairs the two directly; there is no separate combiner. The decoded rungs use the enriched SnarkRelationWithDecodedColumns, which additionally pins the decoded columns.' },
-  { id:'circuitSat', c:4,r:6, label:'circuit satisfaction', status:'object',
+  { id:'circuitSat', c:4,r:6, w:235, label:'circuit satisfaction', status:'object',
     anchor:'KnowledgeSoundness.circuitSatViaGates',
     role:'The circuit-satisfaction half of the SNARK relation: the decoded columns satisfy the y-combined gate/quotient identity (circuitSatViaGates). Produced by the gate-check lift, then paired with the IPA opening. Covers the gate identity only — the permutation and lookup arguments’ semantic soundness is separate, in-progress work (#21: structural grand-product/lookup lemmas, with the grand-product telescoping, final lookup assembly, and their Schwartz–Zippel bridge still open) and is not yet wired into this chain.' },
   { id:'capstones', c:3,r:7, label:'verifier soundness', status:'goal',
     anchor:'Vesta.orchard_verifier_vesta_*',
-    role:'The base capstone — the top-level orchard_verifier_vesta_* family (in Vesta.lean). An accepting proof concludes IPA opening ∨ a nontrivial relation exists (a discrete-log relation on (g, U, W)) — conditional verifier soundness over the concrete Vesta curve; the constraint form additionally derives circuit satisfaction (the full SNARK relation).<br><br>They form a ladder, each rung assuming less than the one before:<br>• conditional — a scaffold over an opaque accept (assumes the extraction and circuit satisfaction); not finished soundness.<br>• reductions — the concrete deployed accept, but still assume the Fiat–Shamir tree bridge and the per-opening hypotheses.<br>• forking — replaces that bridge with the random-oracle forking, so the structural facts are proven rather than assumed.<br>• deployed → adaptive → rewind — how the prover and oracle are modeled inside the forking capstones: a fixed deployed proof string, then an arbitrary prefix-respecting prover, then the accept probability taken over reprogrammed-oracle (rewound) runs.<br><br>Each forking rung comes in an "opening" form (extracts the IPA witness) and a "constraint" form (also derives circuit satisfaction and takes hencodes). The wrappers are not a full product: _xgood (derives hgood, at the cost of hprobX) exists on the constraint forms, _x4 (derives hbatch from hcur and hprob4) on the deployed constraint, and _agm_dl (relation → discrete log ∨ soundness loss), the map\'s AGM soundness, across the family — 36 theorems in all.' },
+    role:'The top-level orchard_verifier_vesta_* family in Vesta.lean. An accepting proof concludes IPA opening ∨ a nontrivial relation; constraint forms additionally derive circuit satisfaction. The ladder moves from conditional and reduction forms through forking, deployed, adaptive, and rewound adversaries. The hprob-based rungs remain noncomputable because their fork certificate is obtained from propositional Extractable data. PR #28 adds a separate computable AGM endpoint below: it takes the explicit representation-carrying certificate as data and does not pretend to remove that higher random-oracle boundary.' },
   { id:'gateLift', c:5,r:5, label:'gate-check lift', status:'proven',
     anchor:'KnowledgeSoundness.circuitSatViaGates_of_check',
     role:'Lifts the verifier’s gate point-check at x to the full polynomial identity — circuit satisfaction — given a good challenge and the real columns (circuitSatViaGates_of_check).' },
-  { id:'hquot', c:5,r:4, label:'quotient check', status:'hyp',
+  { id:'hquot', c:6,r:5, label:'quotient check', status:'hyp',
     anchor:'hquot',
     role:'The gate/quotient point-check content (the hypothesis hquot), and carrying the gate challenge x over to the multiopen evaluation point x₃. Still an open hypothesis.' },
-  { id:'structural', c:5,r:7, label:'structural residuals', status:'hyp',
+  { id:'structural', c:5,r:7, w:235, label:'structural residuals', status:'hyp',
     anchor:'hz · hg0 · hs · hξ',
     role:'The capstone hypotheses that stay structural residuals: z ≠ 0 (hz) on every rung; the URS generator g₀ ≠ 0 (hg0) on every forking rung; the S-opening commit s = ipaS (hs) only on the deployed/adaptive/rewind rungs — the abstract forking rungs bake it into hbridge instead; and value recovery ξ·⟨s,b⟩ = 0 (hξ) only on the constraint rungs (the openings conclude the shifted value unconditionally). Assumed in-Lean, not yet discharged.' },
   { id:'hgood', c:5,r:6, label:'sound challenge', status:'hyp',
@@ -302,16 +303,16 @@ const nodes = [
     role:'The multi-round forking lemma (extractable_of_prob) — an averaging argument, proven: if the accept probability beats the knowledge error kerr/Nᵏ, rewinding the random oracle yields three accepting continuations per round at distinct, nonzero challenges. What remains is the accept-probability hypothesis and the Blake2b-as-RO idealization it rests on.' },
   { id:'treeAssembly', c:2,r:3, label:'tree assembly', status:'proven',
     anchor:'Forking.Extractor.deployed_forking_tree · produceDeployed',
-    role:'Assembles the forked transcripts into the deployed IPA tree on the live path (deployed_forking_tree / produceDeployed): the round points get their (g,U,W) representation recovered by Vandermonde from decomposition-free certificates, and the recovered root is proved equal to the threaded deployed commitment — root-consistent extraction, no posited decomposition. The legacy forkAccept_to_acceptV route is not used on the deployed spine.' },
+    role:'The deployed-tree reconstruction procedure, not another input transcript tree. It traverses a DForkCert together with its DeployedForkValid proof, uses Vandermonde recovery to decompose the whole round points into g/U/W tracks, and builds the normalized DeployedIpaTreeV whose recovered root is proved equal to the threaded deployed commitment. Ordinary forking and AlgebraicDForkCert.toDForkCert are alternate ways of supplying that certificate path, not joint inputs. AGM representations are erased before reconstruction and remain admissibility data on the algebraic certificate.' },
   { id:'hprob', c:2,r:1, label:'accept probability', status:'hyp',
     anchor:'hprob · Vesta forking capstones',
     role:'The accept probability beats the knowledge error kerr/Nᵏ — the hypothesis hprob in the Vesta forking capstones. The measure-side random-oracle floor.' },
-  { id:'ordering', c:3,r:2, label:'round-by-round soundness', status:'proven',
+  { id:'ordering', c:3,r:2, w:270, label:'round-by-round soundness', status:'proven',
     anchor:'Forking.Ordering.roundPoint_mem_roundTranscript',
     role:'The transcript-ordering guarantee (roundPoint_mem_roundTranscript): each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges — round-by-round soundness. The backbone under sound forking, the sealed x₁/x₄ prefixes the decode uses, and the x-fixed-before-sampling the Schwartz–Zippel argument needs.' },
   { id:'x4floor', c:6,r:3, label:'batch rewinds', status:'object',
     anchor:'Multiopen.Deployed.deployedMultiopenRewind_of_x4Prob',
-    role:'The x₄ forking floor (deployedMultiopenRewind_of_x4Prob): given an accepting honest run, once the accept measure of the x₄-rewound runs beats the pair-count bound, it extracts an injective family of accepting rewound openings — one IPA witness per run — that the decode inverts by Vandermonde. The multiopen analog of the rewind step.' },
+    role:'The x₄ forking floor (deployedMultiopenRewind_of_x4Prob): given an accepting honest run, once the accept measure of the x₄-rewound runs beats the pair-count bound, it produces MultiopenRewindForRelation — a transfer that turns the current IPA opening into the batch openings consumed by the Vandermonde decode. The multiopen analog of the rewind step.' },
   { id:'x4batch', c:7,r:3, label:'challenge batch', status:'proven',
     anchor:'Multiopen.Deployed.deployedCommitment_x4_batch',
     role:'The verifier folds all the opening claims into one (deployedCommitment_x4_batch) using powers of the challenge x₄; this collapse is proved to be exactly the power-weighted batch the decode inverts.' },
@@ -327,31 +328,46 @@ const nodes = [
   { id:'goodChallenge', c:6,r:6, label:'good challenge', status:'proven',
     anchor:'GoodChallenge.exists_accepting_good_challenge_quotient · Vesta.*_xgood',
     role:'A uniform RO challenge hits the bad set with probability ≤ d/p, so a good accepting x is derived (exists_accepting_good_challenge_quotient) rather than assumed — no hgood input.' },
+  { id:'fsAdversary', c:4,r:1, dx:100, w:225, label:'FS adversary (stub)', status:'hyp',
+    anchor:'PR #56 · OracleComp producer TODO',
+    role:'Stub for the real bounded-query Fiat–Shamir adversary. PR #56 models its random-oracle execution and query loss; the still-open weld must preserve its represented group outputs and acceptance probability while producing the algebraic instances consumed by PR #28.' },
+  { id:'algProver', c:4,r:2, dx:100, w:270, label:'AlgebraicProver interface', status:'object',
+    anchor:'AGM.Prover.AlgebraicProver',
+    role:'The representation-carrying prefix strategy defined by PR #28. Every emitted L/R point includes coefficients over the fixed augmented (g,U,W) basis. PR #28 proves consequences for a supplied AlgebraicProver; it does not construct one from the deployed FS adversary.' },
+  { id:'algCert', c:4,r:3, dx:100, w:310, label:'algebraic fork certificate', status:'object',
+    anchor:'AGM.Prover.AlgebraicDForkCert · algebraicProverAccept_forkValid',
+    role:'The tree-shaped IPA fork certificate, not the complete Fiat–Shamir/random-oracle execution transcript. At every IPA round it stores the shared L/R points with their AGM representations, three distinct challenges, and three child certificates; each leaf stores the terminal c/f scalars. algebraicProverAccept_forkValid combines a supplied AlgebraicProver with propositional Extractable data to prove ∃ cert, DeployedForkValid … cert.toDForkCert. That certificate-and-validity witness remains proof-level rather than an executable extractor output.' },
+  { id:'algInstance', c:4,r:4, dx:100, w:285, label:'deployed instance family', status:'object',
+    anchor:'AGM.Capstone.DeployedAlgebraicForkingInstance · deployedAlgebraicRelationFinder',
+    role:'One per-basis package containing AlgebraicDForkCert, the sampled basis, transcript values, commitment equations, and validity proofs. Its run returns either an IPA opening or an explicit relation. The probability path supplies a family basis ↦ Option DeployedAlgebraicForkingInstance to deployedAlgebraicRelationFinder, which returns some relation only for the relation branch and returns none for a missing instance or an opening; this node therefore feeds only the DL reduction bound. The opening path is exposed separately by AGM soundness. PR #56 must construct that family from the FS adversary and preserve attack probability.' },
   { id:'algRel', c:0,r:6, label:'algebraic relation', status:'object',
-    anchor:'AGM.Capstone.deployedAlgebraicRelationWitness',
-    role:'The data-carrying AlgebraicRelationWitness the discrete-log reduction consumes — an explicit function of the prover representations, with no Classical.choice. Reached only by identifying the deployed prover with the abstract algebraic relation-finder (issue #15): a modeling assumption, not composed with the forking extraction, which yields only the existential relation.' },
-  { id:'adapter', c:0,r:7, label:'fixed-slot', status:'object',
-    anchor:'AGM.Adapter.FixedSlotEmbedding',
-    role:'The fixed-slot embedding (FixedSlotEmbedding) hides a discrete-log challenge in one basis slot fixed before the adversary runs; a found relation hitting that slot yields the discrete log, extracted deterministically by discreteLogOfBasis_of_relation.' },
+    anchor:'AGM.Adapter.AlgebraicRelationWitness · AGM.Capstone.deployedAlgebraicForkingRelation',
+    role:'The explicit AlgebraicRelationWitness obtained by converting the deployed kernel’s computed relation on the augmented (g,U,W) basis. This is the data consumed by fixedSlotExtractOrMiss. The probability path does not create a second relation source: deployedAlgebraicRelationFinder runs the supplied instances and orchard_deployed_relation_set_eq_relSet identifies their relation-producing executions with relSet.' },
+  { id:'adapter', c:0,r:7, label:'fixed-slot adapter', status:'object',
+    anchor:'AGM.Adapter.FixedSlotEmbedding · fixedSlotExtractOrMiss',
+    role:'The fixed-slot adapter takes an embedding that hides a discrete-log challenge in one basis slot fixed before the adversary runs, then classifies the exact returned relation. A hit yields the discrete log; a miss retains that relation with a zero coefficient at the planted slot.' },
   { id:'dlrep', c:0,r:8, label:'DL solution', status:'object',
     anchor:'AGM.Adapter.DiscreteLogRepresentation',
     role:'A solved discrete log (DiscreteLogRepresentation), extracted from a relation that hits the planted slot — the reduction’s output. Producing one would break the DL-hardness assumption, which is exactly why finding the relation is assumed infeasible.' },
-  { id:'missesSlot', c:1,r:8, label:'soundness loss', status:'object',
-    anchor:'AGM.Adapter.RelationMissesSlot',
-    role:'Soundness loss (RelationMissesSlot): the escape case — a nontrivial relation that misses the planted slot, so the AGM reduction extracts no discrete log. As a proposition it holds trivially at prime order — the bounded quantity is the probability that the adversary returns a relation landing here, which the probability wrapper averages away.' },
+  { id:'missesSlot', c:1,r:8, label:'fixed-slot miss', status:'object',
+    anchor:'AGM.Adapter.FixedSlotRelationOutcome',
+    role:'The miss branch retains the exact relation returned by the deployed kernel and proves that relation\'s coefficient at the pre-fixed slot is zero. It is not a separately chosen existential relation. Uniform random-slot accounting prices the chance of this miss.' },
   { id:'dlbound', c:1,r:7, label:'DL reduction bound', status:'proven',
-    anchor:'AGM.Probability.relation_prob_le_of_textbookDL',
-    role:'The random-slot accounting (relation_prob_le_of_textbookDL): the planted slot is hit with probability at least 1/|basis| of the finder’s, so the probability of finding a relation is bounded by a multiple of the discrete-log advantage. This is where DL-hardness enters as an explicit, priced hypothesis. Stated over a sampled basis, not the deployed URS — reading it at the URS is the uniform-basis modeling assumption (issue #15).' },
-  { id:'agm_dl', c:2,r:7, label:'AGM soundness', status:'proven',
-    anchor:'Vesta.*_agm_dl',
-    role:'AGM soundness — the _agm_dl capstones (also in Vesta.lean), the AGM-model sharpening of the base capstone. It takes the base capstone\'s IPA opening ∨ a nontrivial relation and routes the relation branch through the fixed-slot adapter, concluding the trichotomy: IPA opening ∨ a discrete-log solution ∨ a soundness loss (the relation misses the planted slot). That soundness-loss branch is not discharged here — it is bounded only in the separate probability layer (the DL reduction bound, over a sampled basis), where DL-hardness prices it. Like the base capstone, the disjunction is propositionally true at prime order; the content is the deterministic extraction chain.' },
+    anchor:'AGM.ProbabilityVesta.orchard_deployed_relation_prob_le_of_generatorRO_textbookDL',
+    role:'The random-slot accounting instantiated with deployedAlgebraicRelationFinder: relation-finding probability is at most |basis| times the textbook-DL advantage. orchard_uniformURSIdentification_of_generatorRO derives the complete basis-distribution equality for distinct queries to a uniform group-valued generator oracle; concrete hash-to-curve-as-RO remains the setup idealization.' },
+  { id:'agm_dl', c:2,r:7, label:'AGM soundness', status:'object',
+    anchor:'AGM.ProbabilityVesta.orchardDeployedAlgebraicForkingFixedSlot',
+    role:'The computable Vesta endpoint takes an explicit AlgebraicDForkCert, the deployed statement data and validity proofs, and a fixed-slot embedding. It wraps the same cert.toDForkCert → deployed_forking_relation reconstruction shown above rather than defining a second extraction path. It returns an IPA opening, or retains the exact computed relation together with either a discrete-log solution or a proof that its planted-slot coefficient is zero. No Classical.choice selects certificate, relation, or branch data.' },
   { id:'DLhard', c:2,r:8, label:'DL-hardness', status:'floor',
     anchor:'AGM.Probability.TextbookDLAdvantageLE',
     role:'Discrete-log hardness on Vesta. The bound is stated in Lean (TextbookDLAdvantageLE); that it actually holds for Vesta is the computational assumption, not a Lean theorem.' },
   { id:'blake2b', c:3,r:8, label:'Blake2b = RO', status:'floor',
     anchor:'Forking.Oracle.uniformChallenge',
     role:'Blake2b modeled as a random oracle. The oracle model itself — reprogramming, uniform challenges — is mechanized (Forking.Oracle); identifying the deployed Blake2b transcript with that oracle is the idealization.' },
-  { id:'hlrel', c:4,r:8, label:'high-level relation', status:'floor',
+  { id:'h2cRO', c:6,r:8, w:235, label:'generator H2C = RO', status:'floor',
+    anchor:'AGM.ProbabilityVesta.orchardGeneratorROSetup · orchard_uniformURSIdentification_of_generatorRO',
+    role:'The deployed generator hash-to-curve is modeled as the uniform group-valued generator random oracle used by the setup theorem. Lean proves the sampled-basis distribution equality inside that model; identifying halo2’s concrete deterministic generator derivation with the oracle remains an out-of-Lean idealization, separate from the Fiat–Shamir transcript RO.' },
+  { id:'hlrel', c:4,r:8, w:225, label:'high-level relation', status:'floor',
     anchor:'hencodes',
     role:'Semantic adequacy (hencodes): SnarkRelation — the witness satisfies the gates — implies the intended high-level Ironwood statement (note well-formed, values balance, nullifier derived, spend authorized). An assumed hypothesis over a free Prop; the composition otherwise stops at SnarkRelation. The output-side gap. Not started.' },
   { id:'vkfaith', c:5,r:8, label:'VK correctness', status:'floor',
@@ -388,24 +404,46 @@ const edges = [
   ['gateLift','hgood','rests'],
   ['decode','gateLift','entails','circuitSatViaGates_of_check'],
   ['x4batch','x4floor','entails','deployedMultiopenRewind_of_x4Prob'],
-  ['x4floor','decode','entails','decodedColumnFamily_of_batch_openings'],
+  ['x4floor','decode','entails','MultiopenRewindForRelation · decodedColumnFamily_of_batch_openings'],
   ['decode','member_binding','entails','deployed_witness_member_binding'],
-  ['IpaRelation','x4floor','entails','multiopenRewindForRelation_of_acceptedFamily'],
+  ['IpaRelation','decode','entails','MultiopenRewindForRelation'],
   ['szBadSet','goodChallenge','entails','exists_accepting_good_challenge_quotient'],
   ['goodChallenge','hgood','discharges','exists_accepting_good_challenge_quotient'],
   ['SnarkRelation','capstones','entails','orchard_verifier_vesta_*'],
-  ['capstones','agm_dl','entails','orchard_verifier_vesta_*_agm_dl'],
-  ['relation','algRel','gap'],
-  ['algRel','adapter','entails','FixedSlotEmbedding'],
+  ['fsAdversary','algProver','gap'],
+  ['algProver','algCert','entails','algebraicProverAccept_forkValid'],
+  ['forking','algCert','entails','algebraicProverAccept_forkValid'],
+  ['algCert','treeAssembly','entails','AlgebraicDForkCert.toDForkCert · DeployedForkValid'],
+  ['algCert','algInstance','gap'],
+  ['relation','algRel','entails','AugmentedRelationWitness.toAlgebraicRelationWitness'],
+  ['algRel','adapter','entails','fixedSlotExtractOrMiss'],
   ['adapter','dlrep','entails','discreteLogOfBasis_of_relation'],
-  ['adapter','missesSlot','entails','RelationMissesSlot'],
-  ['adapter','dlbound','entails','relation_prob_le_of_textbookDL'],
+  ['adapter','missesSlot','entails','fixedSlotExtractOrMiss'],
+  ['adapter','dlbound','entails','orchard_deployed_relation_prob_le_of_textbookDL'],
+  ['algInstance','dlbound','entails','deployedAlgebraicRelationFinder · orchard_deployed_relation_set_eq_relSet'],
+  ['algCert','agm_dl','entails','orchardDeployedAlgebraicForkingFixedSlot'],
+  ['adapter','agm_dl','entails','orchardDeployedAlgebraicForkingFixedSlot'],
+  ['agm_dl','IpaRelation','entails','orchardDeployedAlgebraicForkingFixedSlot'],
   ['dlbound','DLhard','rests'],
-  ['dlbound','agm_dl','gap'],
+  ['dlbound','h2cRO','rests'],
   ['capstones','hlrel','rests'],
   ['capstones','structural','rests'],
   ['capstones','vkfaith','rests'],
 ];
+
+// Explicit routes keep cross-territory composition edges from passing through unrelated nodes.
+const edgeRoutes = {
+  'ordering:x4floor': [{ x:1050, y:270 }, { x:1300, y:270 }],
+  'forking:algCert': [{ x:COL(3), y:ROW(2) + 78 }],
+  'forking:blake2b': [
+    { x:650, y:400 }, { x:760, y:460 }, { x:720, y:820 }, { x:690, y:960 },
+    { x:760, y:980 },
+  ],
+  'algCert:agm_dl': [{ x:900, y:520 }, { x:720, y:700 }, { x:720, y:840 }],
+  'algInstance:dlbound': [{ x:1000, y:650 }, { x:760, y:700 }, { x:720, y:840 }],
+  'adapter:agm_dl': [{ x:COL(1), y:ROW(7) - 65 }],
+  'dlbound:h2cRO': [{ x:600, y:970 }, { x:1400, y:970 }],
+};
 
 const statusColor = { proven:'--c-proven', hyp:'--c-hyp', floor:'--c-floor', object:'--c-object', goal:'--accent' };
 const statusName  = { proven:'Proven', hyp:'Hypothesis', floor:'Out-of-Lean assumption', object:'Definition', goal:'Top-level' };
@@ -422,9 +460,9 @@ const relPhrase = {
 
 const byId = {};
 nodes.forEach(n => {
-  n.cx = COL(n.c); n.cy = ROW(n.r);
+  n.cx = COL(n.c) + (n.dx || 0); n.cy = ROW(n.r);
   const ch = n.label.length;
-  n.w = Math.max(126, Math.min(216, ch * 10.2 + 30));
+  n.w = n.w || Math.max(126, Math.min(216, ch * 10.2 + 30));
   n.h = 46;
   byId[n.id] = n;
 });
@@ -465,19 +503,21 @@ territories.forEach(t => {
     x1=Math.max(x1,cx+hw); y1=Math.max(y1,cy+hh);
   });
   const pad=20;
+  const padRight=t.padRight || pad;
+  const headroom=t.headroom || 14;
   const g = el('g', {});
-  const rect = el('rect', { x:x0-pad, y:y0-pad-14, width:(x1-x0)+pad*2, height:(y1-y0)+pad*2+14, class:'terr' });
+  const rect = el('rect', { x:x0-pad, y:y0-pad-headroom, width:(x1-x0)+pad+padRight, height:(y1-y0)+pad*2+headroom, class:'terr' });
   rect.style.setProperty('--th', `color-mix(in srgb, ${t.h} 10%, var(--surface))`);
   rect.style.setProperty('--ts', t.h);
   g.appendChild(rect);
-  const labX = (t.labelSide === 'right' ? x1+pad-14 : x0-pad+14) + (t.labelDx || 0);
-  const lab = el('text', { x:labX, y:y0-pad-14+22, class:'terr-label' });
+  const labX = (t.labelSide === 'right' ? x1+padRight-14 : x0-pad+14) + (t.labelDx || 0);
+  const lab = el('text', { x:labX, y:y0-pad-headroom+22, class:'terr-label' });
   if (t.labelSide === 'right') lab.setAttribute('text-anchor', 'end');
   lab.style.setProperty('--ts', t.h);
   lab.textContent = t.label;
   terrLabelLayer.appendChild(lab);
   if (t.tag) {
-    const tg = el('text', { x:x1+pad-14, y:y0-pad-14+22, 'text-anchor':'end', class:'terr-tag' });
+    const tg = el('text', { x:x1+padRight-14, y:y0-pad-headroom+22, 'text-anchor':'end', class:'terr-tag' });
     tg.style.setProperty('--ts', t.h);
     tg.textContent = t.tag;
     terrLabelLayer.appendChild(tg);
@@ -496,12 +536,26 @@ function borderPoint(n, tx, ty) {
 const edgeLayer = el('g', {});
 const edgeEls = edges.map((e) => {
   const a = byId[e[0]], b = byId[e[1]];
-  const s = borderPoint(a, b.cx, b.cy), t = borderPoint(b, a.cx, a.cy);
-  const mx=(s.x+t.x)/2, my=(s.y+t.y)/2;
-  let nx=t.y-s.y, ny=-(t.x-s.x); const len=Math.hypot(nx,ny)||1;
-  const dist=Math.hypot(t.x-s.x,t.y-s.y); const off=Math.min(46, dist*0.13);
-  const cx=mx+nx/len*off, cy=my+ny/len*off;
-  const p = el('path', { class:'edge '+e[2], d:`M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`, 'marker-end':`url(#ar-${e[2]})` });
+  const route = edgeRoutes[`${e[0]}:${e[1]}`];
+  const first = route?.[0], last = route?.[route.length - 1];
+  const s = borderPoint(a, first?.x ?? b.cx, first?.y ?? b.cy);
+  const t = borderPoint(b, last?.x ?? a.cx, last?.y ?? a.cy);
+  let d;
+  if (route) {
+    d = `M${s.x},${s.y}`;
+    route.forEach((control, i) => {
+      const next = route[i + 1];
+      const end = next ? { x:(control.x + next.x)/2, y:(control.y + next.y)/2 } : t;
+      d += ` Q${control.x},${control.y} ${end.x},${end.y}`;
+    });
+  } else {
+    const mx=(s.x+t.x)/2, my=(s.y+t.y)/2;
+    let nx=t.y-s.y, ny=-(t.x-s.x); const len=Math.hypot(nx,ny)||1;
+    const dist=Math.hypot(t.x-s.x,t.y-s.y); const off=Math.min(46, dist*0.13);
+    const cx=mx+nx/len*off, cy=my+ny/len*off;
+    d = `M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`;
+  }
+  const p = el('path', { class:'edge '+e[2], d, 'marker-end':`url(#ar-${e[2]})` });
   edgeLayer.appendChild(p);
   return p;
 });

@@ -12,6 +12,7 @@ BOOK_DIR = Path(__file__).resolve().parent
 REPO_DIR = BOOK_DIR.parent
 FV_DIR = BOOK_DIR / "src" / "formal-verification"
 SOURCE_CACHE = {}
+FETCHED_SOURCES = set()
 
 
 def fail(errors, message):
@@ -66,10 +67,34 @@ def validate_graph(errors, map_text):
     return node_set, len(edges)
 
 
+def fetch_source_if_missing(source):
+    source_ref = source["ref"]
+    if source_ref in FETCHED_SOURCES:
+        return
+    FETCHED_SOURCES.add(source_ref)
+    present = subprocess.run(
+        ["git", "cat-file", "-e", f"{source_ref}^{{commit}}"],
+        cwd=REPO_DIR,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if present.returncode == 0:
+        return
+    subprocess.run(
+        ["git", "fetch", "--no-tags", "--depth=100", "origin", source["fetch"]],
+        cwd=REPO_DIR,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
 def source_text(errors, source, source_path):
     key = (source["ref"], source_path)
     if key in SOURCE_CACHE:
         return SOURCE_CACHE[key]
+    fetch_source_if_missing(source)
     result = subprocess.run(
         ["git", "show", f"{source['ref']}:{source_path}"],
         cwd=REPO_DIR,
