@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-78cdcc6e.js";
+            window.path_to_searchindex_js = "searchindex-ebfc7b8d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-aff24c6d.js"></script>
@@ -185,9 +185,20 @@ confidence for all Zcash'rs in the supply integrity of Zcash.</p>
 of the Action circuit used by the <em>Orchard</em> and <em>Ironwood pools</em>, before the NU6.3
 upgrade that activates the latter. An important part of this effort will be to clearly
 and accurately document the scope of what is and is not formally verified.</p>
+<h2 id="verifying-the-proofs"><a class="header" href="#verifying-the-proofs">Verifying the proofs</a></h2>
+<p>The formalization is a Lean 4 development over Mathlib, and building it
+re-elaborates every proof — a successful build <em>is</em> the verification. The single
+command is <code>lake build</code>, with two one-time prerequisites: install
+<a href="https://github.com/leanprover/elan"><code>elan</code></a> (the Lean toolchain manager, which
+reads <a href="lean-toolchain"><code>lean-toolchain</code></a> and installs the pinned toolchain
+automatically), then, from the repository root, fetch Mathlib's prebuilt
+artifacts so it need not be recompiled from source:</p>
+<pre><code class="language-sh">lake exe cache get   # one-time: download prebuilt Mathlib artifacts
+lake build           # verify everything (exactly what CI runs)
+</code></pre>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
 <ul>
-<li><a href="https://zcash.github.io/ironwood/"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">The Ironwood Book</span></span></span></span></span></a></li>
+<li><a href="https://zcash.github.io/ironwood/">The Ironwood Book</a></li>
 </ul>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>Copyright 2026 Zcash Protocol Developers.</p>
