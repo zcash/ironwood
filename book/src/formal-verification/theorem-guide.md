@@ -1,223 +1,323 @@
 # Guide to the Theorems
 
-A prose reading of what the verifier-soundness theorems actually claim, the
-assumptions they rest on, and — the point of the page — **everything a human
-auditor must still check to trust the result.**
+**Who this is for.** Anyone deciding how much to trust Ironwood's
+verifier-soundness proof — a protocol engineer, a reviewer, an auditor. It
+assumes you know roughly what a zero-knowledge proof is *for*: a prover
+convinces a verifier that some statement is true without revealing why. It does
+not assume you have read any Lean, and it does not assume you work on proof
+systems.
 
-This is deliberately *not* a tour of the proof mechanics, the internal lemma
-DAG, or the per-declaration API. Those live in the [proof map](proof-map.md),
-the [proof journey](proof-journey.md), and the Lean source itself. Here we stay
-on the *trusted surface*: the top-level statements, the definitions you need to
-read them, and the boundary between what Lean proves and what you are trusting.
-New terms are collected in the [glossary](glossary.md); the two development-wide
-conventions (["breaks as computed data"](../formal-verification.md#breaks-as-computed-data)
-and the ["trust discipline"](../formal-verification.md#trust-discipline)) are on
-the [Formal Verification](../formal-verification.md) landing page.
+**What it gives you.** The claim in plain words, the assumptions it rests on,
+and — the point of the page — **the list of things Lean does not prove, which
+somebody has to check by hand.** Lean names are kept out of the prose and
+collected in [one table at the end](#where-this-lives-in-lean), so the page reads
+as English while still telling a specialist exactly where to look.
 
-## What is being claimed, in one paragraph
+**What it is not.** Not a tour of how the proofs work. The shape of the argument
+is in the [proof map](proof-map.md) and the [proof journey](proof-journey.md);
+terms of art are in the [glossary](glossary.md); the two development-wide
+conventions are on the [Formal Verification](../formal-verification.md) landing
+page.
 
-For the deployed Halo 2 verifier that Orchard/Ironwood runs over the Vesta
-curve, a proof the verifier *accepts* can be turned — by an efficient
-extractor — into a witness that both **opens the IPA commitment** and
-**satisfies the circuit's gates**. The only escape hatch is that the prover
-instead computed a nontrivial discrete-log relation among the fixed generators
-$(g, U, W)$ — and the discrete-log assumption says no efficient prover can do
-that. Everything below is the fine print: which theorem states which half of
-this, what "accept" and "opens" and "satisfies" mean precisely, and which
-pieces of the sentence are assumed rather than proven.
+This page focuses on claims relating to the knowledge soundness of the
+Action circuit with respect to its intended statement. For a map of how that
+will be used to prove some of the high-level security properties of the Zcash
+protocol, see the [Security Definitions](security-definitions.md) page.
 
-## The theorems, in words
+## The claim, in one sentence
 
-The soundness statements come in a deliberate ladder, from a fully abstract
-*conditional* form down to the concrete deployed verifier at Vesta. Reading them
-in order shows exactly what each layer adds.
+> If the deployed verifier accepts a proof, then whoever produced that proof
+> could have handed you the secret data it is a proof *about* — unless they
+> solved a problem the field believes is infeasible.
 
-### Conditional soundness — `orchard_verifier_sound_conditional`
+Everything below is the fine print: what each of those words means, how much of
+the sentence Lean actually establishes, and where the sentence is currently
+weaker than you might read it as being.
 
-The top of the ladder (`Zcash/Snark/Soundness/Main.lean`) takes acceptance as an
-**opaque `Prop`**. It says: *if* an accepting proof yields extraction data (the
-hypothesis `ExtractableFromAcceptance` — a consistent transcript, an
-`IpaRelation` opening, and a circuit witness), *and if* gate satisfaction
-encodes the intended high-level statement (the hypothesis `hencodes`), then that
-statement `S` holds.
+## The cast
 
-Read it as a *quarantine*: the theorem is honest that it assumes the two hard
-things — extraction and semantic adequacy — rather than proving them. It says
-nothing about the fingerprint, because `accepts` is a free proposition unrelated
-to the real verifier. Its Vesta specialization is
-`orchard_verifier_sound_vesta_conditional`, identical in content, with the curve
-pinned to `SWPoint Vesta.curve`.
+Five ideas carry the whole statement. They are worth pinning down before the
+theorems, because most of the difficulty is in the definitions rather than the
+proofs.
 
-### Deployed acceptance — `DeployedAccepts` and `deployedAccepts_verifierEq`
+**The circuit.** Zcash's Action circuit is a large system of equations over a
+finite field. The secret data — which note is being spent, its value, the key
+authorizing the spend — is an assignment of numbers to that system's variables.
+An assignment that makes all the equations come out true is called a **witness**.
+The circuit is designed so that witnesses correspond to genuine Orchard actions:
+a well-formed note, balanced value, a correctly derived nullifier, an authorized
+spend.
 
-The deployed layer replaces the opaque `accepts` with the *real* accept
-predicate. `DeployedAccepts` holds exactly when the verifier's MSM assembler
-`assemble?` succeeds and the assembled multi-scalar multiplication **evaluates
-to the group identity** against the URS. This is the concrete accept — the same
-$\text{MSM} = 0$ condition the [fingerprint](glossary.md) pins to the Rust
-verifier.
+**Proof and verifier.** Halo 2, the proof system Orchard uses, lets someone
+holding a witness produce a short proof of that fact. The verifier checks the
+proof without ever seeing the witness. Ironwood runs this over the Vesta elliptic
+curve, against a fixed public list of curve points that everyone agrees on in
+advance.
 
-`deployedAccepts_verifierEq` is the first reduction step: it converts that
-compact $\text{MSM} = 0$ accept into halo2's **explicit IPA verifier equation**
-(`DeployedIpaVerifierEq`), the readable form the inner-product argument consumes.
+**Accepting.** The entire Halo 2 verifier boils down to a single arithmetic test.
+It combines the proof and the public list into one big weighted sum of curve
+points, and checks that the sum comes out to zero — the curve's identity element.
+That test *is* acceptance, and it is exactly what the Lean model encodes.
 
-### The deployed reduction — opening, constraint, and the binding branch
+**Knowing, not merely existing.** A weak soundness claim would say a witness
+*exists*. That is nearly worthless here: for almost any statement someone,
+somewhere, could have a witness. The useful claim is that *this prover has one*,
+and cryptography makes it precise by demanding an **extractor** — a procedure
+that, given access to the prover, produces the witness. If you can extract it,
+the prover demonstrably knew it. Everything on this page is a claim of this
+stronger kind.
 
-From an accepting deployed proof, a fork of the Fiat–Shamir transcript is
-produced (a `ForkedTranscript`: a rewound, accepting IPA tree that opens the
-pinned commitment after removing its declared $U$/$W$ components). The fork then
-splits two ways:
+**Reduction.** Nobody can prove outright that a prover cannot cheat; that would
+settle open problems in complexity theory. What can be proven is a trade:
+*any* prover that cheats can be turned, mechanically and cheaply, into a solver
+for a problem believed to be infeasible. That trade is a **reduction**, and every
+theorem here has that shape. Throughout this development the infeasible problem
+is always the same one: given a handful of fixed curve points, find multipliers,
+not all zero, that make them cancel out to zero. Such a set of multipliers is
+called a **nontrivial discrete-log relation**.
 
-* **Clean fork ⇒ extraction.**
-  `orchard_verifier_deployed_opening_of_forked` extracts the opening witness $a$
-  for the declared commitment (the blinded opening
-  $\text{deployedCommitment} = \langle a, g\rangle + [p_U]U + [p_W]W$, with
-  $\langle a, b\rangle$ equal to the pinned `multiopenValue`).
-  `orchard_verifier_deployed_constraint_of_forked` additionally derives circuit
-  satisfaction, lifting the verifier's gate point-check (`hquot`) at the
-  challenge $x$ to the full polynomial gate identity via Schwartz–Zippel
-  (`hgood`) — so the check constrains the *single extracted witness* $a$. Their
-  Vesta forms are `orchard_verifier_vesta_opening_of_forked` and
-  `_constraint_of_forked`.
+## What Lean actually proves
 
-* **Unclean fork ⇒ a computed break.**
-  `NontrivialRelation.ofUnopenedFork` (Vesta: `…ofUnopenedForkVesta`) takes a
-  forked transcript that does *not* project to a clean IPA tree and **computes**
-  a nontrivial discrete-log relation among $(g, U, W)$. It does not merely assert
-  one exists — at prime order one always does; it returns the coefficients as
-  data, the object the discrete-log assumption forbids an efficient prover from
-  finding.
+The statements form a ladder. Each rung takes something the rung above assumed
+and replaces it with something proven. Reading them in order shows exactly what
+is and is not established.
 
-### The computed Fiat–Shamir endpoints — `knowledgeSoundness_under_DL` / `binding_under_DL`
+**Rung 1 — the honest placeholder.** At the top, "the verifier accepts" is left
+as an unspecified condition, and the two hard steps — that acceptance yields a
+witness, and that a witness means what we want it to mean — are written down as
+explicit assumptions rather than proven. This rung claims nothing about the real
+verifier. It exists so that the hard parts are quarantined somewhere visible
+instead of being smuggled in later.
 
-The legacy ladder above bundles the forking step as a hypothesis. The *computed*
-reduction (`ComputedAlgebraicFSFamily` in
-`Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean`) instead constructs the
-forks from a bounded-query adversary and charges the query loss.
-`knowledgeSoundness_under_DL` bounds the probability of an accepting proof that
-resists extraction; `binding_under_DL` is its binding-side dual. Both are stated
-in the AGM with an ideal random oracle, gated by per-family discrete-log
-hardness (`DiscreteLogRelationHardFor`) and by the extractor's call bound.
+**Rung 2 — the real acceptance test.** Here the placeholder is replaced by the
+test the deployed verifier actually runs: assemble the weighted sum of curve
+points in the same order Halo 2's Rust verifier does, and check it is zero. A
+first proof step rewrites that compact test into the explicit equation Halo 2's
+inner-product argument works with — the same condition, in a form the rest of the
+argument can consume.
 
-## The security model — what you are trusting
+**Rung 3 — extraction, with its escape hatch.** This is the heart of it. From an
+accepting proof, the argument **rewinds**: it re-runs the prover from the same
+starting point but answers its questions differently, collecting several
+accepting runs that agree on their early history and diverge later. Two things
+can happen, and the theorems cover both:
 
-The theorems are *reductions*: they convert a verifier that accepts a false
-statement into a concrete break of an underlying primitive. Trusting the
-conclusion therefore means trusting that those primitives are hard and that the
-model faithfully represents the deployed system. The assumptions are:
+* The collected runs fit together, and the argument **computes** a witness —
+  one that both opens the commitment and satisfies the circuit's equations. Along
+  the way, the verifier's spot-check of the circuit at a single random point gets
+  lifted to the full polynomial identity: were the identity false, only a tiny
+  fraction of points could have hidden that, so a passing spot-check is
+  overwhelmingly likely to mean it really holds. Lean bounds that tiny fraction,
+  but the step from "unlikely" to "this particular challenge was fine" is taken as
+  a hypothesis rather than discharged — see the checklist.
+* The runs do *not* fit together, and the argument **computes** a nontrivial
+  discrete-log relation — the thing assumed infeasible.
 
-* **Discrete-log relation hardness.** No efficient prover finds a nontrivial
-  relation among the fixed generators $(g, U, W)$. This is where every "unclean
-  fork" and "no clean opening" branch is discharged. Commitment binding is the
-  same assumption in another guise: two openings of one commitment *is* a
-  relation.
-* **An ideal random oracle** for Blake2b and for field-element challenge
-  conversion — and, on the generator-RO endpoints, for the hash-to-curve URS
-  derivation. Identifying the deployed hash with a random oracle is external to
-  Lean (see below).
-* **The algebraic group model (AGM)** for the computed reduction: the adversary
-  declares algebraic representations of the group elements it outputs.
-* **CompElliptic's Vesta point-count.** A closed numeric fact discharged by
-  `native_decide`, which adds one compiler-trust axiom. Concrete-curve endpoints
-  inherit it; the per-theorem `#print axioms` pins record exactly where.
-* **Verifying-key correctness** (input side): that the `VerifyingKey` handed to
-  the verifier faithfully encodes the real deployed circuit. Assumed, not proven
-  — see the checklist.
+Both branches produce actual data, not an assertion that something exists. That
+distinction is load-bearing rather than stylistic: on a curve of prime order a
+nontrivial relation always exists, so a theorem that merely claimed one existed
+would be saying nothing at all. The development's
+[breaks as computed data](../formal-verification.md#breaks-as-computed-data)
+convention exists to prevent exactly that failure.
 
-Two model limits are worth stating plainly. Reduction **efficiency** is the one
-property Lean does not express: it is argued by inspection (the reductions are
-straight-line manipulations of their inputs), and a *field-independent
-polynomial* bound on the extractor's adversary-run count is still open — the
-present bound is the exponential $(2\cdot|F|+1)^k$ fallback, with a polynomial
-$(6/\delta)^k$ available only under a fork-spread hypothesis. And adversary
-running time as a PPT bound is external throughout.
+**Rung 4 — the probability statement.** The rungs above take "we obtained several
+accepting runs" as given. The top rung constructs them, from an adversary allowed
+a bounded number of hash queries, and pays for the chance that rewinding fails to
+produce what is needed. The result is a bound: the probability of producing an
+accepting proof that resists extraction is small, so long as the discrete-log
+problem is hard. A companion statement covers binding — that a prover cannot open
+one commitment two different ways.
 
-## How Fiat–Shamir is modeled
+## What you are trusting
 
-The deployed verifier is non-interactive: every challenge is derived by hashing
-the transcript absorbed so far. The model (`Zcash/Snark/Verifier/FiatShamir.lean`)
-records halo2's absorb/squeeze order exactly — points, scalars, and challenge
-markers written in the same sequence as halo2's PLONK, multiopen, and commitment
-verifiers — and treats the hash as an abstract `FiatShamir.squeeze`. **Blake2b
-itself is not formalized.** The security layer then idealizes `squeeze` as a
-random oracle.
+The theorems trade cheating for a break of some primitive. Trusting the
+conclusion therefore means trusting several quite different things, and it is
+worth keeping them apart, because they fail in different ways.
 
-The consequences an auditor should internalize:
+### One computational hardness assumption
 
-* **The transcript order is load-bearing.** Round-by-round soundness means each
-  IPA round point sits in the transcript *before* the challenge that folds it is
-  drawn, so a later message cannot bend an earlier challenge. This ordering is a
-  proven property, not an assumption — but it is a property *of the model's
-  absorb order*, which is trusted to match halo2.
-* **Forking is oracle rewinding.** The forking lemma re-runs the schedule with
-  the random oracle reprogrammed at a round prefix; redrawing the IPA round
-  vector *is* reprogramming the deployed oracle. Extraction rests on this, so it
-  rests on the random-oracle idealization.
-* **The Blake2b ↔ random-oracle gap is yours.** Nothing in Lean argues that
-  Blake2b with halo2's field-conversion behaves like a random oracle. That
-  identification, and the hash-to-curve URS derivation on the relevant
-  endpoints, are trusted.
+**Finding a discrete-log relation is infeasible.** No efficient prover can find
+multipliers, not all zero, that cancel the fixed generators to zero. This is what
+discharges every "the runs didn't fit together" branch. Commitment binding is the
+same assumption wearing a different hat: two different openings of one commitment
+*are* such a relation.
 
-## The accept predicate and the halo2 correspondence
+This is a genuine hardness assumption — a claim that a specific computational
+problem is hard, of the kind the field has studied for decades.
 
-The definitions you must read to interpret the statements:
+### Two restricted-adversary heuristics
 
-* **The accept predicate.** The whole verifier collapses to one MSM; it accepts
-  exactly when that MSM is the identity. `DeployedAccepts` is that predicate;
-  `assemble?` builds the MSM in the exact order of halo2's `plonk/verifier.rs`.
-* **The relation.** `SnarkRelation` is the extraction target: *one* witness $a$
-  that both opens the IPA commitment (`IpaRelation`) and satisfies the circuit
-  (`circuitSat`). The conclusion of soundness is that such an $a$ exists (or a
-  break is exhibited).
-* **The correspondence to the Rust verifier.** The fingerprint match
-  `fingerprint_matches` is a single `native_decide` check that the Lean
-  assembler's MSM equals the Rust verifier's captured MSM — **for the specific
-  captured proof and circuit under analysis.** This is what ties the Lean
-  `DeployedAccepts` to the deployed verifier's accept. It is a numeric oracle,
-  independently re-checkable by another implementation or by hand.
+The next two are **not** hardness assumptions, and reading them as though they
+were overstates the result. They do not claim any problem is difficult. They
+replace the real world with a more convenient one: a hash function with an
+idealized one, or a real attacker with a handicapped one. Nothing deployed
+satisfies them literally. They are modelling choices, believed sound for
+protocols that were not built to exploit the gap.
 
-## The trusted surface — what the auditor must personally check
+* **The hash behaves like a truly random function.** Challenges are derived by
+  hashing; the proof treats that hash as a source of fresh randomness with no
+  structure an attacker can exploit. This covers Blake2b, the conversion of hash
+  output into field elements, and — for the statements that derive the public
+  point list by hashing — that derivation too. Blake2b itself is not formalized
+  in Lean anywhere; the model treats the hash as an opaque black box, and the
+  security layer assumes that box is random.
+* **The attacker is algebraic.** For the probability statement of rung 4, the
+  adversary is *assumed* to declare, for every curve point it outputs, a recipe
+  building that point out of points it was given. Real attackers owe no such
+  explanation. This assumption is what lets the reduction read a relation off the
+  adversary's own output.
 
-Collecting the boundary in one place. To trust the end-to-end result you must
-independently satisfy yourself of each of the following; none is discharged
-inside the soundness theorems.
+### What the Fiat–Shamir model buys and costs
 
-1. **The computational assumptions hold.** Discrete-log relation hardness on
-   Vesta, the random-oracle idealization of Blake2b and challenge conversion
-   (and hash-to-curve for the URS), and the AGM for the computed reduction.
-2. **The `native_decide` oracles are correct.** The fingerprint match
-   `fingerprint_matches` and CompElliptic's Vesta point-count. Both are closed,
-   re-checkable numeric facts; a miscompiled or buggy oracle would be caught by
-   an independent recomputation disagreeing. The
-   [trust discipline](../formal-verification.md#trust-discipline) pins them at
-   build time via `assert_no_sorry` and a `#guard_msgs`-frozen `#print axioms`.
-3. **Verifying-key correctness (input side).** That the `VerifyingKey` fed to
-   the verifier encodes the *real* deployed circuit — gate polynomials, query
-   layouts, fixed/permutation commitments. Outside Lean; not started.
-4. **Semantic adequacy (output side).** That gate satisfaction (`SnarkRelation`)
-   actually encodes a *valid Orchard action* — a well-formed note, balanced
-   value, a correctly derived nullifier, an authorized spend. In the theorems
-   this is the free proposition `S` reached through the assumed `hencodes`; the
-   chain stops at "the extracted witness satisfies the gates." Instantiating `S`
-   to the concrete statement and proving `hencodes` is the output-side dual of
-   item 3. Outside Lean; not started.
-5. **The open in-Lean hypotheses the capstones still carry.** The multiopen
-   *decode binding* — tying the decoded columns back to the committed columns via
-   `batch_open_soundV` — is proven but not yet wired into the constraint capstone,
-   so the constraint side is not yet closed end-to-end. Alongside it the priced
-   structural residuals ($z \neq 0$, $g_0 \neq 0$, the $S$-opening
-   $\text{commit}\,s = \text{ipaS}$, value recovery $\xi\cdot\langle s,b\rangle = 0$)
-   and the accept-probability / good-challenge hypotheses (`hprob`, `hquot`,
-   `hgood`) are assumed in-Lean and priced rather than discharged. The
-   [glossary](glossary.md) itemizes each (its *Capstones & hypotheses* group)
-   with its Lean anchor.
-6. **Reduction efficiency.** That the reductions are efficient (argued by
-   inspection) and that the missing field-independent polynomial extractor bound
-   does not hide a super-polynomial cost.
+The deployed verifier is non-interactive: rather than an actual back-and-forth,
+every challenge is computed by hashing everything sent so far. Lean models that
+sequence exactly — which points and numbers get absorbed, and in what order,
+matching Halo 2's own verifiers. Three consequences an auditor should internalize:
 
-Items 1–2 are the intended trusted base — the assumptions and re-checkable
-oracles a mechanized proof is *meant* to rest on. Items 3–6 are the currently
-open surface: the gaps between "the extracted witness satisfies the gates over
-Vesta" and "the deployed Orchard/Ironwood verifier is sound for real
-transactions." Reading them off in full is exactly the check this page exists to
-enable.
+* **The order is load-bearing, and it is checked.** Each round's message enters
+  the transcript *before* the challenge that depends on it is drawn, so a later
+  message cannot bend an earlier challenge. Lean proves this. But it proves it of
+  *the model's* ordering, which is trusted to match Halo 2's.
+* **Rewinding is only meaningful in the idealized world.** "Re-run the prover and
+  answer differently" means reprogramming the hash mid-conversation. That is a
+  legitimate move against a random oracle and a meaningless one against Blake2b,
+  which is a fixed function. Extraction rests on this, so it inherits the
+  idealization.
+* **The gap between Blake2b and a random oracle is yours to accept.** Nothing in
+  Lean argues that Blake2b behaves like a random oracle. That identification is
+  an act of judgement, made outside the proof.
+
+### One assumption about the input
+
+**The verifying key describes the real circuit.** The verifier is handed a
+compact description of the circuit it is checking against. Everything proven here
+is relative to that description. That it faithfully encodes the Action circuit
+Zcash actually deploys is assumed, not proven.
+
+### Compiler trust
+
+Separately from all the above, the statements about the concrete Vesta curve rest
+on **compiler trust**. A few closed numeric facts — the captured fingerprint
+match described below, and CompElliptic's facts about the Vesta curve, its group
+order among them — are established by compiling a program and running it, rather
+than by checking the fact inside Lean's small trusted kernel. Each such fact adds
+an axiom recording that the compiler was trusted.
+
+These facts *are* rigorously established; what is not established is that they
+hold on the kernel alone. The Vesta group order, for instance, was
+[computed in Sage](https://github.com/zcash/pasta/blob/f0f7068552a3565786cb338448cb58bc36a8314a/amicable.sage#L184)
+by an entirely different method when the Pasta curves were designed, so a Lean
+compiler bug would have to arrive at exactly the same wrong answer to slip
+through unnoticed.
+
+### The tie to the Rust verifier
+
+One more numeric check connects the Lean model to the shipped code: the
+**fingerprint match** confirms that the weighted sum Lean's model assembles is
+identical to the one the Rust verifier assembles. Read the scope carefully — it
+holds **for the specific captured proofs and circuits checked in**, not for the
+verifier in general. It is a re-checkable numeric fact: another implementation,
+or careful hand computation, would produce the same number, so a wrong answer
+should be catchable by disagreement rather than by faith.
+
+## What Lean does not prove
+
+This is the part of the page worth printing out. To trust the end-to-end result
+you have to satisfy yourself of each of the following independently; none is
+established inside the soundness theorems.
+
+1. **The assumptions and idealizations hold.** Discrete-log relation hardness on
+   Vesta — the one real hardness assumption — plus the two restricted-adversary
+   heuristics: that the hash behaves randomly, and that the attacker is
+   algebraic.
+
+2. **The numeric oracles are right.** The fingerprint match against the Rust
+   verifier, and CompElliptic's Vesta curve facts. Both are closed, re-checkable
+   computations, so an error should surface as a disagreement with an independent
+   recomputation. The [trust discipline](../formal-verification.md#trust-discipline)
+   pins them at build time.
+
+3. **The right circuit went in.** That the verifying key handed to the verifier
+   encodes the *real* deployed circuit — its equations, its query layout, its
+   fixed commitments. Outside Lean; not started.
+
+4. **The circuit means what we think it means.** That satisfying the circuit's
+   equations really does amount to a valid Orchard action — well-formed note,
+   balanced value, correctly derived nullifier, authorized spend. In the theorems
+   this is a free-floating placeholder statement, connected to circuit
+   satisfaction by an assumption rather than a proof. The chain currently stops at
+   "the extracted witness satisfies the equations," and everything from there to
+   "this is a legitimate transaction" is unproven. This is the mirror image of
+   *the right circuit went in*, on the output side. Outside Lean; not started.
+
+5. **Only the gate equations are covered.** A Halo 2 circuit is enforced by three
+   kinds of constraint: the gate equations, the copy constraints that force the
+   same value to appear in cells the circuit declares equal, and the lookup
+   arguments. Only the gate equations are formalized. This matters a great deal,
+   because gate equations alone constrain very little — without copy constraints
+   nothing forces the circuit's wiring to be respected. Folding in the
+   permutation and lookup arguments is tracked in
+   [#36](https://github.com/zcash/ironwood/issues/36).
+
+6. **Some hypotheses are still assumed inside Lean.** The most consequential is
+   the **decode gap**. The extracted witness is a list of field elements; using it
+   as circuit data requires decoding it into the circuit's columns. That decoding
+   is currently a free function, not tied to the extracted witness — so as the
+   statement stands, the circuit-satisfaction half may not constrain the extracted
+   witness *at all*. The lemma that would tie them together is proven but not yet
+   wired in. Until it is, treat the constraint side as open rather than merely
+   incomplete. Alongside it sit several smaller structural side conditions and the
+   good-challenge and accept-probability hypotheses, assumed and accounted for
+   rather than discharged; the [glossary](glossary.md) itemizes each with its Lean
+   anchor.
+
+7. **The reductions are efficient.** Lean cannot express efficiency at all, so it
+   is argued by reading the code: each reduction is a straight-line manipulation
+   of its inputs, with no loops or search. The extractor is the exception, and it
+   is the one number worth understanding. It works by re-running the prover, so
+   its cost is a *count of prover runs*, and that count must stay manageable as
+   proofs grow. Writing $k$ for the number of rounds and $|F|$ for the size of the
+   field — astronomically large for Vesta — the bound proven with no extra
+   hypothesis is $(2\cdot|F|+1)^k$. That grows with the field size, so as a
+   practical guarantee it is worth nothing. A usable bound, $(6/\delta)^k$, is
+   also proven, but only under an additional hypothesis: that wherever the
+   extractor rewinds, at least a $\delta$ fraction of the possible challenges
+   would lead to an accepting run. Proving a bound that is both usable and
+   unconditional is open work. Separately, "efficient prover" in the formal
+   complexity-theoretic sense never appears in Lean at all.
+
+The first two are the intended trusted base — the assumptions and re-checkable
+computations a mechanized proof is *meant* to rest on. The remaining five are the
+currently open surface: the distance between "the extracted witness satisfies the
+gate equations over Vesta" and "the deployed Orchard/Ironwood verifier is sound
+for real transactions." Being able to read that distance off in full is the
+reason this page exists.
+
+## Where this lives in Lean
+
+For readers who want to check the prose against the source. Everything above is
+described in English precisely so this table can carry the names.
+
+| Described above as | In Lean | File |
+| --- | --- | --- |
+| Rung 1, the honest placeholder | `orchard_verifier_sound_conditional` (Vesta: `orchard_verifier_sound_vesta_conditional`) | `Soundness/Main.lean`, `Soundness/Vesta.lean` |
+| "acceptance yields a witness", assumed at rung 1 | `ExtractableFromAcceptance` | `Soundness/Main.lean` |
+| "a witness means what we want", assumed at rung 1 | the `hencodes` hypothesis, concluding a free proposition `S` | `Soundness/Main.lean` |
+| Rung 2, the real acceptance test | `DeployedAccepts`, built by `assemble?` | `Soundness/Main.lean`, `Verifier/Assemble.lean` |
+| Rewriting it into the explicit equation | `deployedAccepts_verifierEq`, yielding `DeployedIpaVerifierEq` | `Soundness/Main.lean`, `Soundness/Deployed/Verification.lean` |
+| The collected accepting runs | `ForkedTranscript` | `Soundness/Main.lean` |
+| Rung 3, runs fit ⇒ opening | `orchard_verifier_deployed_opening_of_forked` (Vesta: `orchard_verifier_vesta_opening_of_forked`) | `Soundness/Main.lean`, `Soundness/Vesta.lean` |
+| Rung 3, runs fit ⇒ circuit satisfaction | `orchard_verifier_deployed_constraint_of_forked` (Vesta: `orchard_verifier_vesta_constraint_of_forked`) | `Soundness/Main.lean`, `Soundness/Vesta.lean` |
+| Lifting the spot-check to the full identity | `circuitSatViaGates_of_check`, with error bound `soundness_error` | `Soundness/KnowledgeSoundness.lean` |
+| Rung 3, runs don't fit ⇒ computed relation | `NontrivialRelation.ofUnopenedFork` (Vesta: `…ofUnopenedForkVesta`) | `Soundness/Main.lean`, `Soundness/Vesta.lean` |
+| Rung 4, the probability statement | `knowledgeSoundness_under_DL`, `binding_under_DL`, over `ComputedAlgebraicFSFamily` | `Soundness/Forking/Adversary/Algebraic.lean` |
+| Discrete-log relation hardness | `DiscreteLogRelationHardFor` | `Soundness/Forking/Adversary/Algebraic.lean` |
+| "one witness, opening *and* satisfying" | `SnarkRelation`, pairing `IpaRelation` with a circuit predicate | `Soundness/KnowledgeSoundness.lean`, `Soundness/InnerProduct.lean` |
+| Gate equations only (checklist 5) | the predicate is instantiated to `circuitSatViaGates` | `Soundness/KnowledgeSoundness.lean` |
+| The decode gap (checklist 6) | the unused `batch_open_soundV`; see the comment above `SnarkRelation` | `Soundness/IpaSoundness.lean`, `Soundness/KnowledgeSoundness.lean` |
+| The hash, as an opaque black box | the `squeeze` field of `FiatShamir` | `Verifier/FiatShamir.lean` |
+| The transcript absorb order | `deriveChallenges` | `Verifier/FiatShamir.lean` |
+| The fingerprint match | `fingerprint_matches`, one per captured fixture | `Fixtures/SingleAction/Fixture.lean`, `Fixtures/MultiAction/Fixture.lean` |
+| Build-time pins on all of the above | the `TrustBoundary` modules | `Snark/Soundness/TrustBoundary.lean` and siblings; `TrustBoundary.lean` for the protocol layer |
+
+Paths are relative to `Zcash/`.
