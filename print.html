@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-bb0df134.js";
+            window.path_to_searchindex_js = "searchindex-e38675d8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -821,11 +821,7 @@ bundle capstones, whose balance statements are the contrapositives under discret
 relation hardness). A structure with data fields
 cannot be inhabited by proof-irrelevant existence, and a plain <code>def</code> cannot conjure the
 data from mere existence via choice — the compiler enforces this, so <code>noncomputable</code> is
-not permitted for these definitions. One scoped exception: the arbitrary-domain
-adversary reduction (<code>globalReachSet</code>, <code>splitFamilyRand</code>) is <code>noncomputable</code>, solely
-because it materializes a <code>Fintype</code> instance for the Vesta curve group
-(<code>Fintype.ofFinite</code>); the witness data those endpoints produce still flows through the
-same computable relation kernels.</li>
+not permitted for these definitions.</li>
 <li>Efficiency of a reduction is the one property Lean cannot express; it is established by
 inspection. The constructions here are straight-line manipulations of their inputs.</li>
 <li>Predicates over <em>named</em> witnesses (for example, a key-binding break of two specific
