@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-e38675d8.js";
+            window.path_to_searchindex_js = "searchindex-6a5b3797.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -849,7 +849,8 @@ their abstract form over an arbitrary <code>Fp</code>-module, only on the standa
 <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
 trust. Instantiated at the concrete Vesta curve they additionally inherit one compiler-trust
 axiom: CompElliptic's curve point-count, a closed computational fact discharged by <code>native_decide</code>
-(below). The per-theorem <code>#print axioms</code> pins record exactly which endpoints carry it.</p>
+(below). The <code>+native</code> flag on the corresponding build-time checks records exactly which endpoints
+carry it.</p>
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
@@ -859,32 +860,39 @@ proof. The CompElliptic dependency applies the same discipline to its concrete
 curve-arithmetic facts (cardinalities, primality certificates). Such facts are independently
 re-checkable (another implementation, or hand computation, would compute the same result),
 so a miscompiled or buggy oracle could in principle be caught by disagreement.</p>
-<p>These boundaries are <em>checked at build time</em>, not merely documented:</p>
+<p>These boundaries are <em>checked at build time</em>, not merely documented. <code>Zcash.TrustBoundary</code> is a
+single top-level census that carries the whole library's trust claims — the key-binding, birthday,
+ledger, and binding-signature break reductions together with the SNARK binding/knowledge-soundness
+stack (the executable forking extractor, the endpoints across all adversary models, and the DL
+capstones) — as build-time obligations expressed through two commands from <code>Zcash.Meta.AxiomCheck</code>:</p>
 <ul>
-<li><code>Zcash.Snark.Fingerprint.TrustBoundary</code> pins the fingerprint match: <code>assert_no_sorry</code>
-walks the elaborated dependency graph, so a <code>sorry</code> hidden in any transitive dependency
-fails the build; and a <code>#guard_msgs</code>-pinned <code>#print axioms</code> freezes the exact axiom set,
-so a newly introduced axiom fails the build. The pin also documents precisely <em>which</em>
-compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
-(<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global
-<code>Lean.ofReduceBool</code>. Pinning it keeps that claim verified rather than remembered, which
-is the point of the discipline: unpinned claims about the trusted base drift silently as
-toolchains change.</li>
-<li><code>Zcash.Snark.Soundness.AGM.TrustBoundary</code>, <code>Zcash.Snark.Soundness.TrustBoundary</code>, and
-<code>Zcash.Snark.Soundness.Deployed.TrustBoundary</code> pin the AGM/Fiat–Shamir soundness stack —
-the executable forking extractor, the knowledge-soundness and binding endpoints across
-all adversary models, and the DL capstones — with the same <code>assert_no_sorry</code> +
-guarded-<code>#print axioms</code> discipline.</li>
-<li><code>Zcash.Security.Ledger.TrustBoundary</code> and
-<code>Zcash.Security.BindingSignature.TrustBoundary</code> pin the break reductions the same way.
-The ledger reductions rest on <code>propext</code> and <code>Quot.sound</code> only; the binding-signature
-relation reductions additionally record <code>Classical.choice</code>, entering only through erased
-<code>Prop</code> certificate fields — in both cases the definitions compile as plain <code>def</code>s, so the
-break data cannot have been conjured from mere propositional existence.</li>
-<li>CI builds both as part of the default targets, and <code>fingerprint_matches</code>'s
-<code>native_decide</code> compiles and runs the verifier, so anything <code>noncomputable</code> on the
-assembled-verifier path fails the build.</li>
+<li><code>assert_axioms d</code> fails the build unless <code>d</code> rests only on the standard classical axioms
+(<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>) — in particular no <code>sorry</code> and no <code>native_decide</code>;
+<code>assert_axioms d +native</code> additionally permits the toolchain-dependent <code>native_decide</code>
+compiler-trust axiom that the Vesta-instantiated endpoints carry. Unlike a <code>#guard_msgs</code>-pinned
+<code>#print axioms</code>, it states the expected tier in one line and stays green across toolchain bumps
+that rename the <code>native_decide</code> axiom, while still failing the moment a declaration reaches beyond
+its tier. It covers the general soundness theorems, probability bounds, and run-time/query-charge
+lemmas.</li>
+<li><code>assert_computable d</code> additionally requires <code>d</code> to be a plain <code>def</code> — not <code>noncomputable</code> — so it
+guards the <em>breaks-as-computed-data</em> discipline: the data-producing reductions (a collision, fold,
+peel, or fork turned into a discrete-log relation) stay genuinely computable, closing the gap
+where a reduction could silently become <code>noncomputable</code> and still build. <code>Classical.choice</code> is
+admitted only through erased <code>Prop</code> certificate fields (<code>+choice</code>); the relation coefficients are
+direct terms of the inputs, so the break data cannot have been conjured from mere propositional
+existence. <code>+native</code> covers the Vesta producers.</li>
 </ul>
+<p>The boundaries kept as literal pins are the two fixture censuses,
+<code>Zcash.Snark.Fixtures.SingleAction.TrustBoundary</code> and <code>…MultiAction.TrustBoundary</code>, which belong to
+the <code>FixtureCheck</code> target (kept out of <code>lake build Zcash</code> because the captures are large and slow).
+Each states its tier with <code>assert_axioms</code> like the rest of the development, and <em>additionally</em>
+retains a <code>#guard_msgs</code>-pinned <code>#print axioms fingerprint_matches</code> documenting precisely <em>which</em>
+compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
+(<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global <code>Lean.ofReduceBool</code> —
+because for a captured fingerprint match the exact axiom set <em>is</em> the claim, the case
+<code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds both <code>Zcash</code> and <code>FixtureCheck</code> as
+part of the default targets, and <code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs the
+verifier, so anything <code>noncomputable</code> on the assembled-verifier path fails the build.</p>
 <p>Coined terms and shorthand for the development, including the two conventions above, are
 collected in the <a href="formal-verification/glossary.html">glossary</a>.</p>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
