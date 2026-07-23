@@ -43,6 +43,7 @@ assert_computable Zcash.Security.RandomOracle.CollisionUpToSign.ofBreak +choice
 /-! ## Key binding — theorems -/
 
 assert_axioms Zcash.Security.KeyBinding.Extractor.card_ivk_ge
+assert_axioms Zcash.Security.KeyBinding.Extractor.card_ivk_ge
 assert_axioms Zcash.Security.KeyBinding.commit_scalar_pm
 assert_axioms Zcash.Security.KeyBinding.rivk_eq_finalOracle
 assert_axioms Zcash.Security.KeyBinding.sameIvk_finalOracle_pm
@@ -89,6 +90,11 @@ assert_computable Zcash.Security.KeyBinding.evalEquiv
 assert_axioms Zcash.Security.KeyBinding.uniform_triple_eval
 assert_axioms Zcash.Security.KeyBinding.break_measure_le_product
 assert_axioms Zcash.Security.toInterface_break_measure_le
+assert_axioms Zcash.Security.KeyBinding.uniformOfFintype_prod
+assert_computable Zcash.Security.KeyBinding.evalEquiv
+assert_axioms Zcash.Security.KeyBinding.uniform_triple_eval
+assert_axioms Zcash.Security.KeyBinding.break_measure_le_product
+assert_axioms Zcash.Security.toInterface_break_measure_le
 
 /-! ## Ledger-layer break reductions
 
@@ -98,6 +104,7 @@ even in erased positions, which is the strict (flagless) `assert_computable` tie
 assert_computable Collision.upToSign
 assert_computable Merkle.collisionOfWrongLeaf
 assert_computable noteCommitBreakOfNe
+assert_computable Zcash.Security.Ledger.nfOldEqOrBreak +choice
 assert_computable Zcash.Security.Ledger.nfOldEqOrBreak +choice
 
 /-! ## Binding-signature relation reductions
