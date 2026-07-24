@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-6a5b3797.js";
+            window.path_to_searchindex_js = "searchindex-4de7e7bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -1201,7 +1201,7 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 <section>
 <div class="grp">Conventions</div>
 <div class="g"><div class="g-head"><span class="term">breaks as computed data</span><span class="anchor">Security.RandomOracle · Security/Ledger · Security/BindingSignature</span></div><div class="def">Break events are structures carrying the breaking data (colliding queries, relation coefficients); the reductions producing them are plain computable <code>def</code>s. An ∃-closed break <code>Prop</code> is vacuously true at the instantiations of interest (relations always exist at prime order; compressing hashes always have collisions), so the content lives in the data, protected by compiler-checked computability and pinned axiom sets. See <a href="formal-verification/../formal-verification.html#breaks-as-computed-data">Breaks as computed data</a>.</div></div>
-<div class="g"><div class="g-head"><span class="term">checked trust boundary</span><span class="anchor">Fingerprint.TrustBoundary · Ledger.TrustBoundary · BindingSignature.TrustBoundary · AGM.TrustBoundary</span></div><div class="def">Build-time pins on what a theorem may rest on: <code>assert_no_sorry</code> over the elaborated dependency graph plus a <code>#guard_msgs</code>-pinned <code>#print axioms</code>, so a stray <code>sorry</code> or a new axiom fails the build instead of silently widening the trusted base. See <a href="formal-verification/../formal-verification.html#trust-discipline">Trust discipline</a>.</div></div>
+<div class="g"><div class="g-head"><span class="term">checked trust boundary</span><span class="anchor">Zcash.TrustBoundary</span> (and <code>Zcash.Fixtures.*.TrustBoundary</code> modules)</div><div class="def">Build-time pins on what a theorem may rest on: <code>assert_axioms</code> asserts a bound on the axioms used by a definition, so that a stray <code>sorry</code> or a new axiom fails the build instead of silently widening the trusted base. <code>assert_computable</code> additionally asserts that the definition is a plain <code>def</code>, ensuring constructivity of security reductions. Some of the <code>TrustBoundary</code> modules also use <code>#guard_msgs</code>-pinned <code>#print axioms</code> checks, e.g. to pin specific native axioms. See <a href="formal-verification/../formal-verification.html#trust-discipline">Trust discipline</a>.</div></div>
 </section>
 </div>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>

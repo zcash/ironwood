@@ -9,13 +9,18 @@
     },
     "agmStack": {
       "label": "PR #28 code head",
-      "ref": "580a49a7ad3ed4ec5d9fc0e5e3a9316369be55f3",
+      "ref": "c78e4f2704a14408149b5bdf52d71aab95cf2fc4",
       "fetch": "pull/28/head"
     },
     "fsStack": {
       "label": "PR #56 FS-to-AGM handoff",
-      "ref": "ef8d8fdc9526720f583eb46597cbdf6d2ea3a076",
+      "ref": "e628e19d59ffc4fceca3ff83130c7a9fbf142326",
       "fetch": "pull/56/head"
+    },
+    "decodeStack": {
+      "label": "PR #30 decode head",
+      "ref": "d2a01b30c4475827e8a2620dea6cfb876561c716",
+      "fetch": "pull/30/head"
     }
   },
   "prs": {
@@ -44,14 +49,14 @@
       "label": "PR #28",
       "title": "AGM binding reduction",
       "url": "https://github.com/zcash/ironwood/pull/28",
-      "sha": "580a49a",
+      "sha": "c78e4f2",
       "lane": "stack"
     },
     "30": {
       "label": "PR #30",
       "title": "Bind the IPA witness to verifier columns",
       "url": "https://github.com/zcash/ironwood/pull/30",
-      "sha": "f62e3b2",
+      "sha": "d2a01b3",
       "lane": "stack"
     },
     "31": {
@@ -65,7 +70,7 @@
       "label": "PR #56",
       "title": "Fully adaptive Fiat-Shamir adversary",
       "url": "https://github.com/zcash/ironwood/pull/56",
-      "sha": "ef8d8fd",
+      "sha": "456c386",
       "lane": "stack"
     },
     "27": {
@@ -431,6 +436,16 @@
         {
           "symbol": "deployed_witness_member_binding",
           "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+        },
+        {
+          "symbol": "deployed_member_node_binding",
+          "path": "Zcash/Snark/Soundness/Multiopen/NodeBinding.lean",
+          "source": "decodeStack"
+        },
+        {
+          "symbol": "deployed_member_budget",
+          "path": "Zcash/Snark/Soundness/Multiopen/BudgetedExtraction.lean",
+          "source": "decodeStack"
         }
       ],
       "prs": [
@@ -513,6 +528,26 @@
         {
           "symbol": "orchard_verifier_vesta_forking_constraint_adaptive_rewind_xgood",
           "path": "Zcash/Snark/Soundness/Vesta.lean"
+        },
+        {
+          "symbol": "orchard_verifier_sound_vesta_computed",
+          "path": "Zcash/Snark/Soundness/Composition/Bridge.lean",
+          "source": "decodeStack"
+        },
+        {
+          "symbol": "snarkExtraction_prob_le_of_generatorRO_textbookDL_decomposed",
+          "path": "Zcash/Snark/Soundness/Composition/Decomposition.lean",
+          "source": "decodeStack"
+        },
+        {
+          "symbol": "honestCompletenessSupply_or_relation",
+          "path": "Zcash/Snark/Soundness/Composition/Completeness.lean",
+          "source": "decodeStack"
+        },
+        {
+          "symbol": "AdaptiveWeight.measure_le",
+          "path": "Zcash/Snark/Soundness/Forking/AdaptiveCoupling.lean",
+          "source": "decodeStack"
         }
       ],
       "prs": [
@@ -561,6 +596,16 @@
         {
           "symbol": "blinder_value_recovery_badSet",
           "path": "Zcash/Snark/Soundness/Vesta.lean"
+        },
+        {
+          "symbol": "orchard_verifier_vesta_member_constraint_budgeted_hfold_derived",
+          "path": "Zcash/Snark/Soundness/VestaBudget.lean",
+          "source": "decodeStack"
+        },
+        {
+          "symbol": "snarkExtractionFailureEventDeployed_measure_le",
+          "path": "Zcash/Snark/Soundness/Composition/Completeness.lean",
+          "source": "decodeStack"
         }
       ],
       "prs": [
