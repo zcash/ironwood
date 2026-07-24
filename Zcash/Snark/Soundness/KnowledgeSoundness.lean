@@ -60,6 +60,64 @@ theorem circuitSatViaGates_of_check {k : ℕ} (fixedCols : ℕ → Polynomial Fp
     circuitSatViaGates fixedCols decodeAdvice decodeInstance y gates hpoly deg a :=
   constraint_identity_of_accept _ hpoly deg x hcheck hgood
 
+/-- **Circuit satisfaction through the full constraint list.** `circuitSatViaGates` asks only that
+the gate combination is the quotient's multiple. This asks it of the whole list — gates, permutation
+argument and lookup argument — so a witness satisfying it satisfies the constraint system the
+verifier actually checks, not just its gate part. -/
+def circuitSatViaConstraints {k np : ℕ} (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ k) → Fp) → Fin np → ℕ → Polynomial Fp)
+    (gates : List (Expr Fp))
+    (sets : Fin np → List (PermSetEval (Polynomial Fp)))
+    (chunks : Fin np →
+      List (PermSetEval (Polynomial Fp) × List (Polynomial Fp × Polynomial Fp)))
+    (lookups : Fin np → List (LookupEval (Polynomial Fp) × List (Expr Fp) × List (Expr Fp)))
+    (beta gamma delta theta y : Fp) (chunkLen : ℕ) (l0 lLast lBlind hpoly : Polynomial Fp)
+    (deg : ℕ) (a : Fin (2 ^ k) → Fp) : Prop :=
+  combineConstraints fixedCols (decodeAdvice a) (decodeInstance a) gates sets chunks lookups
+    beta gamma delta theta y chunkLen l0 lLast lBlind = hpoly * (X ^ deg - 1)
+
+/-- Derive constraint-system satisfaction from an accepting quotient check at a good challenge —
+`circuitSatViaGates_of_check` with the permutation and lookup arguments folded in. -/
+theorem circuitSatViaConstraints_of_check {k np : ℕ} (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ k) → Fp) → Fin np → ℕ → Polynomial Fp)
+    (gates : List (Expr Fp))
+    (sets : Fin np → List (PermSetEval (Polynomial Fp)))
+    (chunks : Fin np →
+      List (PermSetEval (Polynomial Fp) × List (Polynomial Fp × Polynomial Fp)))
+    (lookups : Fin np → List (LookupEval (Polynomial Fp) × List (Expr Fp) × List (Expr Fp)))
+    (beta gamma delta theta y : Fp) (chunkLen : ℕ) (l0 lLast lBlind hpoly : Polynomial Fp)
+    (deg : ℕ) (a : Fin (2 ^ k) → Fp) (x : Fp)
+    (hcheck : quotientCheck (combineConstraints fixedCols (decodeAdvice a) (decodeInstance a)
+      gates sets chunks lookups beta gamma delta theta y chunkLen l0 lLast lBlind) hpoly deg x)
+    (hgood : combineConstraints fixedCols (decodeAdvice a) (decodeInstance a) gates sets chunks
+        lookups beta gamma delta theta y chunkLen l0 lLast lBlind ≠ hpoly * (X ^ deg - 1) →
+      (combineConstraints fixedCols (decodeAdvice a) (decodeInstance a) gates sets chunks lookups
+        beta gamma delta theta y chunkLen l0 lLast lBlind - hpoly * (X ^ deg - 1)).eval x ≠ 0) :
+    circuitSatViaConstraints fixedCols decodeAdvice decodeInstance gates sets chunks lookups
+      beta gamma delta theta y chunkLen l0 lLast lBlind hpoly deg a :=
+  constraint_identity_of_accept _ hpoly deg x hcheck hgood
+
+/-- **The capstone payload over the full constraint system.** An IPA opening together with the
+constraint identity *is* `SnarkRelation` at `circuitSatViaConstraints`. This is the projection the
+deployed path needs: the same opening it already computes, paired with satisfaction of the gate,
+permutation and lookup constraints rather than of the gates alone. -/
+theorem snarkRelation_constraints {np : ℕ} (urs : URS G) {P : G} {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → Fin np → ℕ → Polynomial Fp)
+    (gates : List (Expr Fp))
+    (sets : Fin np → List (PermSetEval (Polynomial Fp)))
+    (chunks : Fin np →
+      List (PermSetEval (Polynomial Fp) × List (Polynomial Fp × Polynomial Fp)))
+    (lookups : Fin np → List (LookupEval (Polynomial Fp) × List (Expr Fp) × List (Expr Fp)))
+    (beta gamma delta theta y : Fp) (chunkLen : ℕ) (l0 lLast lBlind hpoly : Polynomial Fp)
+    (deg : ℕ) {a : Fin (2 ^ urs.k) → Fp}
+    (hopen : IpaRelation urs P b v a)
+    (hsat : combineConstraints fixedCols (decodeAdvice a) (decodeInstance a) gates sets chunks
+      lookups beta gamma delta theta y chunkLen l0 lLast lBlind = hpoly * (X ^ deg - 1)) :
+    SnarkRelation urs P b v (circuitSatViaConstraints fixedCols decodeAdvice decodeInstance gates
+      sets chunks lookups beta gamma delta theta y chunkLen l0 lLast lBlind hpoly deg) a :=
+  ⟨hopen, hsat⟩
+
 /-- A consistent tree, opening, and circuit witness yield the extracted SNARK relation. -/
 theorem knowledge_sound (urs : URS G)
     {t : Tree Fp urs.k} {a : Fin (2 ^ urs.k) → Fp} (hcons : Consistent t a)

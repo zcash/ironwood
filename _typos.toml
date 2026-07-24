@@ -26,5 +26,6 @@ extend-ignore-identifiers-re = [
 
 [default.extend-words]
 advices = "advices"
-thr = "thr"  # threshold identifiers (`thr`, `thr1`, `thr4`) in Compose67Completeness
+thr = "thr"  # threshold identifiers (`thr`, `thr1`, `thr4`) in Composition/Completeness
 hsi = "hsi"  # hypothesis identifiers (`hsiN`) in Verifier/Assemble
+Hom = "Hom"  # `RingHom`, `evalRingHom` — Mathlib's homomorphism naming

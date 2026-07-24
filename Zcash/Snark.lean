@@ -32,9 +32,16 @@ import Zcash.Snark.Soundness.GrandProduct
 import Zcash.Snark.Soundness.Lookup
 import Zcash.Snark.Soundness.Permutation
 import Zcash.Snark.Soundness.PermutationConstruction
+import Zcash.Snark.Soundness.RunningProduct
+import Zcash.Snark.Soundness.GrandProductBridge
+import Zcash.Snark.Soundness.LookupAssembly
+import Zcash.Snark.Soundness.PermutationRows
+import Zcash.Snark.Soundness.ConstraintRelations
+import Zcash.Snark.Soundness.ChallengePricing
 import Zcash.Snark.Soundness.InnerProduct
 import Zcash.Snark.Soundness.Extraction
 import Zcash.Snark.Soundness.Constraints
+import Zcash.Snark.Soundness.FoldSplit
 import Zcash.Snark.Soundness.CommitFold
 import Zcash.Snark.Soundness.Consistency
 import Zcash.Snark.Soundness.KnowledgeSoundness

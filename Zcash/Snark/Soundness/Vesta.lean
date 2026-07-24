@@ -94,6 +94,31 @@ theorem orchard_verifier_sound_vesta_conditional
     S :=
   orchard_verifier_sound_conditional urs haccepts hextract hencodes
 
+open Polynomial in
+/-- **Soundness at Vesta over the full constraint system.** `orchard_verifier_sound_vesta_conditional`
+instantiated at `circuitSatViaConstraints` instead of `circuitSatViaGates`: the extracted witness
+satisfies the gate, permutation and lookup constraints together. This is where the two arguments
+reach the capstone — the statement the reduction ends in now mentions them. -/
+theorem orchard_verifier_sound_vesta_constraints (urs : URS VestaG)
+    {P : VestaG} {b : Fin (2 ^ urs.k) → Fp} {v : Fp}
+    {np : ℕ} (fixedCols : ℕ → Polynomial Fp)
+    (decodeAdvice decodeInstance : (Fin (2 ^ urs.k) → Fp) → Fin np → ℕ → Polynomial Fp)
+    (gates : List (Expr Fp))
+    (sets : Fin np → List (PermSetEval (Polynomial Fp)))
+    (chunks : Fin np →
+      List (PermSetEval (Polynomial Fp) × List (Polynomial Fp × Polynomial Fp)))
+    (lookups : Fin np → List (LookupEval (Polynomial Fp) × List (Expr Fp) × List (Expr Fp)))
+    (beta gamma delta theta y : Fp) (chunkLen : ℕ) (l0 lLast lBlind hpoly : Polynomial Fp)
+    (deg : ℕ) {accepts : Prop} (haccepts : accepts)
+    (hextract : ExtractableFromAcceptance urs P b v
+      (circuitSatViaConstraints fixedCols decodeAdvice decodeInstance gates sets chunks lookups
+        beta gamma delta theta y chunkLen l0 lLast lBlind hpoly deg) accepts)
+    {S : Prop} (hencodes : ∀ a, SnarkRelation urs P b v
+      (circuitSatViaConstraints fixedCols decodeAdvice decodeInstance gates sets chunks lookups
+        beta gamma delta theta y chunkLen l0 lLast lBlind hpoly deg) a → S) :
+    S :=
+  orchard_verifier_sound_vesta_conditional urs haccepts hextract hencodes
+
 /-- **The deployed binding reduction over Vesta, as a computed relation.**
 `NontrivialRelation.ofUnopenedFork` specialised to `SWPoint Vesta.curve`: a forked transcript
 whose projection is not cleanly accepted computes a nontrivial discrete-log relation among the

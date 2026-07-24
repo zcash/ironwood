@@ -127,6 +127,51 @@ def allExpressions {shape : Shape} {F G : Type*} [Field F] (vk : VerifyingKey sh
     (ps : ProofString shape F G) (ch : Challenges shape.k F) (l0 lLast lBlind : F) : List F :=
   (List.ofFn (fun p => subProofExpressions vk ps ch l0 lLast lBlind p)).flatten
 
+/-- One sub-proof's permutation set evaluations, in verifier order. -/
+def subProofPermSets {shape : Shape} {F G : Type*} [Field F] (ps : ProofString shape F G)
+    (p : Fin shape.numProofs) : List (PermSetEval F) :=
+  List.ofFn (fun s => ps.permutationSetEvals p s)
+
+/-- One sub-proof's permutation chunks: each set paired with its columns' `(columnEval, permEval)`
+list, the column evaluations resolved through the verifying key's chunk layout. -/
+def subProofPermChunks {shape : Shape} {F G : Type*} [Field F] (vk : VerifyingKey shape F G)
+    (ps : ProofString shape F G) (p : Fin shape.numProofs) :
+    List (PermSetEval F × List (F × F)) :=
+  ((subProofPermSets ps p).zip vk.permutationChunks).map (fun sc =>
+    (sc.1, sc.2.map (fun cr =>
+      (cr.1.resolve (finFn (ps.instanceEvals p)) (finFn (ps.adviceEvals p)) (finFn ps.fixedEvals),
+        finFn ps.permutationCommonEvals cr.2))))
+
+/-- One sub-proof's lookups: each lookup's evaluations paired with its input and table expressions. -/
+def subProofLookups {shape : Shape} {F G : Type*} [Field F] (vk : VerifyingKey shape F G)
+    (ps : ProofString shape F G) (p : Fin shape.numProofs) :
+    List (LookupEval F × List (Expr F) × List (Expr F)) :=
+  List.ofFn (fun l => (ps.lookupEvals p l, vk.lookupInputExprs l, vk.lookupTableExprs l))
+
+/-- The verifier's constraint values for one sub-proof are the generic builder at its own claimed
+evaluations. -/
+theorem subProofExpressions_eq {shape : Shape} {F G : Type*} [Field F]
+    (vk : VerifyingKey shape F G) (ps : ProofString shape F G) (ch : Challenges shape.k F)
+    (l0 lLast lBlind : F) (p : Fin shape.numProofs) :
+    subProofExpressions vk ps ch l0 lLast lBlind p
+      = subProofConstraints (finFn ps.fixedEvals) (finFn (ps.adviceEvals p))
+          (finFn (ps.instanceEvals p)) vk.gates (subProofPermSets ps p) (subProofPermChunks vk ps p)
+          (subProofLookups vk ps p) ch.beta ch.gamma ch.x vk.delta ch.theta vk.chunkLen
+          l0 lLast lBlind := by
+  simp [subProofExpressions, subProofConstraints, subProofPermSets, subProofPermChunks,
+    subProofLookups, List.map_ofFn, Function.comp_def]
+
+/-- The verifier's whole constraint list is the generic builder at its own claimed evaluations. -/
+theorem allExpressions_eq {shape : Shape} {F G : Type*} [Field F]
+    (vk : VerifyingKey shape F G) (ps : ProofString shape F G) (ch : Challenges shape.k F)
+    (l0 lLast lBlind : F) :
+    allExpressions vk ps ch l0 lLast lBlind
+      = allConstraints (finFn ps.fixedEvals) (fun p => finFn (ps.adviceEvals p))
+          (fun p => finFn (ps.instanceEvals p)) vk.gates (subProofPermSets ps)
+          (subProofPermChunks vk ps) (subProofLookups vk ps) ch.beta ch.gamma ch.x vk.delta
+          ch.theta vk.chunkLen l0 lLast lBlind := by
+  simp [allExpressions, allConstraints, subProofExpressions_eq]
+
 /-- The verifier's full ordered list of opening queries (halo2 `plonk/verifier.rs`): recompute the
 vanishing `h` commitment and `expected_h_eval`, then chain, per sub-proof, the instance / advice /
 permutation / lookup queries, followed by the shared fixed / permutation-common / vanishing queries. -/
