@@ -153,7 +153,7 @@
   .detail { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
   .detail .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 3px 9px; border-radius: 999px; border: 1px solid; margin-bottom: 10px; }
   .detail .title { font-family: ui-monospace, monospace; font-size: 15px; font-weight: 600; margin: 0 0 2px; text-wrap: balance; }
-  .detail .anchor { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); word-break: break-word; margin-bottom: 12px; }
+  .detail .anchor { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); word-break: break-word; overflow-wrap: anywhere; margin-bottom: 12px; }
   .detail .anchor a.src { color: inherit; text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--line); }
   .detail .anchor a.src:hover { color: var(--accent); text-decoration-color: var(--accent); }
   .detail .role { font-size: 13.5px; margin: 0 0 14px; }
@@ -246,7 +246,7 @@ const nodes = [
     role:'The whole verifier collapsed into one multi-scalar multiplication — the fingerprint, reproduced line-for-line from halo2.' },
   { id:'fingerprint', c:1,r:0, label:'pinned to Rust', status:'proven',
     anchor:'Fingerprint.Match.msmMatch_eval',
-    role:'The fingerprint match (msmMatch_eval): the Lean-assembled MSM is compared coefficient-for-coefficient against the Rust verifier’s captured MSM, and a match implies equal evaluations. The deployed check is the numeric fixture match (fingerprint_matches, native_decide) — agreement on one captured proof, full stop: an empirical anchor, not a universal equivalence, and the fixture’s group bases are opaque tags, so Vesta-point faithfulness lives in the Rust capture. Backed by a Fiat–Shamir schedule check and VK/shape faithfulness; multi-action and negative/tamper fixtures are incoming (#27).' },
+    role:'The fingerprint match (msmMatch_eval): the Lean-assembled MSM is compared coefficient-for-coefficient against the Rust verifier’s captured MSM, and a match implies equal evaluations. The deployed check is the numeric fixture match (fingerprint_matches, native_decide) — agreement on one captured proof, full stop: an empirical anchor, not a universal equivalence, and the fixture’s group bases are opaque tags, so Vesta-point faithfulness lives in the Rust capture. Backed by a Fiat–Shamir schedule check and VK/shape faithfulness; multi-action and negative/tamper fixtures are incoming.' },
   { id:'accept', c:0,r:1, label:'accepting proof', status:'object',
     anchor:'Main.DeployedAccepts',
     role:'The concrete accept condition: the assembled MSM evaluates to the group identity. The premise everything hangs from.' },
@@ -276,10 +276,10 @@ const nodes = [
     role:'The SNARK relation — literally a Lean structure with two fields, i.e. a conjunction: opens, the IPA opening (from special soundness) ∧ satisfiesCircuit, circuit satisfaction (from the gate-check side). The deployed path pairs the two directly; there is no separate combiner. The decoded rungs use the enriched SnarkRelationWithDecodedColumns, which additionally pins the decoded columns.' },
   { id:'circuitSat', c:4,r:6, w:235, label:'circuit satisfaction', status:'object',
     anchor:'KnowledgeSoundness.circuitSatViaGates',
-    role:'The circuit-satisfaction half of the SNARK relation: the decoded columns satisfy the y-combined gate/quotient identity (circuitSatViaGates). Produced by the gate-check lift, then paired with the IPA opening. Covers the gate identity only — the permutation and lookup arguments’ semantic soundness is separate, in-progress work (#21: structural grand-product/lookup lemmas, with the grand-product telescoping, final lookup assembly, and their Schwartz–Zippel bridge still open) and is not yet wired into this chain.' },
+    role:'The circuit-satisfaction half of the SNARK relation: the decoded columns satisfy the y-combined gate/quotient identity (circuitSatViaGates). Produced by the gate-check lift, then paired with the IPA opening. Covers the gate identity only — the permutation and lookup arguments’ semantic soundness is separate, in-progress work (structural grand-product/lookup lemmas, with the grand-product telescoping, final lookup assembly, and their Schwartz–Zippel bridge still open) and is not yet wired into this chain.' },
   { id:'capstones', c:3,r:7, label:'verifier soundness', status:'goal',
-    anchor:'Vesta.orchard_verifier_vesta_*',
-    role:'The top-level orchard_verifier_vesta_* family in Vesta.lean. An accepting proof concludes IPA opening ∨ a nontrivial relation; constraint forms additionally derive circuit satisfaction. Its older hprob-based rungs remain existence-form. The computed attack path is ComputedAlgebraicFSFamily.binding_prob_le_of_generatorRO_textbookDL: PR #56 runs the recursive FS extractor, packages PR #28’s AGM instance, and bounds the real binding event by extraction loss plus plain-DL advantage.' },
+    anchor:'ComputedAlgebraicFSFamily.knowledgeSoundness_under_DL · binding_under_DL',
+    role:'The current top-level verifier-soundness capstone: knowledgeSoundness_under_DL, with its binding dual binding_under_DL. Built from a bounded-query algebraic Fiat–Shamir adversary in the AGM with an ideal random oracle, it bounds the probability that an accepting proof resists extraction — an accept with no clean IPA opening — by the recursive query loss, the adaptive z = 0 slice, and |basis| times the textbook discrete-log advantage, packaged under per-family DL hardness (DiscreteLogRelationHardFor) and gated by the extractor call bound. The propositional orchard_verifier_vesta_* family in Vesta.lean sits alongside it: an accepting proof concludes IPA opening ∨ a nontrivial relation, and constraint forms additionally derive circuit satisfaction. But its older hprob-based rungs — and the superseded legacy_orchard_verifier_vesta_* wrappers — stay existence-form: they assume the accept-probability hypothesis hprob and select an existential certificate, where this capstone prices extraction failure directly from the adversary experiment rather than assuming it.' },
   { id:'gateLift', c:5,r:5, label:'gate-check lift', status:'proven',
     anchor:'KnowledgeSoundness.circuitSatViaGates_of_check',
     role:'Lifts the verifier’s gate point-check at x to the full polynomial identity — circuit satisfaction — given a good challenge and the real columns (circuitSatViaGates_of_check).' },
@@ -354,7 +354,7 @@ const nodes = [
     role:'The miss branch retains the exact relation returned by the deployed kernel and proves that relation\'s coefficient at the pre-fixed slot is zero. It is not a separately chosen existential relation. Uniform random-slot accounting prices the chance of this miss.' },
   { id:'dlbound', c:1,r:7, label:'DL reduction bound', status:'proven',
     anchor:'Forking.Adversary.Algebraic.ComputedAlgebraicFSFamily.binding_prob_le_of_generatorRO_textbookDL',
-    role:'The random-slot accounting instantiated with the computed FS producer. In the uniform generator-RO setup model, the real deployed binding probability is at most the recursive query loss, the adaptive z = 0 slice, and |basis| times the textbook-DL advantage. PR #28 supplies the setup bridge and fixed-slot reduction; PR #56 supplies the executable adversary-to-instance composition.' },
+    role:'The random-slot accounting instantiated with the computed FS producer. In the uniform generator-RO setup model, the real deployed binding probability is at most the recursive query loss, the adaptive z = 0 slice, and |basis| times the textbook-DL advantage. This is the bound the verifier-soundness capstone (knowledgeSoundness_under_DL / binding_under_DL) packages under per-family DL hardness.' },
   { id:'agm_dl', c:2,r:7, label:'AGM soundness', status:'object',
     anchor:'AGM.ProbabilityVesta.orchardDeployedAlgebraicForkingFixedSlot',
     role:'The computable Vesta endpoint takes an explicit AlgebraicDForkCert, the deployed statement data and validity proofs, and a fixed-slot embedding. It wraps the same cert.toDForkCert → deployed_forking_relation reconstruction shown above rather than defining a second extraction path. It returns an IPA opening, or retains the exact computed relation together with either a discrete-log solution or a proof that its planted-slot coefficient is zero. No Classical.choice selects certificate, relation, or branch data.' },
@@ -364,7 +364,7 @@ const nodes = [
   { id:'blake2b', c:3,r:8, label:'Blake2b = RO', status:'floor',
     anchor:'Forking.Oracle.uniformChallenge',
     role:'Blake2b modeled as a random oracle. The oracle model itself — reprogramming, uniform challenges — is mechanized (Forking.Oracle); identifying the deployed Blake2b transcript with that oracle is the idealization.' },
-  { id:'h2cRO', c:6,r:8, w:235, label:'generator H2C = RO', status:'floor',
+  { id:'h2cRO', c:6,r:8, w:235, label:'Hash-to-Curve = RO', status:'floor',
     anchor:'AGM.ProbabilityVesta.orchardGeneratorROSetup · orchard_uniformURSIdentification_of_generatorRO',
     role:'The deployed generator hash-to-curve is modeled as the uniform group-valued generator random oracle used by the setup theorem. Lean proves the sampled-basis distribution equality inside that model; identifying halo2’s concrete deterministic generator derivation with the oracle remains an out-of-Lean idealization, separate from the Fiat–Shamir transcript RO.' },
   { id:'hlrel', c:4,r:8, w:225, label:'high-level relation', status:'floor',
@@ -409,7 +409,7 @@ const edges = [
   ['IpaRelation','decode','entails','MultiopenRewindForRelation'],
   ['szBadSet','goodChallenge','entails','exists_accepting_good_challenge_quotient'],
   ['goodChallenge','hgood','discharges','exists_accepting_good_challenge_quotient'],
-  ['SnarkRelation','capstones','entails','orchard_verifier_vesta_*'],
+  ['SnarkRelation','capstones','entails','knowledgeSoundness_under_DL'],
   ['fsAdversary','recursiveExtractor','entails','algebraicForkCertAttempt'],
   ['forking','recursiveExtractor','entails','recursiveForkFailure_measure_le'],
   ['recursiveExtractor','algCert','entails','recursiveAlgebraicForkFrom_realizes · algebraicForkCertAttempt_valid'],
