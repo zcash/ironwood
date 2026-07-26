@@ -1195,7 +1195,9 @@ theorem cleanOpening_isSome_iff (family : ComputedAlgebraicFSFamily shape)
   | none => simp
   | some x =>
       cases hrun : x.run with
-      | inl o => simp [hrun]
+      | inl o =>
+          simp [hrun]
+          exact ⟨o.1, o.2, rfl⟩
       | inr r => simp [hrun]
 
 /-- Nonzero-challenge accepting runs on which the producer returns no instance. -/

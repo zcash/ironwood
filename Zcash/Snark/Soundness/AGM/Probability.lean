@@ -234,6 +234,7 @@ def randomizedBasis (X : G) (α t : ι → F) : ι → G := fun i => α i • B 
 when it is nonzero. -/
 def maskCombination (coeffs t : ι → F) : F := ∑ i, coeffs i * t i
 
+omit [Fintype ι] [DecidableEq ι] [Nonempty ι] [Fintype F] in
 /-- With `X = x • B` the randomized basis is the plain scalar basis at logs `α + x · t`: the
 reduction presents exactly the distribution the honest experiment does. -/
 theorem randomizedBasis_smul (x : F) (α t : ι → F) :
@@ -281,6 +282,7 @@ noncomputable def returnedCoeffs (s : ι → F) : ι → F :=
   | some r => r.coeffs
   | none => 0
 
+omit [DecidableEq ι] [Nonempty ι] [Fintype F] in
 /-- On a relation-producing scalar vector, the returned coefficients are nontrivial. -/
 theorem returnedCoeffs_ne_zero {s : ι → F} (hs : (A (scalarBasis B s)).isSome) :
     returnedCoeffs B A s ≠ 0 := by
@@ -296,6 +298,7 @@ the reduction itself plants no slot. -/
 noncomputable def pivotSlot (s : ι → F) : ι :=
   if h : ∃ i, returnedCoeffs B A s i ≠ 0 then h.choose else Classical.arbitrary ι
 
+omit [DecidableEq ι] [Fintype F] in
 /-- The pivot slot really carries a nonzero coefficient. -/
 theorem returnedCoeffs_pivotSlot {s : ι → F} (hs : returnedCoeffs B A s ≠ 0) :
     returnedCoeffs B A s (pivotSlot B A s) ≠ 0 := by
@@ -310,6 +313,7 @@ noncomputable def tightSuccSet : Finset ((ι → F) × (ι → F)) :=
   Finset.univ.filter
     (fun p => (A (scalarBasis B p.1)).isSome ∧ maskCombination (returnedCoeffs B A p.1) p.2 ≠ 0)
 
+omit [Nonempty ι] in
 /-- A nonzero coefficient vector is annihilated by at most a `1/|F|` fraction of hiding vectors:
 fixing the entries off a nonzero slot determines the entry at it.
 
@@ -476,7 +480,6 @@ theorem relProb_le_tightSuccProb_add_inv :
         ≤ ((relSet B A).card : ℝ≥0∞) * Fintype.card (ι → F) := by exact_mod_cast hmiss
     refine h1.trans ?_
     gcongr
-    exact_mod_cast hR
   rw [uniformOfFintype_toOuterMeasure_finset, uniformOfFintype_toOuterMeasure_finset,
     Fintype.card_prod, Nat.cast_mul]
   have hstep1 : ((relSet B A).card : ℝ≥0∞) / Fintype.card (ι → F)
@@ -506,7 +509,7 @@ theorem relProb_le_tightSuccProb_add_inv :
               ((Fintype.card F : ℝ≥0∞)⁻¹),
             mul_assoc, ENNReal.mul_inv_cancel hNN0 hNNt, mul_one]
   rw [hstep1]
-  exact add_le_add_left hstep2 _
+  exact add_le_add le_rfl hstep2
 
 /-- Winning coins for the tight reduction against the textbook DL game: the secret `x`, the base
 randomization `α`, and the hiding vector `t`. The presented basis is `scalarBasis B (α + x · t)`,
@@ -515,6 +518,7 @@ noncomputable def tightWinSet : Finset (F × (ι → F) × (ι → F)) :=
   Finset.univ.filter
     (fun w => ((fun i => w.2.1 i + w.1 * w.2.2 i), w.2.2) ∈ tightSuccSet B A)
 
+omit [Nonempty ι] in
 /-- The winning-coins set has `|F|` elements for each element of `tightSuccSet`: for each fixed
 secret, `(α, t) ↦ (α + x · t, t)` is a bijection. -/
 theorem tightWinSet_card :
@@ -544,6 +548,7 @@ theorem tightWinSet_card :
     have hfun : (fun i => (s i - x * t i) + x * t i) = s := by funext i; ring
     simp only [hfun]
 
+omit [Nonempty ι] in
 /-- The tight reduction and the randomized experiment have the same success probability. -/
 theorem tight_winProb_eq_succProb :
     (PMF.uniformOfFintype (F × (ι → F) × (ι → F))).toOuterMeasure (tightWinSet B A)
@@ -553,7 +558,7 @@ theorem tight_winProb_eq_succProb :
     tightWinSet_card]
   have hcard : Fintype.card (F × (ι → F) × (ι → F))
       = Fintype.card F * Fintype.card ((ι → F) × (ι → F)) := by
-    simp only [Fintype.card_prod]; ring
+    simp only [Fintype.card_prod]
   rw [hcard]
   push_cast
   rw [mul_comm ((tightSuccSet B A).card : ℝ≥0∞) (Fintype.card F : ℝ≥0∞),
