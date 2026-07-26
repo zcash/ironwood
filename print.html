@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-4de7e7bb.js";
+            window.path_to_searchindex_js = "searchindex-3b497046.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -1007,55 +1007,104 @@ Layer-A break (<code>NontrivialRelation.ofImbalance</code>, <code>Merkle.collisi
 <code>q(q-1)/|F|</code>, or the discrete-log advantage. The only layer that consumes an assumption.</li>
 </ul>
 <h2 id="one-connected-picture"><a class="header" href="#one-connected-picture">One connected picture</a></h2>
-<pre class="mermaid">flowchart TD
-  subgraph GAMES[&quot;Ledger-model security games — the capstones&quot;]
-    BAL[&quot;Balance&quot;]
-    SPEND[&quot;Spendability&quot;]
-    SPENDAUTH[&quot;Spend authority&quot;]
+<pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; }&quot;}}%%
+flowchart TD
+  subgraph GAMES[&quot;Ledger security games — the capstones&quot;]
+    BAL[&quot;Balance&lt;br/&gt;balanceSubsetOrBreak&lt;br/&gt;balanceValueOrBreak&quot;]
+    SPEND[&quot;Spendability&lt;br/&gt;faerieGoldCore&lt;br/&gt;validLedger_append&quot;]
+    SPENDAUTH[&quot;Spend authority&lt;br/&gt;spendAuthorityOrBreak&quot;]
   end
 
-  SPEND --&gt; SPENDAUTH
+  BAL --&gt; BS[&quot;Binding-signature&lt;br/&gt;balance&quot;]
+  BAL --&gt; NCB[&quot;Note-commitment&lt;br/&gt;binding&quot;]
+  BAL --&gt; MERK[&quot;Merkle-path&lt;br/&gt;binding&quot;]
+  BAL --&gt; KB[&quot;Key binding&lt;br/&gt;ZIP 2005 (ROM)&quot;]
+  SPEND --&gt; NCB
+  SPEND --&gt; MERK
+  SPEND --&gt; KB
+  SPEND --&gt; NFB[&quot;Nullifier binding&quot;]
+  SPENDAUTH --&gt; KB
 
-  BAL ---&gt; NCB[&quot;Note-commitment binding&quot;]
-  BAL ---&gt; BS[&quot;Binding-signature balance&lt;br/&gt;Zcash/Security/BindingSignature&quot;]
-  BAL ---&gt; KB[&quot;Key binding · ZIP 2005 (ROM)&lt;br/&gt;Zcash/Security/KeyBinding&quot;]
-  SPEND ---&gt; KB
-  SPEND ---&gt; MERK[&quot;Merkle-path binding&quot;]
-
-  BAL --&gt; SPENDAUTH
-
-  subgraph ASSUMPTIONS[&quot;Computational hardness assumptions&quot;]
+  subgraph ASSUMPTIONS[&quot;Hardness assumptions&quot;]
     DL[(&quot;Discrete log&quot;)]
-    CR[(&quot;Hash collision resistance&quot;)]
   end
 
   subgraph MODELS[&quot;Heuristic adversary models&quot;]
     ROM[(&quot;Random oracle&quot;)]
   end
 
-  BS ---&gt;|non-balancing bundle computes| NDLR[&quot;NontrivialRelation&lt;br/&gt;(V,R) discrete-log relation&quot;]
-  BS --&gt; STMT[&quot;Witness or replay evidence&lt;br/&gt;for the Action statement&lt;br/&gt;ActionSatisfied · spec §4.17.4&quot;]
-  KB --&gt; STMT
-  KB ---&gt;|conflicting ivk witnesses compute| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle, distinct queries&quot;]
-  NCB --&gt;|wrong note opening computes| NCBK[&quot;NoteCommitBreak&quot;]
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| NDLR[&quot;NontrivialRelation&lt;br/&gt;(V,R) discrete-log&lt;br/&gt;relation&quot;]
+  BS --&gt; STMT[&quot;Witness or replay&lt;br/&gt;evidence&lt;br/&gt;ActionSatisfied&lt;br/&gt;§4.17.4&quot;]
+  NCB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean'&gt;wrong note&lt;br/&gt;opening computes&lt;/a&gt;&quot;| NCBK[&quot;NoteCommitBreak&quot;]
   NCB --&gt; STMT
   MERK --&gt; STMT
-  MERK ---&gt;|wrong Merkle path computes| MC[&quot;Merkle collision&quot;]
+  MERK ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean'&gt;wrong Merkle&lt;br/&gt;path computes&lt;/a&gt;&quot;| MC[&quot;DefinedCollision&lt;br/&gt;(one height, encoding&lt;br/&gt;domain, success-only)&quot;]
+  KB --&gt; STMT
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&quot;]
+  NFB --&gt; STMT
+  NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
+  SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
 
-  STMT -. &quot;justified by the extractor;&lt;br/&gt;hencodes gap&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;an accepting proof yields a computed&lt;br/&gt;witness or break data&quot;]
-  NCBK --&gt; SDLR[&quot;Sinsemilla discrete-log relation&quot;]
+  STMT -. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor;&lt;br/&gt;hencodes gap&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
 
-  KS ---&gt;|AGM heuristic + independent hash-to-curve bases| DL
-  KS --&gt;|&quot;Fiat–Shamir heuristic&quot;| ROM
-  CUS --&gt;|&quot;birthday counting q(q-1)/r,&lt;br/&gt;no assumption&quot;| ROM
-  NDLR ---&gt;|&quot;independent hash-to-curve bases&quot;| DL
-  SDLR ---&gt;|&quot;independent hash-to-curve bases&quot;| DL
-  MC ---&gt; CR
+  NDLR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/Capstone.lean'&gt;AGM heuristic +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/Forking'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
+  MC --&gt; SDLR
+  CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/r,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
+  NFC ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;nullifier base&lt;br/&gt;independent of&lt;br/&gt;commitment bases&lt;/a&gt;&quot;| DL
+  SAF --&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
+  RDSA ---&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;forking extraction&quot;| DL
+  RDSA ---&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
+
+  click BAL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Balance.lean&quot; _blank
+  click SPEND &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click SPENDAUTH &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean&quot; _blank
+  click BS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean&quot; _blank
+  click NCB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click MERK &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean&quot; _blank
+  click KB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean&quot; _blank
+  click NFB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click STMT &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click NCBK &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click MC &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean&quot; _blank
+  click CUS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
+  click NFC &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click SAF &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean&quot; _blank
+  click NDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click SDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click KS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/KnowledgeSoundness.lean&quot; _blank
+  click DL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click ROM &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
+  click RDSA &quot;https://github.com/zcash/ironwood/issues/22&quot; _blank
+
+  classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
+  classDef checked fill:#0969da,stroke:#0550ae,color:#ffffff
+  classDef partial fill:#9a6700,stroke:#7d4e00,color:#ffffff
+  classDef hyp fill:#cf222e,stroke:#a40e26,color:#ffffff
+  classDef assumed fill:#57606a,stroke:#424a53,color:#ffffff
+  class BAL,SPEND,SPENDAUTH,KS partial
+  class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF checked
+  class SDLR,RDSA hyp
+  class DL,ROM assumed
 </pre>
+<p>
+<span style="color:#1a7f37">■</span> fully proven — nothing here yet<br/>
+<span style="color:#0969da">■</span> stated and machine-checked in Lean, over abstract primitives<br/>
+<span style="color:#9a6700">■</span> partly machine-checked; remainder tracked (the games' probabilistic capstones; knowledge soundness's <code>hencodes</code> bridge)<br/>
+<span style="color:#cf222e">■</span> named hypothesis; formalization deferred<br/>
+<span style="color:#57606a">■</span> assumption or heuristic model; terminal by design
+</p>
 <p>This picture is a deliberate approximation, and is likely to change as the formalization
-proceeds. Some components may rest on assumptions not shown — for example, nullifier
-derivation may need a PRF assumption that does not reduce to discrete log or to hash
-collision resistance in the random-oracle model.</p>
+proceeds. Some edges are coarser than the eventual argument — for example, the
+<code>NullifierCollision</code> edge to discrete log is a named hypothesis whose <code>PRF^nf</code> component
+is not yet decomposed, and may not reduce to discrete log alone. The RedDSA node is a
+named hypothesis rather than a terminal assumption: its discharge edge names the
+reduction for security of signatures with re-randomizable keys
+[<a href="https://eprint.iacr.org/2015/395">FKMSSS2016</a>, section 3], adapted
+to the ±-randomized variant, together with forking extraction of the Schnorr witness.</p>
 <p>Every solid arrow reads "rests on"; where an edge carries a label, the label names the
 computed break object flowing along it, or the adversary model or side condition under which
 the reduction holds (the AGM restriction, base independence from hash-to-curve, the birthday
@@ -1070,6 +1119,18 @@ satisfaction implies the intended high-level statement". The latter is the subje
 circuit soundness proof.</p>
 <h2 id="the-definitions"><a class="header" href="#the-definitions">The definitions</a></h2>
 <style>
+/* "One connected picture" links: labels keep their ordinary colour at rest
+   (blue is reserved for the status coding); hover underlines. */
+.mermaid .edgeLabel a { color: inherit; }
+.mermaid .edgeLabel a:hover,
+.mermaid a:hover .nodeLabel {
+  /* The SVG is scaled down to fit the page, so the default (~1px) underline
+     can fall below one device pixel and drop out on some line boxes; an
+     em-based thickness scales with the text instead. */
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.12em;
+}
 .iw-glossary { margin: 1.3rem 0; display: grid; gap: 26px; }
 .iw-glossary section { display: grid; gap: 9px; }
 .iw-glossary .grp {
@@ -1113,7 +1174,7 @@ circuit soundness proof.</p>
 <div class="g"><div class="g-head"><span class="term">Action statement satisfied</span><span class="anchor">Security.Ledger.ActionSatisfied</span></div><div class="def">The games-relevant conjuncts of an Orchard-shaped Action statement (spec §4.17.4) over abstract primitives: commitment integrity, Merkle-path validity, nullifier integrity, the key-binding condition, address integrity, value-commitment integrity. This is the interface the games consume, and the target the verifier-soundness proof is meant to deliver.</div></div>
 <div class="g"><div class="g-head"><span class="term">pinning lemmas</span><span class="anchor">ivk_pinned · nk_eq_or_break · nf_old_eq_or_break</span></div><div class="def">The deterministic steps of the Balance argument: an address <code>(g_d, pk_d)</code> determines <code>ivk</code> (needs only <code>g_d ≠ 0</code> and torsion-freeness), hence <code>nk</code> is determined up to an exhibited key-binding break, and spends of the same note tuple reveal the same nullifier up to a break.</div></div>
 <div class="g"><div class="g-head"><span class="term">NoteCommitBreak</span><span class="anchor">Ledger.NoteCommitBreak · noteCommitBreakOfNe</span></div><div class="def">A note-commitment opening collision, as data. <code>noteCommitBreakOfNe</code> computes one when an <code>extract</code>-equal commitment fails to pin the note tuple <code>(rcm, note)</code>. Prequantumly, note-commitment binding reduces to a Sinsemilla / discrete-log-relation break.</div></div>
-<div class="g"><div class="g-head"><span class="term">Merkle position binding</span><span class="anchor">Ledger.Merkle.collisionOfWrongLeaf</span></div><div class="def">Fixed-depth Merkle trees are position-binding up to a hash collision: a validating authentication path for a leaf that is <em>not</em> the committed one computes a <code>RandomOracle.Collision</code> of the tree hash. The vector-commitment property the Balance and Spendability arguments require of the note-commitment tree.</div></div>
+<div class="g"><div class="g-head"><span class="term">Merkle position binding</span><span class="anchor">Ledger.Merkle.collisionOfWrongLeaf</span></div><div class="def">Fixed-depth Merkle trees are position-binding up to a hash collision: a validating authentication path for a leaf that is <em>not</em> the committed one, against a defined tree, computes a <code>DefinedCollision</code> of one height’s compression — escaped (⊥) evaluations never count as collisions. The vector-commitment property the Balance and Spendability arguments require of the note-commitment tree. Prequantumly, the Sinsemilla compression’s collision resistance reduces to a discrete-log-relation break (SDLR) — the same terminal as note-commitment binding — so BLAKE2b collision resistance does not enter the pre-quantum Balance argument.</div></div>
 </section>
 <section>
 <div class="grp">Shared foundation · Zcash/Security/Common</div>
@@ -1241,7 +1302,7 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 
         <!-- Custom JS scripts -->
         <script src="mermaid-eefea253.min.js"></script>
-        <script src="mermaid-init-ccf746f1.js"></script>
+        <script src="mermaid-init-d0d5e6a7.js"></script>
         <script src="todo-e74d2c27.js"></script>
 
         <script>
