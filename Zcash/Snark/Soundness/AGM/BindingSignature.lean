@@ -56,7 +56,7 @@ def NontrivialRelation.toAlgebraicRelationWitness (V R : M)
 /-- Compute the discrete log of `V` base `R` from a two-base relation, assuming `R ≠ 0`. -/
 def NontrivialRelation.toDiscreteLog [DecidableEq F] (V R : M)
     (r : NontrivialRelation (F := F) V R)
-    (hR : R ≠ 0) : Zcash.Snark.DiscreteLogRepresentation (F := F) R V := by
+    (hR : R ≠ 0) : Zcash.Snark.DiscreteLogWitness (F := F) R V := by
   by_cases hα : r.α = 0
   · exfalso
     have hβ : r.β ≠ 0 := by
@@ -86,7 +86,7 @@ def orchardImbalanceToDiscreteLog {M : Type*} [AddCommGroup M]
     (hExtract : bindingVK V R (castBundle actions) (castBundle [])
       (vBalance : ZMod pallasScalarOrder) = bsk • R)
     (hR : R ≠ 0) :
-    Zcash.Snark.DiscreteLogRepresentation (F := ZMod pallasScalarOrder) R V :=
+    Zcash.Snark.DiscreteLogWitness (F := ZMod pallasScalarOrder) R V :=
   (NontrivialRelation.ofOrchardImbalance V R actions vBalance bsk hne hv hn hvBalance
     hExtract).toDiscreteLog V R hR
 
@@ -104,7 +104,7 @@ def saplingImbalanceToDiscreteLog {M : Type*} [AddCommGroup M]
     (hExtract : bindingVK V R (castBundle spends) (castBundle outputs)
       (vBalance : ZMod jubjubScalarOrder) = bsk • R)
     (hR : R ≠ 0) :
-    Zcash.Snark.DiscreteLogRepresentation (F := ZMod jubjubScalarOrder) R V :=
+    Zcash.Snark.DiscreteLogWitness (F := ZMod jubjubScalarOrder) R V :=
   (NontrivialRelation.ofSaplingImbalance V R spends outputs vBalance bsk hne hOld hNew
     hnOld hnNew hvBalance hExtract).toDiscreteLog V R hR
 
