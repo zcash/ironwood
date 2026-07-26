@@ -510,7 +510,24 @@ def deployed_forking_relation [DecidableEq G] [Inhabited G] (urs : URS G)
 /-! ## Propositional extraction
 
 This legacy path turns high acceptance into a fork certificate. The executable adversary path is in
-`Soundness.Forking.Adversary.Algebraic`. -/
+`Soundness.Forking.Adversary.Algebraic`.
+
+### Why the ladder is still here
+
+The `legacy_*` rungs are superseded by the computed Fiat–Shamir endpoints and were scoped for
+deletion once the stack landed. They cannot go yet: `orchard_verifier_vesta_forking_constraint_deployed_x4`
+— a non-legacy capstone pinned in `TrustBoundary` — consumes
+`legacy_orchard_verifier_vesta_forking_opening_deployed`, which chains through
+`legacy_orchard_verifier_vesta_forking_opening` and `legacy_deployed_forking_soundness_of_bridge`
+down to `legacy_deployed_forking_soundness` here. The book's proof map and proof journey also
+document the ladder as a live capstone family.
+
+Genuinely dead rungs today (definition-only, unpinned): `legacy_orchard_verifier_vesta_forking_constraint`,
+`…_constraint_adaptive`, `…_opening_rewind`, `…_constraint_rewind`, `…_constraint_adaptive_rewind`,
+and `legacy_deployed_forking_soundness_of_{fixed,staged}_adversary` /
+`legacy_deployed_forking_soundness_of_adversary`. Deleting those also frees
+`OracleComp.fsAdvantage_pure`, whose only consumer is the fixed-adversary rung. That is a scoping
+call on how much of the documented ladder to retire, not a mechanical cleanup. -/
 
 open scoped ENNReal in
 open Classical in
@@ -625,6 +642,11 @@ noncomputable def legacy_deployed_forking_soundness [DecidableEq G] [Inhabited G
   -- is what makes this composition `noncomputable` — the honest random-oracle floor (`Forking.Oracle`). The
   -- deterministic `deployed_forking_relation` it wraps is a genuine *computed* reduction returning the opening
   -- as data; here that data is forgotten to `∃` since the certificate itself is only classically obtained.
+  --
+  -- The computed path no longer forgets it. `algebraicForkCertAttempt` returns the certificate as data, so
+  -- `ComputedAlgebraicFSFamily.cleanOpening` returns the opening itself and
+  -- `knowledgeSoundness_under_DL_computed` prices its absence. The loss below is specific to this legacy
+  -- rung, whose `hprob` hypothesis supplies no certificate to compute with.
   have hpf := proverAccept_forkValid P urs.g b
     (commit urs aDep + (z * 0) • urs.u + blind • urs.w) (extractable_of_prob _ hprob)
   rcases deployed_forking_relation urs b v ξ z blind aMulti aDep s hpf.choose hz hb0 hP hpf.choose_spec

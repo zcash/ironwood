@@ -898,6 +898,30 @@ theorem recursiveAlgebraicFork_sum_runs_le_of_forkSpread {σ₀ : ℕ} (h2 : 2 �
   recursiveAlgebraicForkFrom_sum_runs_le_of_forkSpread basis k A prefixes rounds final win
     decideWin h2 hspread k 0 (by omega) O (A.run O)
 
+/-- The fork-spread bound over uniform oracle-table *and* extractor-tape coins.
+
+This is the geometric counterpart of `recursiveAlgebraicFork_oracle_tape_sum_runs_le_unconditional`
+and the form the call-bound endpoints consume: `ComputedAlgebraicFSFamily.ReductionEfficient` sums
+over exactly this coin space. -/
+theorem recursiveAlgebraicFork_oracle_tape_sum_runs_le_of_forkSpread [Fintype T] {σ₀ : ℕ}
+    (h2 : 2 ≤ σ₀)
+    (hspread : ForkSpread basis k A prefixes rounds final win decideWin σ₀) :
+    (σ₀ - 1) ^ k * ∑ coins : (T → F) × RecursiveForkTape F k,
+        (recursiveAlgebraicFork basis k A prefixes rounds final win decideWin
+          coins.1 coins.2.toCoins).runs
+      ≤ (6 * Fintype.card F) ^ k * Fintype.card ((T → F) × RecursiveForkTape F k) := by
+  rw [Fintype.sum_prod_type, Finset.mul_sum]
+  calc ∑ O : T → F, (σ₀ - 1) ^ k * ∑ tape : RecursiveForkTape F k,
+          (recursiveAlgebraicFork basis k A prefixes rounds final win decideWin
+            O tape.toCoins).runs
+      ≤ ∑ _O : T → F, (6 * Fintype.card F) ^ k * Fintype.card (RecursiveForkTape F k) :=
+        Finset.sum_le_sum fun O _ =>
+          recursiveAlgebraicFork_sum_runs_le_of_forkSpread basis k A prefixes rounds final win
+            decideWin h2 hspread O
+    _ = (6 * Fintype.card F) ^ k * Fintype.card ((T → F) × RecursiveForkTape F k) := by
+        rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, Fintype.card_prod]
+        ring
+
 end SpreadTheorem
 
 end Zcash.Snark
