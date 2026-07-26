@@ -291,18 +291,6 @@ def truncateTranscript (L : ℕ) (t : List (TranscriptElt F G)) :
     Option (BTranscript F G L) :=
   if h : t.length ≤ L then some ⟨t, h⟩ else none
 
-theorem truncateTranscript_val (L : ℕ) (t : BTranscript F G L) :
-    truncateTranscript L t.val = some t := by
-  rw [truncateTranscript, dif_pos t.prop]
-  rfl
-
-theorem truncateTranscript_eq_some (L : ℕ) {t : List (TranscriptElt F G)}
-    {tD : BTranscript F G L} (h : truncateTranscript L t = some tD) : t = tD.val := by
-  rw [truncateTranscript] at h
-  split at h
-  · exact congrArg Subtype.val (Option.some.inj h)
-  · exact absurd h (by simp)
-
 end DeployedRetraction
 
 end Zcash.Snark

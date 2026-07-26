@@ -711,31 +711,6 @@ theorem recursiveAlgebraicFork_oracle_tape_sum_runs_le_unconditional [Fintype T]
           coins.1 coins.2)
     _ = _ := by rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.mul_comm]
 
-/-- Every natural number is bounded by the power of two with the same exponent. -/
-private theorem nat_le_two_pow (n : ℕ) : n ≤ 2 ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [Nat.pow_succ]
-      have hone : 1 ≤ 2 ^ n := one_le_pow₀ (by omega)
-      omega
-
-/-- Rewrite the exhaustive bound as `(2^k)^(2·|F|+1)`; its field-sized exponent is not polynomial AFK. -/
-theorem recursiveAlgebraicFork_runs_le_instance_pow
-    (basis : ι → G) (k : ℕ)
-    (A : OracleComp T F P) (prefixes : P → Fin k → T)
-    (rounds : P → Fin k → AlgebraicPoint (F := F) basis × AlgebraicPoint (F := F) basis)
-    (final : P → F × F) (win : (T → F) → P → Prop)
-    (decideWin : ∀ O p, Decidable (win O p)) [Fintype F]
-    (O : T → F) (tape : RecursiveForkTape F k) :
-    (recursiveAlgebraicFork basis k A prefixes rounds final win decideWin O tape.toCoins).runs
-      ≤ (2 ^ k) ^ (2 * Fintype.card F + 1) := by
-  let C := 2 * Fintype.card F + 1
-  calc
-    _ ≤ C ^ k := recursiveAlgebraicFork_runs_le basis k A prefixes rounds final win decideWin O tape
-    _ ≤ (2 ^ C) ^ k := Nat.pow_le_pow_left (nat_le_two_pow C) k
-    _ = (2 ^ k) ^ C := by rw [← pow_mul, ← pow_mul, Nat.mul_comm]
-
 /-! ## Certificate semantics -/
 
 /-- An explicit algebraic fork tree for `acc`, using the conventions of `DeployedForkValid`. -/

@@ -131,11 +131,6 @@ theorem history_getElem_fst_congr (A : OracleComp T F α) (O O' : T → F) (i : 
           simp only [history_query, List.getElem?_cons_succ, ht]
           exact ih (O t) j (ht ▸ h.2)
 
-/-- Some query answer lands in that point's escape set. -/
-def escapesDuring (esc : T → Set F) : OracleComp T F α → (T → F) → Prop
-  | .pure _, _ => False
-  | .query t k, O => O t ∈ esc t ∨ (k (O t)).escapesDuring esc O
-
 /-- Some query answer lies in a table-dependent escape set that is blind at that query point. -/
 def escapesDuringC (esc : T → (T → F) → Set F) : OracleComp T F α → (T → F) → Prop
   | .pure _, _ => False
@@ -463,10 +458,6 @@ def applyUpdates (σ : List (T × F)) (O : T → F) : T → F :=
 theorem applyUpdates_cons (p : T × F) (σ : List (T × F)) (O : T → F) :
     applyUpdates (p :: σ) O = applyUpdates σ (Function.update O p.1 p.2) := rfl
 
-theorem applyUpdates_append_single (σ : List (T × F)) (t : T) (u : F) (O : T → F) :
-    applyUpdates (σ ++ [(t, u)]) O = Function.update (applyUpdates σ O) t u := by
-  simp [applyUpdates, List.foldl_append]
-
 /-- Off the override domain, the table shows through. -/
 theorem applyUpdates_apply_not_mem {σ : List (T × F)} {t : T}
     (h : t ∉ σ.map Prod.fst) (O : T → F) : applyUpdates σ O t = O t := by
@@ -475,21 +466,6 @@ theorem applyUpdates_apply_not_mem {σ : List (T × F)} {t : T}
   | cons p σ ih =>
       simp only [List.map_cons, List.mem_cons, not_or] at h
       rw [applyUpdates_cons, ih h.2, Function.update_apply, if_neg h.1]
-
-/-- On the override domain, the value is one of the recorded overrides at that point. -/
-theorem applyUpdates_pair_mem {σ : List (T × F)} {t : T}
-    (h : t ∈ σ.map Prod.fst) (O : T → F) : (t, applyUpdates σ O t) ∈ σ := by
-  induction σ generalizing O with
-  | nil => simp at h
-  | cons p σ ih =>
-      by_cases hmem : t ∈ σ.map Prod.fst
-      · exact List.mem_cons_of_mem _ (ih hmem _)
-      · simp only [List.map_cons, List.mem_cons] at h
-        rcases h with h | h
-        · subst h
-          rw [applyUpdates_cons, applyUpdates_apply_not_mem hmem, Function.update_self]
-          exact List.mem_cons_self ..
-        · exact absurd h hmem
 
 /-- On the override domain, the value does not depend on the underlying table. -/
 theorem applyUpdates_apply_of_mem {σ : List (T × F)} {t : T}
@@ -534,114 +510,6 @@ theorem applyUpdates_update_of_mem {σ : List (T × F)} {t : T}
         · exact absurd h hp
         · rw [Function.update_comm hp]
           exact ih h _
-
-/-- A `Q`-query machine enters pointwise `ε`-escape sets with probability at most `Q·ε`. -/
-theorem escapesDuring_measure_le {T F : Type*} [Fintype T] [DecidableEq T] [Fintype F]
-    [Nonempty F] {α : Type*} (esc : T → Set F) {ε : ℝ≥0∞}
-    (hesc : ∀ t, (PMF.uniformOfFintype F).toOuterMeasure (esc t) ≤ ε)
-    {A : OracleComp T F α} {Q : ℕ} (hQ : A.QueryBound Q)
-    (σ : List (T × F)) (hσ : ∀ p ∈ σ, p.2 ∉ esc p.1) :
-    (PMF.uniformOfFintype (T → F)).toOuterMeasure
-      {O : T → F | A.escapesDuring esc (applyUpdates σ O)} ≤ Q * ε := by
-  induction hQ generalizing σ with
-  | pure a Q' =>
-      have : {O : T → F | (OracleComp.pure a : OracleComp T F α).escapesDuring esc
-          (applyUpdates σ O)} = ∅ := by
-        ext O; simp [OracleComp.escapesDuring]
-      rw [this]
-      simp
-  | @query t k Q h ih =>
-      by_cases hmem : t ∈ σ.map Prod.fst
-      · -- re-queried point: the recorded answer does not escape; recurse at the same budget
-        obtain ⟨f₀⟩ := (inferInstance : Nonempty F)
-        set v := applyUpdates σ (fun _ => f₀) t with hv
-        have hvin : (t, v) ∈ σ := applyUpdates_pair_mem hmem _
-        have hvesc : v ∉ esc t := hσ _ hvin
-        have hset : {O : T → F | (OracleComp.query t k).escapesDuring esc (applyUpdates σ O)}
-            = {O : T → F | (k v).escapesDuring esc (applyUpdates σ O)} := by
-          ext O
-          have hOv : applyUpdates σ O t = v := applyUpdates_apply_of_mem hmem _ _
-          simp only [OracleComp.escapesDuring, Set.mem_setOf_eq, hOv]
-          exact or_iff_right hvesc
-        rw [hset]
-        refine (ih v σ hσ).trans ?_
-        gcongr
-        exact_mod_cast Nat.le_succ Q
-      · -- fresh point: pay ε at the point, recurse conditioned on the new answer
-        have happ : ∀ O : T → F, applyUpdates σ O t = O t :=
-          fun O => applyUpdates_apply_not_mem hmem O
-        have hsub : {O : T → F | (OracleComp.query t k).escapesDuring esc (applyUpdates σ O)}
-            ⊆ {O : T → F | O t ∈ esc t} ∪ ⋃ u : F, {O : T → F | O t = u ∧
-                O ∈ {O' : T → F | u ∉ esc t ∧
-                  (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}} := by
-          intro O hO
-          simp only [OracleComp.escapesDuring, Set.mem_setOf_eq, happ O] at hO
-          by_cases hesc' : O t ∈ esc t
-          · exact Or.inl hesc'
-          · rcases hO with h1 | h2
-            · exact Or.inl h1
-            · refine Or.inr (Set.mem_iUnion.mpr ⟨O t, rfl, hesc', ?_⟩)
-              rw [applyUpdates_append_single]
-              have hupd : Function.update (applyUpdates σ O) t (O t) = applyUpdates σ O := by
-                rw [← happ O, Function.update_eq_self]
-              rw [hupd]
-              exact h2
-        refine le_trans (MeasureTheory.measure_mono hsub) ?_
-        refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-        have hfirst : (PMF.uniformOfFintype (T → F)).toOuterMeasure {O : T → F | O t ∈ esc t}
-            ≤ ε := by
-          rw [uniformOfFintype_point_measure]
-          exact hesc t
-        have hsecond : (PMF.uniformOfFintype (T → F)).toOuterMeasure
-            (⋃ u : F, {O : T → F | O t = u ∧ O ∈ {O' : T → F | u ∉ esc t ∧
-              (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}}) ≤ Q * ε := by
-          refine le_trans (MeasureTheory.measure_iUnion_le _) ?_
-          rw [tsum_fintype]
-          have hper : ∀ u : F, (PMF.uniformOfFintype (T → F)).toOuterMeasure
-              {O : T → F | O t = u ∧ O ∈ {O' : T → F | u ∉ esc t ∧
-                (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}}
-              ≤ (Q * ε) / Fintype.card F := by
-            intro u
-            by_cases huesc : u ∈ esc t
-            · have hempty : {O : T → F | O t = u ∧ O ∈ {O' : T → F | u ∉ esc t ∧
-                  (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}} = ∅ := by
-                ext O; simp [huesc]
-              rw [hempty]
-              simp
-            · have hblind : ∀ (O : T → F) (v : F),
-                  Function.update O t v ∈ {O' : T → F | u ∉ esc t ∧
-                    (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}
-                  ↔ O ∈ {O' : T → F | u ∉ esc t ∧
-                    (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')} := by
-                intro O v
-                have hdom : t ∈ (σ ++ [(t, u)]).map Prod.fst := by simp
-                simp only [Set.mem_setOf_eq, applyUpdates_update_of_mem hdom]
-              rw [uniformOfFintype_cond_point t u _ hblind]
-              have hEle : (PMF.uniformOfFintype (T → F)).toOuterMeasure
-                  {O' : T → F | u ∉ esc t ∧
-                    (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')} ≤ Q * ε := by
-                have hsub2 : {O' : T → F | u ∉ esc t ∧
-                    (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')}
-                    ⊆ {O' : T → F | (k u).escapesDuring esc (applyUpdates (σ ++ [(t, u)]) O')} :=
-                  fun O' hO' => hO'.2
-                refine le_trans (MeasureTheory.measure_mono hsub2) ?_
-                refine ih u (σ ++ [(t, u)]) ?_
-                intro p hp
-                rcases List.mem_append.mp hp with hp | hp
-                · exact hσ p hp
-                · simp only [List.mem_singleton] at hp
-                  subst hp
-                  exact huesc
-              exact ENNReal.div_le_div_right hEle _
-          refine le_trans (Finset.sum_le_sum fun u _ => hper u) ?_
-          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_comm,
-            ENNReal.div_mul_cancel (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-              (ENNReal.natCast_ne_top _)]
-        calc (PMF.uniformOfFintype (T → F)).toOuterMeasure {O : T → F | O t ∈ esc t}
-              + (PMF.uniformOfFintype (T → F)).toOuterMeasure (⋃ u : F, _)
-            ≤ ε + Q * ε := add_le_add hfirst hsecond
-          _ = (Q + 1) * ε := by ring
-          _ = ((Q + 1 : ℕ) : ℝ≥0∞) * ε := by push_cast; ring
 
 /-- A `Q`-query cache-avoiding machine enters table-dependent blind escape sets of measure `ε` with
 probability at most `Q · ε`. -/
@@ -1220,106 +1088,6 @@ theorem Fresh.of_snoc [Nonempty F] {k : ℕ} {s : AdSched T F k} {pt : (Fin k �
 
 end AdSched
 
-/-- Under a fresh schedule, an adaptive final read hits a state-dependent set with probability at
-most that set's worst-case measure. -/
-theorem adaptive_fork_mem_le {T F : Type*} [Fintype T] [DecidableEq T] [Fintype F] [Nonempty F]
-    {k : ℕ} (s : AdSched T F k) (pt : (Fin k → F) → T) (hf : (s.snoc pt).Fresh)
-    (S : (Fin k → F) → Set F) {ε : ℝ≥0∞}
-    (hS : ∀ ψ, (PMF.uniformOfFintype F).toOuterMeasure (S ψ) ≤ ε) :
-    (PMF.uniformOfFintype (T → F)).toOuterMeasure
-        {O : T → F | O (pt (s.read O)) ∈ S (s.read O)} ≤ ε := by
-  set e : (Fin (k + 1) → F) ≃ F × (Fin k → F) := (Fin.snocEquiv (fun _ : Fin (k + 1) => F)).symm
-    with he
-  have hB : {O : T → F | O (pt (s.read O)) ∈ S (s.read O)}
-      = (s.snoc pt).read ⁻¹' {χ : Fin (k + 1) → F | χ (Fin.last k) ∈ S (Fin.init χ)} := by
-    ext O
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, AdSched.read_snoc, Fin.snoc_last, Fin.init_snoc]
-  rw [hB, ← PMF.toOuterMeasure_map_apply, AdSched.map_read_uniform (s.snoc pt) hf]
-  have hB2 : {χ : Fin (k + 1) → F | χ (Fin.last k) ∈ S (Fin.init χ)}
-      = e ⁻¹' {x : F × (Fin k → F) | x.1 ∈ S x.2} := by
-    ext χ
-    simp only [he, Set.mem_setOf_eq, Set.mem_preimage, Fin.snocEquiv_symm_apply]
-  rw [hB2, ← PMF.toOuterMeasure_map_apply, map_uniformOfFintype_equiv e]
-  exact uniformOfFintype_prod_fiber_bound S hS
-
-/-- Reorder `F × (F × X)` (last, mid, initial) as `(X, F, F)` (initial, mid, last). -/
-def reorder3 (F X : Type*) : F × F × X ≃ X × F × F where
-  toFun x := (x.2.2, x.2.1, x.1)
-  invFun y := (y.2.2, y.2.1, y.1)
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- Reindex a length-`(k+2)` vector as `(initial k-tuple, k-th, (k+1)-th)`, via two `Fin.snocEquiv`
-peels and a reordering. -/
-def reindex2 (F : Type*) (k : ℕ) : (Fin (k + 2) → F) ≃ (Fin k → F) × F × F :=
-  ((Fin.snocEquiv (fun _ : Fin (k + 2) => F)).symm.trans
-    ((Equiv.refl F).prodCongr (Fin.snocEquiv (fun _ : Fin (k + 1) => F)).symm)).trans
-    (reorder3 F (Fin k → F))
-
-@[simp] theorem reindex2_apply (F : Type*) (k : ℕ) (v : Fin (k + 2) → F) :
-    reindex2 F k v = (Fin.init (Fin.init v), (Fin.init v) (Fin.last k), v (Fin.last (k + 1))) := by
-  simp only [reindex2, Equiv.trans_apply, Equiv.prodCongr_apply,
-    Fin.snocEquiv_symm_apply, Equiv.coe_refl, Prod.map_apply, id_eq, reorder3, Equiv.coe_fn_mk]
-
-/-- Reindex a length-`(k+1)` vector as `(initial k-tuple, last)`. -/
-def reindex1 (F : Type*) (k : ℕ) : (Fin (k + 1) → F) ≃ (Fin k → F) × F :=
-  (Fin.snocEquiv (fun _ : Fin (k + 1) => F)).symm.trans (Equiv.prodComm F (Fin k → F))
-
-@[simp] theorem reindex1_apply (F : Type*) (k : ℕ) (v : Fin (k + 1) → F) :
-    reindex1 F k v = (Fin.init v, v (Fin.last k)) := by
-  simp only [reindex1, Equiv.trans_apply, Fin.snocEquiv_symm_apply, Equiv.prodComm_apply,
-    Prod.swap_prod_mk]
-
-/-- Two fresh fork points both accept with distinct challenges with probability at least
-`ε² − ε/N`. -/
-theorem schedule_fork_bound {T F : Type*} [Fintype T] [DecidableEq T] [Fintype F] [Nonempty F]
-    [DecidableEq F] {k : ℕ} (s : AdSched T F k) (pt₁ pt₂ : (Fin k → F) → T)
-    (hd : ((s.snoc pt₁).snoc (fun χ : Fin (k + 1) → F => pt₂ (Fin.init χ))).Fresh)
-    (acc : (Fin k → F) → F → Prop) [∀ ψ, DecidablePred (acc ψ)] :
-    ((PMF.uniformOfFintype (T → F)).toOuterMeasure
-        {O | acc (s.read O) (O (pt₁ (s.read O)))}) ^ 2
-      ≤ (PMF.uniformOfFintype (T → F)).toOuterMeasure
-          {O | acc (s.read O) (O (pt₁ (s.read O))) ∧ acc (s.read O) (O (pt₂ (s.read O)))
-                ∧ O (pt₁ (s.read O)) ≠ O (pt₂ (s.read O))}
-        + (PMF.uniformOfFintype (T → F)).toOuterMeasure
-            {O | acc (s.read O) (O (pt₁ (s.read O)))} / Fintype.card F := by
-  set sd := (s.snoc pt₁).snoc (fun χ : Fin (k + 1) → F => pt₂ (Fin.init χ)) with hsd
-  have hs1 : (s.snoc pt₁).Fresh := AdSched.Fresh.of_snoc hd
-  have hread1 : ∀ O, (s.snoc pt₁).read O = Fin.snoc (s.read O) (O (pt₁ (s.read O))) :=
-    fun O => AdSched.read_snoc s pt₁ O
-  have hreadd : ∀ O, sd.read O
-      = Fin.snoc (Fin.snoc (s.read O) (O (pt₁ (s.read O)))) (O (pt₂ (s.read O))) := by
-    intro O
-    rw [hsd, AdSched.read_snoc (s.snoc pt₁) _ O, hread1]
-    simp only [Fin.init_snoc]
-  have hLHS : (PMF.uniformOfFintype (T → F)).toOuterMeasure {O | acc (s.read O) (O (pt₁ (s.read O)))}
-      = (PMF.uniformOfFintype ((Fin k → F) × F)).toOuterMeasure {x | acc x.1 x.2} := by
-    have hset : {O : T → F | acc (s.read O) (O (pt₁ (s.read O)))}
-        = (s.snoc pt₁).read ⁻¹' (reindex1 F k ⁻¹' {x : (Fin k → F) × F | acc x.1 x.2}) := by
-      ext O
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, hread1, reindex1_apply, Fin.init_snoc,
-        Fin.snoc_last]
-    rw [hset, ← PMF.toOuterMeasure_map_apply, AdSched.map_read_uniform (s.snoc pt₁) hs1,
-      ← PMF.toOuterMeasure_map_apply, map_uniformOfFintype_equiv (reindex1 F k)]
-  have hTRIPLE : (PMF.uniformOfFintype (T → F)).toOuterMeasure
-        {O | acc (s.read O) (O (pt₁ (s.read O))) ∧ acc (s.read O) (O (pt₂ (s.read O)))
-              ∧ O (pt₁ (s.read O)) ≠ O (pt₂ (s.read O))}
-      = (PMF.uniformOfFintype ((Fin k → F) × F × F)).toOuterMeasure
-          {x | acc x.1 x.2.1 ∧ acc x.1 x.2.2 ∧ x.2.1 ≠ x.2.2} := by
-    have hset : {O : T → F | acc (s.read O) (O (pt₁ (s.read O)))
-              ∧ acc (s.read O) (O (pt₂ (s.read O))) ∧ O (pt₁ (s.read O)) ≠ O (pt₂ (s.read O))}
-        = sd.read ⁻¹'
-            (reindex2 F k ⁻¹'
-              {x : (Fin k → F) × F × F | acc x.1 x.2.1 ∧ acc x.1 x.2.2 ∧ x.2.1 ≠ x.2.2}) := by
-      ext O
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, hreadd, reindex2_apply, Fin.init_snoc,
-        Fin.snoc_last]
-    rw [hset, ← PMF.toOuterMeasure_map_apply, AdSched.map_read_uniform sd hd,
-      ← PMF.toOuterMeasure_map_apply, map_uniformOfFintype_equiv (reindex2 F k)]
-  rw [hLHS, hTRIPLE]
-  exact forking_measure_bound acc
-
-
 section Game
 
 variable {T P F : Type*} [Fintype T] [DecidableEq T] [Fintype F] [Nonempty F] {k : ℕ}
@@ -1344,31 +1112,6 @@ theorem fsAdvantage_pure (p : P) (accept : P → (Fin k → F) → Prop)
   rw [fsAdvantage, ← uniformOfFintype_map_precomp_injective (prefixes p) hinj,
     PMF.toOuterMeasure_map_apply]
   rfl
-
-/-- Bound advantage by `Q·ε + δ` when wins escape or enter a residual `δ`-event. -/
-theorem fsAdvantage_le_of_forcing (A : OracleComp T F P) (accept : P → (Fin k → F) → Prop)
-    (prefixes : P → Fin k → T) (esc : T → Set F) {ε : ℝ≥0∞}
-    (hesc : ∀ t, (PMF.uniformOfFintype F).toOuterMeasure (esc t) ≤ ε)
-    {Q : ℕ} (hQ : A.QueryBound Q) (R : Set (T → F)) {δ : ℝ≥0∞}
-    (hR : (PMF.uniformOfFintype (T → F)).toOuterMeasure R ≤ δ)
-    (hwin : ∀ O, fsWins A accept prefixes O → A.escapesDuring esc O ∨ O ∈ R) :
-    fsAdvantage A accept prefixes ≤ Q * ε + δ := by
-  have hsub : {O : T → F | fsWins A accept prefixes O}
-      ⊆ {O : T → F | A.escapesDuring esc O} ∪ R := by
-    intro O hO
-    rcases hwin O hO with h | h
-    · exact Or.inl h
-    · exact Or.inr h
-  refine le_trans (MeasureTheory.measure_mono hsub) ?_
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  have hesc' : (PMF.uniformOfFintype (T → F)).toOuterMeasure
-      {O : T → F | A.escapesDuring esc O} ≤ Q * ε := by
-    have h0 : {O : T → F | A.escapesDuring esc O}
-        = {O : T → F | A.escapesDuring esc (applyUpdates ([] : List (T × F)) O)} := by
-      simp
-    rw [h0]
-    exact escapesDuring_measure_le esc hesc hQ [] (by simp)
-  exact add_le_add hesc' hR
 
 end Game
 
