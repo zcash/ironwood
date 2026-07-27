@@ -530,11 +530,6 @@
           "path": "Zcash/Snark/Soundness/Vesta.lean"
         },
         {
-          "symbol": "orchard_verifier_sound_vesta_computed",
-          "path": "Zcash/Snark/Soundness/Composition/Bridge.lean",
-          "source": "decodeStack"
-        },
-        {
           "symbol": "snarkExtraction_prob_le_of_generatorRO_textbookDL_decomposed",
           "path": "Zcash/Snark/Soundness/Composition/Decomposition.lean",
           "source": "decodeStack"
