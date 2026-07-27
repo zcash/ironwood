@@ -1,0 +1,428 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Source Map - The Ironwood Book</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-1235b096.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "rust";
+            window.path_to_searchindex_js = "../searchindex-1bca09ef.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-21ef045d.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The Ironwood Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="source-map"><a class="header" href="#source-map">Source Map</a></h1>
+<p>A directory-by-directory index of the Lean development under <a href="https://github.com/zcash/ironwood/tree/main/Zcash"><code>Zcash/</code></a>:
+what each subtree contains and where to start reading. It is the source-tree companion
+to the <a href="proof-map.html">proof map</a> (which traces how the results connect), the
+<a href="security-definitions.html">security definitions</a> (which state the properties being proven),
+and the <a href="glossary.html">glossary</a> (which defines the coined terms).</p>
+<p>The development has three layers. <strong><code>Zcash/Snark/</code></strong> is verifier soundness for the deployed
+Halo 2 verifier — an accepting proof is bound to a witness satisfying the circuit, or else
+an explicit break of a hardness assumption is computed. <strong><code>Zcash/Circuits/</code></strong> is the circuit
+layer — a port of the Orchard Action circuit onto Clean's Halo 2 formalization, saying what
+satisfying that circuit means in protocol terms. <strong><code>Zcash/Security/</code></strong> is the protocol
+security-property layer — the binding-signature balance, key-binding, and ledger-model games
+built on top. A small set of shared foundations (<code>Zcash/Common/</code>, <code>Zcash/Meta/</code>) and a
+library-wide trust census (<code>Zcash/TrustBoundary.lean</code>) support all three.</p>
+<p>Each <code>.lean</code> file carries a module docstring with the details; this page stays at the
+directory level, naming the notable modules as entry points.</p>
+<h2 id="top-level--zcash"><a class="header" href="#top-level--zcash">Top level — <code>Zcash/</code></a></h2>
+<ul>
+<li><strong><code>Common/</code></strong> — shared cryptographic primitives. <code>DiscreteLogRelation</code> carries a
+nontrivial <code>F</code>-linear (discrete-log) relation among a family of generators as <em>computed
+data</em> — the coefficients — so the reduction-style security arguments can produce a break
+rather than merely assert one exists (see <em>breaks as computed data</em> on the
+<a href="../formal-verification.html">Formal Verification</a> page).</li>
+<li><strong><code>Meta/</code></strong> — build-time metaprogramming. <code>AxiomCheck</code> provides <code>assert_axioms</code>, a sibling
+of Mathlib's <code>assert_no_sorry</code> that asserts an <em>upper bound</em> on a declaration's trusted
+base without hard-coding the pretty-printed axiom list, so the trust pins stay green across
+toolchain bumps that rename the <code>native_decide</code> axiom.</li>
+<li><strong><code>TrustBoundary.lean</code></strong> — the library-wide census that makes the trust claims build-time
+checks rather than prose: a change that widens any checked declaration's trusted base — a
+reachable <code>sorry</code>, an unexpected axiom, or <code>native_decide</code> where none was permitted — fails
+the build here. The SNARK-side censuses were consolidated into this one file, so apart from
+the per-capture fixture boundaries below it is the single place the trust claims are pinned.</li>
+</ul>
+<h2 id="verifier-soundness--zcashsnark"><a class="header" href="#verifier-soundness--zcashsnark">Verifier soundness — <code>Zcash/Snark/</code></a></h2>
+<h3 id="core--the-verifiers-objects"><a class="header" href="#core--the-verifiers-objects"><code>Core/</code> — the verifier's objects</a></h3>
+<p>The nouns the verifier operates on, modeled abstractly so most proofs stay generic over the
+field and group. <code>Field</code> fixes the scalar field <code>F_p</code> (Vesta's scalar = Pallas base) and its
+cardinality; <code>Group</code> fixes the verifier group <code>E_q</code> (Vesta) and the uniform reference string,
+as an <code>F</code>-module; <code>Msm</code> is the fingerprint multiscalar multiplication the verifier collapses
+its whole check into, mirroring halo2's <code>MSM&lt;C&gt;</code>; <code>ProofString</code> is the proof as opaque field
+and group elements after canonical decoding; <code>Challenges</code> records the verifier's challenges
+(<code>θ, β, γ, y, x</code>, the multiopen <code>x₁…x₄</code>, and the IPA <code>ξ, z</code> and round challenges <code>uⱼ</code>).</p>
+<h3 id="verifier--the-msm-assembly"><a class="header" href="#verifier--the-msm-assembly"><code>Verifier/</code> — the MSM assembly</a></h3>
+<p>The pure function that assembles the fingerprint MSM in the exact order of halo2's
+<code>plonk/verifier.rs</code> — the Lean image of the interactive verifier. <code>Assemble</code> and <code>Checks</code>
+compose the building blocks; <code>Queries</code> builds the per-argument opening queries; <code>Expressions</code>
+recomputes the vanishing argument's <code>expected_h_eval</code>; <code>Ipa</code> is the inner-product-argument
+opening (<code>compute_s</code> / <code>compute_b</code>); <code>FiatShamir</code> models halo2's Blake2b challenge schedule as
+an abstract <code>squeeze</code>; <code>Parametric</code> proves the assembly and schedule traverse every sub-proof
+for an arbitrary proof count (every consensus-valid Orchard action count is one instance).</p>
+<h3 id="fingerprint--the-cross-check-and-its-soundness"><a class="header" href="#fingerprint--the-cross-check-and-its-soundness"><code>Fingerprint/</code> — the cross-check and its soundness</a></h3>
+<p><code>Match</code> is the fingerprint match: running the deployed Rust verifier and the Lean <code>assemble</code>
+on the same proof and challenges and comparing the assembled MSMs coefficient-for-coefficient
+— the cross-check that validates the Lean assembly in place of a line-by-line translation
+proof. <code>SchwartzZippel</code> and <code>Batch</code> supply the soundness bounds: a fingerprint agrees with a
+random evaluation, and a random-linear-combination batch is the identity, only with negligible
+probability.</p>
+<h3 id="fixtures--captured-proofs-and-boundary-checks"><a class="header" href="#fixtures--captured-proofs-and-boundary-checks"><code>Fixtures/</code> — captured proofs and boundary checks</a></h3>
+<p>Concrete Orchard captures that exercise the assembly end-to-end and make the Rust/Lean boundary
+less silent. This whole subtree is the <code>FixtureCheck</code> lake target, kept out of <code>lake build Zcash</code>
+(the captures are large, generated, and slow) but built by CI. <code>MaxShape</code> specializes the verifier
+shape to the captured column and query dimensions while leaving the action count free;
+<code>ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
+<code>PostNu63</code> pins the canonical post-NU 6.3 verifying key and URS so fixture drift is visible here.
+<code>SingleAction/</code> and <code>MultiAction/</code> hold the captured single- and multi-action proofs, each with
+its <strong>Fiat–Shamir</strong> schedule check and its checked <code>TrustBoundary</code> turning the fingerprint match
+into build-time obligations; the multi-action capture additionally carries the shape/VK
+<strong>faithfulness</strong> checks and the adversarial <strong>negative</strong> fixtures.</p>
+<h3 id="soundness--the-soundness-argument"><a class="header" href="#soundness--the-soundness-argument"><code>Soundness/</code> — the soundness argument</a></h3>
+<p>The core argument that an accepting proof yields a witness or a computed break. The top-level
+modules cover the argument end to end: <code>Main</code> (conditional soundness and the deployed-acceptance
+route), <code>KnowledgeSoundness</code> (the <code>SnarkRelation</code> knowledge-soundness relation), <code>Constraints</code>
+(Schwartz–Zippel soundness of the vanishing check) with <code>FoldSplit</code> (recovering the individual
+constraints from the verifier's <code>y</code>-fold), <code>ConstraintRelations</code> (what the capstone's satisfaction
+predicate buys the row-level results), and <code>GoodChallenge</code>/<code>ChallengePricing</code> (deriving the
+good-challenge exclusions from challenge uniformity rather than assuming them). The
+permutation/lookup stack is <code>GrandProduct</code> — the shared grand-product-to-multiset kernel —
+with <code>RunningProduct</code> (telescoping the running product), <code>GrandProductBridge</code> (the two
+Schwartz–Zippel steps from the verifier's evaluated check to the multiset identity),
+<code>Permutation</code>, <code>PermutationConstruction</code>, <code>PermutationRows</code>, <code>Lookup</code>, and <code>LookupAssembly</code>.
+The IPA stack is <code>InnerProduct</code>, <code>IpaSoundness</code>, <code>Extraction</code>, <code>Consistency</code>, <code>CommitFold</code>.
+<code>Vesta</code> pins the abstract group to the actual Vesta curve, and <code>VestaBudget</code> restates its
+capstone against a single joint accept floor. Five subtrees carry the heavier machinery:</p>
+<ul>
+<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns the relation coefficients computed
+from algebraic prover data (<code>Peel</code>, <code>Capstone</code>) into a discrete-log solution over the
+augmented basis <code>(g, U, W)</code> (<code>Adapter</code>, following Fuchsbauer–Kiltz–Loss), feeds the
+binding-signature relations in as AGM inputs (<code>BindingSignature</code>), adds the algebraic
+coefficients to the forking-certificate interfaces (<code>Prover</code>), and bounds the probability
+loss of the fixed-challenge-slot DL reduction (<code>Probability</code>, <code>ProbabilityCoins</code>,
+<code>ProbabilityVesta</code>).</li>
+<li><strong><code>Forking/</code></strong> — the reusable Fiat–Shamir forking kernel: random-oracle primitives
+(<code>Oracle</code>), the deployed round ordering and rewinding (<code>Ordering</code>, <code>Rewind</code>), fork-tree
+existence and the forking-lemma probability bound (<code>Tree</code>, <code>Probability</code>), the closed form
+of that bound (<code>KnowledgeError</code>), the query-loss coupling between the coin draw and the
+multiopen challenge draw (<code>AdaptiveCoupling</code>), and the transcript assembly and extraction
+that turn forked transcripts into a deployed IPA tree (<code>Assembly</code>, <code>Extractor</code>).
+<strong><code>Forking/Adversary/</code></strong> builds the querying-adversary reduction on top: the <code>Q</code>-query
+adaptive adversary model (<code>OracleComp</code>), executable recursive forking from a finite tape
+(<code>Recursive</code>), the Fiat–Shamir-to-AGM handoff (<code>Algebraic</code>), oracle-domain reduction to
+finite support (<code>DomainReduction</code>), the adaptive interface and pre-IPA query accounting
+(<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>), and the expected-run bookkeeping (<code>ExpectedRuns</code>,
+<code>ExpectedRunsPoly</code> — an unconditional polynomial bound remains open).</li>
+<li><strong><code>Deployed/</code></strong> — the bridge from the clean, abstract soundness onto halo2's actual deployed
+IPA. It models the deployed IPA's <code>U</code>/<code>W</code> apparatus and peels it onto the clean recursive IPA
+(<code>Ipa</code>, <code>IpaPeel</code>), unfolds the flattened deployed MSM into the recursive generator fold
+(<code>Fold</code>), shows deployed acceptance implies halo2's explicit IPA verifier equation
+(<code>Verification</code>), reduces binding over the augmented generators to discrete-log-relation
+hardness (<code>Binding</code>), and reads the fork-tree knowledge error off the deployed Orchard
+parameters as a concrete number (<code>ConcreteBounds</code>, at recursion depth <code>k = 11</code>).</li>
+<li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code>/<code>DecodeFixture</code> and
+<code>Compat</code> recover the deployed multiopen structure; <code>RPoly</code> supplies the interpolation core
+(Mathlib's <code>Lagrange.interpolate</code>, plus the bridge to the deployed <code>foldl</code>); <code>Claimed</code>,
+<code>Opened</code>, <code>ValueCheck</code>, <code>ValueCheckDeployed</code>, and <code>NodeBinding</code> bind each decoded aggregate
+column to its claimed evaluation; <code>BudgetedExtraction</code> and <code>FloorBudget</code> re-prove the nested
+extraction from one joint accept floor over the four fresh challenges.</li>
+<li><strong><code>Composition/</code></strong> — joining the two architecturally disjoint halves. <code>Bridge</code> identifies the
+algebraic forking extraction's clean opening with the deployed decoded capstone's opened
+commitment; <code>Decomposition</code> splits the knowledge-error bound unconditionally into the priced
+clean-opening failure plus a measured clean-but-not-extracted residual (<code>Residual</code>), with
+<code>Prefixes</code>, <code>Assembly</code>, and <code>Completeness</code> supplying the supporting pieces.</li>
+</ul>
+<h2 id="circuit-layer--zcashcircuits"><a class="header" href="#circuit-layer--zcashcircuits">Circuit layer — <code>Zcash/Circuits/</code></a></h2>
+<p>A port of the Orchard Action circuit onto <a href="https://github.com/Verified-zkEVM/clean">Clean</a>'s
+Halo 2 formalization, with elliptic-curve arithmetic from
+<a href="https://github.com/daira/CompElliptic">CompElliptic</a>. Each chip is ported from the actual Rust
+(<code>orchard@0.14.0</code>, <code>halo2_gadgets-0.5.0</code>) rather than from memory, and the module docstrings cite
+the source lines. Where the Sinsemilla incomplete-addition escapes can fire, the statements carry
+them as data (<code>SpecOrBreak</code>) rather than assuming them away.</p>
+<ul>
+<li><strong><code>Specs/</code></strong> — the value-level protocol specifications the circuits are proven against:
+Orchard data shapes (<code>Types</code>), the Pallas curve and its certified arithmetic (<code>Pallas</code>,
+<code>PallasCert</code>, <code>CompEllipticExtras</code>), bit-range arithmetic (<code>Bitrange</code>), and the Sinsemilla
+hash with its generators and break structure (<code>Sinsemilla</code>, <code>SinsemillaGenerators</code>,
+<code>SinsemillaBreak</code>).</li>
+<li><strong><code>Utilities/</code></strong> — the shared gadgets: <code>LookupRangeCheck</code> (the first lookup-consuming gadget
+ported, generic over <code>K</code>), <code>RunningSum</code>/<code>DecomposeRunningSum</code>, <code>CondSwap</code>, and <code>AddChip</code>.</li>
+<li><strong><code>Ecc/</code></strong> — the ECC chip. Point witnessing (<code>WitnessPoint</code>), complete and incomplete addition
+(<code>Add</code>, <code>AddIncomplete</code>), variable-base multiplication in its incomplete/complete/overflow
+phases (<code>Mul</code>, <code>MulIncomplete</code>, <code>MulIncompleteRound</code>, <code>MulComplete</code>, <code>MulOverflow</code>,
+<code>DoubleAndAdd</code>), and fixed-base multiplication (<code>MulFixed/</code>, with full-width, short, and
+base-field-element variants). <strong><code>MulFixed/Certs/</code></strong> holds the six deployed fixed bases with
+their window-table certificates, checked through <code>CertCheck</code>'s <code>ℕ</code>-literal evaluator.</li>
+<li><strong><code>Sinsemilla/</code></strong> — the Sinsemilla chip: the <code>2^K</code> generator table (<code>Basic</code>), one hash piece
+and its rounds (<code>HashPiece</code>, <code>HashPieceRound</code>), the <code>⊥</code>-propagating chain (<code>Chain</code>,
+<code>HashToPoint</code>), the commit domain (<code>CommitDomain</code>), and the fixed-depth Merkle path (<code>Merkle</code>).</li>
+<li><strong><code>Poseidon/</code></strong> — the Poseidon chip: the <code>pow5</code> S-box and round structure (<code>Pow5</code>, <code>Rounds</code>,
+<code>Constants</code>), the permutation (<code>Permute</code>), and the sponge/hash at <code>ConstantLength&lt;2&gt;</code> (<code>Hash</code>).</li>
+<li><strong><code>NoteCommit/</code></strong> and <strong><code>CommitIvk/</code></strong> — the two commitment circuits, each as pieces and
+decompositions, the gate set, the canonicity checks, and the assembled <code>Main</code>/<code>MainBundle</code>
+contract at the extracted window scalar.</li>
+<li><strong><code>Action/</code></strong> — the top-level Orchard Action circuit. <code>Circuit</code> is the ironwood <code>configure</code>
+and <code>synthesize</code> in exact region-creation order; <code>CircuitPreIronwood</code> is the post-NU 6.2
+circuit without the cross-address region (both share <code>configure</code>, hence all VK fixtures);
+<code>RealBases</code> instantiates everything at the actual deployed constants; the per-check modules
+are <code>ValueCommit</code>, <code>DeriveNullifier</code>, <code>SpendAuthority</code>, and <code>AddressIntegrity</code>; and <code>Bundle</code>
+is the end-to-end statement against protocol spec §4.17.4.</li>
+<li><strong><code>Fixtures/</code></strong> and <strong><code>Tests/</code></strong> — the VK cross-check against Rust. <code>Fixtures/</code> reconstructs,
+purely and computably, the layout products a keygen-view dump pins (the ordered copy list, the
+permutation σ, the fixed assignments) from a circuit's <code>Operations</code>, with the dumps carried as
+JSON data files (<code>Json</code>); <code>Tests/</code> checks the ported <code>configure</code> equal to those dumps both pre-
+and post-<code>compress_selectors</code>.</li>
+</ul>
+<h2 id="protocol-security--zcashsecurity"><a class="header" href="#protocol-security--zcashsecurity">Protocol security — <code>Zcash/Security/</code></a></h2>
+<p>The security-property games layered on the verifier, all in the reduction style: a property
+violation <em>exhibits</em> a concrete break (a hash collision or a discrete-log relation), carried as
+computed data.</p>
+<ul>
+<li><strong><code>Common/</code></strong> — the classical random-oracle foundation shared by the games. <code>RandomOracle</code>
+is the collision vocabulary (the <code>Collision</code> / <code>CollisionUpToSign</code> structures); <code>Birthday</code>
+is the birthday-bound counting for random-oracle ±-collisions, in the counting-fraction style
+used throughout (no probability monad).</li>
+<li><strong><code>BindingSignature/</code></strong> — the binding-signature <em>balance</em> argument (spec §4.13 Sapling /
+§4.14 Orchard). <code>Balance</code> is the shared algebraic core over an arbitrary <code>F</code>-module;
+<code>Orchard</code> and <code>Sapling</code> add the per-pool no-overflow bounds that keep the value sums below
+the scalar-field order.</li>
+<li><strong><code>KeyBinding/</code></strong> — the key-binding theorem (ZIP 2005, ROM). <code>Basic</code> is the deterministic
+layer: a verifying Recovery-Statement witness pins the key components (<code>ak</code> up to y-sign,
+<code>nk</code>, and the <code>qk</code>/<code>sk</code> branch) to <code>ivk</code> unless an explicit break is computed. <code>Instance</code>
+bridges that concrete development to the games' <code>KeyBindingInterface</code>, and <code>Probability</code>
+adds the whole-table random-oracle model that turns the counting facts into a probability
+bound.</li>
+<li><strong><code>Ledger/</code></strong> — the ledger-model games. <code>Statement</code> transcribes the games-relevant conjuncts
+of an Orchard-shaped Action statement over abstract primitives — the interface the games
+consume — and <code>Model</code> is the witness-annotated ledger they quantify over, with <code>Effects</code>
+reading off the outputs, spends, and shielded-pool balance. The games themselves:
+<code>Balance</code> (every nonzero spend is a committed output of a strictly earlier transaction, or a
+Merkle/note-commitment break is computed), <code>Spendability</code> (the Faerie-Gold core — nullifiers
+pin note tuples — plus persistence), and <code>SpendAuthority</code> (an unsigned spend yields a
+signature forgery or a key-binding break). <code>Merkle</code> proves fixed-depth Merkle trees are
+position-binding up to an exhibited tree-hash collision.</li>
+</ul>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../formal-verification/proof-map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../formal-verification/security-definitions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../formal-verification/proof-map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../formal-verification/security-definitions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-9576a2db.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid-eefea253.min.js"></script>
+        <script src="../mermaid-init-d0d5e6a7.js"></script>
+        <script src="../todo-e74d2c27.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
