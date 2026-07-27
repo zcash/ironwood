@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-da879069.js";
+            window.path_to_searchindex_js = "searchindex-61906c7b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -242,6 +242,23 @@ axiom: CompElliptic's curve point-count, a closed computational fact discharged 
 (below). This applies to both the SNARK soundness endpoints (Vesta) and the Action circuit
 soundness (Pallas). The <code>+native</code> flag on the corresponding build-time checks records
 exactly which endpoints carry it.</p>
+<p><strong><code>@[csimp]</code> replacement lemmas</strong> get their own <code>assert_axioms</code> entries in
+<code>Zcash/TrustBoundary.lean</code>, enforced by <code>scripts/check_csimp_census.sh</code> in CI: the compiler
+applies a csimp substitution in all downstream compiled code, but the axioms of the lemma's
+own proof are not propagated into downstream <code>native_decide</code> axiom tracking (
+<a href="https://github.com/leanprover/lean4/issues/7463">lean4#7463</a>), so the check must sit on the
+lemma itself. The underlying mechanism study — what <code>native_decide</code>, the interpreter, and
+precompiled native code actually trust — is
+<a href="https://github.com/daira/CompElliptic/blob/main/design/lean-native-trust-research.md"><code>design/lean-native-trust-research.md</code></a>
+in the CompElliptic repository.</p>
+<p><strong>Native-executing checks are opt-in.</strong> Executing a check through locally compiled native
+code (a <code>precompileModules</code> dylib — ours, or the CompElliptic pin's) trusts the C emitter,
+the local C toolchain, and the loader, coarse-grained and with no axiom trace. Loading a
+lane's dylib is inseparable from elaborating modules that import it, so the enforced
+invariant sits at the level of checks: no module whose import closure reaches a lane module
+may contain an evaluation-based check (<code>#eval</code>, <code>#guard</code>, <code>native_decide</code>) unless explicitly
+opted in, enforced by <code>scripts/check_native_optin.py</code> in CI. Appendix C of the research
+document linked above records the observed Lake behaviour behind this rule.</p>
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
