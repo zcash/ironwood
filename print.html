@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-620fdf4a.js";
+            window.path_to_searchindex_js = "searchindex-b0c3be27.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1260,16 +1260,16 @@ flowchart TD
   STMT -. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor;&lt;br/&gt;hencodes gap&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
   NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
 
-  NDLR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/Capstone.lean'&gt;AGM heuristic +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/Forking'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
+  KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/Forking'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
   MC --&gt; SDLR
   CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/r,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
-  NFC ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;nullifier base&lt;br/&gt;independent of&lt;br/&gt;commitment bases&lt;/a&gt;&quot;| DL
+  NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'&gt;distinct-note openings&lt;br/&gt;compute&lt;/a&gt;&quot;| SDLR
   SAF --&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
-  RDSA ---&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;forking extraction&quot;| DL
-  RDSA ---&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
+  RDSA --&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;forking extraction&quot;| DL
+  RDSA --&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
 
   click BAL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Balance.lean&quot; _blank
   click SPEND &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
@@ -1310,13 +1310,10 @@ flowchart TD
 <span style="color:#57606a">■</span> assumption or heuristic model; terminal by design
 </p>
 <p>This picture is a deliberate approximation, and is likely to change as the formalization
-proceeds. Some edges are coarser than the eventual argument — for example, the
-<code>NullifierCollision</code> edge to discrete log is a named hypothesis whose <code>PRF^nf</code> component
-is not yet decomposed, and may not reduce to discrete log alone. The RedDSA node is a
-named hypothesis rather than a terminal assumption: its discharge edge names the
-reduction for security of signatures with re-randomizable keys
-[<a href="https://eprint.iacr.org/2015/395">FKMSSS2016</a>, section 3], adapted
-to the ±-randomized variant, together with forking extraction of the Schnorr witness.</p>
+proceeds. The RedDSA node is a named hypothesis rather than a terminal assumption: its
+discharge edge names the reduction for security of signatures with re-randomizable keys
+[<a href="https://eprint.iacr.org/2015/395">FKMSSS2016</a>, section 3], adapted to the
+±-randomized variant, together with forking extraction of the Schnorr witness.</p>
 <p>Every solid arrow reads "rests on"; where an edge carries a label, the label names the
 computed break object flowing along it, or the adversary model or side condition under which
 the reduction holds (the AGM restriction, base independence from hash-to-curve, the birthday
@@ -1390,7 +1387,7 @@ circuit soundness proof.</p>
 </section>
 <section>
 <div class="grp">Shared foundation · Zcash/Security/Common</div>
-<div class="g"><div class="g-head"><span class="term">collision vocabulary</span><span class="anchor">Security.RandomOracle.Collision · CollisionUpToSign</span></div><div class="def">Layer-A break events for the classical ROM: a <code>Collision</code> is two distinct queries with equal outputs; a <code>CollisionUpToSign</code> (<code>a =± b</code>) is the shape produced by arguments passing through the <code>Extract</code> coordinate extractor, whose fibres are <code>{P, −P}</code>. Both key binding and the nullifier (Faerie-Gold) argument bottom out here.</div></div>
+<div class="g"><div class="g-head"><span class="term">collision vocabulary</span><span class="anchor">Security.RandomOracle.Collision · CollisionUpToSign</span></div><div class="def">Layer-A break events for the classical ROM: a <code>Collision</code> is two distinct queries with equal outputs; a <code>CollisionUpToSign</code> (<code>a =± b</code>) is the shape produced by arguments passing through the <code>Extract</code> coordinate extractor, whose fibres are <code>{P, −P}</code>. Key binding bottoms out here, as does the nullifier (Faerie-Gold) argument for the Recovery Statement; the deployed nullifier argument bottoms out in the Sinsemilla discrete-log relation instead.</div></div>
 <div class="g"><div class="g-head"><span class="term">birthday bound</span><span class="anchor">Security.Birthday.birthday_closed_form</span></div><div class="def">The Layer-C probability: the shifted <code>±</code>-collision event over <code>q</code> uniform oracle outputs has probability at most <code>q(q-1)/|F|</code>, by union-bounding the per-pair fraction <code>2/|F|</code>. Counted in the random-oracle model with no hardness assumption; proven as a probability statement over the uniform oracle table (#73).</div></div>
 </section>
 </div>
