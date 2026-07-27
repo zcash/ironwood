@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-3b497046.js";
+            window.path_to_searchindex_js = "searchindex-da879069.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d18a864e.js"></script>
@@ -237,10 +237,11 @@ different trust standards.</p>
 <p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) rest, in
 their abstract form over an arbitrary <code>Fp</code>-module, only on the standard classical axioms
 <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
-trust. Instantiated at the concrete Vesta curve they additionally inherit one compiler-trust
+trust. Instantiated at a concrete Pasta curve they additionally inherit one compiler-trust
 axiom: CompElliptic's curve point-count, a closed computational fact discharged by <code>native_decide</code>
-(below). The <code>+native</code> flag on the corresponding build-time checks records exactly which endpoints
-carry it.</p>
+(below). This applies to both the SNARK soundness endpoints (Vesta) and the Action circuit
+soundness (Pallas). The <code>+native</code> flag on the corresponding build-time checks records
+exactly which endpoints carry it.</p>
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
@@ -259,7 +260,7 @@ capstones) — as build-time obligations expressed through two commands from <co
 <li><code>assert_axioms d</code> fails the build unless <code>d</code> rests only on the standard classical axioms
 (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>) — in particular no <code>sorry</code> and no <code>native_decide</code>;
 <code>assert_axioms d +native</code> additionally permits the toolchain-dependent <code>native_decide</code>
-compiler-trust axiom that the Vesta-instantiated endpoints carry. Unlike a <code>#guard_msgs</code>-pinned
+compiler-trust axiom that the curve-instantiated endpoints carry. Unlike a <code>#guard_msgs</code>-pinned
 <code>#print axioms</code>, it states the expected tier in one line and stays green across toolchain bumps
 that rename the <code>native_decide</code> axiom, while still failing the moment a declaration reaches beyond
 its tier. It covers the general soundness theorems, probability bounds, and run-time/query-charge
