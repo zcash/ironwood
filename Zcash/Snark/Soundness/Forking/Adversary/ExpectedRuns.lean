@@ -3,8 +3,8 @@ import Zcash.Snark.Soundness.Forking.Adversary.Recursive
 /-!
 # Expected extractor runs under fork spread
 
-Under optional fork spread, `E[runs] ≤ (6·|F|/(σ₀−1))^k`; `.runs` counts adversary calls. An
-unconditional polynomial AFK bound remains open.
+Under optional fork spread, `E[runs] ≤ (6·|F|/(σ₀−1))^k`; `.runs` counts adversary calls.
+The separate unconditional AFK analysis is completed in `ExpectedRunsPoly`.
 -/
 
 namespace Zcash.Snark

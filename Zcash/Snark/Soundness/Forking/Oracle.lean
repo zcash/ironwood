@@ -63,10 +63,11 @@ issue's scope (binding ⟶ plain DL in the AGM) is discharged by `Soundness.AGM.
 
 What is left of the floor is therefore *not* "there is no adversary experiment". It is:
 
-* **Efficiency.** The endpoints are gated on `ComputedAlgebraicFSFamily.ReductionEfficient R`.
-  `reductionEfficient_exponential` discharges it unconditionally at `(2·|F|+1)^k`;
-  `reductionEfficient_of_forkSpread` discharges it at the polynomial `(6/δ)^k` but only under
-  `FamilyForkSpread`. PPT-ness of the adversary family itself is external to Lean.
+* **Efficiency modeling.** The generic endpoints are parameterized by
+  `ComputedAlgebraicFSFamily.ReductionEfficient R`, and their `_poly` forms discharge it
+  unconditionally via `reductionEfficient_poly` at `(8·Q+1)·10^k`.
+  `reductionEfficient_of_forkSpread` remains as a conditional density-sensitive alternative.
+  PPT-ness of the adversary family itself is external to Lean.
 * **The idealizations.** Blake2b as a random function, the conversion bias above, the AGM, plain-DL
   hardness, and the generator random-oracle model.
 * **The legacy fixed-proof rungs.** `legacy_deployed_forking_soundness` and the
