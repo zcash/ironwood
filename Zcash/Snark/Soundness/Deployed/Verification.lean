@@ -141,8 +141,8 @@ theorem deployed_verification_eq {shape : Shape} (g : Fin (2 ^ shape.k) → G) (
 
 /-- halo2's explicit IPA verifier equation for the deployed proof, set to the group identity. By
 `deployed_verification_eq` this is exactly `(assembleFinalMsm …).eval = 0`. Stating it explicitly
-lets the forking bridge act on halo2's actual IPA equation, with `P`/`v` the pinned
-`multiopenCommitment`/`multiopenValue`.
+lets the forking bridge act on halo2's actual IPA equation, opening the pinned
+`deployedIpaCommitment`.
 
 Totality note: the closed form uses Lean's total inverse (`0⁻¹ = 0`), and the deployed code
 computes the same thing — halo2 batch-inverts the round challenges with ff's `batch_invert`,
@@ -157,11 +157,7 @@ def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhab
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) : Prop :=
-  (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-        (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩
-      + (∑ i, ([-(assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-          (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).2].getD i.val 0) • g i)
-      + ch.xi • ps.ipaS
+  deployedIpaCommitment g w u vk instanceCommitment ps ch
       + (((List.ofFn ps.ipaRounds).zip (List.ofFn ch.ipaRound)).map
           (fun p => p.2⁻¹ • p.1.1 + p.2 • p.1.2)).sum
       + (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) • u

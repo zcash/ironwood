@@ -77,7 +77,9 @@ theorem deployedAccepts_verifierEq [DecidableEq G] [Inhabited G] {shape : Shape}
       simp only [] at h
       rw [eval_cast hk m] at h
       have hmeq := assemble?_eq_some vk instanceCommitment ps ch hm
-      unfold DeployedIpaVerifierEq
+      -- `deployed_verification_eq` is generic in the grouping, so its statement is in raw
+      -- `assembleOpening` terms; expand the adjusted commitment to meet it.
+      unfold DeployedIpaVerifierEq deployedIpaCommitment multiopenCommitment multiopenValue
       rw [← deployed_verification_eq (hk ▸ urs.g) urs.w urs.u ps ch
             (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)), ← hmeq]
       exact h
