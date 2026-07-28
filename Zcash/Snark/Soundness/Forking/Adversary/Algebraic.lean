@@ -513,9 +513,6 @@ theorem algebraicForkCertAttempt_valid {shape : Shape}
     · intro i
       exact Fin.elim0 i
     · simpa only [algebraicForkCertAttempt, recursiveAlgebraicFork] using hout
-  -- Stated in the adjusted commitment's components, not through `deployedIpaCommitment`: the
-  -- rewrites below act on those components, and the abbrev is reducible, so `exact hacc` still
-  -- bridges the two forms at the use site.
   have hPwhole : ∀ (chi : Fin shape.k → Fp),
       (multiopenCommitment urs.g urs.w urs.u vk instanceCommitment p₀.proof.1 (chRecord ν₀ chi)
         + (∑ i, ([-(multiopenValue vk instanceCommitment p₀.proof.1 (chRecord ν₀ chi))].getD i.val 0) • urs.g i)

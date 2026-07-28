@@ -721,7 +721,7 @@ theorem flatAccept_proverOfRounds :
           (-(z * c * foldAllFin χ b)) U (-f) W = 0)
   | 0, R, c, f, g, b, U, W, z, P, χ => by
       rw [proverOfRounds, flatAccept]
-      simp only [CF, gPart]
+      simp only [CF]
       rw [← foldAllFin_eq]
       have hg : commitGen g (fun _ : Fin (2 ^ 0) => c) = c • g 0 := by simp [commitGen]
       have hb : commitGen b (fun _ : Fin (2 ^ 0) => c) = c * b 0 := by simp [commitGen]
@@ -818,9 +818,7 @@ theorem deployedVerifierEq_iff_flatAccept_adaptive {shape : Shape} [DecidableEq 
       flatAccept P g (evalVector shape.k ch.x3) u w ch.z
         (deployedIpaCommitment g w u vk instanceCommitment ps ch) χ := by
   rw [deployedVerifierEq_iff_flatAccept]
-  -- Splicing touches only `ipaRounds`/`ipaC`/`ipaF` and the challenge update only `ipaRound`, so
-  -- every field the adjusted commitment reads is untouched and the two sides are definitionally
-  -- equal.
+  -- Neither the splice nor the challenge update touches a field the adjusted commitment reads.
   have e : deployedIpaCommitment g w u vk instanceCommitment
       (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
       = deployedIpaCommitment g w u vk instanceCommitment ps ch := rfl
