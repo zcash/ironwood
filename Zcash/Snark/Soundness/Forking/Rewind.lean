@@ -677,74 +677,30 @@ theorem proverRoundPoint_proverOfRounds : {d : ℕ} → (R : Fin d → G × G) �
       rw [proverRoundPoint_proverOfRounds (Fin.tail R) c f (Fin.tail χ) j (Nat.lt_of_succ_lt_succ hj)]
       rfl
 
-/-- `foldGens` commutes with reindexing by `Fin.cast`. -/
-theorem foldGens_comp_cast {m n : ℕ} (h : n = m) (g : Fin (2 ^ (m + 1)) → G) (u : Fp) :
-    foldGens (fun j : Fin (2 ^ (n + 1)) => g (Fin.cast (by rw [h]) j)) u
-      = fun i : Fin (2 ^ n) => foldGens g u (Fin.cast (by rw [h]) i) := by
-  subst h; rfl
-
-/-- Fold `g` through a `Fin`-indexed challenge vector without dependent casts. -/
-def foldAllFin : {d : ℕ} → (Fin d → Fp) → (Fin (2 ^ d) → G) → G
-  | 0, _, g => g 0
-  | _ + 1, χ, g => foldAllFin (Fin.tail χ) (foldGens g (χ 0)⁻¹)
-
-/-- Reindex `foldAll` along an equality of challenge lists. -/
-theorem foldAll_congr_cast {u u' : List Fp} (h : u = u') (g : Fin (2 ^ u.length) → G) :
-    foldAll u g = foldAll u' (fun j => g (Fin.cast (by rw [h]) j)) := by
-  subst h; rfl
-
-/-- `foldAllFin` equals the deployed list-based `foldAll`. -/
-theorem foldAllFin_eq : {d : ℕ} → (χ : Fin d → Fp) → (g : Fin (2 ^ d) → G) →
-    foldAllFin χ g = foldAll (List.ofFn χ) (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j)) 0
-  | 0, _, g => by simp only [foldAllFin]; rfl
-  | d + 1, χ, g => by
-      have hchal : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
-      rw [foldAllFin, foldAllFin_eq (Fin.tail χ) (foldGens g (χ 0)⁻¹), foldAll_congr_cast hchal, foldAll]
-      simp only [Fin.cast_cast]
-      exact congrArg (fun gen => foldAll (List.ofFn (Fin.tail χ)) gen 0)
-        (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
-
-/-- Reindex `CF` along an equality of challenge lists. -/
-theorem CF_congr_chal {u u' : List Fp} (h : u = u') (rounds : List (G × G))
-    (g : Fin (2 ^ u.length) → G) (P : G) (c Uc Wc : Fp) (U W : G) :
-    CF rounds u g P c Uc U Wc W
-      = CF rounds u' (fun j => g (Fin.cast (by rw [h]) j)) P c Uc U Wc W := by
-  subst h; rfl
-
-/-- For a fixed proof tree, `flatAccept` is exactly the closed-form verifier equation `CF = 0`. -/
+/-- For a fixed proof tree, `flatAccept` is exactly the verifier equation `VerifierIpa.eval = 0`,
+at the commitment `P`, the tree's rounds and final scalars, and the value coefficient
+`[-z·c·b₀]` the eval vector folds to. Each round of the induction is one `eval_peel`. -/
 theorem flatAccept_proverOfRounds :
     {d : ℕ} → (R : Fin d → G × G) → (c f : Fp) → (g : Fin (2 ^ d) → G) → (b : Fin (2 ^ d) → Fp) →
     (U W : G) → (z : Fp) → (P : G) → (χ : Fin d → Fp) →
     (flatAccept (proverOfRounds R c f) g b U W z P χ ↔
-      CF (List.ofFn R) (List.ofFn χ)
-          (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j)) P c
-          (-(z * c * foldAllFin χ b)) U (-f) W = 0)
+      VerifierIpa.eval
+        { commitment := P, rounds := R, challenges := χ, final := c,
+          uScalar := valueScalar c (foldAllFin χ b) z, wScalar := -f } g U W = 0)
   | 0, R, c, f, g, b, U, W, z, P, χ => by
       rw [proverOfRounds, flatAccept]
-      simp only [CF, gPart]
-      rw [← foldAllFin_eq]
       have hg : commitGen g (fun _ : Fin (2 ^ 0) => c) = c • g 0 := by simp [commitGen]
       have hb : commitGen b (fun _ : Fin (2 ^ 0) => c) = c * b 0 := by simp [commitGen]
-      simp only [roundSum, List.ofFn_zero, List.zip_nil_right, List.map_nil, List.sum_nil, add_zero,
-        foldAllFin, hg, hb]
+      simp only [VerifierIpa.eval, roundSumFin, foldAllFin, valueScalar, add_zero, hg, hb]
       constructor
       · intro h; rw [h]; module
       · intro h; linear_combination (norm := module) h
   | d + 1, R, c, f, g, b, U, W, z, P, χ => by
-      have hchal : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
-      have hround : List.ofFn R = ((R 0).1, (R 0).2) :: List.ofFn (Fin.tail R) := by
-        rw [List.ofFn_succ]; rfl
       rw [proverOfRounds, flatAccept,
           flatAccept_proverOfRounds (Fin.tail R) c f (foldGens g (χ 0)⁻¹) (foldGens b (χ 0)⁻¹) U W z
-            (P + (χ 0)⁻¹ • (R 0).1 + (χ 0) • (R 0).2) (Fin.tail χ)]
-      rw [hround, CF_congr_chal hchal]
-      rw [show (((R 0).1, (R 0).2) : G × G)
-            = ((R 0).1 + (0 : Fp) • U + (0 : Fp) • W, (R 0).2 + (0 : Fp) • U + (0 : Fp) • W) by simp]
-      rw [CF_cons]
-      simp only [mul_zero, add_zero, Fin.cast_cast]
-      refine iff_of_eq (congrArg (· = (0 : G)) ?_)
-      congr 1
-      exact (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
+            (P + (χ 0)⁻¹ • (R 0).1 + (χ 0) • (R 0).2) (Fin.tail χ),
+          VerifierIpa.eval_peel]
+      exact Iff.rfl
 
 /-- Folding a `Fin`-indexed eval vector gives the flat verifier's `computeB`. -/
 theorem foldAllFin_evalVector {d : ℕ} (χ : Fin d → Fp) (x : Fp) :
@@ -762,12 +718,10 @@ theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [Deci
     (ch : Challenges shape.k Fp) :
     DeployedIpaVerifierEq g w u vk instanceCommitment ps ch ↔
       flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF) g (evalVector shape.k ch.x3) u w ch.z
-        (multiopenCommitment g w u vk instanceCommitment ps ch
-          + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS)
+        (deployedIpaCommitment g w u vk instanceCommitment ps ch)
         ch.ipaRound := by
-  rw [deployedVerifierEq_cf, flatAccept_proverOfRounds, foldAllFin_evalVector,
-    show (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z)
-      = -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound)) from by ring]
+  rw [flatAccept_proverOfRounds, foldAllFin_evalVector]
+  exact Iff.rfl
 
 /-! ## The staged (round-adaptive) adversary: `hbridge` discharged beyond the constant strategy
 
@@ -817,19 +771,15 @@ theorem deployedVerifierEq_iff_flatAccept_adaptive {shape : Shape} [DecidableEq 
     DeployedIpaVerifierEq g w u vk instanceCommitment
         (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ} ↔
       flatAccept P g (evalVector shape.k ch.x3) u w ch.z
-        (multiopenCommitment g w u vk instanceCommitment ps ch
-          + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ := by
+        (deployedIpaCommitment g w u vk instanceCommitment ps ch) χ := by
   rw [deployedVerifierEq_iff_flatAccept]
-  have e1 : multiopenValue vk instanceCommitment
+  -- Neither the splice nor the challenge update touches a field the adjusted commitment reads.
+  have e : deployedIpaCommitment g w u vk instanceCommitment
       (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
-      = multiopenValue vk instanceCommitment ps ch := rfl
-  have e2 : multiopenCommitment g w u vk instanceCommitment
-      (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
-      = multiopenCommitment g w u vk instanceCommitment ps ch := rfl
-  rw [e1, e2]
+      = deployedIpaCommitment g w u vk instanceCommitment ps ch := rfl
+  rw [e]
   exact (flatAccept_pathData P g (evalVector shape.k ch.x3)
-    (multiopenCommitment g w u vk instanceCommitment ps ch
-      + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ).symm
+    (deployedIpaCommitment g w u vk instanceCommitment ps ch) χ).symm
 
 /-! ## Prover-to-verifier bridge
 

@@ -57,7 +57,7 @@ theorem multiopenCommitment_witness_zero
       witnessVk witnessIc witnessPs (chRecord ν (fun _ => 0)) = 0 := by
   simp [multiopenCommitment, assembleQueries, witnessVk, witnessPs, witnessShape, witnessIc,
     vanishingQueries, columnQueries, permutationCommonQueries, vanishingHCommitment,
-    constructIntermediateSets, assembleOpening, compressSet, Msm.eval, Msm.zero,
+    constructIntermediateSets, openedPair, assembleOpening, compressSet, Msm.eval, Msm.zero,
     accumulateCommitment, List.ofFn_zero, multiopenCombine, Msm.appendTerm, Msm.scale,
     Msm.add, expectedHEval, allExpressions, subProofExpressions, List.findIdx]
 
@@ -560,7 +560,7 @@ theorem multiopenValue_witness_zero (ch : Challenges witnessShape.k Fp) :
     multiopenValue witnessVk witnessIc witnessPs ch = 0 := by
   simp [multiopenValue, assembleQueries, witnessVk, witnessPs, witnessShape, witnessIc,
     vanishingQueries, columnQueries, permutationCommonQueries, vanishingHCommitment,
-    constructIntermediateSets, assembleOpening, compressSet, Msm.zero,
+    constructIntermediateSets, openedPair, assembleOpening, compressSet, Msm.zero,
     accumulateCommitment, List.ofFn_zero, multiopenCombine, Msm.appendTerm, Msm.scale,
     Msm.add, expectedHEval, allExpressions, subProofExpressions, List.findIdx,
     multiopenEval]

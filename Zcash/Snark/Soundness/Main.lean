@@ -76,10 +76,7 @@ theorem deployedAccepts_verifierEq [DecidableEq G] [Inhabited G] {shape : Shape}
       rw [hm] at h
       simp only [] at h
       rw [eval_cast hk m] at h
-      have hmeq := assemble?_eq_some vk instanceCommitment ps ch hm
-      unfold DeployedIpaVerifierEq
-      rw [← deployed_verification_eq (hk ▸ urs.g) urs.w urs.u ps ch
-            (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)), ← hmeq]
+      rw [assemble?_eq_some vk instanceCommitment ps ch hm, deployed_verification_eq] at h
       exact h
 
 /-! ## `IpaRelation` is derived from the transcript tree, not assumed
