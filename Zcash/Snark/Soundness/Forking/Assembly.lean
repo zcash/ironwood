@@ -8,10 +8,9 @@ The old `FiatShamirTree` assumption combined two jobs: producing forked transcri
 rewinding, and converting those transcripts into `DeployedIpaAcceptV`. This module proves the second
 job.
 
-The closed form `CF` (`Deployed.Flat`) folds one IPA round at a time. `computeB_cons` and
-`CF_cons` match that fold to the recursive commitment, generator, value, and blinding updates.
-`CF_leaf_to_acceptV` identifies the final closed-form equation with the deployed leaf check, and
-`forkAccept_to_acceptV` assembles the full tree.
+The verifier equation folds one IPA round at a time (`VerifierIpa.eval_peel`, `Deployed.Flat`), and
+`computeB_cons` matches that fold's `b`-value update. `CF_leaf_to_acceptV` identifies the depth-zero
+closed form with the deployed leaf check, and `forkAccept_to_acceptV` assembles the full tree.
 
 `Soundness.Forking.Extractor` recovers the parent data, while the algebraic prover supplies AGM
 coefficients. Rewinding and query loss remain outside this structural step.
@@ -135,9 +134,11 @@ theorem forkAccept_to_acceptV {U W : G} {z : F} :
 
 /-! ## The adjusted-commitment connection: halo2's verifier equation is the closed form -/
 
-/-- Halo2's deployed IPA verifier equation is the closed form `CF = 0` — definitionally, since
-`DeployedIpaVerifierEq` is *defined* as that equation (`Deployed.Verification`). Named so the forking
-side enters the closed form by rewriting rather than by unfolding. -/
+/-- Halo2's deployed IPA verifier equation is the closed form `CF = 0`. `DeployedIpaVerifierEq` is
+defined as the depth-indexed `VerifierIpa.eval` form (`Deployed.Verification`); this is its
+list-shaped reading, by `eval_eq_CF`. The fork side reaches `CF` at depth zero
+(`CF_leaf_to_acceptV`, `ForkAccept`) through the peel, so this is the escape hatch for anything
+that wants the whole equation in list form. -/
 theorem deployedVerifierEq_cf {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
@@ -146,7 +147,8 @@ theorem deployedVerifierEq_cf {shape : Shape} [DecidableEq F] [DecidableEq G] [I
       CF (List.ofFn ps.ipaRounds) (List.ofFn ch.ipaRound)
           (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
           (deployedIpaCommitment g w u vk instanceCommitment ps ch)
-          ps.ipaC (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) u (-ps.ipaF) w = 0 :=
-  Iff.rfl
+          ps.ipaC (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) u (-ps.ipaF) w = 0 := by
+  rw [DeployedIpaVerifierEq, VerifierIpa.eval_eq_CF]
+  exact Iff.rfl
 
 end Zcash.Snark

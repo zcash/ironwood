@@ -4,16 +4,16 @@ import Zcash.Snark.Soundness.Deployed.Flat
 /-!
 # Deployed acceptance implies the explicit IPA verifier equation
 
-This module instantiates the closed form `CF` (`Deployed.Flat`) at halo2's multiopen assembly and
-ties the resulting equation to the deployed accept condition:
+This module builds the `VerifierIpa` equation (`Deployed.Flat`) out of halo2's multiopen assembly and
+ties it to the deployed accept condition:
 
 * `multiopenCommitment` / `multiopenValue` — the `P` and `v` halo2's IPA verifier opens, read off the
   multiopen assembly on `(vk, ps, ch)`.
 * `deployedIpaCommitment` — the adjusted commitment `P' = P − [v]g₀ + [ξ]S` at that `P` and `v`.
-* `deployed_verification_eq` — `(assembleFinalMsm …).eval` *is* the closed form, for any multiopen
-  grouping.
-* `DeployedIpaVerifierEq` — the closed form at the grouping the deployed verifier derives, set to
-  the identity.
+* `assembledIpa` / `deployedIpa` — the equation over an arbitrary multiopen grouping, and over the
+  grouping the deployed verifier derives.
+* `deployed_verification_eq` — `(assembleFinalMsm …).eval` *is* `assembledIpa` read against the URS.
+* `DeployedIpaVerifierEq` — `deployedIpa` set to the identity.
 * the `…?_eq_some` lemmas — deployed acceptance uses the rejecting `assemble?`; when it
   returns `some m`, `m` is the non-rejecting `assembleFinalMsm`, so the equation transfers.
 
@@ -118,34 +118,53 @@ abbrev deployedIpaCommitment {shape : Shape} [DecidableEq F] [DecidableEq G] [In
   adjustedCommitment g (multiopenCommitment g w u vk instanceCommitment ps ch)
     (multiopenValue vk instanceCommitment ps ch) ch.xi ps.ipaS
 
-/-- The deployed fingerprint MSM evaluates to the closed form `CF` (`Deployed.Flat`): the adjusted
-commitment `P − [v]g₀ + [ξ]S`, the round total `Σ([uⱼ⁻¹]Lⱼ+[uⱼ]Rⱼ)`, the value-binding `[-c·b·z]U`,
-the blinding `[-f]W`, and the folded generator `[-c]G'₀`. `eval_assembleFinalMsm` plus
-`deployed_gterm_foldAll` (the `g`-term is `[-c]·G'₀`).
+/-- The IPA verifier equation the deployed assembly produces over a multiopen grouping: the adjusted
+commitment from that grouping's own opening, the proof's IPA rounds `(Lⱼ, Rⱼ)` and the transcript's
+round challenges `uⱼ`, the prover's final scalar `c`, and halo2's coefficients `[-c·b·z]` and `[-f]`
+for the inner-product and blinding generators. -/
+def assembledIpa {shape : Shape} (g : Fin (2 ^ shape.k) → G) (w u : G)
+    (ps : ProofString shape F G) (ch : Challenges shape.k F)
+    (grouped : MultiopenGrouped shape.k F G) : VerifierIpa shape.k F G where
+  commitment := adjustedCommitment g
+    ((assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU) grouped
+        (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩)
+    (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU) grouped
+        (Msm.zero shape.k F G)).2
+    ch.xi ps.ipaS
+  rounds := ps.ipaRounds
+  challenges := ch.ipaRound
+  final := ps.ipaC
+  uScalar := -ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z
+  wScalar := -ps.ipaF
 
-The grouping is a parameter, so the adjusted commitment reads `assembleOpening` on that grouping
-directly. At the grouping the deployed verifier derives it is `deployedIpaCommitment`, which is
-where `DeployedIpaVerifierEq` picks it up. -/
+/-- The deployed IPA verifier equation for the grouping the deployed verifier derives from
+`(vk, ps, ch)`, so its adjusted commitment is `deployedIpaCommitment`. -/
+abbrev deployedIpa {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+    (g : Fin (2 ^ shape.k) → G) (w u : G)
+    (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+    (ps : ProofString shape F G) (ch : Challenges shape.k F) : VerifierIpa shape.k F G :=
+  assembledIpa g w u ps ch (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch))
+
+/-- The deployed fingerprint MSM evaluates to `assembledIpa`: the adjusted commitment
+`P − [v]g₀ + [ξ]S`, the round total `Σ([uⱼ⁻¹]Lⱼ+[uⱼ]Rⱼ)`, the value-binding `[-c·b·z]U`, the
+blinding `[-f]W`, and the folded generator `[-c]G'₀`. `eval_assembleFinalMsm` plus
+`deployed_gterm_foldAll` (the `g`-term is `[-c]·G'₀`), then `eval_eq_CF` to fold the assembly's
+list-shaped round sum and generator fold into their depth-indexed counterparts.
+
+That last step is where the `List.ofFn` transport between the two shapes is paid, once: every
+statement downstream of here is in `VerifierIpa.eval` terms and carries no cast. -/
 theorem deployed_verification_eq {shape : Shape} (g : Fin (2 ^ shape.k) → G) (w u : G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
     (grouped : MultiopenGrouped shape.k F G) :
     (assembleFinalMsm ps ch grouped).eval ⟨shape.k, g, w, u⟩
-      = CF (List.ofFn ps.ipaRounds) (List.ofFn ch.ipaRound)
-          (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
-          (adjustedCommitment g
-            ((assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-                grouped (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩)
-            (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-                grouped (Msm.zero shape.k F G)).2
-            ch.xi ps.ipaS)
-          ps.ipaC (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) u (-ps.ipaF) w := by
-  rw [eval_assembleFinalMsm, deployed_gterm_foldAll]
+      = (assembledIpa g w u ps ch grouped).eval g u w := by
+  rw [eval_assembleFinalMsm, deployed_gterm_foldAll, VerifierIpa.eval_eq_CF]
   rfl
 
-/-- halo2's explicit IPA verifier equation for the deployed proof, set to the group identity: the
-closed form `CF` at the derived grouping, opening the pinned `deployedIpaCommitment`. By
-`deployed_verification_eq` this is exactly `(assembleFinalMsm …).eval = 0`. Stating it as its own
-definition lets the forking bridge act on halo2's actual IPA equation.
+/-- halo2's explicit IPA verifier equation for the deployed proof, set to the group identity:
+`deployedIpa` read against the URS generators. By `deployed_verification_eq` this is exactly
+`(assembleFinalMsm …).eval = 0`. Stating it as its own definition lets the forking bridge act on
+halo2's actual IPA equation.
 
 Totality note: the closed form uses Lean's total inverse (`0⁻¹ = 0`), and the deployed code
 computes the same thing — halo2 batch-inverts the round challenges with ff's `batch_invert`,
@@ -160,9 +179,6 @@ def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhab
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) : Prop :=
-  CF (List.ofFn ps.ipaRounds) (List.ofFn ch.ipaRound)
-      (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
-      (deployedIpaCommitment g w u vk instanceCommitment ps ch)
-      ps.ipaC (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) u (-ps.ipaF) w = 0
+  (deployedIpa g w u vk instanceCommitment ps ch).eval g u w = 0
 
 end Zcash.Snark

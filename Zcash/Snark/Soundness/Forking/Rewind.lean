@@ -677,47 +677,30 @@ theorem proverRoundPoint_proverOfRounds : {d : ℕ} → (R : Fin d → G × G) �
       rw [proverRoundPoint_proverOfRounds (Fin.tail R) c f (Fin.tail χ) j (Nat.lt_of_succ_lt_succ hj)]
       rfl
 
-/-- Reindex `CF` along an equality of challenge lists. -/
-theorem CF_congr_chal {u u' : List Fp} (h : u = u') (rounds : List (G × G))
-    (g : Fin (2 ^ u.length) → G) (P : G) (c Uc Wc : Fp) (U W : G) :
-    CF rounds u g P c Uc U Wc W
-      = CF rounds u' (fun j => g (Fin.cast (by rw [h]) j)) P c Uc U Wc W := by
-  subst h; rfl
-
-/-- For a fixed proof tree, `flatAccept` is exactly the closed-form verifier equation `CF = 0`. -/
+/-- For a fixed proof tree, `flatAccept` is exactly the verifier equation `VerifierIpa.eval = 0`,
+at the commitment `P`, the tree's rounds and final scalars, and the value coefficient
+`[-z·c·b₀]` the eval vector folds to. Each round of the induction is one `eval_peel`. -/
 theorem flatAccept_proverOfRounds :
     {d : ℕ} → (R : Fin d → G × G) → (c f : Fp) → (g : Fin (2 ^ d) → G) → (b : Fin (2 ^ d) → Fp) →
     (U W : G) → (z : Fp) → (P : G) → (χ : Fin d → Fp) →
     (flatAccept (proverOfRounds R c f) g b U W z P χ ↔
-      CF (List.ofFn R) (List.ofFn χ)
-          (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j)) P c
-          (-(z * c * foldAllFin χ b)) U (-f) W = 0)
+      VerifierIpa.eval
+        { commitment := P, rounds := R, challenges := χ, final := c,
+          uScalar := -(z * c * foldAllFin χ b), wScalar := -f } g U W = 0)
   | 0, R, c, f, g, b, U, W, z, P, χ => by
       rw [proverOfRounds, flatAccept]
-      simp only [CF]
-      rw [← foldAllFin_eq]
       have hg : commitGen g (fun _ : Fin (2 ^ 0) => c) = c • g 0 := by simp [commitGen]
       have hb : commitGen b (fun _ : Fin (2 ^ 0) => c) = c * b 0 := by simp [commitGen]
-      simp only [roundSum, List.ofFn_zero, List.zip_nil_right, List.map_nil, List.sum_nil, add_zero,
-        foldAllFin, hg, hb]
+      simp only [VerifierIpa.eval, roundSumFin, foldAllFin, add_zero, hg, hb]
       constructor
       · intro h; rw [h]; module
       · intro h; linear_combination (norm := module) h
   | d + 1, R, c, f, g, b, U, W, z, P, χ => by
-      have hchal : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
-      have hround : List.ofFn R = ((R 0).1, (R 0).2) :: List.ofFn (Fin.tail R) := by
-        rw [List.ofFn_succ]; rfl
       rw [proverOfRounds, flatAccept,
           flatAccept_proverOfRounds (Fin.tail R) c f (foldGens g (χ 0)⁻¹) (foldGens b (χ 0)⁻¹) U W z
-            (P + (χ 0)⁻¹ • (R 0).1 + (χ 0) • (R 0).2) (Fin.tail χ)]
-      rw [hround, CF_congr_chal hchal]
-      rw [show (((R 0).1, (R 0).2) : G × G)
-            = ((R 0).1 + (0 : Fp) • U + (0 : Fp) • W, (R 0).2 + (0 : Fp) • U + (0 : Fp) • W) by simp]
-      rw [CF_cons]
-      simp only [mul_zero, add_zero, Fin.cast_cast]
-      refine iff_of_eq (congrArg (· = (0 : G)) ?_)
-      congr 1
-      exact (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
+            (P + (χ 0)⁻¹ • (R 0).1 + (χ 0) • (R 0).2) (Fin.tail χ),
+          VerifierIpa.eval_peel]
+      exact Iff.rfl
 
 /-- Folding a `Fin`-indexed eval vector gives the flat verifier's `computeB`. -/
 theorem foldAllFin_evalVector {d : ℕ} (χ : Fin d → Fp) (x : Fp) :
@@ -737,9 +720,10 @@ theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [Deci
       flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF) g (evalVector shape.k ch.x3) u w ch.z
         (deployedIpaCommitment g w u vk instanceCommitment ps ch)
         ch.ipaRound := by
-  rw [deployedVerifierEq_cf, flatAccept_proverOfRounds, foldAllFin_evalVector,
-    show (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z)
-      = -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound)) from by ring]
+  rw [flatAccept_proverOfRounds, foldAllFin_evalVector,
+    show -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound))
+      = -ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z from by ring]
+  exact Iff.rfl
 
 /-! ## The staged (round-adaptive) adversary: `hbridge` discharged beyond the constant strategy
 
