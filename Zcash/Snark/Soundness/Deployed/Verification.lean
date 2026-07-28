@@ -148,17 +148,18 @@ abbrev deployedIpa {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
 /-- The deployed fingerprint MSM evaluates to `assembledIpa`: the adjusted commitment
 `P − [v]g₀ + [ξ]S`, the round total `Σ([uⱼ⁻¹]Lⱼ+[uⱼ]Rⱼ)`, the value-binding `[-c·b·z]U`, the
 blinding `[-f]W`, and the folded generator `[-c]G'₀`. `eval_assembleFinalMsm` plus
-`deployed_gterm_foldAll` (the `g`-term is `[-c]·G'₀`), then `eval_eq_CF` to fold the assembly's
-list-shaped round sum and generator fold into their depth-indexed counterparts.
+`deployed_gterm_foldAll` (the `g`-term is `[-c]·G'₀`), then `roundSumFin_eq` and `foldAllFin_eq` to
+read the assembly's list-shaped round sum and generator fold as their depth-indexed counterparts.
 
-That last step is where the `List.ofFn` transport between the two shapes is paid, once: every
+Those last two steps are where the `List.ofFn` transport between the two shapes is paid, once: every
 statement downstream of here is in `VerifierIpa.eval` terms and carries no cast. -/
 theorem deployed_verification_eq {shape : Shape} (g : Fin (2 ^ shape.k) → G) (w u : G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
     (grouped : MultiopenGrouped shape.k F G) :
     (assembleFinalMsm ps ch grouped).eval ⟨shape.k, g, w, u⟩
       = (assembledIpa g w u ps ch grouped).eval g u w := by
-  rw [eval_assembleFinalMsm, deployed_gterm_foldAll, VerifierIpa.eval_eq_CF]
+  rw [eval_assembleFinalMsm, deployed_gterm_foldAll, VerifierIpa.eval, roundSumFin_eq,
+    foldAllFin_eq]
   rfl
 
 /-- halo2's explicit IPA verifier equation for the deployed proof, set to the group identity:
