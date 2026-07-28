@@ -111,7 +111,6 @@ assert_axioms Zcash.Snark.Keygen.shape_eq_mergeDerived +native(
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 assert_axioms Zcash.Snark.Keygen.vk_eq_derived +native(
-  Zcash.Arithmetic.omegaOf_eq_certifiedRootPow,
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.neg_five_not_isCube,
@@ -126,7 +125,6 @@ assert_axioms Zcash.Snark.Keygen.vk_eq_derived +native(
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 assert_axioms Zcash.Snark.Deployed.action_bundleStatement_or_relation_of_deployedAccepts +native(
-  Zcash.Arithmetic.omegaOf_eq_certifiedRootPow,
   Zcash.Snark.actionConstantCellAddressFailures_eq_nil,
   Zcash.Snark.actionConstantSites_fit,
   Zcash.Snark.actionConstantValueFailures_eq_nil,

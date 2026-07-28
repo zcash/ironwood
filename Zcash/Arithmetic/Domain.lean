@@ -5,9 +5,9 @@ import Zcash.Arithmetic.Field
 # Evaluation-domain scalars (pasta `Fp` constants and facts)
 
 halo2's domain data as pure functions: binary exponentiation (`powFast`), the size-`2^k`
-domain root of unity `omegaOf` (pasta `Fp::GENERATOR = 5`, `ROOT_OF_UNITY` squared down,
-`EvaluationDomain::new`), `Fp::DELTA`, and the domain facts (primitive-root, power
-injectivity, size nonvanishing) bridged once to CompElliptic's certified Pasta root.
+domain root of unity `omegaOf` (CompElliptic's certified Pasta `ROOT_OF_UNITY` squared
+down, `EvaluationDomain::new`), `Fp::DELTA`, and the domain facts (primitive-root, power
+injectivity, size nonvanishing) derived from the certificate's order fact.
 Moved out of `Zcash/Bridge` per the Clean-boundary architecture
 (`Zcash/Circuits/Integration/clean-boundary.md`): these are verifier-native arithmetic
 facts, not bridge plumbing.
@@ -53,24 +53,24 @@ theorem powFast_eq_pow (b : Fp) (n : ℕ) :
             _ = b ^ (2 * (n / 2)) := by rw [pow_mul]
             _ = b ^ n := congrArg (b ^ ·) hn_split.symm
 
-/-- The size-`2^k` domain's root of unity: pasta `Fp::GENERATOR = 5`,
-`ROOT_OF_UNITY = 5^((p−1)/2^32)`, and `EvaluationDomain::new` squares it down `32 − k`
-times — so `omega = 5^((p−1)/2^k)`. Certified against the captured VK in `VkMatch`. -/
-def omegaOf (k : ℕ) : Fp :=
-  powFast 5 ((scalarFieldOrder - 1) / 2 ^ k)
+/-- pasta `Fp::ROOT_OF_UNITY = 5^((p−1)/2^32)` as a bare literal — pure data, so that
+definitions built on the domain scalars do not pull CompElliptic's certificate (and its
+native axiom) into their trusted base. `rootOfUnityFp_eq_certified` identifies it with the
+certified constant definitionally. -/
+def rootOfUnityFp : Fp :=
+  0x2bce74deac30ebda362120830561f81aea322bf2b7bb7584bdad6fabd87ea32f
 
-/--
-The executable generator spelling of every supported `omegaOf` agrees with powers of
-CompElliptic's certified Pasta root. This is the sole native-tier bridge in the domain
-facts below; `omegaOf` itself remains pure data and does not infect assignment
-definitions with the certificate's native axiom.
--/
-theorem omegaOf_eq_certifiedRootPow :
-    ∀ k : Fin 33,
-      omegaOf k =
-        powFast CompElliptic.Fields.Pasta.pallasBase.rootOfUnity
-          (2 ^ (32 - (k : ℕ))) := by
-  native_decide
+/-- The literal is CompElliptic's certified Pasta root, definitionally. -/
+theorem rootOfUnityFp_eq_certified :
+    rootOfUnityFp = CompElliptic.Fields.Pasta.pallasBase.rootOfUnity := rfl
+
+/-- The size-`2^k` domain's root of unity: the Pasta root (`ROOT_OF_UNITY = 5^((p−1)/2^32)`,
+pasta `Fp::GENERATOR = 5`) squared down `32 − k` times, exactly as `EvaluationDomain::new`
+does — so `omega = 5^((p−1)/2^k)`. Its order is a theorem of CompElliptic's certificate via
+`rootOfUnityFp_eq_certified`; agreement with the deployed key's omega is pinned by `VkMatch`
+against the captured VK. -/
+def omegaOf (k : ℕ) : Fp :=
+  powFast rootOfUnityFp (2 ^ (32 - k))
 
 /-- `omegaOf k` is a primitive size-`2^k` domain root for every supported exponent. -/
 theorem omegaOf_isPrimitiveRoot (k : ℕ) (hk : k ≤ 32) :
@@ -80,7 +80,8 @@ theorem omegaOf_isPrimitiveRoot (k : ℕ) (hk : k ≤ 32) :
         CompElliptic.Fields.Pasta.pallasBase.rootOfUnity (2 ^ 32) :=
     IsPrimitiveRoot.iff_orderOf.mpr
       CompElliptic.Fields.Pasta.pallasBase.valid.rootOfUnity_order
-  rw [omegaOf_eq_certifiedRootPow ⟨k, Nat.lt_succ_of_le hk⟩, powFast_eq_pow]
+  unfold omegaOf
+  rw [rootOfUnityFp_eq_certified, powFast_eq_pow]
   apply IsPrimitiveRoot.pow (by positivity) hroot
   rw [← pow_add, Nat.sub_add_cancel hk]
 
