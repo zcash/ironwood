@@ -2359,7 +2359,7 @@ theorem multiopenCommitment_eq_eval
     (ch : Challenges shape.k Fp) :
     multiopenCommitment g' w' u' vk instanceCommitment ps ch
       = (multiopenMsm vk instanceCommitment ps ch).eval ⟨shape.k, g', w', u'⟩ := by
-  unfold multiopenCommitment multiopenMsm
+  unfold multiopenCommitment openedPair multiopenMsm
   rfl
 
 attribute [local irreducible] multiopenMsm

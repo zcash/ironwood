@@ -7,8 +7,9 @@ import Zcash.Snark.Soundness.Deployed.Flat
 This module builds the `VerifierIpa` equation (`Deployed.Flat`) out of halo2's multiopen assembly and
 ties it to the deployed accept condition:
 
-* `multiopenCommitment` / `multiopenValue` — the `P` and `v` halo2's IPA verifier opens, read off the
-  multiopen assembly on `(vk, ps, ch)`.
+* `openedPair` — the commitment/value pair the multiopen assembly opens over a grouping.
+* `multiopenCommitment` / `multiopenValue` — that pair's two halves at the grouping the deployed
+  verifier derives from `(vk, ps, ch)`: the `P` and `v` halo2's IPA verifier opens.
 * `deployedIpaCommitment` — the adjusted commitment `P' = P − [v]g₀ + [ξ]S` at that `P` and `v`.
 * `assembledIpa` / `deployedIpa` — the equation over an arbitrary multiopen grouping, and over the
   grouping the deployed verifier derives.
@@ -91,22 +92,28 @@ theorem assemble?_eq_some {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhab
           · rw [if_neg hpts] at h; exact absurd h (by simp)
   · rw [if_neg hwf] at h; exact absurd h (by simp)
 
-/-- The deployed multiopen commitment `P` the IPA verifier opens: the `x₁`-compressed, `x₄`-collapsed
-multiopen assembly on `(vk, ps, ch)`, evaluated against the URS. -/
+/-- The commitment/value pair the multiopen assembly opens over `grouped`: halo2's `x₁`-compressed,
+`x₄`-collapsed batch opening, accumulated from the zero MSM (halo2 `multiopen/verifier.rs`). -/
+def openedPair {shape : Shape} (ps : ProofString shape F G) (ch : Challenges shape.k F)
+    (grouped : MultiopenGrouped shape.k F G) : Msm shape.k F G × F :=
+  assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU) grouped
+    (Msm.zero shape.k F G)
+
+/-- The deployed multiopen commitment `P` the IPA verifier opens: `openedPair` at the grouping the
+deployed verifier derives from `(vk, ps, ch)`, evaluated against the URS. -/
 def multiopenCommitment {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) : G :=
-  (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-    (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩
+  (openedPair ps ch (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch))).1.eval
+    ⟨shape.k, g, w, u⟩
 
-/-- The deployed multiopen value `v` the IPA verifier opens `P` to (halo2 `multiopen/verifier.rs`). -/
+/-- The deployed multiopen value `v` the IPA verifier opens `P` to. -/
 def multiopenValue {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G)
     (ch : Challenges shape.k F) : F :=
-  (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
-    (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).2
+  (openedPair ps ch (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch))).2
 
 /-- The adjusted commitment the deployed IPA verifier actually opens: `adjustedCommitment` at the
 multiopen commitment `P` and value `v` derived from `(vk, ps, ch)`, blinded by the proof's `ipaS` at
@@ -125,16 +132,12 @@ for the inner-product and blinding generators. -/
 def assembledIpa {shape : Shape} (g : Fin (2 ^ shape.k) → G) (w u : G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
     (grouped : MultiopenGrouped shape.k F G) : VerifierIpa shape.k F G where
-  commitment := adjustedCommitment g
-    ((assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU) grouped
-        (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩)
-    (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU) grouped
-        (Msm.zero shape.k F G)).2
-    ch.xi ps.ipaS
+  commitment := adjustedCommitment g ((openedPair ps ch grouped).1.eval ⟨shape.k, g, w, u⟩)
+    (openedPair ps ch grouped).2 ch.xi ps.ipaS
   rounds := ps.ipaRounds
   challenges := ch.ipaRound
   final := ps.ipaC
-  uScalar := -ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z
+  uScalar := valueScalar ps.ipaC (computeB ch.x3 (List.ofFn ch.ipaRound)) ch.z
   wScalar := -ps.ipaF
 
 /-- The deployed IPA verifier equation for the grouping the deployed verifier derives from

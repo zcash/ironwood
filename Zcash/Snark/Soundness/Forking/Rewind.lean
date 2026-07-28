@@ -686,12 +686,12 @@ theorem flatAccept_proverOfRounds :
     (flatAccept (proverOfRounds R c f) g b U W z P χ ↔
       VerifierIpa.eval
         { commitment := P, rounds := R, challenges := χ, final := c,
-          uScalar := -(z * c * foldAllFin χ b), wScalar := -f } g U W = 0)
+          uScalar := valueScalar c (foldAllFin χ b) z, wScalar := -f } g U W = 0)
   | 0, R, c, f, g, b, U, W, z, P, χ => by
       rw [proverOfRounds, flatAccept]
       have hg : commitGen g (fun _ : Fin (2 ^ 0) => c) = c • g 0 := by simp [commitGen]
       have hb : commitGen b (fun _ : Fin (2 ^ 0) => c) = c * b 0 := by simp [commitGen]
-      simp only [VerifierIpa.eval, roundSumFin, foldAllFin, add_zero, hg, hb]
+      simp only [VerifierIpa.eval, roundSumFin, foldAllFin, valueScalar, add_zero, hg, hb]
       constructor
       · intro h; rw [h]; module
       · intro h; linear_combination (norm := module) h
@@ -720,9 +720,7 @@ theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [Deci
       flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF) g (evalVector shape.k ch.x3) u w ch.z
         (deployedIpaCommitment g w u vk instanceCommitment ps ch)
         ch.ipaRound := by
-  rw [flatAccept_proverOfRounds, foldAllFin_evalVector,
-    show -(ch.z * ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound))
-      = -ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z from by ring]
+  rw [flatAccept_proverOfRounds, foldAllFin_evalVector]
   exact Iff.rfl
 
 /-! ## The staged (round-adaptive) adversary: `hbridge` discharged beyond the constant strategy

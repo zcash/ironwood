@@ -16,11 +16,13 @@ are the inner-product and blinding generators.
 * `adjustedCommitment` — the *adjusted commitment* `P' = P − [v]g₀ + [ξ]S`: the commitment being
   opened, with the claimed value `v` folded into the first generator and the opening's synthetic
   blinding `[ξ]S` added.
+* `valueScalar` — the value `-c·b·z` the inner-product generator's coefficient carries when the
+  equation comes from a transcript.
 * `VerifierIpa` — the identity's whole left side as a structure with named fields, read against the
   generators by `VerifierIpa.eval`. Its `U` and `W` coefficients are *abstract*, which is what lets
   the forking proof feed it round points represented over `(g, U, W)`. `eval_peel` folds one round
-  into the commitment exactly as the recursive verifier does, and `leaf` is the depth-zero shape the
-  fork tree checks.
+  into the commitment exactly as the recursive verifier does; `leaf`/`eval_leaf` are the depth-zero
+  shape the fork tree checks.
 
 The structure indexes its rounds and challenges by `Fin d`, while halo2's code — and so `foldAll`,
 `computeB`, and the multiopen assembly — is list-shaped. `roundSum`/`roundSumFin_eq` and
@@ -41,6 +43,16 @@ spelled as the singleton-list sum `Msm.eval` produces — `[-v]` read at index `
 — so the deployed assembly's evaluation matches it term for term. -/
 def adjustedCommitment {n : ℕ} (g : Fin n → G) (P : G) (v ξ : F) (S : G) : G :=
   P + (∑ i, ([-v].getD i.val 0) • g i) + ξ • S
+
+/-- The value `VerifierIpa.uScalar` carries when the equation comes from a transcript: `-c·b·z`, the
+coefficient halo2 adds to the inner-product generator's scalar (`add_to_u_scalar`). It binds the
+claimed value through the folded eval vector `b` and the challenge `z`.
+
+Not the same thing as the `uScalar` field, which stays an arbitrary coefficient — the fork tree's
+leaves set it to `-z·c·b₀` written another way. One name here keeps the deployed side (`b` is
+`computeB`) and the fold side (`b` is `foldAllFin`) in a single spelling, so they differ only in
+`b` and `foldAllFin_evalVector` reconciles them. -/
+def valueScalar (c b z : F) : F := -c * b * z
 
 /-- The sum `Σⱼ ([uⱼ⁻¹]Lⱼ + [uⱼ]Rⱼ)` contributed by the IPA rounds, over lists — the shape the
 multiopen assembly produces. `roundSumFin_eq` reads it as the depth-indexed `roundSumFin`. -/
@@ -154,8 +166,8 @@ theorem eval_peel {d : ℕ} (e : VerifierIpa (d + 1) F G) (g : Fin (2 ^ (d + 1))
   simp only [eval, peel, roundSumFin, foldAllFin]
   abel
 
-/-- The depth-zero equation: no rounds and no challenges, so `eval` reduces to
-`P + [Uc]U + [Wc]W + [-c]g₀`. This is the shape the fork tree's leaves check. -/
+/-- The depth-zero equation: no rounds and no challenges left, only the commitment, the two
+coefficients, and the final scalar. This is the shape the fork tree's leaves check. -/
 def leaf (P : G) (c Uc Wc : F) : VerifierIpa 0 F G where
   commitment := P
   rounds := Fin.elim0
@@ -163,6 +175,12 @@ def leaf (P : G) (c Uc Wc : F) : VerifierIpa 0 F G where
   final := c
   uScalar := Uc
   wScalar := Wc
+
+/-- The depth-zero equation reads `P + [Uc]U + [Wc]W + [-c]g₀`: the round sum is empty and the
+generator fold is the single remaining generator. -/
+theorem eval_leaf (P : G) (c Uc Wc : F) (g : Fin (2 ^ 0) → G) (U W : G) :
+    (leaf P c Uc Wc).eval g U W = P + Uc • U + Wc • W + (-c) • g 0 := by
+  simp only [eval, leaf, roundSumFin, foldAllFin, add_zero]
 
 end VerifierIpa
 

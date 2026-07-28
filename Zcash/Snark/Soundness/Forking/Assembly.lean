@@ -91,8 +91,7 @@ theorem evalLeaf_to_acceptV (g : Fin (2 ^ 0) → G) (b : Fin (2 ^ 0) → F) (U W
     DeployedIpaAcceptV g b U W z (commitGen g aP) v blind (.leaf c f aP) := by
   refine ⟨rfl, ?_⟩
   have hg : commitGen g (fun _ => c) = c • g 0 := by simp [commitGen]
-  rw [hg, ← sub_eq_zero, ← hEq]
-  simp only [VerifierIpa.eval, VerifierIpa.leaf, roundSumFin, foldAllFin, add_zero]
+  rw [hg, ← sub_eq_zero, ← hEq, VerifierIpa.eval_leaf]
   module
 
 /-! ## The tree assembly: the forking output yields `DeployedIpaAcceptV`
