@@ -1,0 +1,40 @@
+(** Generated storage for the two large tables in the axiom-free Lean
+    ActionGarden source.
+
+    Lean source SHA-256: @LEAN_SHA256@
+
+    The Lean source deliberately uses ordinary lists.  This generated Rocq
+    target stores the same rows in immutable primitive arrays so lookup is
+    constant-time and the 1,024-entry table has no list spine for Rocq to
+    reduce or serialize.  Array indices are an implementation detail: the
+    generated public accessor still accepts [Z] and checks bounds before
+    converting to Rocq's primitive index type. *)
+
+From Stdlib Require Import ZArith Array.PrimArray.
+Open Scope Z_scope.
+
+Record ActionGardenState3Data : Type := {
+  ActionGardenZ_x0 : BinNums.Z;
+  ActionGardenZ_x1 : BinNums.Z;
+  ActionGardenZ_x2 : BinNums.Z;
+}.
+
+Definition actionGardenPoseidonRoundConstantsData
+    : PrimArray.array ActionGardenState3Data :=
+@ORCHARD_POSEIDON_ROUND_CONSTANTS@.
+
+Record ActionGardenPointData : Type := {
+  actionGardenPointX : BinNums.Z;
+  actionGardenPointY : BinNums.Z;
+}.
+
+Definition actionGardenSinsemillaGeneratorsData
+    : PrimArray.array ActionGardenPointData :=
+@ORCHARD_SINSEMILLA_GENERATORS@.
+
+(** Keep aliases in the main generated file from unfolding the complete
+    payload while Rocq serializes them.  Auditing proofs may locally use
+    [Transparent] because these are ordinary definitions, not axioms. *)
+Global Opaque
+  actionGardenPoseidonRoundConstantsData
+  actionGardenSinsemillaGeneratorsData.

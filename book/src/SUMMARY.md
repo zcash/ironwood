@@ -13,5 +13,6 @@
   - [Proof Journey](formal-verification/proof-journey.md)
   - [Proof Map](formal-verification/proof-map.md)
   - [Source Map](formal-verification/source-map.md)
+  - [Ironwood–Garden Action Bridge](formal-verification/ironwood-garden-action-bridge.md)
   - [Security Definitions](formal-verification/security-definitions.md)
   - [Glossary](formal-verification/glossary.md)

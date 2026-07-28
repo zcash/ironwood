@@ -1,0 +1,856 @@
+(** Generated from the axiom-free Lean ActionGarden.
+    Lean source SHA-256: @LEAN_SHA256@
+
+    This file is a declaration-for-declaration concrete mirror.  It uses [Z]
+    as its sole specification arithmetic carrier; [nat] occurs only as a
+    structural recursion index, exactly as [Nat] does in the Lean source.
+    Rocq's primitive [int] occurs only behind the checked accessor for the two
+    generated immutable constant arrays. *)
+
+From Stdlib Require Import ZArith List Bool Uint63 Array.PrimArray.
+Require Export
+  Garden.Orchard.IronwoodGardenActionBridge.action_garden_constants.
+Import ListNotations.
+Open Scope Z_scope.
+
+Module ActionGardenZ.
+
+Notation Not := not.
+
+(** ** Explicit integer and field arithmetic
+
+    [Z] is an alias for Rocq's mathematical integers.  The [base*] and
+    [scalar*] operations below always reduce modulo the named Pallas modulus;
+    no coercion or type-class operation hides which field is in use. *)
+
+Definition Z : Type := BinNums.Z.
+
+Definition pallasBaseModulus : Z :=
+  28948022309329048855892746252171976963363056481941560715954676764349967630337.
+
+Definition pallasScalarModulus : Z :=
+  28948022309329048855892746252171976963363056481941647379679742748393362948097.
+
+Definition zZero : Z := Z.of_nat 0.
+Definition zOne : Z := Z.of_nat 1.
+Definition zTwo : Z := Z.of_nat 2.
+
+Definition zAdd (left right : Z) : Z := Z.add left right.
+Definition zSub (left right : Z) : Z := Z.sub left right.
+Definition zMul (left right : Z) : Z := Z.mul left right.
+Definition zNeg (value : Z) : Z := Z.opp value.
+Definition zDiv (dividend divisor : Z) : Z := Z.div dividend divisor.
+Definition zMod (dividend modulus : Z) : Z := Z.modulo dividend modulus.
+Definition zPowNat (base : Z) (exponent : nat) : Z :=
+  Z.pow base (Z.of_nat exponent).
+Definition zEq (left right : Z) : bool := Z.eqb left right.
+
+Definition inRange (value upperBound : Z) : Prop :=
+  Z.le zZero value /\ Z.lt value upperBound.
+
+Definition normalize (modulus value : Z) : Z :=
+  zMod value modulus.
+
+Definition addModulo (modulus left right : Z) : Z :=
+  normalize modulus (zAdd left right).
+
+Definition subModulo (modulus left right : Z) : Z :=
+  normalize modulus (zSub left right).
+
+Definition mulModulo (modulus left right : Z) : Z :=
+  normalize modulus (zMul left right).
+
+Definition negModulo (modulus value : Z) : Z :=
+  normalize modulus (zNeg value).
+
+Definition baseNormalize (value : Z) : Z :=
+  normalize pallasBaseModulus value.
+
+Definition baseAdd (left right : Z) : Z :=
+  addModulo pallasBaseModulus left right.
+
+Definition baseSub (left right : Z) : Z :=
+  subModulo pallasBaseModulus left right.
+
+Definition baseMul (left right : Z) : Z :=
+  mulModulo pallasBaseModulus left right.
+
+Definition baseNeg (value : Z) : Z :=
+  negModulo pallasBaseModulus value.
+
+Definition baseEqual (left right : Z) : bool :=
+  zEq (baseNormalize left) (baseNormalize right).
+
+Definition baseCanonical (value : Z) : Prop :=
+  baseNormalize value = value.
+
+Definition scalarNormalize (value : Z) : Z :=
+  normalize pallasScalarModulus value.
+
+Definition scalarAdd (left right : Z) : Z :=
+  addModulo pallasScalarModulus left right.
+
+Definition scalarNeg (value : Z) : Z :=
+  negModulo pallasScalarModulus value.
+
+Definition scalarCanonical (value : Z) : Prop :=
+  scalarNormalize value = value.
+
+Definition baseToScalar (value : Z) : Z :=
+  scalarNormalize (baseNormalize value).
+
+Definition modInverse (modulus value : Z) : Z :=
+  let reduced := normalize modulus value in
+  if zEq reduced zZero then zZero
+  else normalize modulus
+    (zPowNat reduced (Z.to_nat (zSub modulus zTwo))).
+
+Definition baseInverse (value : Z) : Z :=
+  modInverse pallasBaseModulus value.
+
+Definition baseDiv (numerator denominator : Z) : Z :=
+  baseMul numerator (baseInverse denominator).
+
+(** ** Affine Pallas points
+
+    Points are explicit pairs of canonical base-field integers.  [(0, 0)] is
+    the identity sentinel used by both circuit developments.  [pointAdd] is
+    total, but the Action validity predicate records the on-curve and
+    Sinsemilla non-degeneracy conditions under which it has the protocol
+    interpretation. *)
+
+Record Point : Type := {
+  x : Z;
+  y : Z;
+}.
+
+Definition pointIdentity : Point :=
+  {| x := zZero; y := zZero |}.
+
+Definition pointNormalize (point : Point) : Point :=
+  {| x := baseNormalize point.(x); y := baseNormalize point.(y) |}.
+
+Definition pointIsIdentity (point : Point) : bool :=
+  andb (baseEqual point.(x) zZero) (baseEqual point.(y) zZero).
+
+Definition pointCanonical (point : Point) : Prop :=
+  baseCanonical point.(x) /\ baseCanonical point.(y).
+
+Definition pointOnCurve (point : Point) : Prop :=
+  let xSquared := baseMul point.(x) point.(x) in
+  let xCubed := baseMul xSquared point.(x) in
+  let right := baseAdd xCubed (Z.of_nat 5) in
+  baseMul point.(y) point.(y) = right.
+
+Definition pointValid (point : Point) : Prop :=
+  pointNormalize point = pointIdentity \/ pointOnCurve point.
+
+Definition pointNeg (point : Point) : Point :=
+  if pointIsIdentity point then pointIdentity
+  else {| x := baseNormalize point.(x); y := baseNeg point.(y) |}.
+
+Definition pointAdd (left right : Point) : Point :=
+  if pointIsIdentity left then pointNormalize right
+  else if pointIsIdentity right then pointNormalize left
+  else if baseEqual left.(x) right.(x) then
+    if baseEqual (baseAdd left.(y) right.(y)) zZero then pointIdentity
+    else
+      let numerator :=
+        baseAdd
+          (baseMul (Z.of_nat 3) (baseMul left.(x) left.(x)))
+          zZero in
+      let denominator := baseMul zTwo left.(y) in
+      let slope := baseDiv numerator denominator in
+      let resultX :=
+        baseSub (baseSub (baseMul slope slope) left.(x)) right.(x) in
+      let resultY :=
+        baseSub (baseMul slope (baseSub left.(x) resultX)) left.(y) in
+      {| x := resultX; y := resultY |}
+  else
+    let numerator := baseSub right.(y) left.(y) in
+    let denominator := baseSub right.(x) left.(x) in
+    let slope := baseDiv numerator denominator in
+    let resultX :=
+      baseSub (baseSub (baseMul slope slope) left.(x)) right.(x) in
+    let resultY :=
+      baseSub (baseMul slope (baseSub left.(x) resultX)) left.(y) in
+    {| x := resultX; y := resultY |}.
+
+Fixpoint pointNatMul (scalar : nat) (point : Point) : Point :=
+  match scalar with
+  | O => pointIdentity
+  | S remaining => pointAdd (pointNatMul remaining point) point
+  end.
+
+Definition scalarMul (scalar : Z) (point : Point) : Point :=
+  pointNatMul (Z.to_nat (scalarNormalize scalar)) point.
+
+Definition basePointMul (baseValue : Z) (point : Point) : Point :=
+  pointNatMul (Z.to_nat (baseNormalize baseValue)) point.
+
+Definition extractX (point : Point) : Z :=
+  if pointIsIdentity point then zZero else baseNormalize point.(x).
+
+(** ** Poseidon P128Pow5T3
+
+    The constants are data in [PoseidonParameters].  The schedule is four full
+    rounds, twenty-eight pairs of partial rounds, and four final full rounds,
+    matching the 64-round Orchard coreNullifier permutation. *)
+
+Record State3 : Type := {
+  x0 : Z;
+  x1 : Z;
+  x2 : Z;
+}.
+
+Record Matrix3 : Type := {
+  m00 : Z;
+  m01 : Z;
+  m02 : Z;
+  m10 : Z;
+  m11 : Z;
+  m12 : Z;
+  m20 : Z;
+  m21 : Z;
+  m22 : Z;
+}.
+
+Record PoseidonParameters : Type := {
+  roundConstant : Z -> State3;
+  mds : Matrix3;
+}.
+
+Definition basePow5 (value : Z) : Z :=
+  let square := baseMul value value in
+  baseMul (baseMul square square) value.
+
+Definition matrixApply (matrix : Matrix3) (state : State3) : State3 :=
+  {|
+    x0 :=
+      baseAdd
+        (baseAdd
+          (baseMul state.(x0) matrix.(m00))
+          (baseMul state.(x1) matrix.(m01)))
+        (baseMul state.(x2) matrix.(m02));
+    x1 :=
+      baseAdd
+        (baseAdd
+          (baseMul state.(x0) matrix.(m10))
+          (baseMul state.(x1) matrix.(m11)))
+        (baseMul state.(x2) matrix.(m12));
+    x2 :=
+      baseAdd
+        (baseAdd
+          (baseMul state.(x0) matrix.(m20))
+          (baseMul state.(x1) matrix.(m21)))
+        (baseMul state.(x2) matrix.(m22))
+  |}.
+
+Definition poseidonFullRound
+    (parameters : PoseidonParameters) (round : Z) (state : State3) : State3 :=
+  let constants := parameters.(roundConstant) round in
+  matrixApply parameters.(mds) {|
+    x0 := basePow5 (baseAdd state.(x0) constants.(x0));
+    x1 := basePow5 (baseAdd state.(x1) constants.(x1));
+    x2 := basePow5 (baseAdd state.(x2) constants.(x2))
+  |}.
+
+Definition poseidonPartialPair
+    (parameters : PoseidonParameters) (round : Z) (state : State3) : State3 :=
+  let firstConstants := parameters.(roundConstant) round in
+  let firstMixed := matrixApply parameters.(mds) {|
+    x0 := basePow5 (baseAdd state.(x0) firstConstants.(x0));
+    x1 := baseAdd state.(x1) firstConstants.(x1);
+    x2 := baseAdd state.(x2) firstConstants.(x2)
+  |} in
+  let secondConstants := parameters.(roundConstant) (zAdd round zOne) in
+  matrixApply parameters.(mds) {|
+    x0 := basePow5 (baseAdd firstMixed.(x0) secondConstants.(x0));
+    x1 := baseAdd firstMixed.(x1) secondConstants.(x1);
+    x2 := baseAdd firstMixed.(x2) secondConstants.(x2)
+  |}.
+
+Fixpoint iterateIndexedFrom {A : Type}
+    (count index : nat) (step : nat -> A -> A) (initial : A) : A :=
+  match count with
+  | O => initial
+  | S remaining =>
+      iterateIndexedFrom remaining (S index) step (step index initial)
+  end.
+
+Definition iterateIndexed {A : Type}
+    (count : nat) (step : nat -> A -> A) (initial : A) : A :=
+  iterateIndexedFrom count O step initial.
+
+Definition poseidonPermute
+    (parameters : PoseidonParameters) (initial : State3) : State3 :=
+  let afterFirstFull :=
+    iterateIndexed 4%nat
+      (fun index state =>
+        poseidonFullRound parameters (Z.of_nat index) state)
+      initial in
+  let afterPartial :=
+    iterateIndexed 28%nat
+      (fun index state =>
+        poseidonPartialPair parameters
+          (Z.of_nat (Nat.add 4%nat (Nat.mul 2%nat index))) state)
+      afterFirstFull in
+  iterateIndexed 4%nat
+    (fun index state =>
+      poseidonFullRound parameters
+        (Z.of_nat (Nat.add 60%nat index)) state)
+    afterPartial.
+
+Definition poseidonHash2
+    (parameters : PoseidonParameters) (left right : Z) : Z :=
+  let capacity :=
+    baseNormalize (zMul (Z.of_nat 2) (zPowNat (Z.of_nat 2) 64%nat)) in
+  (** Garden's constant-length-two sponge enters the permutation with the two
+      message words already in the state.  This direct form corresponds as a
+      total function for arbitrary [Z] inputs. *)
+  (poseidonPermute parameters {|
+    x0 := left;
+    x1 := right;
+    x2 := capacity
+  |}).(x0).
+
+(** ** Concrete deployed Orchard parameters *)
+
+Definition listGetDAtZ {A : Type}
+    (values : PrimArray.array A) (index : Z) (fallback : A) : A :=
+  let normalizedIndex := Z.max zZero index in
+  if Z.ltb normalizedIndex
+      (Uint63.to_Z (PrimArray.length values))
+  then PrimArray.get values (Uint63.of_Z normalizedIndex)
+  else fallback.
+
+Definition orchardPoseidonRoundConstants : PrimArray.array State3 :=
+  actionGardenPoseidonRoundConstantsData.
+
+Definition orchardPoseidonRoundConstant (round : Z) : State3 :=
+  listGetDAtZ orchardPoseidonRoundConstants round
+    {| x0 := zZero; x1 := zZero; x2 := zZero |}.
+
+Definition orchardPoseidonMds : Matrix3 := {|
+  m00 := 4844513277385895547578596669280046666372576567380472439333234012806535256931;
+  m01 := 22420227485671588580194914215361958133919537309433003325602272145024023440222;
+  m02 := 3505906565384614297249013623188452104971681200991017471148427242055139865693;
+  m10 := 15918204248318370126242808206081613758525089148509539575126649371340283647612;
+  m11 := 17094040714843518372934853765548613673798971581804674915582475057795168500270;
+  m12 := 15812769689003694604229247543370933348074043003262912834067271177893884949626;
+  m20 := 20880359470746774736726481852287259022559450533689220298394450009637377072100;
+  m21 := 13164192954509875252051728398669721690665762613581286296450591265062029506148;
+  m22 := 27123552791154096240274588421608257979835967097480491934880175221940903501553
+|}.
+
+Definition orchardPoseidonParameters : PoseidonParameters := {|
+  roundConstant := orchardPoseidonRoundConstant;
+  mds := orchardPoseidonMds
+|}.
+
+Definition orchardSinsemillaGenerators : PrimArray.array Point :=
+  actionGardenSinsemillaGeneratorsData.
+
+Definition orchardSinsemillaGenerator (chunk : Z) : Point :=
+  listGetDAtZ orchardSinsemillaGenerators chunk pointIdentity.
+
+Definition orchardNoteCommitQ : Point := {|
+  x := 10629404576683096409262958701336170057000067777256141967953463442979689100381;
+  y := 22898949290933268079297281211505753011910178734473470279111609228438645877859
+|}.
+
+Definition orchardCommitIvkQ : Point := {|
+  x := 2593820817260930114322133467408868473290945477826616247349533151445648376562;
+  y := 12214744946019415453501880094709511126888074367290315326445800415816181472958
+|}.
+
+Definition orchardMerkleCrhQ : Point := {|
+  x := 9991206725476878888751475603038274618448000607209514551456795194094072219296;
+  y := 24209798415301550423396126020228723009317736024280831393239261884225294625378
+|}.
+
+Definition orchardSpendAuthG : Point := {|
+  x := 25027635063850382358429654596649554085117301901282348152423547104939793041763;
+  y := 12128007492603938773365931378340937928001494939630793217712875072231079427017
+|}.
+
+Definition orchardValueCommitVG : Point := {|
+  x := 21457208314186520936880902219424053485005045883401337627148481900742711001959;
+  y := 20379375922573002911833717643813254676246486412159279022689151936901102105230
+|}.
+
+Definition orchardValueCommitRG : Point := {|
+  x := 3597772235883004661259329170144280297379687592370687591147658848249887611537;
+  y := 16317546749781193797530044795837656238506071957562073482938086095508632426954
+|}.
+
+Definition orchardNullifierKG : Point := {|
+  x := 17144890976040313974462754624161095328261290075490099718273142830262355741301;
+  y := 9661337292872073193100428608853316471968232023361741282759000480983323509196
+|}.
+
+Definition orchardNoteCommitRG : Point := {|
+  x := 17502433695644481444785977856966854265310331039772160001849803703443502427667;
+  y := 27531606546556235994383748883097777001194017792923801570415255878186539366371
+|}.
+
+Definition orchardCommitIvkRG : Point := {|
+  x := 17022113834174368664964072539940476916905682548990455171271428285673934201112;
+  y := 18912017636736613471143674001158885358143653198146604093009134371854861983145
+|}.
+
+(** The public Garden layer below refers to the deployed tables through these
+    named accessors.  Keeping the storage boundary opaque prevents Rocq's
+    library cooker from recursively inlining all 1,088 rows into every helper;
+    these remain definitions and proof files may locally mark them
+    [Transparent] when auditing concrete entries. *)
+Strategy opaque
+  [orchardPoseidonRoundConstants
+   orchardPoseidonRoundConstant
+   orchardPoseidonMds
+   orchardPoseidonParameters
+   orchardSinsemillaGenerators
+   orchardSinsemillaGenerator].
+
+(** ** Garden-shaped Action specification *)
+
+Record Params : Type := {
+  paramsNoteCommitQ : Point;
+  paramsCommitIvkQ : Point;
+  paramsMerkleCrhQ : Point;
+}.
+
+Definition orchardParams : Params := {|
+  paramsNoteCommitQ := orchardNoteCommitQ;
+  paramsCommitIvkQ := orchardCommitIvkQ;
+  paramsMerkleCrhQ := orchardMerkleCrhQ
+|}.
+
+Definition pointAddGarden (left right : Point) : Point :=
+  if zEq left.(x) zZero then right
+  else if zEq right.(x) zZero then left
+  else if andb (zEq left.(x) right.(x))
+      (zEq (baseAdd left.(y) right.(y)) zZero)
+  then pointIdentity
+  else
+    let slope :=
+      if zEq left.(x) right.(x)
+      then
+        baseDiv
+          (baseMul (Z.of_nat 3) (baseMul left.(x) left.(x)))
+          (baseMul zTwo left.(y))
+      else
+        baseDiv
+          (baseSub right.(y) left.(y))
+          (baseSub right.(x) left.(x)) in
+    let resultX :=
+      baseSub
+        (baseSub (baseMul slope slope) left.(x))
+        right.(x) in
+    {|
+      x := resultX;
+      y := baseSub
+        (baseMul slope (baseSub left.(x) resultX))
+        left.(y)
+    |}.
+
+Definition extractXGarden (point : Point) : Z :=
+  point.(x).
+
+Definition pointAddIncomplete (left right : Point) : Point :=
+  let slope :=
+    baseDiv
+      (baseSub left.(y) right.(y))
+      (baseSub left.(x) right.(x)) in
+  let resultX :=
+    baseSub
+      (baseSub (baseMul slope slope) left.(x))
+      right.(x) in
+  {|
+    x := resultX;
+    y :=
+      baseSub
+        (baseMul slope (baseSub left.(x) resultX))
+        left.(y)
+  |}.
+
+Definition sinsemillaRound (accumulator : Point) (word : Z) : Point :=
+  pointAddIncomplete
+    (pointAddIncomplete accumulator (orchardSinsemillaGenerator word))
+    accumulator.
+
+Definition sinsemillaHashToPointGarden
+    (domain : Point) (words : list Z) : Point :=
+  fold_left sinsemillaRound words domain.
+
+Definition pointIdentityGarden (point : Point) : Prop :=
+  point.(x) = zZero /\ point.(y) = zZero.
+
+Definition sinsemillaRoundDefined
+    (accumulator : Point) (word : Z) : Prop :=
+  let generator := orchardSinsemillaGenerator word in
+  let firstSum := pointAddIncomplete accumulator generator in
+  ~ pointIdentityGarden accumulator /\
+  ~ pointIdentityGarden generator /\
+  baseNormalize accumulator.(x) <> baseNormalize generator.(x) /\
+  ~ pointIdentityGarden firstSum /\
+  baseNormalize firstSum.(x) <> baseNormalize accumulator.(x).
+
+Fixpoint sinsemillaHashDefinedFromGarden
+    (accumulator : Point) (words : list Z) : Prop :=
+  match words with
+  | nil => True
+  | cons word rest =>
+      sinsemillaRoundDefined accumulator word /\
+      sinsemillaHashDefinedFromGarden
+        (sinsemillaRound accumulator word) rest
+  end.
+
+Definition sinsemillaHashDefinedGarden
+    (domain : Point) (words : list Z) : Prop :=
+  sinsemillaHashDefinedFromGarden domain words.
+
+Fixpoint wordsLe (count : nat) (value : Z) : list Z :=
+  match count with
+  | O => nil
+  | S remaining =>
+      cons
+        (zMod value (zPowNat zTwo 10%nat))
+        (wordsLe remaining (zDiv value (zPowNat zTwo 10%nat)))
+  end.
+
+Definition pointParity (point : Point) : Z :=
+  zMod point.(y) zTwo.
+
+Definition noteCommitMessageGarden
+    (gd pkd : Point) (value rho psi : Z) : list Z :=
+  wordsLe 109%nat
+    (zAdd
+      (zAdd
+        (zAdd
+          (zAdd
+            (zAdd
+              (zAdd
+                (zAdd
+                  (zAdd
+                    (extractXGarden gd)
+                    (zMul (pointParity gd) (zPowNat zTwo 255%nat)))
+                  (zMul (extractXGarden pkd) (zPowNat zTwo 256%nat)))
+                (zMul (pointParity pkd) (zPowNat zTwo 511%nat)))
+              (zMul value (zPowNat zTwo 512%nat)))
+            (zMul rho (zPowNat zTwo 576%nat)))
+          (zMul psi (zPowNat zTwo 831%nat)))
+        zZero)
+      zZero).
+
+Definition commitIvkMessageGarden (ak nk : Z) : list Z :=
+  wordsLe 51%nat (zAdd ak (zMul nk (zPowNat zTwo 255%nat))).
+
+Definition merkleMessageGarden (layer left right : Z) : list Z :=
+  wordsLe 52%nat
+    (zAdd layer
+      (zAdd
+        (zMul left (zPowNat zTwo 10%nat))
+        (zMul right (zPowNat zTwo 265%nat)))).
+
+Definition merkleLayer
+    (domain : Point) (layer node sibling : Z) (isRight : bool) : Z :=
+  let left := if isRight then sibling else node in
+  let right := if isRight then node else sibling in
+  extractXGarden
+    (sinsemillaHashToPointGarden domain
+      (merkleMessageGarden layer left right)).
+
+Definition merkleRootGarden
+    (domain : Point) (leaf : Z) (path : list (Z * Z * bool)) : Z :=
+  fold_left
+    (fun node element =>
+      merkleLayer domain (fst (fst element)) node
+        (snd (fst element)) (snd element))
+    path leaf.
+
+Definition merkleStepDefinedGarden
+    (domain : Point) (node layer sibling : Z) (isRight : bool) : Prop :=
+  let left := if isRight then sibling else node in
+  let right := if isRight then node else sibling in
+  sinsemillaHashDefinedGarden domain
+    (merkleMessageGarden layer left right).
+
+Inductive merklePathDefinedFromGarden
+    (domain : Point) : Z -> list (Z * Z * bool) -> Prop :=
+  | ActionGardenMerklePathDefinedNil (node : Z) :
+      merklePathDefinedFromGarden domain node nil
+  | ActionGardenMerklePathDefinedCons
+      (node nextNode layer sibling : Z) (isRight : bool)
+      (rest : list (Z * Z * bool)) :
+      merkleStepDefinedGarden domain node layer sibling isRight ->
+      nextNode = merkleLayer domain layer node sibling isRight ->
+      merklePathDefinedFromGarden domain nextNode rest ->
+      merklePathDefinedFromGarden domain node
+        (cons ((layer, sibling), isRight) rest).
+
+Definition merklePathDefinedGarden
+    (domain : Point) (leaf : Z)
+    (path : list (Z * Z * bool)) : Prop :=
+  merklePathDefinedFromGarden domain leaf path.
+
+Fixpoint pathLayersFrom
+    (expected : Z) (path : list (Z * Z * bool)) : Prop :=
+  match path with
+  | nil => True
+  | cons element rest =>
+      fst (fst element) = expected /\
+      pathLayersFrom (zAdd expected zOne) rest
+  end.
+
+Definition pathLayersCanonical
+    (path : list (Z * Z * bool)) : Prop :=
+  pathLayersFrom zZero path.
+
+Record ActionInputs : Type := {
+  inAk : Point;
+  inNk : Z;
+  inRhoOld : Z;
+  inPsiOld : Z;
+  inCmOld : Point;
+  inGdOld : Point;
+  inPkdOld : Point;
+  inVOld : Z;
+  inRivk : Z;
+  inAlpha : Z;
+  inAnchorPublic : Z;
+  inRcv : Z;
+  inMagnitude : Z;
+  inSign : Z;
+  inLeaf : Z;
+  inPath : list (Z * Z * bool);
+  inGdNew : Point;
+  inPkdNew : Point;
+  inVNew : Z;
+  inPsiNew : Z;
+  inRcmNew : Z;
+}.
+
+Record FullActionInputs : Type := {
+  fullAction : ActionInputs;
+  fullRcmOld : Z;
+  fullEnableSpend : Z;
+  fullEnableOutput : Z;
+  fullDisableCrossAddress : Z;
+}.
+
+Record ActionOutputs : Type := {
+  outAnchor : Z;
+  outCvNet : Point;
+  outNfOld : Z;
+  outRk : Point;
+  outCmx : Z;
+}.
+
+Definition signedNetValue (magnitude sign : Z) : Z :=
+  if zEq sign zOne then magnitude else zNeg magnitude.
+
+Definition spendAuthRandomize (ak : Point) (alpha : Z) : Point :=
+  pointAddGarden ak (scalarMul alpha orchardSpendAuthG).
+
+Definition valueCommit (value randomness : Z) : Point :=
+  pointAddGarden
+    (scalarMul value orchardValueCommitVG)
+    (scalarMul randomness orchardValueCommitRG).
+
+Definition nullifier (nk rho psi : Z) (cm : Point) : Z :=
+  let hash := poseidonHash2 orchardPoseidonParameters nk rho in
+  let scalar := baseAdd hash psi in
+  extractXGarden
+    (pointAddGarden
+      (scalarMul scalar orchardNullifierKG)
+      cm).
+
+Definition noteCommit
+    (parameters : Params)
+    (gd pkd : Point) (value rho psi randomness : Z) : Point :=
+  pointAddGarden
+    (sinsemillaHashToPointGarden parameters.(paramsNoteCommitQ)
+      (noteCommitMessageGarden gd pkd value rho psi))
+    (scalarMul randomness orchardNoteCommitRG).
+
+Definition commitIvk
+    (parameters : Params) (ak nk randomness : Z) : Point :=
+  pointAddGarden
+    (sinsemillaHashToPointGarden parameters.(paramsCommitIvkQ)
+      (commitIvkMessageGarden ak nk))
+    (scalarMul randomness orchardCommitIvkRG).
+
+Definition actionParametersValid (parameters : Params) : Prop :=
+  pointCanonical parameters.(paramsNoteCommitQ) /\
+  pointCanonical parameters.(paramsCommitIvkQ) /\
+  pointCanonical parameters.(paramsMerkleCrhQ) /\
+  pointCanonical orchardSpendAuthG /\
+  pointCanonical orchardValueCommitVG /\
+  pointCanonical orchardValueCommitRG /\
+  pointCanonical orchardNullifierKG /\
+  pointCanonical orchardNoteCommitRG /\
+  pointCanonical orchardCommitIvkRG /\
+  pointOnCurve parameters.(paramsNoteCommitQ) /\
+  pointOnCurve parameters.(paramsCommitIvkQ) /\
+  pointOnCurve parameters.(paramsMerkleCrhQ) /\
+  pointOnCurve orchardSpendAuthG /\
+  pointOnCurve orchardValueCommitVG /\
+  pointOnCurve orchardValueCommitRG /\
+  pointOnCurve orchardNullifierKG /\
+  pointOnCurve orchardNoteCommitRG /\
+  pointOnCurve orchardCommitIvkRG /\
+  forall word : Z,
+    inRange word (Z.of_nat 1024) ->
+    pointCanonical (orchardSinsemillaGenerator word) /\
+    pointOnCurve (orchardSinsemillaGenerator word).
+
+Definition actionPointsTyped (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  pointCanonical core.(inAk) /\
+  pointCanonical core.(inCmOld) /\
+  pointCanonical core.(inGdOld) /\
+  pointCanonical core.(inPkdOld) /\
+  pointCanonical core.(inGdNew) /\
+  pointCanonical core.(inPkdNew) /\
+  pointOnCurve core.(inAk) /\
+  pointValid core.(inCmOld) /\
+  pointOnCurve core.(inGdOld) /\
+  pointOnCurve core.(inPkdOld) /\
+  pointOnCurve core.(inGdNew) /\
+  pointOnCurve core.(inPkdNew).
+
+Definition actionBaseValuesTyped (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  baseCanonical core.(inNk) /\
+  baseCanonical core.(inRhoOld) /\
+  baseCanonical core.(inPsiOld) /\
+  baseCanonical core.(inVOld) /\
+  baseCanonical core.(inAnchorPublic) /\
+  baseCanonical input.(fullEnableSpend) /\
+  baseCanonical input.(fullEnableOutput) /\
+  baseCanonical input.(fullDisableCrossAddress) /\
+  baseCanonical core.(inMagnitude) /\
+  baseCanonical core.(inSign) /\
+  baseCanonical core.(inLeaf) /\
+  baseCanonical core.(inVNew) /\
+  baseCanonical core.(inPsiNew).
+
+Definition actionScalarValuesTyped (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  scalarCanonical core.(inRivk) /\
+  scalarCanonical core.(inAlpha) /\
+  scalarCanonical input.(fullRcmOld) /\
+  scalarCanonical core.(inRcmNew) /\
+  scalarCanonical core.(inRcv).
+
+Definition actionInputsTyped (input : FullActionInputs) : Prop :=
+  actionPointsTyped input /\
+  actionBaseValuesTyped input /\
+  actionScalarValuesTyped input.
+
+Definition actionRangesValid (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  let twoTo64 := zPowNat zTwo 64%nat in
+  let twoTo255 := zPowNat zTwo 255%nat in
+  inRange core.(inVOld) twoTo64 /\
+  inRange core.(inVNew) twoTo64 /\
+  inRange core.(inMagnitude) twoTo64 /\
+  (core.(inSign) = zOne \/ core.(inSign) = baseNeg zOne) /\
+  inRange core.(inLeaf) twoTo255 /\
+  forall element : Z * Z * bool,
+    In element core.(inPath) ->
+    inRange (snd (fst element)) twoTo255.
+
+Definition actionValueConstraints (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  baseSub core.(inVOld) core.(inVNew) =
+    baseMul core.(inMagnitude) core.(inSign) /\
+  baseMul core.(inVOld)
+    (baseSub zOne input.(fullEnableSpend)) = zZero /\
+  baseMul core.(inVNew)
+    (baseSub zOne input.(fullEnableOutput)) = zZero /\
+  (Not (input.(fullDisableCrossAddress) = zZero) ->
+    core.(inGdOld) = core.(inGdNew) /\
+    core.(inPkdOld) = core.(inPkdNew)).
+
+Definition actionOwnershipValid
+    (parameters : Params) (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  let ivkWords :=
+    commitIvkMessageGarden (extractXGarden core.(inAk)) core.(inNk) in
+  let oldNoteWords :=
+    noteCommitMessageGarden core.(inGdOld) core.(inPkdOld)
+      core.(inVOld) core.(inRhoOld) core.(inPsiOld) in
+  let ivkPoint :=
+    commitIvk parameters
+      (extractXGarden core.(inAk)) core.(inNk) core.(inRivk) in
+  sinsemillaHashDefinedGarden
+    parameters.(paramsCommitIvkQ) ivkWords /\
+  core.(inPkdOld) =
+    scalarMul (extractXGarden ivkPoint) core.(inGdOld) /\
+  sinsemillaHashDefinedGarden
+    parameters.(paramsNoteCommitQ) oldNoteWords /\
+  core.(inCmOld) =
+    noteCommit parameters core.(inGdOld) core.(inPkdOld)
+      core.(inVOld) core.(inRhoOld) core.(inPsiOld)
+      input.(fullRcmOld).
+
+Definition actionMerkleValid
+    (parameters : Params) (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  List.length core.(inPath) = 32%nat /\
+  pathLayersCanonical core.(inPath) /\
+  merklePathDefinedGarden parameters.(paramsMerkleCrhQ)
+    core.(inLeaf) core.(inPath) /\
+  core.(inLeaf) = extractXGarden core.(inCmOld) /\
+  (core.(inVOld) = zZero \/
+    core.(inAnchorPublic) =
+      merkleRootGarden parameters.(paramsMerkleCrhQ)
+        core.(inLeaf) core.(inPath)).
+
+Definition actionNewNoteValid
+    (parameters : Params) (input : FullActionInputs) : Prop :=
+  let core := input.(fullAction) in
+  let nfOldValue :=
+    nullifier core.(inNk) core.(inRhoOld)
+      core.(inPsiOld) core.(inCmOld) in
+  sinsemillaHashDefinedGarden parameters.(paramsNoteCommitQ)
+    (noteCommitMessageGarden core.(inGdNew) core.(inPkdNew)
+      core.(inVNew) nfOldValue core.(inPsiNew)).
+
+Definition validActionInputs
+    (parameters : Params) (input : FullActionInputs) : Prop :=
+  actionParametersValid parameters /\
+  actionInputsTyped input /\
+  actionRangesValid input /\
+  actionValueConstraints input /\
+  actionOwnershipValid parameters input /\
+  actionMerkleValid parameters input /\
+  actionNewNoteValid parameters input.
+
+Definition orchardAction
+    (parameters : Params) (input : ActionInputs) : ActionOutputs :=
+  let nfOldValue :=
+    nullifier input.(inNk) input.(inRhoOld)
+      input.(inPsiOld) input.(inCmOld) in
+  {|
+    outAnchor :=
+      if zEq input.(inVOld) zZero
+      then input.(inAnchorPublic)
+      else
+        merkleRootGarden parameters.(paramsMerkleCrhQ)
+          input.(inLeaf) input.(inPath);
+    outCvNet :=
+      valueCommit
+        (signedNetValue input.(inMagnitude) input.(inSign))
+        input.(inRcv);
+    outNfOld := nfOldValue;
+    outRk := spendAuthRandomize input.(inAk) input.(inAlpha);
+    outCmx :=
+      extractXGarden
+        (noteCommit parameters input.(inGdNew) input.(inPkdNew)
+          input.(inVNew) nfOldValue input.(inPsiNew) input.(inRcmNew))
+  |}.
+
+End ActionGardenZ.
