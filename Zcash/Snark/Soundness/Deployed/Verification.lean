@@ -106,6 +106,17 @@ def multiopenValue {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
   (assembleOpening ch.x1 ch.x2 ch.x3 ch.x4 ps.multiopenQPrime (List.ofFn ps.multiopenU)
     (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).2
 
+/-- The *adjusted commitment* the deployed IPA verifier actually opens: `P' = P − [v]g₀ + [ξ]S`,
+where `P` is the multiopen commitment, `v` the value it opens to, and `[ξ]S` the synthetic blinding
+of the opening (halo2 `poly/commitment/verifier.rs`). -/
+abbrev deployedIpaCommitment {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+    (g : Fin (2 ^ shape.k) → G) (w u : G)
+    (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+    (ps : ProofString shape F G) (ch : Challenges shape.k F) : G :=
+  multiopenCommitment g w u vk instanceCommitment ps ch
+    + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i)
+    + ch.xi • ps.ipaS
+
 /-- The deployed fingerprint MSM evaluates to halo2's explicit IPA verifier equation: the
 multiopen commitment, the `[-v]g₀` value term, the `[ξ]S` blinding poly, the round total
 `Σ([uⱼ⁻¹]Lⱼ+[uⱼ]Rⱼ)`, the value-binding `[-c·b·z]U`, the blinding `[-f]W`, and the folded

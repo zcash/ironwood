@@ -99,6 +99,15 @@ theorem multiopenCommitment_spliceIpa [DecidableEq VestaG]
     multiopenCommitment g w u vk instanceCommitment (spliceIpa ps R cc ff) c
       = multiopenCommitment g w u vk instanceCommitment ps c := rfl
 
+/-- Replacing the IPA proof suffix does not change the adjusted commitment: the splice rewrites only
+`ipaRounds`/`ipaC`/`ipaF`, while `P' = P − [v]g₀ + [ξ]S` reads the multiopen fields and `ipaS`. -/
+theorem deployedIpaCommitment_spliceIpa [DecidableEq VestaG]
+    [Inhabited VestaG] {shape : Shape} (g : Fin (2 ^ shape.k) → VestaG)
+    (w u : VestaG) (vk : VerifyingKey shape Fp VestaG) (instanceCommitment : Fin shape.numProofs → ℕ → VestaG) (ps : ProofString shape Fp VestaG)
+    (R : Fin shape.k → VestaG × VestaG) (cc ff : Fp) (c : Challenges shape.k Fp) :
+    deployedIpaCommitment g w u vk instanceCommitment (spliceIpa ps R cc ff) c
+      = deployedIpaCommitment g w u vk instanceCommitment ps c := rfl
+
 /-- Every pre-IPA squeeze position is no later than the final one. -/
 private theorem preIpaLen_le_last (shape : Shape) (n₀ : ℕ) (i : Fin 11) :
     preIpaLen shape n₀ i ≤ preIpaLen shape n₀ 10 := by
@@ -504,6 +513,9 @@ theorem algebraicForkCertAttempt_valid {shape : Shape}
     · intro i
       exact Fin.elim0 i
     · simpa only [algebraicForkCertAttempt, recursiveAlgebraicFork] using hout
+  -- Stated in the adjusted commitment's components, not through `deployedIpaCommitment`: the
+  -- rewrites below act on those components, and the abbrev is reducible, so `exact hacc` still
+  -- bridges the two forms at the use site.
   have hPwhole : ∀ (chi : Fin shape.k → Fp),
       (multiopenCommitment urs.g urs.w urs.u vk instanceCommitment p₀.proof.1 (chRecord ν₀ chi)
         + (∑ i, ([-(multiopenValue vk instanceCommitment p₀.proof.1 (chRecord ν₀ chi))].getD i.val 0) • urs.g i)
@@ -547,7 +559,7 @@ theorem algebraicForkCertAttempt_valid {shape : Shape}
   rw [algebraicTableAcceptZ, hnu, hchi] at hwin
   have hacc := hwin.1
   rw [deployedVerifierEq_iff_flatAccept] at hacc
-  rw [hsplice, multiopenValue_spliceIpa, multiopenCommitment_spliceIpa] at hacc
+  rw [hsplice, deployedIpaCommitment_spliceIpa] at hacc
   have hrounds : (fun j => grindDecode (ts j)) = p'.proof.1.ipaRounds := by
     funext j
     calc
@@ -557,8 +569,6 @@ theorem algebraicForkCertAttempt_valid {shape : Shape}
   have hc : p'.proof.1.ipaC = c := congrArg Prod.fst hfinal
   have hf : p'.proof.1.ipaF = f := congrArg Prod.snd hfinal
   rw [hrounds, ← hc, ← hf, ← hPwhole cs]
-  rw [show (spliceIpa p₀.proof.1 p'.proof.1.ipaRounds p'.proof.1.ipaC
-    p'.proof.1.ipaF).ipaS = p₀.proof.1.ipaS from rfl] at hacc
   exact hacc
 
 /-- Rewrite a certificate onto the canonical augmented basis of the deployed AGM instance. -/

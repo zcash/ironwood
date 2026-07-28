@@ -202,10 +202,10 @@ theorem deployedVerifierEq_cf {shape : Shape} [DecidableEq F] [DecidableEq G] [I
     DeployedIpaVerifierEq g w u vk instanceCommitment ps ch ↔
       CF (List.ofFn ps.ipaRounds) (List.ofFn ch.ipaRound)
           (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
-          (multiopenCommitment g w u vk instanceCommitment ps ch
-            + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS)
+          (deployedIpaCommitment g w u vk instanceCommitment ps ch)
           ps.ipaC (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z) u (-ps.ipaF) w = 0 := by
-  unfold DeployedIpaVerifierEq CF gPart roundSum multiopenCommitment multiopenValue
+  unfold DeployedIpaVerifierEq CF gPart roundSum deployedIpaCommitment multiopenCommitment
+    multiopenValue
   constructor <;> intro h <;> linear_combination (norm := abel) h
 
 end Zcash.Snark

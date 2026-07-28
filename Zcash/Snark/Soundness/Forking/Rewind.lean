@@ -762,8 +762,7 @@ theorem deployedVerifierEq_iff_flatAccept {shape : Shape} [DecidableEq Fp] [Deci
     (ch : Challenges shape.k Fp) :
     DeployedIpaVerifierEq g w u vk instanceCommitment ps ch ↔
       flatAccept (proverOfRounds ps.ipaRounds ps.ipaC ps.ipaF) g (evalVector shape.k ch.x3) u w ch.z
-        (multiopenCommitment g w u vk instanceCommitment ps ch
-          + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS)
+        (deployedIpaCommitment g w u vk instanceCommitment ps ch)
         ch.ipaRound := by
   rw [deployedVerifierEq_cf, flatAccept_proverOfRounds, foldAllFin_evalVector,
     show (-ps.ipaC * computeB ch.x3 (List.ofFn ch.ipaRound) * ch.z)
@@ -817,19 +816,17 @@ theorem deployedVerifierEq_iff_flatAccept_adaptive {shape : Shape} [DecidableEq 
     DeployedIpaVerifierEq g w u vk instanceCommitment
         (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ} ↔
       flatAccept P g (evalVector shape.k ch.x3) u w ch.z
-        (multiopenCommitment g w u vk instanceCommitment ps ch
-          + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ := by
+        (deployedIpaCommitment g w u vk instanceCommitment ps ch) χ := by
   rw [deployedVerifierEq_iff_flatAccept]
-  have e1 : multiopenValue vk instanceCommitment
+  -- Splicing touches only `ipaRounds`/`ipaC`/`ipaF` and the challenge update only `ipaRound`, so
+  -- every field the adjusted commitment reads is untouched and the two sides are definitionally
+  -- equal.
+  have e : deployedIpaCommitment g w u vk instanceCommitment
       (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
-      = multiopenValue vk instanceCommitment ps ch := rfl
-  have e2 : multiopenCommitment g w u vk instanceCommitment
-      (spliceIpa ps (pathData P χ).1 (pathData P χ).2.1 (pathData P χ).2.2) {ch with ipaRound := χ}
-      = multiopenCommitment g w u vk instanceCommitment ps ch := rfl
-  rw [e1, e2]
+      = deployedIpaCommitment g w u vk instanceCommitment ps ch := rfl
+  rw [e]
   exact (flatAccept_pathData P g (evalVector shape.k ch.x3)
-    (multiopenCommitment g w u vk instanceCommitment ps ch
-      + (∑ i, ([-(multiopenValue vk instanceCommitment ps ch)].getD i.val 0) • g i) + ch.xi • ps.ipaS) χ).symm
+    (deployedIpaCommitment g w u vk instanceCommitment ps ch) χ).symm
 
 /-! ## Prover-to-verifier bridge
 
