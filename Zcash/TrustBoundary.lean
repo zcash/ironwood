@@ -12,6 +12,9 @@ import Zcash.Security.Ledger.Capstone
 import Zcash.Security.Ledger.Nullifier
 import Zcash.Security.Ledger.Value
 import Zcash.Security.Ledger.KeyBindingArm
+import Zcash.Security.Ledger.ForgeryArm
+import Zcash.Security.Ledger.ValueExtraction
+import Zcash.Security.RedDSA.SURK
 import Zcash.Security.Common.Birthday
 import Zcash.Security.BindingSignature.Orchard
 import Zcash.Security.BindingSignature.Sapling
@@ -434,6 +437,56 @@ assert_axioms Zcash.Security.Ledger.Bridge.orchardSpendAuthority_measure_le +nat
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check)
+
+/-! ## RedDSA
+
+The abstract scheme behind the two signature obligations. Completeness and the
+re-randomization axioms are theorems; special soundness (`forkDlog_spec`,
+`verify_fork_dlog`) is the forking extractor's deterministic core; the SURK-CMA win
+and the extraction failure are computable data, per breaks-as-computed-data. -/
+
+assert_axioms Zcash.Security.RedDSA.randomizePrivate_add_neg
+assert_axioms Zcash.Security.RedDSA.randomizePrivate_zero
+assert_axioms Zcash.Security.RedDSA.Scheme.randomizePublic_zero
+assert_axioms Zcash.Security.RedDSA.Scheme.derivePublic_randomizePrivate
+assert_axioms Zcash.Security.RedDSA.Scheme.derivePublic_add
+assert_axioms Zcash.Security.RedDSA.Scheme.derivePublic_injective
+assert_axioms Zcash.Security.RedDSA.Scheme.derivePublic_neg
+assert_axioms Zcash.Security.RedDSA.Scheme.verify_sign
+assert_axioms Zcash.Security.RedDSA.Scheme.verify_sign_randomized
+assert_axioms Zcash.Security.RedDSA.Scheme.verify_shifted_of_key_blind_hash
+assert_axioms Zcash.Security.RedDSA.forkDlog_spec
+assert_axioms Zcash.Security.RedDSA.verify_fork_dlog
+assert_computable Zcash.Security.RedDSA.forkDlog +choice
+assert_computable Zcash.Security.RedDSA.SURKWin.ofMessageFresh
+assert_computable Zcash.Security.RedDSA.SURKWin.negKey
+
+/-! ## The forgery arm's ε, named against SURK-CMA
+
+The Spend Authority forgery arm at its honest name: with the signature primitives
+pinned to RedDSA (`SpendAuthShape`), each sign-split arm sample exhibits a SURK-CMA
+win against the victim's key or its negation, and the capstone composes with the two
+named advantages summed — the design's accepted factor-of-2. -/
+
+assert_computable Zcash.Security.Ledger.Model.SpendAuthForgery.toSURKWin
+assert_axioms Zcash.Security.Ledger.Model.spendAuthorityForgeryEvent_subset
+assert_axioms Zcash.Security.Ledger.Model.spendAuthorityForgeryArm_win
+assert_axioms Zcash.Security.Ledger.Model.spendAuthorityForgery_measure_le
+assert_axioms Zcash.Security.Ledger.Model.spendAuthority_measure_le_surk
+
+/-! ## The transaction-balance premiss in extractor-plus-knowledge-error form
+
+The fallible-extractor restatement of the transaction-balance premiss discharge: the extractor is
+an arbitrary function, its failures are exhibited `RedDSA.ExtractionFailure` data,
+and the Balance capstones bound the violation by `εdlr + κ`. `+choice` is the
+erased-positions tier. -/
+
+assert_computable Zcash.Security.Ledger.Model.ValueShape.premissOrBreakFallible +choice
+assert_computable Zcash.Security.Ledger.Model.txBalancePremissFallible +choice
+assert_axioms Zcash.Security.Ledger.Model.valueExtractFailEvent_failure
+assert_axioms Zcash.Security.Ledger.Model.txBalanceBreakEvent_fallible_subset
+assert_axioms Zcash.Security.Ledger.Model.balanceConservation_measure_le_kerr
+assert_axioms Zcash.Security.Ledger.Model.shieldedBalanceCap_measure_le_kerr
 
 /-! ## The key-binding arms' ε, discharged
 
