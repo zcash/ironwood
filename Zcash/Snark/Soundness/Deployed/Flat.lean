@@ -21,10 +21,13 @@ are the inner-product and blinding generators.
   abstract is what lets the forking proof feed `CF` round points represented over `(g, U, W)`;
   `CF_cons` folds one such round into the commitment and those two coefficients exactly as the
   recursive verifier folds it.
+* `VerifierIpa` — the same left side as a structure with named fields, evaluated by
+  `VerifierIpa.eval`. `eval_eq_CF` connects the two.
 
-Nothing here mentions the halo2 assembly: `Deployed.Verification` instantiates `CF` at it, and
-`Forking.Assembly` runs the fold. Challenge vectors are lists, mirroring halo2's list-shaped code;
-`foldAllFin` and `foldAllFin_eq` are where the `Fin d`-indexed tree side crosses over.
+Nothing here mentions the halo2 assembly: `Deployed.Verification` instantiates the equation at it,
+and `Forking.Assembly` runs the fold. `CF`'s challenge vectors are lists, mirroring halo2's
+list-shaped code; `foldAllFin` and `foldAllFin_eq` are where the `Fin d`-indexed tree side crosses
+over.
 -/
 
 namespace Zcash.Snark
@@ -108,5 +111,83 @@ theorem foldAllFin_eq : {d : ℕ} → (χ : Fin d → F) → (g : Fin (2 ^ d) �
       simp only [Fin.cast_cast]
       exact congrArg (fun gen => foldAll (List.ofFn (Fin.tail χ)) gen 0)
         (foldGens_comp_cast (List.length_ofFn (f := Fin.tail χ)) g (χ 0)⁻¹).symm
+
+/-! ## The equation as a syntax object
+
+`CF` takes its nine pieces positionally, so a call site says nothing about which argument is the
+commitment and which is a coefficient. `VerifierIpa` collects them into named fields and `eval`
+reads them against generators — the same split `Msm` (`Core.Msm`) gives the fingerprint MSM: the
+scalars live in the object, the URS data arrives at the interpretation.
+-/
+
+/-- The IPA verifier equation at depth `d` as a syntax object: `commitment` is the adjusted
+commitment `P'`, `rounds` the round points `(Lⱼ, Rⱼ)` and `challenges` the round challenges `uⱼ`,
+`final` the prover's final scalar `c`, and `uScalar`/`wScalar` the coefficients of the inner-product
+and blinding generators. The generators themselves are supplied to `eval`.
+
+Rounds and challenges are indexed by `Fin d` rather than carried as lists, so `eval`'s generator
+argument has type `Fin (2 ^ d) → G` — mentioning only the depth, never a projection of the object.
+That is what lets `eval_peel` fold a round with no reindexing. -/
+structure VerifierIpa (d : ℕ) (F G : Type*) where
+  commitment : G
+  rounds : Fin d → G × G
+  challenges : Fin d → F
+  final : F
+  uScalar : F
+  wScalar : F
+
+/-- The round total `Σⱼ ([uⱼ⁻¹]Lⱼ + [uⱼ]Rⱼ)` over a `Fin`-indexed round family — `roundSum` with the
+rounds and challenges indexed rather than zipped. -/
+def roundSumFin : {d : ℕ} → (Fin d → G × G) → (Fin d → F) → G
+  | 0, _, _ => 0
+  | _ + 1, R, χ => ((χ 0)⁻¹ • (R 0).1 + χ 0 • (R 0).2) + roundSumFin (Fin.tail R) (Fin.tail χ)
+
+/-- `roundSumFin` is `roundSum` on the corresponding lists. -/
+theorem roundSumFin_eq : {d : ℕ} → (R : Fin d → G × G) → (χ : Fin d → F) →
+    roundSumFin R χ = roundSum (List.ofFn R) (List.ofFn χ)
+  | 0, _, _ => by simp [roundSumFin]
+  | d + 1, R, χ => by
+      have hR : List.ofFn R = ((R 0).1, (R 0).2) :: List.ofFn (Fin.tail R) := by
+        rw [List.ofFn_succ]; rfl
+      have hχ : List.ofFn χ = χ 0 :: List.ofFn (Fin.tail χ) := by rw [List.ofFn_succ]; rfl
+      rw [roundSumFin, roundSumFin_eq (Fin.tail R) (Fin.tail χ), hR, hχ, roundSum_cons]
+
+namespace VerifierIpa
+
+/-- Read the equation's left side against the generators: `P' + Σⱼ([uⱼ⁻¹]Lⱼ + [uⱼ]Rⱼ) + [Uc]U +
+[Wc]W + [-c]G'₀`, where `U` is the inner-product generator, `W` the blinding generator, and
+`G'₀ = foldAllFin`. The verifier accepts iff this is `0`. -/
+def eval {d : ℕ} (e : VerifierIpa d F G) (g : Fin (2 ^ d) → G) (U W : G) : G :=
+  e.commitment + roundSumFin e.rounds e.challenges + e.uScalar • U + e.wScalar • W
+    + (-e.final) • foldAllFin e.challenges g
+
+/-- Absorb the first round into the commitment: `P' ↦ P' + [u₀⁻¹]L₀ + [u₀]R₀`, dropping that round
+and challenge. This is the recursive verifier's commitment update. -/
+def peel {d : ℕ} (e : VerifierIpa (d + 1) F G) : VerifierIpa d F G where
+  commitment := e.commitment + (e.challenges 0)⁻¹ • (e.rounds 0).1 + e.challenges 0 • (e.rounds 0).2
+  rounds := Fin.tail e.rounds
+  challenges := Fin.tail e.challenges
+  final := e.final
+  uScalar := e.uScalar
+  wScalar := e.wScalar
+
+/-- Peeling a round changes nothing, once the generators are folded by that round's challenge. The
+`Fin d` counterpart of `CF_cons` at a round point with no `U`/`W` part — and unlike `CF_cons` it
+carries no reindexing, since the generator type mentions only the depth. -/
+theorem eval_peel {d : ℕ} (e : VerifierIpa (d + 1) F G) (g : Fin (2 ^ (d + 1)) → G) (U W : G) :
+    e.eval g U W = e.peel.eval (foldGens g (e.challenges 0)⁻¹) U W := by
+  simp only [eval, peel, roundSumFin, foldAllFin]
+  abel
+
+/-- `eval` is the list-shaped closed form `CF`. This is the one place the `List.ofFn` transport
+between the depth-indexed and list-shaped sides is paid. -/
+theorem eval_eq_CF {d : ℕ} (e : VerifierIpa d F G) (g : Fin (2 ^ d) → G) (U W : G) :
+    e.eval g U W
+      = CF (List.ofFn e.rounds) (List.ofFn e.challenges)
+          (fun j => g (Fin.cast (congrArg (2 ^ ·) List.length_ofFn) j))
+          e.commitment e.final e.uScalar U e.wScalar W := by
+  rw [eval, CF, roundSumFin_eq, foldAllFin_eq]
+
+end VerifierIpa
 
 end Zcash.Snark
