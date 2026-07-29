@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-04480e57.js";
+            window.path_to_searchindex_js = "../searchindex-d454e67d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -362,12 +362,10 @@ instantiates the permutation and lookup arguments at routed decoded polynomials
 <code>LookupRows</code>), ending at <code>Terminal</code> and its Vesta adapter.</li>
 <li><strong><code>Composition/</code></strong> — joining the two halves the architecture keeps apart and bounding the
 probability loss the join costs. <code>Bridge</code>
-identifies the algebraic forking extraction's clean opening with the deployed decoded capstone's
-opened commitment; <code>Decomposition</code> splits the knowledge-error bound unconditionally into the
-clean-opening failure, with its probability bound, plus a measured clean-but-not-extracted
-residual.
-<code>DeployedAcceptance</code> and <code>DeployedRuntime</code> isolate the deployed decision from the historical
-rewind construction; <code>RootContainment</code>, <code>DeployedRootContainment</code> and
+identifies the algebraic extraction's aggregate witness with the deployed decoded capstone's
+opened commitment.
+<code>DeployedAcceptance</code> and <code>DeployedRuntime</code> name the deployed decision on one oracle table;
+<code>DeployedRootContainment</code> and
 <code>DeployedConstraintContainment</code> replace the four-level joint-event coupling with a finite union
 of explicit bad-root events, each fixed before its own squeeze, so the residual is additive and
 has no fourth root. <code>Quotient</code> reconstructs a genuinely pre-<code>x</code> quotient, <code>PrefixedSqueeze</code> and
@@ -386,27 +384,23 @@ IPA. It models the deployed IPA's <code>U</code>/<code>W</code> apparatus and pe
 (<code>Ipa</code>, <code>IpaPeel</code>), unfolds the flattened deployed MSM into the recursive generator fold
 (<code>Fold</code>), shows deployed acceptance implies halo2's explicit IPA verifier equation
 (<code>Verification</code>), reduces binding over the augmented generators to discrete-log-relation
-hardness (<code>Binding</code>), reads the fork-tree knowledge error off the deployed Orchard parameters as
-a concrete number (<code>ConcreteBounds</code> — <code>33/|F_p| ≈ 2⁻²⁴⁹</code> at the captured depth <code>k = 11</code>), and
-states the Action capstone at the captured artifacts (<code>ActionVesta</code>).</li>
-<li><strong><code>Forking/</code></strong> — the reusable Fiat–Shamir forking kernel: random-oracle primitives
-(<code>Oracle</code>), the deployed round ordering and rewinding (<code>Ordering</code>, <code>Rewind</code>), fork-tree
-existence and the forking-lemma probability bound (<code>Tree</code>, <code>Probability</code>), the closed form
-of that bound (<code>KnowledgeError</code>), the transcript assembly and extraction that turn forked
-transcripts into a deployed IPA tree (<code>Assembly</code>, <code>Extractor</code>), the one-level pinned-squeeze
-bound and the additive union of pinned root events (<code>PinnedSqueeze</code>, <code>PinnedRoots</code>), and the
-wrapper that returns a run's own oracle reads with its output (<code>WithReads</code>).
+hardness (<code>Binding</code>), and states the Action capstone at the captured artifacts (<code>ActionVesta</code>).</li>
+<li><strong><code>Forking/</code></strong> — the reusable Fiat–Shamir random-oracle kernel: random-oracle primitives
+(<code>Oracle</code>), the deployed squeeze ordering (<code>Ordering</code>) and the reprogramming lemmas that say
+changing the oracle at one squeeze prefix replaces exactly that challenge (<code>Rewind</code>), the
+transcript assembly that turns accepting rounds into a deployed IPA tree (<code>Assembly</code>), the
+one-level pinned-squeeze bound and the additive union of pinned root events (<code>PinnedSqueeze</code>,
+<code>PinnedRoots</code>), and the wrapper that returns a run's own oracle reads with its output
+(<code>WithReads</code>).
 <strong><code>Forking/Adversary/</code></strong> builds the querying-adversary reduction on top: the <code>Q</code>-query
-adaptive adversary model (<code>OracleComp</code>), executable recursive forking from a finite tape
-(<code>Recursive</code>), the Fiat–Shamir-to-AGM handoff (<code>Algebraic</code>), oracle-domain reduction to
-finite support (<code>DomainReduction</code>), the adaptive interface and pre-IPA query accounting
-(<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>), and the expected-run bookkeeping (<code>ExpectedRuns</code>,
-<code>ExpectedRunsPoly</code>). The efficiency floor of the reduction is unconditional:
-<code>afkRunBound Q k = (8Q + 1) · 10^k</code>
-follows from the adversary's query bound alone, field-independent and with no premise on the
-fork DAG. That is a ~40-bit cost against the straight-line route's four prover invocations,
-which is why the recursive route is retained as an alternative carrying its own probability
-bound rather than the path the headline rests on.</li>
+adaptive adversary model (<code>OracleComp</code>), the Fiat–Shamir-to-AGM handoff (<code>Algebraic</code>),
+oracle-domain reduction to finite support (<code>DomainReduction</code>), and the adaptive interface and
+pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). The rewinding extractor that once
+sat here — the ternary fork tree, the executable recursive extractor over a finite sampling
+tape, and the Attema–Fehr–Klooß-style expected-runs bookkeeping — has been retired (ironwood#133).
+Its unconditional bound <code>(8Q + 1) · 10^k</code> was a ~40-bit cost against the straight-line route's
+four prover invocations, so it was never the path the headline rested on, and a single deployed
+extractor is now what the trust boundary reads.</li>
 <li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> recovers the individual
 columns from openings of the batch at enough distinct batching challenges, and <code>Deployed</code>
 discharges the flat-power-batch shape those openings are stated in against the deployed verifier
