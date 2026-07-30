@@ -108,7 +108,6 @@ flowchart TD
   classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
   classDef checked fill:#0969da,stroke:#0550ae,color:#ffffff
   classDef partial fill:#9a6700,stroke:#7d4e00,color:#ffffff
-  classDef hyp fill:#cf222e,stroke:#a40e26,color:#ffffff
   classDef assumed fill:#57606a,stroke:#424a53,color:#ffffff
   class BAL,SPEND,SPENDAUTH,KS,RDSA,RKE partial
   class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF,SDLR checked
@@ -119,7 +118,6 @@ flowchart TD
 <span style="color:#1a7f37">■</span> fully proven — nothing here yet<br/>
 <span style="color:#0969da">■</span> stated and machine-checked in Lean, over abstract primitives<br/>
 <span style="color:#9a6700">■</span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end: the key-binding oracle connection, the binding-signature extractability, RedDSA; knowledge soundness's <code>hencodes</code> bridge)<br/>
-<span style="color:#cf222e">■</span> named hypothesis; formalization deferred<br/>
 <span style="color:#57606a">■</span> assumption or heuristic model; terminal by design
 </p>
 
