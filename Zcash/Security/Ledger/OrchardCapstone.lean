@@ -29,9 +29,10 @@ discrete-log hardness of the fixed bases (Jaeger–Tessaro, eprint 2020/1213 Lem
 re-proved as `relation_prob_le_of_textbookDL`). The witness-level model quantifies
 over valid annotated ledgers, so it abstracts away Halo 2 knowledge soundness — a
 separate, lossy reduction on the different Halo 2 bases; that is where the end-to-end
-reduction loss lives. `ε_bindsig`, the binding-signature advantage, bounds the value
-side — value conservation rests on the binding signature — and is not yet reduced to
-its own terminal.
+reduction loss lives. In the protocol's design, value conservation rests on the
+binding signature; the formalized connection of `ε_bindsig` to a binding-signature
+break is tracked in #107 — at this layer it is a named hypothesis on the
+conservation events.
 -/
 
 namespace Zcash.Security.Ledger.Bridge
@@ -186,8 +187,8 @@ minted issuance — except with probability at most `ε_nonneg + ε_bindsig`. Di
 `ε_nonneg` at successor prefixes with
 `orchardShieldedBalanceNonNegative_succ_measure_le`, giving `ε_sinsemilladlr`: no
 value is spent that was never created, except with the discrete-log-relation
-advantage. `ε_bindsig` bounds the conservation side: value conservation rests on the
-binding signature, and is not yet reduced to its own terminal. -/
+advantage. `ε_bindsig` is a named hypothesis on the conservation event; its intended
+binding-signature discharge is tracked in #107. -/
 theorem orchardBalanceIntegrityPerTx_measure_le
     (A : PMF (OrchardAnnotated verify bverify issuance maxActions)) (i : ℕ)
     {ε_nonneg ε_bindsig : ℝ≥0∞}
@@ -238,8 +239,8 @@ factor of `k`. A naive union bound over the prefixes would pay `k · ε`, but th
 prefix violations are not independent: the reduction sends every step's break to a
 relation among the same fixed Sinsemilla bases, so a break at any step lands in the
 one event `orchardRelationEventUpTo`, a single discrete-log-relation advantage
-independent of `k`. The conservation side collapses the same way onto the binding
-signature. -/
+independent of `k`. The conservation side collapses the same way onto the one
+all-prefixes conservation event, whose named bound is `ε_bindsig` (#107). -/
 theorem orchardBalanceIntegrity_measure_le
     (A : PMF (OrchardAnnotated verify bverify issuance maxActions)) (k : ℕ)
     {ε_sinsemilladlr ε_bindsig : ℝ≥0∞}
