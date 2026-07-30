@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-8c415e7d.js";
+            window.path_to_searchindex_js = "searchindex-94fba240.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1089,7 +1089,11 @@ query back to the canonical group element it references.</li>
 <li><code>Ipa</code> is the inner-product-argument opening (<code>compute_s</code> / <code>compute_b</code>).</li>
 <li><code>FiatShamir</code> models halo2's Blake2b challenge schedule as an abstract <code>squeeze</code>.</li>
 <li><code>Parametric</code> proves the assembly and schedule traverse every sub-proof for an arbitrary proof
-count; every consensus-valid Orchard action count is one such count.</li>
+count; every consensus-valid Orchard action count is one such count. At zero, this describes the
+transaction-level absence of an Orchard bundle, not a verifier call with an empty bundle. Actual
+Action-verifier invocations have a positive proof count and the deployed domain exponent <code>k = 11</code>.
+The generic Lean functions remain total at <code>k = 0</code>, while halo2's IPA implementation requires a
+nonempty challenge vector, so behavioral correspondence is scoped to the deployed positive domain.</li>
 </ul>
 <h3 id="keygen--the-verifying-key-derived-rather-than-assumed"><a class="header" href="#keygen--the-verifying-key-derived-rather-than-assumed"><code>Keygen/</code> — the verifying key, derived rather than assumed</a></h3>
 <p>The circuit-side half of halo2's <code>keygen_vk</code>. <code>Pipeline</code> is the single generic route from a closed
@@ -1107,16 +1111,14 @@ elaboration time of the lane — and so is built only in the fixture lane.</p>
 <p><code>Match</code> is the fingerprint match: running the deployed Rust verifier and the Lean <code>assemble</code>
 on the same proof and challenges and comparing the assembled MSMs coefficient-for-coefficient
 — the cross-check that validates the Lean assembly in place of a line-by-line translation
-proof. <code>SchwartzZippel</code> and <code>Batch</code> supply the soundness bounds: a fingerprint agrees with a
-random evaluation, and a random-linear-combination batch is the identity, only with negligible
-probability.</p>
+proof. <code>SchwartzZippel</code> supplies the abstract random-evaluation bound. Outer batching of separate
+proof blobs by Halo2's optional <code>BatchVerifier</code> is outside this formalization's scope.</p>
 <h3 id="fixtures--captured-proofs-and-boundary-checks"><a class="header" href="#fixtures--captured-proofs-and-boundary-checks"><code>Fixtures/</code> — captured proofs and boundary checks</a></h3>
 <p>Concrete Orchard captures that exercise the assembly end-to-end and make the Rust/Lean boundary
 less silent. This subtree is the <code>FixtureCheck</code> lake target, kept out of <code>lake build Zcash</code> (the
-captures are large, generated, and slow) but built by CI; the target's glob also names
-<code>Soundness.Deployed.ActionVesta</code>, which extends the same instance-level lane to the verifying-key
-commitment certificate chain. <code>MaxShape</code> specializes the verifier shape to the captured column and
-query dimensions while leaving the action count free, and <code>MaxShapeBounds</code> and
+captures are large, generated, and slow) but built by CI. <code>MaxShape</code> specializes the verifier shape
+to the captured column and query dimensions while leaving the action count free, and
+<code>MaxShapeBounds</code> and
 <code>StraightLineMaxShapeBounds</code> evaluate the composite bounds at that shape and at the consensus
 maximum; <code>ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
 <code>PostNu63</code> pins the canonical post-NU 6.3 verifying key and URS so fixture drift is visible here;
@@ -1133,8 +1135,8 @@ straight-line), and <code>CapturedZeroFamily</code> — the shape-generic zero p
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.</p>
 <h3 id="soundness--the-soundness-argument"><a class="header" href="#soundness--the-soundness-argument"><code>Soundness/</code> — the soundness argument</a></h3>
 <p>The core argument that an accepting proof yields a witness or a computed break. The top-level
-modules cover the argument end to end: <code>Main</code> (conditional soundness and the deployed-acceptance
-route), <code>KnowledgeSoundness</code> (the <code>SnarkRelation</code> knowledge-soundness relation), <code>Constraints</code>
+modules cover the argument end to end: <code>Main</code> (the deployed-acceptance predicate and explicit
+verifier-equation correspondence), <code>KnowledgeSoundness</code> (the <code>SnarkRelation</code> knowledge-soundness relation), <code>Constraints</code>
 (Schwartz–Zippel soundness of the vanishing check) with <code>FoldSplit</code> (recovering the individual
 constraints from the verifier's <code>y</code>-fold), <code>ConstraintCore</code> and <code>ConstraintRouting</code> (the
 rewind-free deterministic identities the algebraic decoder consumes), <code>ConstraintRelations</code> (the
@@ -1146,18 +1148,21 @@ uniformity rather than assuming them). The permutation/lookup stack is <code>Gra
 grand-product-to-multiset kernel — with <code>RunningProduct</code> (telescoping the running product),
 <code>GrandProductBridge</code> (the two Schwartz–Zippel steps from the verifier's evaluated check to the
 multiset identity), <code>Permutation</code>, <code>PermutationConstruction</code>, <code>PermutationRows</code>, <code>Lookup</code>, and
-<code>LookupAssembly</code>. The IPA stack is <code>InnerProduct</code>, <code>IpaSoundness</code>, <code>Extraction</code>, <code>Consistency</code>,
-<code>CommitFold</code>. <code>InstanceBinding</code> closes the public-instance gap: a decoded instance column is the
+<code>LookupAssembly</code>. The IPA algebra is <code>InnerProduct</code>, <code>Halves</code>, <code>IpaSoundness</code>, <code>Consistency</code>, and
+<code>CommitFold</code>; the executable extraction route itself lives in <code>AGM/StraightLineIpa</code>. <code>InstanceBinding</code> closes the public-instance gap: a decoded instance column is the
 polynomial halo2 committed from its <code>instances</code> argument, or a <code>(g, U, W)</code> relation is computed.
 <code>ZeroData</code> supplies the zero-data multiopen keystone the constant prover families
-are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve. <code>TopLevelTerminal</code> and <code>TopLevelVesta</code> connect verifier acceptance to the Spec of an arbitrary top-level circuit, using that circuit's derived verifier key. <code>ActionVesta</code> specializes them to our concrete Lean model of the Action circuit.</p>
+are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve. <code>TopLevelTerminal</code> turns
+canonical constraint satisfaction into the Spec of an arbitrary top-level circuit.
+<code>StraightLineActionTerminal</code> and <code>StraightLineActionEvent</code> connect the one-run computed decode to
+the concrete Action statement and carry a failure as explicit relation data.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
-<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns the relation coefficients computed
-from algebraic prover data (<code>Peel</code>, <code>Capstone</code>) into a discrete-log solution over the
+<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
+represented online and straight-line finders into a discrete-log solution over the
 augmented basis <code>(g, U, W)</code> (<code>Adapter</code>, following
 <a href="https://eprint.iacr.org/2017/620">Fuchsbauer–Kiltz–Loss 2018</a>), adds the algebraic
-coefficients to the prover and forking-certificate interfaces (<code>Prover</code>), feeds the
+coefficients to the online prover interfaces (<code>OnlineMembers</code>, <code>OnlineMultiopen</code>), feeds the
 binding-signature relations in as AGM inputs (<code>BindingSignature</code>), and bounds the reduction's
 probability loss (<code>Probability</code>, <code>ProbabilityCoins</code>, <code>ProbabilityVesta</code>) — programming <em>every</em>
 basis slot from the
@@ -1165,12 +1170,12 @@ DL challenge rather than guessing which slot the relation will hit, so the loss 
 <code>1/|F|</code> with no multiplicative factor. The bulk of the subtree is the rewind-free deployed
 decoder, consisting of the unbatching chain (<code>AlgebraicUnbatch</code>, <code>DeployedX1</code>,
 <code>DeployedMultiopen</code>,
-<code>ValueUnbatch</code>, <code>DeployedValueUnbatch</code>, <code>ShiftRecovery</code>), the coordinate decode
-(<code>RepresentationDecode</code>, <code>DeployedCoordinateDecode</code>, <code>DirectX4Columns</code>, <code>DirectConstraintFamily</code>),
+<code>ValueUnbatch</code>, <code>DeployedValueUnbatch</code>, <code>ShiftRecovery</code>), the direct coordinate decode
+(<code>DirectX4Columns</code>, <code>DirectConstraintFamily</code>),
 the explicit root sets it must avoid (<code>DeployedRootSets</code>, <code>DeployedRootDecode</code>,
 <code>DeployedPinnedRoots</code>, <code>PinnedRootWitness</code>), the retained-provenance route (<code>OnlineMembers</code>,
 <code>OnlineMultiopen</code>, <code>OnlineConstraint</code>, <code>DeployedConstraintSupply</code>), and the adapters back onto
-the historical opened-batch interface (<code>SyntheticOpened</code>, <code>DeployedSyntheticOpened</code>,
+the opened-batch interfaces (<code>SyntheticOpened</code>, <code>DeployedSyntheticOpened</code>,
 <code>DecodeToOpened</code>). <code>StraightLineIpa</code> and <code>StraightLinePinnedRoots</code> classify one accepting
 algebraic transcript as a clean opening, an explicit relation, or a squeeze-pinned bad-challenge
 event, from a single execution with no rewinding; <code>StraightLineFiniteSecurity</code> records group
@@ -1204,35 +1209,28 @@ the degenerate shape and <code>ZeroStraightLine</code> with eleven live IPA roun
 exclusions the Action-level statement needs, and <code>DirectPathCost</code> bounds the direct-coordinate
 postprocessing's field
 operations and data traversal by a shape polynomial with no <code>|F|</code> term.</li>
-<li><strong><code>Deployed/</code></strong> — the bridge from the clean, abstract soundness onto halo2's actual deployed
-IPA. It models the deployed IPA's <code>U</code>/<code>W</code> apparatus and peels it onto the clean recursive IPA
-(<code>Ipa</code>, <code>IpaPeel</code>), unfolds the flattened deployed MSM into the recursive generator fold
-(<code>Fold</code>), shows deployed acceptance implies halo2's explicit IPA verifier equation
-(<code>Verification</code>), reduces binding over the augmented generators to discrete-log-relation
-hardness (<code>Binding</code>), and states the Action capstone at the captured artifacts (<code>ActionVesta</code>).</li>
-<li><strong><code>Forking/</code></strong> — the reusable Fiat–Shamir random-oracle kernel: random-oracle primitives
-(<code>Oracle</code>), the deployed squeeze ordering (<code>Ordering</code>) and the reprogramming lemmas that say
-changing the oracle at one squeeze prefix replaces exactly that challenge (<code>Rewind</code>), the
-transcript assembly that turns accepting rounds into a deployed IPA tree (<code>Assembly</code>), the
+<li><strong><code>Deployed/</code></strong> — algebra for halo2's actual deployed IPA. <code>Fold</code> rewrites the flattened
+verifier MSM's generator term into the closed-form fold consumed by the straight-line extractor;
+<code>Verification</code> exposes halo2's explicit IPA verifier equation; and <code>Binding</code> supplies the
+augmented-generator collision reductions shared by the computed AGM path.</li>
+<li><strong><code>FiatShamir/</code></strong> — the reusable Fiat–Shamir random-oracle kernel: random-oracle primitives
+(<code>Oracle</code>), the deployed squeeze ordering (<code>Ordering</code>), random-oracle execution and IPA-field
+splicing (<code>Execution</code>), closed-form IPA assembly algebra (<code>Assembly</code>), the
 one-level pinned-squeeze bound and the additive union of pinned root events (<code>PinnedSqueeze</code>,
 <code>PinnedRoots</code>), and the wrapper that returns a run's own oracle reads with its output
 (<code>WithReads</code>).
-<strong><code>Forking/Adversary/</code></strong> builds the querying-adversary reduction on top: the <code>Q</code>-query
+<strong><code>FiatShamir/Adversary/</code></strong> builds the querying-adversary reduction on top: the <code>Q</code>-query
 adaptive adversary model (<code>OracleComp</code>), the Fiat–Shamir-to-AGM handoff (<code>Algebraic</code>),
 oracle-domain reduction to finite support (<code>DomainReduction</code>), and the adaptive interface and
-pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). The rewinding extractor that once
-sat here — the ternary fork tree, the executable recursive extractor over a finite sampling
-tape, and the Attema–Fehr–Klooß-style expected-runs bookkeeping — has been retired (ironwood#133).
-Its unconditional bound <code>(8Q + 1) · 10^k</code> was a ~40-bit cost against the straight-line route's
-four prover invocations, so it was never the path the headline rested on, and a single deployed
-extractor is now what the trust boundary reads.</li>
-<li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> recovers the individual
-columns from openings of the batch at enough distinct batching challenges, and <code>Deployed</code>
-discharges the flat-power-batch shape those openings are stated in against the deployed verifier
-rather than assuming it; <code>Compat</code> is the MSM evaluation spine; <code>RPoly</code> supplies the interpolation
-core (Mathlib's <code>Lagrange.interpolate</code>, plus the bridge to the deployed <code>foldl</code>); <code>Claimed</code>,
-<code>Opened</code>, <code>ValueCheck</code>, <code>ValueCheckDeployed</code>, and <code>NodeBinding</code> bind each decoded aggregate
-column to its claimed evaluation; and <code>ConstraintResolver</code>, <code>CanonicalSelection</code> and
+pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). These components use the bounded
+querying-adversary model to price straight-line pinned-root events.</li>
+<li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> supplies the coefficient and
+Vandermonde primitives; <code>Opened</code> defines the augmented opened-batch and member-decode interfaces
+populated by explicit AGM representations; and <code>Deployed</code> proves that halo2's <code>x₄</code> fold has the
+required flat power-batch shape. <code>Compat</code> is the MSM evaluation spine; <code>RPoly</code> supplies the
+interpolation core (Mathlib's <code>Lagrange.interpolate</code>, plus the bridge to the deployed <code>foldl</code>);
+<code>ValueCheck</code>, <code>ValueCheckDeployed</code>, and <code>NodeBinding</code> provide the deployed algebra consumed by the
+AGM unbatching chain; and <code>ConstraintResolver</code>, <code>CanonicalSelection</code> and
 <code>CanonicalRelation</code> route the decoded members into the canonical constraint model, which is the
 semantic handoff to the formal circuit.</li>
 </ul>
@@ -1411,8 +1409,8 @@ flowchart TD
 
   NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/Capstone.lean'&gt;AGM heuristic +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/Forking'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
+  KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Circuits/Integration/AdaptiveActionEvent.lean'&gt;online AGM +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
   MC --&gt; SDLR
   CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/|F|,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
   NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'&gt;distinct-note openings&lt;br/&gt;compute&lt;/a&gt;&quot;| SDLR
@@ -1575,22 +1573,20 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 <section>
 <div class="grp">The fingerprint</div>
 <div class="g"><div class="g-head"><span class="term">fingerprint</span><span class="anchor">Verifier.Assemble.assemble · Fingerprint.Match.msmMatch_eval</span></div><div class="def">The whole verifier collapsed into one multi-scalar multiplication; the proof accepts exactly when that MSM is the group identity. Checked equal to the Rust verifier's captured MSM, for the specific circuit under analysis. The map's <em>pinned to Rust</em> node.</div></div>
-<div class="g"><div class="g-head"><span class="term">conditional vs deployed</span><span class="anchor">Main.DeployedAccepts</span></div><div class="def">In the legacy propositional ladder, <em>conditional</em> capstones take an opaque <code>accepts : Prop</code>, while <em>deployed</em> capstones take the concrete accept (assembled MSM = identity). The computed Fiat–Shamir endpoint is separate.</div></div>
+<div class="g"><div class="g-head"><span class="term">deployed acceptance</span><span class="anchor">Main.DeployedAccepts</span></div><div class="def">The concrete verifier decision: the MSM assembled from the proof, instances, verifying key, and derived challenges evaluates to the group identity.</div></div>
 <div class="g"><div class="g-head"><span class="term">verifier equation</span><span class="anchor">Main.deployedAccepts_verifierEq</span></div><div class="def">halo2's explicit IPA verifier equation, recovered from the compact <code>MSM = 0</code> accept — the readable form the IPA argument consumes.</div></div>
 </section>
 <section>
-<div class="grp">Fiat–Shamir &amp; rewinding</div>
-<div class="g"><div class="g-head"><span class="term">forking lemma</span><span class="anchor">Forking.Probability.extractable_of_prob</span></div><div class="def">Rewinding the random oracle to get three accepting continuations per round at distinct, nonzero challenges; assembled into the transcript tree the extractor consumes. Proven (an averaging argument) once the accept probability beats the knowledge error <code>kerr/Nᵏ</code>.</div></div>
-<div class="g"><div class="g-head"><span class="term">rewind</span><span class="anchor">Forking.Rewind.roChallenges_reprogramRounds</span></div><div class="def">Re-running the schedule with the oracle reprogrammed at a round prefix: redrawing the IPA round vector is exactly reprogramming the deployed oracle (<code>roChallenges_reprogramRounds</code>) — the bridge from the forking measure to the deployed rewound runs, and the load-bearing consumer of <em>transcript ordering</em>. The legacy <code>_rewind</code> capstones state the accept probability over these runs.</div></div>
-<div class="g"><div class="g-head"><span class="term">prover strategy</span><span class="anchor">Forking.Rewind.deployedVerifierEq_iff_flatAccept</span></div><div class="def">halo2's verifier equation recast as the accept predicate of a concrete prover strategy read off the proof — the <em>proven</em> half of the prover-as-oracle bridge; only the random-oracle measure underneath stays a floor.</div></div>
-<div class="g"><div class="g-head"><span class="term">round-by-round soundness</span><span class="anchor">Forking.Ordering</span></div><div class="def">The transcript-ordering guarantee: each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges.</div></div>
+<div class="grp">Fiat–Shamir &amp; oracle execution</div>
+<div class="g"><div class="g-head"><span class="term">querying adversary</span><span class="anchor">FiatShamir.Adversary.OracleComp</span></div><div class="def">An adaptive oracle-query computation with eager whole-table semantics, an explicit query bound, and a log of the points read on each execution. The straight-line reduction uses this model to price fresh-query and pinned-root events without constructing a transcript tree.</div></div>
+<div class="g"><div class="g-head"><span class="term">IPA splice</span><span class="anchor">FiatShamir.Execution.spliceIpa</span></div><div class="def">Replacing only a proof's IPA fields while preserving the pre-IPA proof data. The adaptive AGM handoff uses this data operation when assembling the proof returned by its algebraic adversary; it is not a rewind extractor.</div></div>
+<div class="g"><div class="g-head"><span class="term">round-by-round soundness</span><span class="anchor">FiatShamir.Ordering</span></div><div class="def">The transcript-ordering guarantee: each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges.</div></div>
 </section>
 <section>
-<div class="grp">Peel &amp; IPA extraction</div>
+<div class="grp">Straight-line IPA extraction</div>
 <div class="g"><div class="g-head"><span class="term">U / W</span><span class="anchor">Deployed.Binding</span></div><div class="def">The auxiliary generators the deployed verifier folds into the MSM alongside the main <code>g</code> basis — the fold and blinding terms.</div></div>
-<div class="g"><div class="g-head"><span class="term">peel</span><span class="anchor">Deployed.IpaPeel.deployed_to_acceptV</span></div><div class="def">Stripping the <code>U</code>/<code>W</code> terms off the deployed transcript tree to recover a clean, <code>g</code>-only IPA tree — or, failing that, a discrete-log relation.</div></div>
-<div class="g"><div class="g-head"><span class="term">three-special-soundness</span><span class="anchor">Ipa.Soundness.ipa_soundV</span></div><div class="def">Extraction of the witness from three accepting transcripts at pairwise-distinct, nonzero challenges per round.</div></div>
-<div class="g"><div class="g-head"><span class="term">adjusted commitment</span><span class="anchor">Ipa.InnerProduct.ipaRelation_unshift · ipaRelation_unblind_value</span></div><div class="def">Folding the claimed value and synthetic blinder into the opened commitment: <code>P′ = P − [v]g₀ + [ξ]S</code>. The un-shift/un-blind lemmas move an opening of <code>P′</code> back to the actual multiopen commitment at its true value — the value-placement step on the equation-to-tree edge.</div></div>
+<div class="g"><div class="g-head"><span class="term">IPA classification</span><span class="anchor">AGM.StraightLineIpa.straightLineBindingAttackZIndexedRootOrRelation</span></div><div class="def">From one algebraically represented accepting proof, compute either the required opening data, an explicit relation over the augmented basis, or a pinned low-degree challenge event. No recursive transcript tree is constructed.</div></div>
+<div class="g"><div class="g-head"><span class="term">adjusted commitment</span><span class="anchor">InnerProduct.ipaRelation_unshift · ipaRelation_unblind_value</span></div><div class="def">Folding the claimed value and synthetic blinder into the opened commitment: <code>P′ = P − [v]g₀ + [ξ]S</code>. The un-shift/un-blind lemmas move an opening of <code>P′</code> back to the actual multiopen commitment at its true value.</div></div>
 </section>
 <section>
 <div class="grp">Binding &amp; the AGM</div>
@@ -1601,22 +1597,20 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 </section>
 <section>
 <div class="grp">Constraints &amp; multiopen</div>
-<div class="g"><div class="g-head"><span class="term">circuit satisfaction</span><span class="anchor">KnowledgeSoundness.circuitSatViaGates</span></div><div class="def">The decoded columns satisfy the circuit gates — the constraint half of the SNARK relation, paired with the IPA opening.</div></div>
-<div class="g"><div class="g-head"><span class="term">batch rewinds</span><span class="anchor">Multiopen.Deployed.deployedMultiopenRewind_of_x4Prob</span></div><div class="def">The <code>x₄</code> forking floor: given an accepting honest run, an accept measure beating the pair-count bound extracts an injective family of accepting <code>x₄</code>-rewound runs — one IPA witness per run, the batch the decode inverts.</div></div>
-<div class="g"><div class="g-head"><span class="term">decoded columns</span><span class="anchor">Multiopen.Decode.decodedCols</span></div><div class="def">The <code>x₄</code>-level columns recovered from the batched multiopen witness by Vandermonde inversion of rewound openings — the point-set aggregates (<code>qᵢ</code>, <code>q′</code>), not yet circuit columns; the <code>x₁</code> unbatch reads the member commitments out of them.</div></div>
-<div class="g"><div class="g-head"><span class="term">challenge batch (x₄) · challenge unbatch (x₁)</span><span class="anchor">Multiopen.Deployed.deployedCommitment_x4_batch · deployed_witness_member_binding</span></div><div class="def">The multiopen batching layers: <code>x₄</code> folds all opening claims into one by powers of the challenge; <code>x₁</code> bundles the commitments queried at each point set into an aggregate, which the unbatch opens back to the individual member commitments — pinning the extracted witness as the two-level power combination of their column witnesses.</div></div>
+<div class="g"><div class="g-head"><span class="term">circuit satisfaction</span><span class="anchor">KnowledgeSoundness.circuitSatViaConstraints</span></div><div class="def">The decoded columns satisfy the verifier's full compressed constraint identity, including custom gates, permutation constraints, and lookups — the constraint half of <code>SnarkRelation</code>.</div></div>
+<div class="g"><div class="g-head"><span class="term">opened batch</span><span class="anchor">Multiopen.Opened.OpenedBatchOpenings</span></div><div class="def">A family of explicit AGM-supplied openings in flat <code>x₄</code>-power form, with witness, <code>U</code>, and <code>W</code> components carried as data. It is not constructed from an accept-measure rewind.</div></div>
+<div class="g"><div class="g-head"><span class="term">decoded columns</span><span class="anchor">Multiopen.Opened.openedColumnDecode</span></div><div class="def">The <code>x₄</code>-level point-set aggregates recovered by applying the Vandermonde inverse componentwise to explicit opened-batch data.</div></div>
+<div class="g"><div class="g-head"><span class="term">challenge batch (x₄) · challenge unbatch (x₁)</span><span class="anchor">Multiopen.Deployed.deployedCommitment_x4_batch · AGM.DecodeToOpened.DeployedAlgebraicDecode.toMemberDecode</span></div><div class="def">The deployed <code>x₄</code> fold is proved to have the flat power-batch shape. The AGM <code>x₁</code> layer then supplies explicit openings for the individual queried member commitments.</div></div>
 <div class="g"><div class="g-head"><span class="term">bad set</span><span class="anchor">Constraints.Vanishing.szBadSet · GoodChallenge</span></div><div class="def">The challenge values that fool the gate check — the roots of the constraint-difference polynomial; a uniform random-oracle challenge lands in it with probability ≤ <code>d/p</code> (Schwartz–Zippel). A challenge outside it is the map's <em>sound challenge</em>.</div></div>
-<div class="g"><div class="g-head"><span class="term">x-squeeze schedule · εₓ</span><span class="anchor">Composition.ScheduleBudget · Fixture2.deployedConstraintXSqueezeSchedule_captured</span></div><div class="def">The rewind-free pricing of the constraint-evaluation challenge: the pre-<code>x</code> constraint difference's root set, collapsed across fork tapes to one Schwartz–Zippel set and capped by the degree walk — <code>εₓ = 20470/|𝔽|</code> at the captured key, consumed as <code>(Q+1)·εₓ</code>. Its causal half (the set is pinned before the <code>x</code> squeeze) is the named premise.</div></div>
+<div class="g"><div class="g-head"><span class="term">x-squeeze schedule · εₓ</span><span class="anchor">Composition.ScheduleBudget · Fixture2.deployedConstraintXSqueezeSchedule_captured</span></div><div class="def">The straight-line pricing of the constraint-evaluation challenge: the pre-<code>x</code> constraint difference's root set is capped by the degree walk — <code>εₓ = 20470/|𝔽|</code> at the captured key, consumed as <code>(Q+1)·εₓ</code>. Its causal half (the set is pinned before the <code>x</code> squeeze) is the named premise.</div></div>
 <div class="g"><div class="g-head"><span class="term">captured knowledge-error bound</span><span class="anchor">Fixture2.orchard_deployed_knowledge_error_captured_straightLine_generatorRO</span></div><div class="def">The additive deployed extraction bound at the captured key. The straight-line AGM endpoint uses the staged representations and a fixed four-call finder, adding the <code>2k</code> IPA-root term and no expected-runs or Markov term. It includes the tight DLOG term, the shape's root budget, and the concrete <code>(Q+1)·20470/|𝔽|</code> constraint-root term. It is a compressed-identity statement; row-level gate, permutation, and lookup semantics carry the four explicitly priced <code>y</code>/<code>β</code>/<code>γ</code>/<code>θ</code> budgets through the matching semantic promotion (<code>straightLineConstraintSemanticFailure_prob_le_of_generatorRO_dlogProfile</code>).</div></div>
 </section>
 <section>
 <div class="grp">Capstones &amp; hypotheses</div>
 <div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor">Fixtures/MultiAction/ActionCapstone.lean</span></div><div class="def">The top-level results a route ends at. The consensus-generic adaptive Action knowledge capstone runs one cached executable terminal, returns Type-valued private witnesses or relation data, and bounds acceptance when witness extraction fails by profiled DLOG advantage plus the statistical remainder. The ordinary false-statement and sequential endpoints remain useful corollaries and presentation-specific variants.</div></div>
-<div class="g"><div class="g-head"><span class="term">quotient check</span><span class="anchor">hquot · Soundness/Vesta.lean</span></div><div class="def">The verifier's gate/quotient point-check, plus carrying the gate challenge <code>x</code> over to the multiopen point <code>x₃</code>. Carried as the capstone hypothesis <code>hquot</code>; still open.</div></div>
-<div class="g"><div class="g-head"><span class="term">sound challenge</span><span class="anchor">hgood · Soundness/Vesta.lean</span></div><div class="def">The challenge avoids the Schwartz–Zippel bad set, so the point-check at <code>x</code> implies the full gate identity. Carried as the capstone hypothesis <code>hgood</code>; discharged by the SZ territory's <code>_xgood</code> wrapper.</div></div>
-<div class="g"><div class="g-head"><span class="term">accept probability</span><span class="anchor">hprob · Soundness/Vesta.lean</span></div><div class="def">The accepting-proof probability beats the knowledge error <code>kerr/Nᵏ</code> — enough for the forking lemma to prove existential extraction. It is the hypothesis of the legacy propositional capstones; the computed FS path instead bounds extraction failure from the adversary experiment.</div></div>
-<div class="g"><div class="g-head"><span class="term">structural residuals</span><span class="anchor">hz · hg0 · hs · hξ · Soundness/Vesta.lean</span></div><div class="def">The remaining structural capstone hypotheses: <code>z ≠ 0</code> (every rung), <code>g₀ ≠ 0</code> (every forking rung), the S-opening <code>commit s = ipaS</code> (deployed/adaptive/rewind rungs), and value recovery <code>ξ·⟨s,b⟩ = 0</code> (constraint rungs only). Assumed in-Lean, priced rather than discharged.</div></div>
-<div class="g"><div class="g-head"><span class="term">high-level relation · VK correctness</span><span class="anchor">hencodes · Verifier.Assemble</span></div><div class="def">The two gaps the composition does not yet cross: on the output side, <code>hencodes</code> — gate satisfaction (<code>SnarkRelation</code>) implies the intended high-level statement; on the input side, VK correctness — the verifying key fed to the verifier faithfully encodes the real deployed circuit. Both outside Lean; not started.</div></div>
+<div class="g"><div class="g-head"><span class="term">knowledge-failure event</span><span class="anchor">AdaptiveActionEvent.adaptiveActionKnowledgeFailureEvent</span></div><div class="def">The event that the deployed Action verifier accepts but the executable extractor does not return private witnesses for the entire bundle. The capstone bounds this event directly.</div></div>
+<div class="g"><div class="g-head"><span class="term">semantic residuals</span><span class="anchor">AdaptiveActionEvent.adaptiveActionSemanticResidualEvent</span></div><div class="def">The explicitly priced <code>y</code>, <code>β</code>, <code>γ</code>, and <code>θ</code> challenge surfaces needed to promote the compressed constraint identity to row-level gate, permutation, and lookup semantics.</div></div>
+<div class="g"><div class="g-head"><span class="term">high-level relation · VK provenance</span><span class="anchor">ActionBundleWitness · Keygen.Certificate</span></div><div class="def">The composed capstone returns the deployed Action circuit's private witnesses and satisfaction proofs. The remaining output-side floor is the bridge from that compiled circuit specification to the abstract Orchard ledger relation. On the input side, Lean derives the verifying key and checks it against the capture; identifying that capture with Orchard's canonical deployed artifact and byte serialization remains external.</div></div>
 </section>
 <section>
 <div class="grp">Conventions</div>
