@@ -78,10 +78,10 @@ flowchart TD
   CUS --->|"<a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'>birthday counting<br/>q(q-1)/|F|,<br/>no assumption</a>"| ROM
   NFC -->|"<a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'>distinct-note openings<br/>compute</a>"| SDLR
   SAF -->|"<a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ForgeryArm.lean'>a forgery is a<br/>SURK-CMA win</a>"| RDSA["SURK-CMA<br/>(RedDSA, ± keys)"]
-  RDSA -->|"re-rand reduction<br/><a target='_blank' href='https://eprint.iacr.org/2015/395'>[FKMSSS2016]</a> +<br/>forking extraction"| DL
+  RDSA -->|"re-rand reduction<br/><a target='_blank' href='https://eprint.iacr.org/2015/395'>[FKMSSS2016]</a>"| DL
   RDSA -->|"challenge hash<br/>as random oracle"| ROM
   BS -->|"<a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ValueExtraction.lean'>violation ≤ ε + κ;<br/>failure exhibited</a>"| RKE["RedDSA knowledge<br/>of bsk (κ)"]
-  RKE -->|"forking extraction;<br/>special soundness<br/>proven"| ROM
+  RKE -->|"challenge hash<br/>as random oracle"| ROM
 
   click BAL "https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Balance.lean" _blank
   click SPEND "https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean" _blank
@@ -126,11 +126,17 @@ proceeds. The two RedDSA nodes are stated in Lean over an abstract scheme
 (`Zcash/Security/RedDSA`): the SURK-CMA experiment with the ± extension, consumed by the
 Spend Authority forgery arm, and the extractor-plus-knowledge-error form of knowledge of
 `bsk`, consumed by the value capstones. What remains named is each node's probability
-bound — the SURK-CMA advantage ε and the knowledge error κ. Their discharge edges name
+bound — the SURK-CMA advantage ε and the knowledge error κ. Their discharge edge names
 the reduction for security of signatures with re-randomizable keys
 [<a href="https://eprint.iacr.org/2015/395">FKMSSS2016</a>, section 3], adapted to the
-±-randomized variant, together with forking extraction of the Schnorr witness (the
-fork's special soundness is proven; the rewinding's probability accounting is not).
+±-randomized variant. The extraction's special soundness is proven
+(`verify_fork_dlog`); its probability accounting is open, and no route is chosen: the
+classical forking discharge pays a multiplicative loss that is essentially optimal for
+ROM-only reductions from discrete log
+(<a href="https://eprint.iacr.org/2012/029">Seurin</a>), while the AGM+ROM admits a
+tight, straight-line reduction for plain Schnorr
+(<a href="https://eprint.iacr.org/2019/877">Fuchsbauer–Plouviez–Seurin</a>) whose
+adaptation to RedDSA (key-prefixed, strong, re-randomized) is unchecked.
 
 Every solid arrow reads "rests on"; where an edge carries a label, the label names the
 computed break object flowing along it, or the adversary model or side condition under which

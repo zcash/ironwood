@@ -33,11 +33,11 @@ The concrete instantiation must carry both; see the caveat in
 * Completeness (`verify_sign`, `verify_sign_randomized`) — the formalized verification
   equation is the one honest signers satisfy, under original and re-randomized keys.
 * Special soundness (`forkDlog_spec`, `verify_fork_dlog`) — two verifying transcripts
-  sharing a commitment under distinct challenges compute `dlog vk`, as data. This is
-  the deterministic core a Fiat–Shamir fork hands the knowledge extractor; the
-  rewinding's probability accounting (the knowledge error) is *not* proven here — it
-  stays a named `κ`, consumed by the transaction-balance premiss discharge
-  (`Zcash.Security.Ledger.ValueExtraction`).
+  sharing a commitment under distinct challenges compute `dlog vk`, as data. The
+  probability accounting that would discharge the knowledge error is not proven here —
+  it stays a named `κ`, consumed by the transaction-balance premiss discharge
+  (`Zcash.Security.Ledger.ValueExtraction`); the known discharge routes are described
+  below.
 * `ExtractionFailure` — the event that `κ` bounds, as data: a verifying signature on
   which a candidate extractor does not return the key's discrete log. The spec's
   demand on `BindingSig` is exactly a knowledge property ("a signature must prove
@@ -45,6 +45,20 @@ The concrete instantiation must carry both; see the caveat in
   ℛ", §5.4.7.2); carrying the failure as data keeps its probability a bound on an
   exhibited event, not a total extraction hypothesis (which is classically satisfiable
   in a cyclic group — see the module doc of `Zcash.Security.Ledger.Value`).
+
+## Discharge routes (none chosen here)
+
+Two routes to discharging the named bounds are known for Schnorr-like schemes. The
+classical one is the random-oracle forking argument (rewind the signer, reprogram the
+challenge at the fork point), whose deterministic core is `verify_fork_dlog`; its
+probability accounting carries a multiplicative loss that is essentially optimal for
+ROM-only reductions from discrete log (Seurin, eprint 2012/029). In the AGM+ROM — the
+model the Halo 2 knowledge-soundness layer already rests on —
+Fuchsbauer–Plouviez–Seurin give a tight, straight-line reduction to discrete log
+(eprint 2019/877, Theorem 1), with no rewinding and only additive statistical loss;
+their theorem covers plain non-key-prefixed Schnorr under EUF-CMA, so its adaptation
+to RedDSA — the key-prefixed hash, the strong (pair-level) freshness, and the
+re-randomized keys — is unchecked.
 -/
 
 namespace Zcash.Security.RedDSA
@@ -158,9 +172,9 @@ theorem Scheme.verify_sign_randomized (sch : Scheme F G MSG) (sk α r : F) (m : 
 A rewinding argument runs the signer twice, reprogramming the random oracle at the
 challenge query `(R, vk, M)` between runs. On a double success it holds two verifying
 transcripts sharing the commitment `R` under distinct challenges, and the subtraction
-below computes `dlog_{𝒫_G} vk`. That is the extractor's whole deterministic content;
-what forking adds is the probability that the double success occurs — the knowledge
-error, a named quantity here. -/
+below computes `dlog_{𝒫_G} vk`. That is the deterministic content; the probability of
+the double success is the knowledge error, a named quantity here (see the module doc's
+discharge-route note). -/
 
 /-- The scalar a fork computes: `(c₁ − c₂)⁻¹ · (S₁ − S₂)`. -/
 def forkDlog (S₁ S₂ c₁ c₂ : F) : F := (c₁ - c₂)⁻¹ * (S₁ - S₂)
@@ -205,8 +219,8 @@ abbrev Extractor (F G MSG : Type*) := G → MSG → Sig F G → F
 not return the discrete log of `vk`. The knowledge obligation on `BindingSig` — "a
 signature must prove knowledge of the discrete logarithm of the validating key with
 respect to the base ℛ" (spec §5.4.7.2) — is the named bound `κ` on the probability
-that an adversary exhibits this event; its eventual discharge is the random-oracle
-forking argument whose deterministic core is `verify_fork_dlog`. -/
+that an adversary exhibits this event; the known discharge routes are in the module
+doc. -/
 structure ExtractionFailure (sch : Scheme F G MSG) (E : Extractor F G MSG) where
   vk : G
   m : MSG

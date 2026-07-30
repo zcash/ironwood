@@ -35,8 +35,8 @@ What stays named: SURK-CMA of RedDSA itself — the bound on the probability tha
 adversary interacting with the signing oracle exhibits a `SURKWin`. The two ε
 hypotheses consumed here are exactly that bound at the two keys; the oracle-machine
 model connecting a ledger adversary to the game's transcript (the analogue of
-`KeyBindingArm`'s `kbExperiment`) is future work, as it is for the key-binding arm's
-own named-ε slot (see the module doc of `Zcash.Security.Ledger.Capstone`).
+`KeyBindingArm`'s `kbExperiment`) is tracked in #155, as it is for the key-binding
+arm's own named-ε slot (see the module doc of `Zcash.Security.Ledger.Capstone`).
 -/
 
 namespace Zcash.Security.Ledger.Model

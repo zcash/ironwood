@@ -35,13 +35,13 @@ probability at least `Pr[violation] − κ`.
   AGM layer) and `κ` bounding the extraction-failure arm.
 
 What stays named: `κ` itself — the RedDSA knowledge error, the probability that an
-adversary produces a verifying signature the extractor misses. Its eventual discharge
-is a random-oracle forking argument (rewind the signer, reprogram the challenge); the
-deterministic core is proven (`RedDSA.verify_fork_dlog`), the rewinding's probability
-accounting is not. The forking machinery under `Zcash.Snark.Soundness.Forking` has
-the right bound shapes (`forking_measure_bound`, `recursiveForkFailure_measure_le`)
-but is built for the IPA transcript; instantiating it at the signature scheme is
-future work.
+adversary produces a verifying signature the extractor misses. The special-soundness
+core is proven (`RedDSA.verify_fork_dlog`); the known discharge routes and their
+losses are described in the module doc of `Zcash.Security.RedDSA.Basic`, and none is
+chosen here. The `Extractor` interface consumes only the verifying triple
+`(vk, m, σ)`: a straight-line AGM discharge extracts from an algebraic adversary's
+representations and a rewinding discharge re-runs the adversary, so a discharge would
+widen the interface or restate the bound per adversary.
 -/
 
 namespace Zcash.Security.Ledger.Model

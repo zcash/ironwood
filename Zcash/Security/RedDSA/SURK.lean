@@ -52,7 +52,12 @@ audited here, not only consumed:
   verifying `(R, S)` under `vk` to a verifying `(R, S + c·α′)` under any
   `RandomizePublic(α′, vk)` — and SURK-CMA breaks trivially. RedDSA hashes
   `v̄k` into the challenge (`H^⊛(R̄ ∥ v̄k ∥ M)`) precisely to cut this off: the
-  key-prefixing is load-bearing, not an EdDSA-inherited accident.
+  key-prefixing is load-bearing, not an EdDSA-inherited accident. It also carries the
+  multi-user tightness line: the claimed tight multi-user→single-user reduction for
+  plain Schnorr (Galbraith–Malone-Lee–Smart) was flawed, Bernstein showed the
+  key-prefixed scheme admits it (eprint 2015/996), and Kiltz–Masny–Pan treat it
+  systematically (eprint 2016/191); SURK-CMA's re-randomized keys are effectively a
+  multi-key setting.
 * **Two idealizations at the abstract layer, flagged.** (1) Signatures here are
   group/scalar pairs, so "same signature" is unambiguous; the deployed byte-level
   scheme accepts encodings whose canonicity ZIP 216 had to legislate, and pair
@@ -104,8 +109,8 @@ theorem Scheme.randomizePublic_zero (sch : Scheme F G MSG) (vk : G) :
 /-- **A key-blind challenge hash forfeits SURK-CMA.** If `H` ignores its key argument,
 any verifying `(R, S)` under `vk` transports to a verifying `(R, S + c·α)` under any
 re-randomization of `vk` — with the message unchanged and the transcript recording
-only `(m, σ)` pairs, a fresh win at every `α ≠ 0`. RedDSA hashes the verification key
-into the challenge to cut this transport off. -/
+only `(m, σ)` pairs, a fresh win at every `α` with `c · α ≠ 0`. RedDSA hashes the
+verification key into the challenge to cut this transport off. -/
 theorem Scheme.verify_shifted_of_key_blind_hash (sch : Scheme F G MSG)
     (hH : ∀ R k k' m, sch.H R k m = sch.H R k' m)
     {vk R : G} {S : F} {m : MSG} (hv : sch.Verify vk m ⟨R, S⟩) (α : F) :
