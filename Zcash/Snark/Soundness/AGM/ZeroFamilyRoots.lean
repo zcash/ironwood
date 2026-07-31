@@ -275,7 +275,7 @@ zero proof string.
 
 section BatchFree
 
-variable {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+variable {G : Type*} [AddCommGroup G] [Module Fp G] [Inhabited G]
 variable (urs : Zcash.Arithmetic.URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
   (ic : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
   (ch : Challenges shape.k Fp)

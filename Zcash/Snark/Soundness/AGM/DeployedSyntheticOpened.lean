@@ -16,7 +16,7 @@ attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchComm
   x4BatchEvals deployedSetMemberCommitments
 
 /-- A deployed `x4` algebraic batch presented through the opened-batch interface. -/
-def deployedSyntheticOpenedX4 [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedSyntheticOpenedX4 [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -36,7 +36,7 @@ def deployedSyntheticOpenedX4 [DecidableEq G] [Inhabited G] {shape : Shape}
     hvalues points hpoints current hcurrent
 
 /-- The deployed synthetic opened object's canonical `x4` decode is the AGM decode. -/
-theorem deployedSyntheticOpenedX4_coeffs [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSyntheticOpenedX4_coeffs [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -56,7 +56,7 @@ theorem deployedSyntheticOpenedX4_coeffs [DecidableEq G] [Inhabited G] {shape : 
     (evalVector urs.k ch.x3) (x4BatchEvals vk instanceCommitment ps ch) hvalues points hpoints current hcurrent i
 
 /-- The deployed synthetic opened object's canonical `U` decode is the AGM decode. -/
-theorem deployedSyntheticOpenedX4_uComp [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSyntheticOpenedX4_uComp [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -76,7 +76,7 @@ theorem deployedSyntheticOpenedX4_uComp [DecidableEq G] [Inhabited G] {shape : S
     (evalVector urs.k ch.x3) (x4BatchEvals vk instanceCommitment ps ch) hvalues points hpoints current hcurrent i
 
 /-- The deployed synthetic opened object's canonical `W` decode is the AGM decode. -/
-theorem deployedSyntheticOpenedX4_wComp [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSyntheticOpenedX4_wComp [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -97,7 +97,7 @@ theorem deployedSyntheticOpenedX4_wComp [DecidableEq G] [Inhabited G] {shape : S
 
 /-- Adapt one deployed `x1` AGM member batch to `OpenedMemberDecode`.  Its reconstruction target is
 the `x4` AGM coordinate because the synthetic `x4` decode was identified above. -/
-def deployedSyntheticMemberDecode [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedSyntheticMemberDecode [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

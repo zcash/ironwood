@@ -42,7 +42,7 @@ theorem vanishing_query_mem_assembleQueries [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- Grouping routes the unique vanishing query to a singleton-point member. -/
-theorem vanishing_slot_routed [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem vanishing_slot_routed [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     ∃ i, i < (constructIntermediateSets
@@ -80,7 +80,7 @@ theorem vanishing_slot_routed [DecidableEq G] [Inhabited G] {shape : Shape}
     rw [hsets d0, hev]
 
 /-- Deployed acceptance excludes the assembler's root-of-unity rejection branch. -/
-theorem deployedAccepts_xn_ne_one [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedAccepts_xn_ne_one [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -109,7 +109,7 @@ theorem hfold_of_expectedHEval_binding (constraints : List Fp) (y x : Fp)
 
 omit [Module Fp G] in
 /-- Read the quotient fold from the routed vanishing member. -/
-theorem hfold_of_vanishing_slot_binding [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem hfold_of_vanishing_slot_binding [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (constraints : List Fp) (hpoly : CPoly) (i m : Nat)

@@ -27,7 +27,7 @@ local instance vestaInhabitedDirectX4 : Inhabited VestaG := ⟨0⟩
 
 /-- The set index whose compressed aggregate is `x₄` batch column `j`: the batch reads the pair
 list in reverse. -/
-def x4ColumnSetIndex {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+def x4ColumnSetIndex {G : Type*} [AddCommGroup G] [Module Fp G] [Inhabited G]
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (j : ℕ) : ℕ :=
   deployedX4PairCount vk instanceCommitment ps ch - 1 - j
@@ -36,7 +36,7 @@ def x4ColumnSetIndex {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] 
 This is the commitment identity the column representations are built against, extracted from the
 `x₁` unbatch so both levels share one proof. -/
 theorem x4BatchCommitments_eq_memberPowerSum {G : Type*} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

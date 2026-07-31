@@ -25,7 +25,7 @@ open Zcash.Circuits.Action
 namespace ActionTerminal
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 /--
 Accepted decoded-member node binding implies the concrete Action bundle statement,

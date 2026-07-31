@@ -127,7 +127,7 @@ theorem CF_cons (Lg Rg U W : G) (Lv Lw Rv Rw : F) (rounds : List (G × G)) (u₀
 -/
 
 /-- Halo2's deployed IPA verifier equation is the closed form `CF = 0`. -/
-theorem deployedVerifierEq_cf {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+theorem deployedVerifierEq_cf {shape : Shape} [DecidableEq F] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) :

@@ -21,7 +21,7 @@ open Classical
 set_option maxHeartbeats 20000
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 section Advice
 
@@ -42,7 +42,7 @@ variable {shape : Shape}
   (hLayout :
     vk.adviceQueryLayout.length = shape.numAdviceQueries)
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem adviceQueryExists
     (hLayout :
       vk.adviceQueryLayout.length = shape.numAdviceQueries)
@@ -68,7 +68,7 @@ private noncomputable def acceptedAdviceQuery
     (adviceQueryExists vk instanceCommitment ps ch proofIndex hLayout
       queryIndex)
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem acceptedAdviceQuery_mem
     (hLayout :
       vk.adviceQueryLayout.length = shape.numAdviceQueries)
@@ -80,7 +80,7 @@ private theorem acceptedAdviceQuery_mem
     (adviceQueryExists vk instanceCommitment ps ch proofIndex hLayout
       queryIndex)).1
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem acceptedAdviceQuery_id
     (hLayout :
       vk.adviceQueryLayout.length = shape.numAdviceQueries)
@@ -284,7 +284,7 @@ variable {shape : Shape}
   (hLayout :
     vk.instanceQueryLayout.length = shape.numInstanceQueries)
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem instanceQueryExists
     (hLayout :
       vk.instanceQueryLayout.length = shape.numInstanceQueries)
@@ -310,7 +310,7 @@ private noncomputable def acceptedInstanceQuery
     (instanceQueryExists vk instanceCommitment ps ch proofIndex hLayout
       queryIndex)
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem acceptedInstanceQuery_mem
     (hLayout :
       vk.instanceQueryLayout.length = shape.numInstanceQueries)
@@ -322,7 +322,7 @@ private theorem acceptedInstanceQuery_mem
     (instanceQueryExists vk instanceCommitment ps ch proofIndex hLayout
       queryIndex)).1
 
-omit [DecidableEq G] [AddCommGroup G] [Module Fp G] in
+omit [AddCommGroup G] [Module Fp G] in
 private theorem acceptedInstanceQuery_id
     (hLayout :
       vk.instanceQueryLayout.length = shape.numInstanceQueries)

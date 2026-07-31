@@ -23,7 +23,7 @@ in `Fixtures.MaxShapeBounds` evaluate the bound to a count linear in the action 
 
 namespace Zcash.Snark
 
-variable {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+variable {G : Type*} [AddCommGroup G] [Module Fp G] [Inhabited G]
 variable {shape : Shape}
 
 /-- Modeled cost of assembling and checking one `x₄` batch column: `memberCount` member visits at

@@ -226,27 +226,27 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 /-- The deployed `x₁`-compressed point-set aggregates, exactly as `assembleOpening` builds them from the
 fingerprinted `constructIntermediateSets` grouping: per point set (in processing order), the `x₁`-power
 fold of the commitments routed to it. -/
-def deployedX4Qs [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedX4Qs [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) : List (Msm shape.k Fp G) :=
   let grouped := constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)
   ((grouped.sets.zip grouped.points).map (fun sp => compressSet ch.x1 sp.1 sp.2.length)).map Prod.fst
 
 /-- The deployed `x₄`-collapse pair list: the point-set aggregates zipped with the prover's claimed set
 evaluations `u`, in the order the collapse folds them. -/
-def deployedX4Pairs [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedX4Pairs [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) : List (Msm shape.k Fp G × Fp) :=
   (deployedX4Qs vk instanceCommitment ps ch).zip (List.ofFn ps.multiopenU)
 
 /-- The number of `x₄`-collapsed `(qᵢ, uᵢ)` pairs. The `x₄` batch has this many aggregate columns plus
 the `q′` slot. -/
-def deployedX4PairCount [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedX4PairCount [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) : ℕ :=
   (deployedX4Pairs vk instanceCommitment ps ch).length
 
 /-- The deployed base evaluation `msm_eval` the `x₄` collapse starts from: the `x₂`-combined,
 vanishing-divided Lagrange step (`multiopenEval`) over the fingerprinted grouping — the value the
 quotient commitment `q′` is claimed to open to. -/
-def deployedBaseEval [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedBaseEval [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) : Fp :=
   let grouped := constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)
   let compressed := (grouped.sets.zip grouped.points).map (fun sp => compressSet ch.x1 sp.1 sp.2.length)
@@ -257,7 +257,7 @@ def deployedBaseEval [DecidableEq G] [Inhabited G] {shape : Shape} (vk : Verifyi
 /-- The deployed `x₄` batch column commitments: ascending `ξ`-powers carry the point-set aggregates in
 reverse fold order, the top power the quotient commitment `q′`. These are the "columns" the `x₄`-level
 decode recovers — the fingerprinted grouping's own aggregates, not a modeled flat batch. -/
-def x4BatchCommitments [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+def x4BatchCommitments [Inhabited G] {shape : Shape} (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) : Fin (deployedX4PairCount vk instanceCommitment ps ch + 1) → G :=
   fun j =>
@@ -268,7 +268,7 @@ def x4BatchCommitments [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS 
 
 /-- The deployed `x₄` batch column evaluations: ascending `ξ`-powers carry the claimed set evaluations
 `uᵢ` in reverse fold order, the top power the recomputed base evaluation `msm_eval`. -/
-def x4BatchEvals [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def x4BatchEvals [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     Fin (deployedX4PairCount vk instanceCommitment ps ch + 1) → Fp :=
   fun j =>
@@ -280,7 +280,7 @@ def x4BatchEvals [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKe
 only the `x₄` field in the challenge record leaves the upstream query assembly, grouping, `x₁`
 compression, and base evaluation fixed. The resulting `deployedCommitment` is therefore the
 `ξ`-power combination of the deployed aggregates. -/
-theorem deployedCommitment_x4_batch [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+theorem deployedCommitment_x4_batch [Inhabited G] {shape : Shape} (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (ξ : Fp) :
     deployedCommitment urs hk vk instanceCommitment ps {ch with x4 := ξ}
@@ -297,7 +297,7 @@ omit [AddCommGroup G] [Module Fp G] in
 `deployedCommitment_x4_batch`: over `{ch with x4 := ξ}`, the pinned `multiopenValue` is the `ξ`-power
 combination of the claimed set evaluations with the base evaluation on top — the discharge of
 the flat-batch model boundary's `hv`. -/
-theorem multiopenValue_x4_batch [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem multiopenValue_x4_batch [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (ξ : Fp) :
     multiopenValue vk instanceCommitment ps {ch with x4 := ξ}
@@ -309,7 +309,7 @@ theorem multiopenValue_x4_batch [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- The queries the fingerprinted grouping routes to point set `i`, in the accumulate order the `x₁`
 compression folds them (`MultiopenGrouped.sets`, zipped with the set's points). -/
-def deployedSetQueries [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedSetQueries [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : ℕ) :
     List (CommitmentRef shape.k Fp G × List Fp) :=
   (let grouped := constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)
@@ -320,7 +320,7 @@ def deployedSetQueries [DecidableEq G] [Inhabited G] {shape : Shape} (vk : Verif
 `constructIntermediateSets_sets_ids_aligned`). `deployedSetCommIds vk instanceCommitment ps ch i |>.getD m` names
 *which* commitment — advice/instance/fixed column, permutation/lookup product, vanishing — member
 `(i, m)` is, tying the decoded member polynomials back to the verifying key's query layout. -/
-def deployedSetCommIds [DecidableEq G] [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+def deployedSetCommIds [Inhabited G] {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : ℕ) : List CommitmentId :=
   (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).ids.getD i []
 
@@ -328,7 +328,7 @@ omit [AddCommGroup G] [Module Fp G] in
 /-- The commitment-identifier list of a deployed point set has one entry per member query.
 Restored after the upstream multiopen prune: the canonical resolver bounds member indices with
 it, and no replacement was carried over. -/
-theorem deployedSetCommIds_length [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetCommIds_length [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (i : ℕ) :
@@ -344,7 +344,7 @@ aggregate of `deployedX4Qs`) is itself a flat power batch in the `x₁` squeeze 
 the fingerprinted grouping routes to that set. Composing with `deployedCommitment_x4_batch`: the deployed
 commitment is the `x₄`-power batch of `x₁`-power batches of the actual query commitments — the deployed
 two-level collapse in closed form. -/
-theorem deployedX4Qs_getD_eval [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4Qs_getD_eval [Inhabited G] {shape : Shape}
     (g : Fin (2 ^ shape.k) → G) (w u : G) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) {i : ℕ}
     (hi : i < (deployedX4Qs vk instanceCommitment ps ch).length) :
@@ -369,7 +369,7 @@ theorem deployedX4Qs_getD_eval [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- The in-range `x₄` batch columns, set-indexed: batch column `j` is the aggregate of point set
 `count − 1 − j` (the collapse folds the sets so the last one processed carries `ξ⁰`). -/
-theorem x4BatchCommitments_getD [DecidableEq G] [Inhabited G] {shape : Shape} (urs : URS G)
+theorem x4BatchCommitments_getD [Inhabited G] {shape : Shape} (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {j : Fin (deployedX4PairCount vk instanceCommitment ps ch + 1)}
     (hj : (j : ℕ) < deployedX4PairCount vk instanceCommitment ps ch) :
@@ -397,14 +397,14 @@ theorem x4BatchCommitments_getD [DecidableEq G] [Inhabited G] {shape : Shape} (u
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `x₄` pair count is the length of the pair list — the definitional unfolding, as a lemma so
 downstream files can use it without delta-reducing the sealed definition. -/
-theorem deployedX4PairCount_eq [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4PairCount_eq [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     deployedX4PairCount vk instanceCommitment ps ch = (deployedX4Pairs vk instanceCommitment ps ch).length := rfl
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The top slot of the `x₄` batch evaluations is the recomputed base evaluation: the slot index
 equals the pair count, so the branch that reads a point set is not taken. -/
-theorem x4BatchEvals_top [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem x4BatchEvals_top [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     x4BatchEvals vk instanceCommitment ps ch ⟨deployedX4PairCount vk instanceCommitment ps ch, Nat.lt_succ_self _⟩
       = deployedBaseEval vk instanceCommitment ps ch := by

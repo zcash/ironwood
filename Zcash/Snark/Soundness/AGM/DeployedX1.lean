@@ -20,7 +20,7 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchCommitments
 
 /-- The actual query commitments routed by the deployed fingerprint to point set `i`. -/
-def deployedSetMemberCommitments [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedSetMemberCommitments [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : Nat) :
@@ -28,7 +28,7 @@ def deployedSetMemberCommitments [DecidableEq G] [Inhabited G] {shape : Shape}
   fun j => ((deployedSetQueries vk instanceCommitment ps ch i).getD (j : Nat) (.point 0, [])).1.eval
     ⟨shape.k, hk ▸ urs.g, urs.w, urs.u⟩
 
-theorem deployedSetMemberCommitments_apply [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetMemberCommitments_apply [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : Nat)
@@ -42,7 +42,7 @@ attribute [local irreducible] deployedSetMemberCommitments
 /-- Provenance-preserving form of the deployed `x1` unbatch.  Its successful branch retains the
 equality between the batch columns and the online member coordinates. -/
 def deployedX1AlgebraicBatchWithSourceOrRelation
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

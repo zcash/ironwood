@@ -21,7 +21,7 @@ open Halo2 CompPoly.CPolynomial
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 variable
     {Config : Type} {PublicInput : TypeMap}
@@ -382,7 +382,7 @@ instance EnabledLookup.inputSelectorLeafRowsExactDecidable
     split <;> infer_instance
   infer_instance
 
-omit [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G] in
+omit [AddCommGroup G] [Module Fp G] [Inhabited G] in
 private theorem resolverFixedRead_of_rowPolynomial
     {shape : Shape} (urs : URS G)
     (vk : VerifyingKey shape Fp G)
@@ -401,7 +401,7 @@ private theorem resolverFixedRead_of_rowPolynomial
   rw [resolverEnvironment_fixed, hpolynomial]
   simpa using instanceRowPolynomial_eval hrows ⟨row, hrow⟩
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 /--
 Relevant exact packed rows and fixed-polynomial binding recover precisely the
 expression-level selector boundary consumed by lookup projection.

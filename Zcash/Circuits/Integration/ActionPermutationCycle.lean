@@ -27,7 +27,7 @@ open Zcash.Circuits.Action (actionCircuit)
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 theorem actionCopyList_decoded :
     Halo2.Layout.V1.copyList
@@ -50,7 +50,7 @@ theorem actionCopyList_decoded :
     Zcash.Snark.actionPermCols, Zcash.Snark.actionConsts,
     TopLevelCircuit.regionStarts] using hdecode
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 theorem actionPermutationRows_eq_chunkRowName
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
@@ -123,7 +123,7 @@ theorem zipIdx_getD_snd
   simp
 
 set_option maxRecDepth 100000 in
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 theorem actionChunkCommonIndex
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
@@ -211,7 +211,6 @@ theorem actionChunkCommonIndex
     _ = global := zipIdx_getD_snd _ (ColumnRef.advice 0) global
       (by simpa only [List.length_map] using hglobal)
 
-omit [DecidableEq G] in
 theorem actionPermutationCommitment_ofKeygen
     (pp : ProofParams) (urs : URS G)
     (hk : (actionShape pp).k = urs.k)
@@ -231,7 +230,7 @@ theorem actionPermutationCommitment_ofKeygen
     Keygen.ProofParams.mergeDerived, Keygen.permColsOf,
     List.length_map] using column.isLt
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 theorem actionRowsInjectiveAtUrs
     (pp : ProofParams) (urs : URS G)
     (hk : (actionShape pp).k = urs.k) :

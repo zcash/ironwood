@@ -30,7 +30,7 @@ list `[expectedHEval …]` (`hevals`), so the index-`0` binding is a binding at 
 capstone's `hfold` equation or the relation. Acceptance supplies the root-of-unity exclusion; the
 one remaining input is the expression-fold fingerprint `hfp`. `hquot` names the extracted quotient
 as the routed member's own column, not an arbitrary member recording the `vanishingH` identity. -/
-def hfold_of_member_budget {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G]
+def hfold_of_member_budget {G : Type*} [AddCommGroup G] [Module Fp G]
     [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -89,7 +89,7 @@ Named assumptions: `hfixed`/`hadvice`/`hinstance` — the fed columns take the c
 `ch.x`; `hsets`/`hchunks`/`hlookups` — the permutation sets, chunks and lookups do the same;
 `hl0`/`hlLast`/`hlBlind` — the Lagrange polynomials take the verifier's Lagrange values;
 `hbindAll`/`hquot`/`hroute`/`hevals`/`hacc` — unchanged from `hfold_of_member_budget`. -/
-def hfold_of_constraint_polys {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G]
+def hfold_of_constraint_polys {G : Type*} [AddCommGroup G] [Module Fp G]
     [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)

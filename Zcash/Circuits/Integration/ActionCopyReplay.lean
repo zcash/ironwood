@@ -22,7 +22,7 @@ open Zcash.Circuits.Action (actionCircuit)
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 /--
 Construct the complete Action copy witness for one proof from the accepted

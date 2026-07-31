@@ -16,14 +16,14 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 /-! ## Executable deployed specialization -/
 
 /-- A deterministic list enumerating the deployed union of opened points. -/
-def deployedAllPointList [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAllPointList [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) : List Fp :=
   (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.flatten
 
 omit [AddCommGroup G] [Module Fp G] in
-theorem mem_deployedAllPointList_iff [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem mem_deployedAllPointList_iff [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (x : Fp) :
@@ -42,7 +42,7 @@ theorem mem_deployedAllPointList_iff [DecidableEq G] [Inhabited G] {shape : Shap
 /-! ## Certificate-producing root checks -/
 
 /-- Compute avoidance of the deployed `x₄` value root. -/
-def deployedX4RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX4RootAvoidance? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -58,7 +58,7 @@ def deployedX4RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
   | some hgood => some ⟨by
       simpa only [deployedX4RootSet] using hgood.down⟩
 
-theorem deployedX4RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
+theorem deployedX4RootAvoidance?_isSome_of [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
@@ -77,7 +77,7 @@ theorem deployedX4RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
   simp [deployedX4RootAvoidance?, hcertificate]
 
 /-- Compute avoidance of the deployed `x₃` polynomial and point-collision union. -/
-def deployedX3RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX3RootAvoidance? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -100,7 +100,7 @@ def deployedX3RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
           exact hbad
         · exact hpoint hbad⟩
 
-theorem deployedX3RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
+theorem deployedX3RootAvoidance?_isSome_of [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
@@ -126,7 +126,7 @@ theorem deployedX3RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
   simp [deployedX3RootAvoidance?, hcertificate, hpoint]
 
 /-- Executable deployed `x₂` polynomial at one enumerated node. -/
-def deployedX2RootPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX2RootPolynomial [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -139,7 +139,7 @@ def deployedX2RootPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
     (deployedAlgebraicSetInterpolants vk instanceCommitment ps ch) node
 
 /-- The finite executable `x₂` checks before packaging their proof. -/
-def deployedX2RootChecks? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX2RootChecks? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -154,7 +154,7 @@ def deployedX2RootChecks? [DecidableEq G] [Inhabited G] {shape : Shape}
     (deployedX2RootPolynomial urs hk vk instanceCommitment ps ch batches
       (deployedAllPointList vk instanceCommitment ps ch)[idx]) ch.x2
 
-theorem deployedX2RootGood_of_checks [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX2RootGood_of_checks [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -175,7 +175,7 @@ theorem deployedX2RootGood_of_checks [DecidableEq G] [Inhabited G] {shape : Shap
   exact hbad
 
 /-- Compute every deployed `x₂` node-separation certificate. -/
-def deployedX2RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX2RootAvoidance? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -189,7 +189,7 @@ def deployedX2RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
   | some hgood => some ⟨deployedX2RootGood_of_checks
       urs hk vk instanceCommitment ps ch batches hgood⟩
 
-theorem deployedX2RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
+theorem deployedX2RootAvoidance?_isSome_of [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
@@ -212,7 +212,7 @@ theorem deployedX2RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
   simp [deployedX2RootAvoidance?, hcertificates]
 
 /-- The finite executable `x₁` checks before packaging their proof. -/
-def deployedX1RootChecks? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX1RootChecks? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -230,7 +230,7 @@ def deployedX1RootChecks? [DecidableEq G] [Inhabited G] {shape : Shape}
       (deployedX1RootPolynomial urs hk vk instanceCommitment ps ch
         batches i i.isLt idx) ch.x1
 
-theorem deployedX1RootGood_of_checks [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX1RootGood_of_checks [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -254,7 +254,7 @@ theorem deployedX1RootGood_of_checks [DecidableEq G] [Inhabited G] {shape : Shap
   next hi => simp at hbad
 
 /-- Compute every deployed `x₁` set/member certificate. -/
-def deployedX1RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX1RootAvoidance? [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -268,7 +268,7 @@ def deployedX1RootAvoidance? [DecidableEq G] [Inhabited G] {shape : Shape}
   | some hgood => some ⟨deployedX1RootGood_of_checks
       urs hk vk instanceCommitment ps ch batches hgood⟩
 
-theorem deployedX1RootAvoidance?_isSome_of [DecidableEq G] [Inhabited G]
+theorem deployedX1RootAvoidance?_isSome_of [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)

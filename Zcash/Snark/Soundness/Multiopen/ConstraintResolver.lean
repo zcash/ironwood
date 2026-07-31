@@ -43,7 +43,7 @@ structure MemberSlot (setCount : ℕ) (memberCount : ℕ → ℕ) where
   memberIndex : Fin (memberCount setIndex)
 
 /-- A valid decoded member position in the deployed multiopen grouping. -/
-abbrev DeployedMemberSlot [DecidableEq G] [Inhabited G]
+abbrev DeployedMemberSlot [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :=
   MemberSlot
@@ -52,7 +52,7 @@ abbrev DeployedMemberSlot [DecidableEq G] [Inhabited G]
       (deployedSetQueries (instanceCommitment := instanceCommitment) vk ps ch i).length)
 
 /-- The polynomial decoded at a valid deployed member slot. -/
-def decodedMemberPolynomial [DecidableEq G] [Inhabited G]
+def decodedMemberPolynomial [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
@@ -71,7 +71,7 @@ def decodedMemberPolynomial [DecidableEq G] [Inhabited G]
 
 /-- Resolve a commitment identity to its decoded member polynomial.  The resolver is total because
 the constraint model is total; identities outside the routed query block use the zero polynomial. -/
-def decodedPolynomialResolver [DecidableEq G] [Inhabited G]
+def decodedPolynomialResolver [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
@@ -94,7 +94,7 @@ def decodedPolynomialResolver [DecidableEq G] [Inhabited G]
     | none => 0
 
 /-- The claimed value stored by the deployed grouping for a member at a point of its point set. -/
-def deployedMemberClaim [DecidableEq G] [Inhabited G]
+def deployedMemberClaim [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (slot : DeployedMemberSlot (instanceCommitment := instanceCommitment) vk ps ch)
@@ -116,7 +116,7 @@ structure RoutedClaim {Slot Id Point Value : Type*}
 
 /-- Routing evidence for one verifier query: its commitment ID selects a decoded member, its point
 belongs to that member's point set, and the grouped claimed value there is the query's value. -/
-abbrev DeployedQueryRoute [DecidableEq G] [Inhabited G]
+abbrev DeployedQueryRoute [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (route : CommitmentId →
@@ -132,7 +132,7 @@ abbrev DeployedQueryRoute [DecidableEq G] [Inhabited G]
 identity present in the assembled query list, `List.find?` selects its first concrete query and
 `constructIntermediateSets_comm_route` performs the verifier's deterministic grouping searches.
 Absent identities remain unrouted.  No existential witness is projected into routing data. -/
-def assembledQueryMemberRoute [DecidableEq G] [Inhabited G]
+def assembledQueryMemberRoute [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -165,7 +165,7 @@ def assembledQueryMemberRoute [DecidableEq G] [Inhabited G]
 
 /-- The canonical route is faithful for every assembled query: it selects the member carrying the
 query's identity, point, and claimed evaluation. -/
-def assembledQueryMemberRoute_faithful [DecidableEq G] [Inhabited G]
+def assembledQueryMemberRoute_faithful [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -228,7 +228,7 @@ omit [AddCommGroup G] [Module Fp G] in
 The member selected by the canonical route carries the routed commitment identity.
 This exposes the positional identity fact retained by `MultiopenGrouped.ids`.
 -/
-theorem assembledQueryMemberRoute_id [DecidableEq G] [Inhabited G]
+theorem assembledQueryMemberRoute_id [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -272,7 +272,7 @@ Any deployed member carrying an instance-column identity is the statement-derive
 that proof and column.  This is the commitment-side companion of the canonical query route: the
 grouping retains `CommitmentId` positionally, so no circuit-specific placement fact is needed.
 -/
-theorem deployedMemberRef_eq_instanceCommitment [DecidableEq G] [Inhabited G]
+theorem deployedMemberRef_eq_instanceCommitment [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -318,7 +318,7 @@ Any deployed member carrying a fixed-column identity is the corresponding
 verifying-key commitment. This is the fixed-column counterpart of
 `deployedMemberRef_eq_instanceCommitment`.
 -/
-theorem deployedMemberRef_eq_fixedCommitment [DecidableEq G] [Inhabited G]
+theorem deployedMemberRef_eq_fixedCommitment [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -367,7 +367,7 @@ omit [Module Fp G] in
 /-- Any deployed member carrying a common-permutation identity is the corresponding
 verifying-key σ-column commitment. This is the σ-column counterpart of
 `deployedMemberRef_eq_fixedCommitment`. -/
-theorem deployedMemberRef_eq_permCommonCommitment [DecidableEq G] [Inhabited G]
+theorem deployedMemberRef_eq_permCommonCommitment [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
     (hcount : deployedX4PairCount (instanceCommitment := instanceCommitment) vk ps ch
@@ -417,7 +417,7 @@ omit [AddCommGroup G] [Module Fp G] in
 canonical member route: duplicate commitment-point queries were rejected, and the `u` vector has
 one entry per grouped point set, so the deployed pair count covers every group. -/
 lemma assembledQueryRoutingConditions_of_assemble?_eq_some
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {m : Msm shape.k Fp G}
     (hm : assemble? vk instanceCommitment ps ch = some m) :
@@ -477,7 +477,7 @@ lemma assembledQueryRoutingConditions_of_assemble?_eq_some
 
 /-- If every routed member is node-bound, the decoded resolver opens every query in `queries`;
 otherwise the existing augmented-basis relation branch is retained. -/
-def decodedPolynomialResolver_opens_or_relation [DecidableEq G] [Inhabited G]
+def decodedPolynomialResolver_opens_or_relation [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
@@ -517,7 +517,7 @@ def decodedPolynomialResolver_opens_or_relation [DecidableEq G] [Inhabited G]
 entries evaluate to the proof's five claimed lookup values, or commitment binding has produced a
 nontrivial augmented-basis relation. -/
 def eval_lookupEntriesOfDecodedResolver_or_relation
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)

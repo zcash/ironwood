@@ -544,7 +544,7 @@ opening queries into point sets, producing the `MultiopenGrouped` that `assemble
 — derived in Lean rather than supplied. Queries are grouped by slot identity (`commId`, halo2's
 pointer identity — see `CommitmentId`); the orderings mirror the Rust and are noted step by step
 in the body. `constructIntermediateSets?` is the rejecting form. -/
-def constructIntermediateSets {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+def constructIntermediateSets {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G)) : MultiopenGrouped k F G :=
   -- distinct points, in first-appearance order; `pointIdx p` is `p`'s index in that order
   let points : List F :=
@@ -587,7 +587,7 @@ def constructIntermediateSets {k : ℕ} {F G : Type*} [DecidableEq F] [Decidable
 projections of the same routed member list (halo2's `CommitmentData` entries routed to that set),
 so their lengths agree — `ids[i][m]` names the slot identity of the member `sets[i][m]`. -/
 theorem constructIntermediateSets_sets_ids_aligned {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) (i : ℕ) :
+    (queries : List (VerifierQuery k F G)) (i : ℕ) :
     ((constructIntermediateSets queries).ids.getD i []).length
       = ((constructIntermediateSets queries).sets.getD i []).length := by
   simp only [constructIntermediateSets, List.getD_eq_getElem?_getD, List.getElem?_map]
@@ -597,14 +597,14 @@ theorem constructIntermediateSets_sets_ids_aligned {k : ℕ} {F G : Type*} [Deci
 
 /-- The `ids` view has one entry per point set, aligned with `sets`. -/
 theorem constructIntermediateSets_ids_length {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) :
+    (queries : List (VerifierQuery k F G)) :
     (constructIntermediateSets queries).ids.length
       = (constructIntermediateSets queries).sets.length := by
   simp [constructIntermediateSets]
 
 /-- `sets` and `points` have one entry per point set. -/
 theorem constructIntermediateSets_points_length {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) :
+    (queries : List (VerifierQuery k F G)) :
     (constructIntermediateSets queries).sets.length
       = (constructIntermediateSets queries).points.length := by
   simp [constructIntermediateSets]
@@ -612,7 +612,7 @@ theorem constructIntermediateSets_points_length {k : ℕ} {F G : Type*} [Decidab
 /-- Projecting the first component of the `sets.zip points` view (`deployedSetQueries`'s shape) is
 the plain `sets` entry — the zip never truncates, since `sets` and `points` are equal-length. -/
 theorem constructIntermediateSets_zip_sets_getD {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) (i : ℕ) :
+    (queries : List (VerifierQuery k F G)) (i : ℕ) :
     (((constructIntermediateSets queries).sets.zip
         (constructIntermediateSets queries).points).getD i ([], [])).1
       = (constructIntermediateSets queries).sets.getD i [] := by
@@ -664,13 +664,34 @@ private theorem getElem?_findIdx_self {α : Type*} [DecidableEq α] {l : List α
   simp only [decide_eq_true_eq] at hval
   rw [hval]
 
+/-- Locating a member by its key: over duplicate-free keys, `findIdx` on a member's key finds
+the member itself. The keyed analogue of `getElem?_findIdx_self` — it lets routing proofs
+recover a member from its slot identity without comparing the other components. -/
+private theorem getElem?_findIdx_key {α β : Type*} [DecidableEq β] {f : α → β} {b : β} :
+    ∀ {l : List α}, (l.map f).Nodup → ∀ {x : α}, x ∈ l → f x = b →
+      l[l.findIdx (fun y => decide (f y = b))]? = some x
+  | [], _, _, hx, _ => absurd hx List.not_mem_nil
+  | a :: t, hnodup, x, hx, hfx => by
+      rw [List.map_cons, List.nodup_cons] at hnodup
+      rcases List.mem_cons.mp hx with rfl | hxt
+      · simp [List.findIdx_cons, hfx]
+      · have hkey : ¬ (f a = b) := by
+          intro hab
+          apply hnodup.1
+          rw [hab, ← hfx]
+          exact List.mem_map.mpr ⟨x, hxt, rfl⟩
+        rw [List.findIdx_cons]
+        have hpa : decide (f a = b) = false := decide_eq_false_iff_not.mpr hkey
+        rw [hpa, cond_false, List.getElem?_cons_succ]
+        exact getElem?_findIdx_key hnodup.2 hxt hfx
+
 /-- **Point routing (F4 core).** Every query's point lands in the point list of the set its
 commitment slot is routed to: if `q ∈ queries` and `q.commId` names member `m` of point set `si`
 (`ids[si][m] = q.commId`), then `q.point` appears in set `si`'s points. The point companion of
 `constructIntermediateSets_ref_mem` — a query routed into a set by its slot identity has its opening
 point among that set's points, since the set's points are exactly the point-indices of the members
 routed there. -/
-theorem constructIntermediateSets_point_mem {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets_point_mem {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G))
     {q : VerifierQuery k F G} (hq : q ∈ queries) {si m : ℕ} {d₀ : CommitmentId}
     (hlt : m < ((constructIntermediateSets queries).ids.getD si []).length)
@@ -738,7 +759,7 @@ private theorem nodup_dedup_foldl {α β : Type*} [DecidableEq β] (l : List α)
 each point set's points; every such list is a `filterMap` of a duplicate-free index set over the
 internal distinct-points list (itself `Nodup` by the first-appearance fold), extracting distinct
 entries, so it is `Nodup`. -/
-theorem constructIntermediateSets_points_nodup {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets_points_nodup {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G)) (idx : ℕ) :
     ((constructIntermediateSets queries).points.getD idx []).Nodup := by
   classical
@@ -805,7 +826,7 @@ and its set's point list are `filterMap`s over the same duplicate-free point-ind
 extractions are everywhere defined — every index in the set is in range of the internal points
 list, and every index got there from some query of the member's slot, so the `find?` succeeds. So
 the lengths agree: the member claims exactly one evaluation at each of its set's points. -/
-theorem constructIntermediateSets_eval_length {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets_eval_length {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G)) (i : ℕ) :
     ∀ qc ∈ (constructIntermediateSets queries).sets.getD i [],
       qc.2.length = ((constructIntermediateSets queries).points.getD i []).length := by
@@ -962,7 +983,7 @@ private theorem cisComms_fold_length_le {k : ℕ} {F G : Type*}
 
 /-- Each point set routes at most one member per query. -/
 theorem constructIntermediateSets_sets_getD_length_le {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) (i : ℕ) :
+    (queries : List (VerifierQuery k F G)) (i : ℕ) :
     ((constructIntermediateSets queries).sets.getD i []).length ≤ queries.length := by
   classical
   have hcomms : (cisComms queries).length ≤ queries.length := by
@@ -1032,6 +1053,48 @@ private theorem range_filter_eq_singleton {j n : ℕ} (h : j < n) :
           exact Nat.ne_of_lt (List.mem_range.mp ha)
         rw [h1, List.nil_append]
         simp
+
+/-- The keyed dedup fold appends an entry only when its key is absent, so the accumulated keys
+are pairwise distinct. -/
+private theorem cisComms_fold_keys_nodup {k : ℕ} {F G : Type*}
+    (l : List (VerifierQuery k F G)) :
+    ∀ (init : List (CommitmentId × CommitmentRef k F G)), (init.map (·.1)).Nodup →
+      ((l.foldl (fun acc q => if acc.any (fun c => decide (c.1 = q.commId)) then acc
+        else acc ++ [(q.commId, q.commitment)]) init).map (·.1)).Nodup := by
+  induction l with
+  | nil => intro init h; simpa using h
+  | cons a l ih =>
+      intro init h
+      rw [List.foldl_cons]
+      by_cases hmem : init.any (fun c => decide (c.1 = a.commId))
+      · rw [if_pos hmem]; exact ih init h
+      · rw [if_neg hmem]
+        refine ih _ ?_
+        rw [List.map_append]
+        refine List.Nodup.append h (List.nodup_singleton _) ?_
+        rw [List.map_singleton, List.disjoint_singleton]
+        intro hmem'
+        obtain ⟨c, hc, hck⟩ := List.mem_map.mp hmem'
+        exact hmem (List.any_eq_true.mpr ⟨c, hc, by simp [hck]⟩)
+
+/-- The members routed to a point set have pairwise-distinct slot identities: the routed list is
+a filtered reversal of `cisData`, whose keys are `cisComms`'s dedup-fold keys. So a member is
+recoverable from its slot identity alone — no curve-value comparison. -/
+private theorem cisRouted_keys_nodup {k : ℕ} {F G : Type*} [DecidableEq F]
+    (queries : List (VerifierQuery k F G)) (si : ℕ) :
+    ((cisRouted queries si).map (·.1)).Nodup := by
+  have hcomms : ((cisComms queries).map (·.1)).Nodup :=
+    cisComms_fold_keys_nodup queries [] (by simp)
+  have hdata : ((cisData queries).map (·.1)).Nodup := by
+    rw [cisData, List.map_map]
+    simpa [Function.comp] using hcomms
+  have hrev : (((cisData queries).reverse).map (·.1)).Nodup := by
+    rw [List.map_reverse]
+    exact List.nodup_reverse.mpr hdata
+  have hsub : List.Sublist ((cisRouted queries si).map (·.1))
+      (((cisData queries).reverse).map (·.1)) :=
+    List.Sublist.map _ List.filter_sublist
+  exact hrev.sublist hsub
 
 /-- A unique-slot query's per-commitment data entry: its own identity and curve value, the
 singleton index set of its point, and the singleton eval list of its claimed evaluation. -/
@@ -1107,7 +1170,7 @@ recorded evaluation list is the singleton of the query's claimed evaluation — 
 slot, the verifier-computed `expectedHEval`. The grouping-side eval-faithfulness fact the `hfold`
 derivation consumes. -/
 theorem constructIntermediateSets_unique_comm_routed {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
+    (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
     (hq : q ∈ queries) (huniq : ∀ q' ∈ queries, q'.commId = q.commId → q' = q) :
     ∃ i, i < (constructIntermediateSets queries).sets.length ∧
       (constructIntermediateSets queries).points.getD i [] = [q.point] ∧
@@ -1449,7 +1512,7 @@ private theorem cisData_query_eval {k : ℕ} {F G : Type*} [DecidableEq F] [Zero
 
 /-- Rejecting version of `constructIntermediateSets`, matching halo2's `Option` guard for duplicate
 queries with the same commitment slot and point. -/
-def constructIntermediateSets? {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+def constructIntermediateSets? {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G)) : Option (MultiopenGrouped k F G) :=
   if hasDuplicateCommitmentPoint queries then none else some (constructIntermediateSets queries)
 
@@ -1457,7 +1520,7 @@ def constructIntermediateSets? {k : ℕ} {F G : Type*} [DecidableEq F] [Decidabl
 a concrete grouped member with the same commitment identity; its point occurs in the group's point
 list, and the member's claimed value at that point is exactly the flat query's claimed evaluation. -/
 theorem constructIntermediateSets_query_routed {k : ℕ} {F G : Type*}
-    [DecidableEq F] [DecidableEq G] [Zero F] [Zero G]
+    [DecidableEq F] [Zero F] [Zero G]
     (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
     (hq : q ∈ queries) (hdup : hasDuplicateCommitmentPoint queries = false) :
     ∃ si, si < (constructIntermediateSets queries).sets.length ∧
@@ -1553,7 +1616,7 @@ theorem constructIntermediateSets_query_routed {k : ℕ} {F G : Type*}
 evaluation.  This is the reusable eval-faithfulness companion to
 `constructIntermediateSets_point_mem`. -/
 theorem constructIntermediateSets_query_eval {k : ℕ} {F G : Type*}
-    [DecidableEq F] [DecidableEq G] [Zero F] [Zero G]
+    [DecidableEq F] [Zero F] [Zero G]
     (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
     (hq : q ∈ queries) (hdup : hasDuplicateCommitmentPoint queries = false)
     {si m : ℕ}
@@ -1637,7 +1700,7 @@ The grouped commitment and identity views at one member position come from the s
 This indexed provenance statement preserves the `CommitmentId` aligned with the group element.
 -/
 theorem constructIntermediateSets_member_provenance {k : ℕ} {F G : Type*}
-    [DecidableEq F] [DecidableEq G]
+    [DecidableEq F]
     (queries : List (VerifierQuery k F G))
     (i m : ℕ)
     (hi : i < (constructIntermediateSets queries).sets.length)
@@ -1789,7 +1852,7 @@ Two of these rejections abstract deployed *panics*, not error returns: at `xⁿ 
 `(x₃ - point).invert().unwrap()` (`multiopen/verifier.rs`). Both strike a negligible proportion of
 challenges (`card_vanishingPanic_le`, `card_multiopenPanic_le`) and are non-accepting either way, which is
 the property the soundness layer consumes; the model just renders "crash" as `none`. -/
-def assemble? {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G] [Inhabited G]
+def assemble? {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) :
     Option (Msm shape.k F G) :=
@@ -1816,7 +1879,7 @@ rejects; kept for the algebraic fingerprint lemmas.
 `(assemble …).eval urs = 0`: on every rejection path that predicate holds vacuously, i.e. the total
 wrapper accepts malformed input. Acceptance must go through `assemble?` (as `DeployedAccepts` does),
 where rejection is `none`. -/
-def assemble {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G] [Inhabited G]
+def assemble {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) :
     Msm shape.k F G :=
@@ -1883,7 +1946,7 @@ evaluation — under `hdet`, one claimed evaluation per slot and point. The many
 feed bindings read. -/
 
 theorem constructIntermediateSets_comm_routed {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
+    (queries : List (VerifierQuery k F G)) {q : VerifierQuery k F G}
     (hq : q ∈ queries)
     (hdet : ∀ q' ∈ queries, q'.commId = q.commId → q'.point = q.point → q'.eval = q.eval)
     (hcommit : ∀ q' ∈ queries, q'.commId = q.commId → q'.commitment = q.commitment) :
@@ -2002,16 +2065,19 @@ theorem constructIntermediateSets_comm_routed {k : ℕ} {F G : Type*} [Decidable
     rw [cisRouted]
     refine List.mem_filter.mpr ⟨List.mem_reverse.mpr hcd, ?_⟩
     simp [hsi]
-  set m := (cisRouted queries si).findIdx
-    (fun x => decide (x = (e.1, e.2, idxSet, evals))) with hmdef
+  -- the member index, located by slot identity alone (`cisRouted_keys_nodup` makes the slot
+  -- identity a key) — no curve-value comparison
+  set m := (cisRouted queries si).findIdx (fun x => decide (x.1 = e.1)) with hmdef
   have hm : m < (cisRouted queries si).length := by
     rw [hmdef]
     exact List.findIdx_lt_length_of_exists
       ⟨(e.1, e.2, idxSet, evals), hrouted, by simp⟩
   have hrm : (cisRouted queries si)[m] = (e.1, e.2, idxSet, evals) := by
-    have hget := getElem?_findIdx_self hrouted
+    have hget : (cisRouted queries si)[m]? = some (e.1, e.2, idxSet, evals) := by
+      rw [hmdef]
+      exact getElem?_findIdx_key (cisRouted_keys_nodup queries si) hrouted rfl
     rw [List.getElem?_eq_getElem hm] at hget
-    exact Option.some.inj (by simpa [hmdef] using hget)
+    exact Option.some.inj hget
   -- the set's point list is the everywhere-defined extraction over the index set
   have hpts : ((cisSetList queries).map fun s => s.filterMap
       fun i => (cisPts queries)[i]?).getD si [] = idxSet.filterMap fun i => (cisPts queries)[i]? := by
@@ -2076,7 +2142,7 @@ theorem constructIntermediateSets_comm_routed {k : ℕ} {F G : Type*} [Decidable
 /-- Computed indices and their routing specification for one commitment slot.  The indices are
 ordinary data obtained by searching the verifier's deterministic grouping; only their validity is
 proof-valued. -/
-structure ConstructIntermediateSetsRoute {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+structure ConstructIntermediateSetsRoute {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G)) (c : CommitmentId)
     (commitment : CommitmentRef k F G) where
   setIndex : Nat
@@ -2098,7 +2164,7 @@ structure ConstructIntermediateSetsRoute {k : ℕ} {F G : Type*} [DecidableEq F]
 a single member of a single point set, and *every* query on that slot lands there. The definition
 returns the actual `findIdx` choices as data. -/
 def constructIntermediateSets_comm_route {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) {c : CommitmentId}
+    (queries : List (VerifierQuery k F G)) {c : CommitmentId}
     {q₀ : VerifierQuery k F G} (hq₀ : q₀ ∈ queries) (hq₀c : q₀.commId = c)
     (hdet : ∀ q ∈ queries, ∀ q' ∈ queries, q.commId = q'.commId → q.point = q'.point →
       q.eval = q'.eval)
@@ -2177,16 +2243,19 @@ def constructIntermediateSets_comm_route {k : ℕ} {F G : Type*} [DecidableEq F]
     rw [cisRouted]
     refine List.mem_filter.mpr ⟨List.mem_reverse.mpr hcd, ?_⟩
     simp [hsi]
-  set m := (cisRouted queries si).findIdx
-    (fun x => decide (x = (e.1, e.2, idxSet, evals))) with hmdef
+  -- the member index, located by slot identity alone (`cisRouted_keys_nodup` makes the slot
+  -- identity a key) — no curve-value comparison
+  set m := (cisRouted queries si).findIdx (fun x => decide (x.1 = e.1)) with hmdef
   have hm : m < (cisRouted queries si).length := by
     rw [hmdef]
     exact List.findIdx_lt_length_of_exists
       ⟨(e.1, e.2, idxSet, evals), hrouted, by simp⟩
   have hrm : (cisRouted queries si)[m] = (e.1, e.2, idxSet, evals) := by
-    have hget := getElem?_findIdx_self hrouted
+    have hget : (cisRouted queries si)[m]? = some (e.1, e.2, idxSet, evals) := by
+      rw [hmdef]
+      exact getElem?_findIdx_key (cisRouted_keys_nodup queries si) hrouted rfl
     rw [List.getElem?_eq_getElem hm] at hget
-    exact Option.some.inj (by simpa [hmdef] using hget)
+    exact Option.some.inj hget
   have hpts : ((cisSetList queries).map fun s => s.filterMap
       fun i => (cisPts queries)[i]?).getD si [] = idxSet.filterMap fun i => (cisPts queries)[i]? := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, hsiget]
@@ -2292,7 +2361,7 @@ def constructIntermediateSets_comm_route {k : ℕ} {F G : Type*} [DecidableEq F]
 
 /-- Proposition-valued compatibility wrapper for the computed route. -/
 theorem constructIntermediateSets_comm_routed_all {k : ℕ} {F G : Type*} [DecidableEq F]
-    [DecidableEq G] (queries : List (VerifierQuery k F G)) {c : CommitmentId}
+    (queries : List (VerifierQuery k F G)) {c : CommitmentId}
     {q₀ : VerifierQuery k F G} (hq₀ : q₀ ∈ queries) (hq₀c : q₀.commId = c)
     (hdet : ∀ q ∈ queries, ∀ q' ∈ queries, q.commId = q'.commId → q.point = q'.point →
       q.eval = q'.eval)
@@ -2318,7 +2387,7 @@ by its aligned `ids` entry.  This is the grouping invariant needed to reroute de
 pre-challenge chosen openings. -/
 
 theorem constructIntermediateSets_member_commitment_eq_of_id
-    {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+    {k : ℕ} {F G : Type*} [DecidableEq F]
     (queries : List (VerifierQuery k F G))
     (resolve : CommitmentId -> CommitmentRef k F G)
     (hcanonical : ∀ q ∈ queries, q.commitment = resolve q.commId)

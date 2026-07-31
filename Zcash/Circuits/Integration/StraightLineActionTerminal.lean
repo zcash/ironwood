@@ -19,7 +19,7 @@ open Zcash.Circuits
 open Zcash.Circuits.Action
 open Zcash.Arithmetic (scalarFieldOrder)
 
-variable {G : Type} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+variable {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
 
 local instance vestaInhabitedStraightLineActionTerminal : Inhabited VestaG := ⟨0⟩
 

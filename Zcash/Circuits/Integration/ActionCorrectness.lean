@@ -21,7 +21,7 @@ open Zcash.Circuits.Action
 namespace ActionCorrectness
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 /--
 Construct the Action circuit's component-level correctness package for the

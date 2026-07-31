@@ -87,7 +87,7 @@ private theorem permutationCommonQueries_length_le {k' : ℕ} {F' G' : Type*} [F
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- **The deployed query list fits the shape budget.** -/
-theorem assembleQueries_length_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem assembleQueries_length_le [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :
     (assembleQueries vk instanceCommitment ps ch).length ≤ queryBudget shape := by
@@ -135,7 +135,7 @@ theorem assembleQueries_length_le [DecidableEq G] [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The deployed `x4` pair count is at most the shape's point-set arity. -/
-theorem deployedX4PairCount_le_numPointSets [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4PairCount_le_numPointSets [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs -> Nat -> G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     deployedX4PairCount vk instanceCommitment ps ch <= shape.numPointSets := by
@@ -191,7 +191,7 @@ theorem constructIntermediateSets_points_getD_mem_queries
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The deployed point union has at most as many points as the verifier has opening queries. -/
-theorem deployedAllPts_card_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedAllPts_card_le [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs -> Nat -> G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     (deployedAllPts vk instanceCommitment ps ch).card <=
@@ -216,7 +216,7 @@ theorem deployedAllPts_card_le [DecidableEq G] [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- Each point set's member count fits the shape budget. -/
-theorem deployedSetQueries_length_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetQueries_length_le [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (i : ℕ) :
     (deployedSetQueries vk instanceCommitment ps ch i).length ≤ queryBudget shape := by
@@ -230,7 +230,7 @@ theorem deployedSetQueries_length_le [DecidableEq G] [Inhabited G] {shape : Shap
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The point union fits the shape budget. -/
-theorem deployedAllPts_card_le_budget [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedAllPts_card_le_budget [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :
     (deployedAllPts vk instanceCommitment ps ch).card ≤ queryBudget shape :=
@@ -251,7 +251,7 @@ noncomputable def actionBudget (shape : Shape) (k' : ℕ) : ℝ≥0∞ :=
 omit [AddCommGroup G] [Module Fp G] in
 /-- **The joint accept floor's threshold fits the action budget**, for every proof string,
 challenge record, and point set. The uniform worst case the resampled-joint threshold consumes. -/
-theorem deployed_member_threshold_le_actionBudget [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployed_member_threshold_le_actionBudget [Inhabited G] {shape : Shape}
     (urs : URS G) (_hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : ℕ) :

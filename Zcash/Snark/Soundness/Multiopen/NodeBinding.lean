@@ -80,7 +80,7 @@ theorem hsamp_of_multiopenEval_reversed {numSets : ℕ}
 `x₁`-compressed evaluation vector, and the prover's claimed set evaluation `multiopenUⱼ`. This is the
 list `deployedBaseEval` feeds `multiopenEval`; naming it lets the value check's field identifications
 be stated. -/
-def deployedSetsForEval [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedSetsForEval [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     List (List Fp × List Fp × Fp) :=
   let grouped := constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)
@@ -90,7 +90,7 @@ def deployedSetsForEval [DecidableEq G] [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- `deployedBaseEval` is `multiopenEval` over `deployedSetsForEval` — definitional. -/
-theorem deployedBaseEval_eq_multiopenEval [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedBaseEval_eq_multiopenEval [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     deployedBaseEval vk instanceCommitment ps ch = multiopenEval ch.x2 ch.x3 (deployedSetsForEval vk instanceCommitment ps ch) := rfl
 
@@ -99,7 +99,7 @@ omit [AddCommGroup G] [Module Fp G] in
 to `min(min(gsets.length, gpoints.length), numPointSets)` — the grouping's set count clipped to the
 prover's claimed-eval count — so no `= shape.numPointSets` fact is needed. This lets the deployed
 value check be instantiated at `numSets := deployedX4PairCount`. -/
-theorem deployedSetsForEval_length [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_length [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     (deployedSetsForEval vk instanceCommitment ps ch).length = deployedX4PairCount vk instanceCommitment ps ch := by
   have hsp := constructIntermediateSets_points_length (assembleQueries vk instanceCommitment ps ch)
@@ -110,7 +110,7 @@ theorem deployedSetsForEval_length [DecidableEq G] [Inhabited G] {shape : Shape}
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `j`-th value-check set's point list is grouping point set `j`'s points — so its finset is
 `deployedSetPts j`. The points-field identification for the grid openings. -/
-theorem deployedSetsForEval_getD_points [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_getD_points [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).getD k ([], [], 0)).1
@@ -129,7 +129,7 @@ theorem deployedSetsForEval_getD_points [DecidableEq G] [Inhabited G] {shape : S
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `j`-th value-check set's point finset is exactly `deployedSetPts j` — the `hpts`
 field-identification for the grid openings. -/
-theorem deployedSetsForEval_getD_toFinset [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_getD_toFinset [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).getD k ([], [], 0)).1.toFinset = deployedSetPts vk instanceCommitment ps ch k := by
@@ -138,7 +138,7 @@ theorem deployedSetsForEval_getD_toFinset [DecidableEq G] [Inhabited G] {shape :
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `j`-th value-check set's point list is duplicate-free — the `hnd` field-identification for
 the grid openings, via `constructIntermediateSets_points_nodup`. -/
-theorem deployedSetsForEval_getD_nodup [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_getD_nodup [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).getD k ([], [], 0)).1.Nodup := by
@@ -148,7 +148,7 @@ theorem deployedSetsForEval_getD_nodup [DecidableEq G] [Inhabited G] {shape : Sh
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `reverse`d value-check `sets`, at index `k`, reads grouping set `numSets − 1 − k`'s point
 list — the reversed index the `multiopenEval` power convention pairs `x₂^k` with. -/
-theorem deployedSetsForEval_reverse_getD_points [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_reverse_getD_points [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).reverse.getD k ([], [], 0)).1
@@ -165,7 +165,7 @@ theorem deployedSetsForEval_reverse_getD_points [DecidableEq G] [Inhabited G] {s
 omit [AddCommGroup G] [Module Fp G] in
 /-- The reversed value-check set's point finset is `deployedSetPts (numSets − 1 − k)` — the `hpts`
 field-ID at the reversed indexing. -/
-theorem deployedSetsForEval_reverse_getD_toFinset [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_reverse_getD_toFinset [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).reverse.getD k ([], [], 0)).1.toFinset
@@ -175,7 +175,7 @@ theorem deployedSetsForEval_reverse_getD_toFinset [DecidableEq G] [Inhabited G] 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The reversed value-check set's point list is `Nodup` — the `hnd` field-ID at the reversed
 indexing. -/
-theorem deployedSetsForEval_reverse_getD_nodup [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_reverse_getD_nodup [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).reverse.getD k ([], [], 0)).1.Nodup := by
@@ -188,7 +188,7 @@ omit [AddCommGroup G] [Module Fp G] in
 to the prover's claimed set eval `multiopenU` at position `count − 1 − k`: `deployedSetsForEval`'s
 `.2.2` and `deployedX4Pairs`'s `.2` are the same `List.ofFn ps.multiopenU` component. This is the
 identity matching `x4BatchEvals` values to `(sets s t).reverse.getD j |>.2.2`. -/
-theorem deployedSetsForEval_reverse_getD_u [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_reverse_getD_u [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).reverse.getD k ([], [], 0)).2.2
@@ -336,7 +336,7 @@ theorem compressSet_snd_getD {k' : ℕ} {F G' : Type*} [Field F]
 omit [AddCommGroup G] [Module Fp G] in
 /-- The `k`-th value-check set's compressed evaluation vector is `compressSet`'s — the evals-field
 identification for the deployed sets (the `.2.1` companion of `deployedSetsForEval_getD_points`). -/
-theorem deployedSetsForEval_getD_evals [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetsForEval_getD_evals [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {k : ℕ} (hk : k < deployedX4PairCount vk instanceCommitment ps ch) :
     ((deployedSetsForEval vk instanceCommitment ps ch).getD k ([], [], 0)).2.1
@@ -385,7 +385,7 @@ omit [AddCommGroup G] [Module Fp G] in
 /-- **`hql` discharged: each routed member of a deployed point set claims one evaluation per set
 point** (`constructIntermediateSets_eval_length` at the deployed queries). This closes the
 one structural bookkeeping premise the per-member value check needs. -/
-theorem deployedSetQueries_eval_length [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetQueries_eval_length [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (i : ℕ) :
     ∀ qc ∈ deployedSetQueries vk instanceCommitment ps ch i,

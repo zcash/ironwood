@@ -28,7 +28,7 @@ variable {F G : Type*} [Field F] [AddCommGroup G] [Module F G]
 
 omit [Field F] [AddCommGroup G] [Module F G] in
 /-- `constructIntermediateSets?` returning `some` is the non-rejecting grouping. -/
-theorem constructIntermediateSets?_eq_some {k : ℕ} [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets?_eq_some {k : ℕ} [DecidableEq F]
     {queries : List (VerifierQuery k F G)} {grouped : MultiopenGrouped k F G}
     (h : constructIntermediateSets? queries = some grouped) :
     grouped = constructIntermediateSets queries := by
@@ -68,7 +68,7 @@ omit [AddCommGroup G] [Module F G] in
 /-- The deployed accept uses the rejecting `assemble?`; when it returns `some m`, `m` is the
 non-rejecting `assembleFinalMsm` over the derived grouping, so `eval_assembleFinalMsm` (hence the
 verifier equation) applies to it. -/
-theorem assemble?_eq_some {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+theorem assemble?_eq_some {shape : Shape} [DecidableEq F] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
     {m : Msm shape.k F G} (h : assemble? vk instanceCommitment ps ch = some m) :
@@ -93,7 +93,7 @@ theorem assemble?_eq_some {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhab
 
 /-- The deployed multiopen commitment `P` the IPA verifier opens: the `x₁`-compressed, `x₄`-collapsed
 multiopen assembly on `(vk, ps, ch)`, evaluated against the URS. -/
-def multiopenCommitment {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+def multiopenCommitment {shape : Shape} [DecidableEq F] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) : G :=
@@ -101,7 +101,7 @@ def multiopenCommitment {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabit
     (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)) (Msm.zero shape.k F G)).1.eval ⟨shape.k, g, w, u⟩
 
 /-- The deployed multiopen value `v` the IPA verifier opens `P` to (halo2 `multiopen/verifier.rs`). -/
-def multiopenValue {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+def multiopenValue {shape : Shape} [DecidableEq F] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G)
     (ch : Challenges shape.k F) : F :=
@@ -142,7 +142,7 @@ term for term. The corner is faithful in both directions: nothing about acceptan
 shown from this form that the deployed verifier would not exhibit. The current reduction treats
 inadmissible challenge values as explicit bad-root events rather than restricting this equation's
 domain. -/
-def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhabited G]
+def DeployedIpaVerifierEq {shape : Shape} [DecidableEq F] [Inhabited G]
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) : Prop :=

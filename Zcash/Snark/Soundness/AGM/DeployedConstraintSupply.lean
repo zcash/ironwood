@@ -45,7 +45,7 @@ structure ConstraintAgreementBundle
 /-- Constraint routing does not consume the IPA verification equation.  It only needs the three
 pre-IPA guards enforced before that equation is assembled: unique `(commitment, point)` queries,
 one `multiopenU` value per grouped point set, and exclusion of an `n`th root of unity at `x`. -/
-structure DeployedConstraintChecks [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedConstraintChecks [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) : Prop where
   noDuplicate : hasDuplicateCommitmentPoint (assembleQueries vk instanceCommitment ps ch) = false
@@ -55,7 +55,7 @@ structure DeployedConstraintChecks [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- Actual deployed acceptance supplies the pre-IPA checks at the representation record.  The
 round vector may differ because none of these checks reads `ipaRound`. -/
-theorem DeployedConstraintChecks.of_accepts_chRecord [DecidableEq G] [Inhabited G]
+theorem DeployedConstraintChecks.of_accepts_chRecord [Inhabited G]
     {shape : Shape} (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (nu : Fin 11 -> Fp) (rounds : Fin shape.k -> Fp)
@@ -74,7 +74,7 @@ theorem DeployedConstraintChecks.of_accepts_chRecord [DecidableEq G] [Inhabited 
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- The pair count follows from the precise `multiopenU` guard, without the final IPA equation. -/
-theorem deployedX4PairCount_eq_sets_length_of_checks [DecidableEq G] [Inhabited G]
+theorem deployedX4PairCount_eq_sets_length_of_checks [Inhabited G]
     {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (checks : DeployedConstraintChecks vk instanceCommitment ps ch) :
     deployedX4PairCount vk instanceCommitment ps ch =
@@ -86,7 +86,7 @@ theorem deployedX4PairCount_eq_sets_length_of_checks [DecidableEq G] [Inhabited 
 /-- Computed deployed route for one commitment slot.  Both indices are the deterministic grouping
 searches returned by `constructIntermediateSets_comm_route`; the remaining fields certify those
 exact values against the deployed `getD` views. -/
-structure DeployedSlotRoute [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedSlotRoute [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (c : CommitmentId) (commitment : CommitmentRef shape.k Fp G) where
@@ -106,7 +106,7 @@ structure DeployedSlotRoute [DecidableEq G] [Inhabited G] {shape : Shape}
           setIndex []).idxOf q.point) 0 = q.eval
 
 /-- Slot routing from the two grouping guards, with no dependence on the final IPA equation. -/
-def deployed_slot_route_of_checks [DecidableEq G] [Inhabited G]
+def deployed_slot_route_of_checks [Inhabited G]
     {shape : Shape} (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (checks : DeployedConstraintChecks vk instanceCommitment ps ch)
     {c : CommitmentId} {q0 : VerifierQuery shape.k Fp G}
@@ -143,7 +143,7 @@ def deployed_slot_route_of_checks [DecidableEq G] [Inhabited G]
 
 omit [Module Fp G] in
 /-- Proposition-valued wrapper for constraint-routing consumers. -/
-theorem deployed_slot_routed_all_of_checks [DecidableEq G] [Inhabited G]
+theorem deployed_slot_routed_all_of_checks [Inhabited G]
     {shape : Shape} (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (checks : DeployedConstraintChecks vk instanceCommitment ps ch)
@@ -177,7 +177,7 @@ def deployedCanonicalQuery [Inhabited G] {shape : Shape}
 omit [AddCommGroup G] [Module Fp G] in
 /-- An existential query specification proves membership of the corresponding canonical query;
 the witness is consumed only in this proposition-valued proof, never to choose routing data. -/
-theorem deployedCanonicalQuery_mem_of_spec [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedCanonicalQuery_mem_of_spec [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (c : CommitmentId) (point eval : Fp)
@@ -193,7 +193,7 @@ theorem deployedCanonicalQuery_mem_of_spec [DecidableEq G] [Inhabited G] {shape 
   rwa [← hqeq]
 
 /-- A family of computed deployed routes indexed by protocol slots. -/
-structure DeployedRouteSelector [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedRouteSelector [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (I : Type*) (target : I → CommitmentId) (point eval : I → Fp) where
@@ -205,7 +205,7 @@ structure DeployedRouteSelector [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- Build computed routes from proposition-valued query-presence proofs.  The returned indices are
 determined by `target`, `point`, and `eval`; `hspec` only certifies membership. -/
-def deployedRouteSelectorOfSpecs [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedRouteSelectorOfSpecs [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (checks : DeployedConstraintChecks vk instanceCommitment ps ch)
@@ -221,7 +221,7 @@ def deployedRouteSelectorOfSpecs [DecidableEq G] [Inhabited G] {shape : Shape}
         deployed_slot_route_of_checks vk instanceCommitment ps ch checks (hmem i) rfl }
 
 /-- The polynomial represented by member `m` of deployed point set `i`. -/
-def DeployedAlgebraicDecode.memberPoly [DecidableEq G] [Inhabited G]
+def DeployedAlgebraicDecode.memberPoly [Inhabited G]
     {shape : Shape} {urs : URS G} {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp G} {instanceCommitment : Fin shape.numProofs → Nat → G}
     {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
     {aggregate : Fin (2 ^ urs.k) -> Fp} {aggregateU aggregateW : Fp}
@@ -233,7 +233,7 @@ def DeployedAlgebraicDecode.memberPoly [DecidableEq G] [Inhabited G]
 /-- The decoder's member polynomial takes the proof string's recorded value at every point routed
 to its set — no rewind premise and no relation disjunction; both were discharged while
 constructing `DeployedAlgebraicDecode`. -/
-theorem DeployedAlgebraicDecode.memberPoly_eval_at_point [DecidableEq G] [Inhabited G]
+theorem DeployedAlgebraicDecode.memberPoly_eval_at_point [Inhabited G]
     {shape : Shape} {urs : URS G} {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp G} {instanceCommitment : Fin shape.numProofs → Nat → G}
     {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
     {aggregate : Fin (2 ^ urs.k) -> Fp} {aggregateU aggregateW : Fp}
@@ -272,7 +272,7 @@ theorem DeployedAlgebraicDecode.memberPoly_eval_at_point [DecidableEq G] [Inhabi
 
 /-- The exact deterministic interface consumed by the constraint layer: one polynomial per routed
 member and its value at every point in that member's set. -/
-structure DeployedMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) where
   poly : forall i, i < deployedX4PairCount vk instanceCommitment ps ch ->
@@ -285,7 +285,7 @@ structure DeployedMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape
         (((constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD i []).idxOf p) 0
 
 /-- Package the rewind-free AGM decode as the deterministic member-polynomial interface. -/
-def DeployedAlgebraicDecode.toMemberPolynomials [DecidableEq G] [Inhabited G]
+def DeployedAlgebraicDecode.toMemberPolynomials [Inhabited G]
     {shape : Shape} {urs : URS G} {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp G} {instanceCommitment : Fin shape.numProofs → Nat → G}
     {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
     {aggregate : Fin (2 ^ urs.k) -> Fp} {aggregateU aggregateW : Fp}
@@ -296,7 +296,7 @@ def DeployedAlgebraicDecode.toMemberPolynomials [DecidableEq G] [Inhabited G]
 
 /-- The decoded aggregate directly opens the deployed IPA statement, using the actual `x4` power
 batch rather than a family of accepting rewinds. -/
-theorem DeployedAlgebraicDecode.ipaRelation [DecidableEq G] [Inhabited G]
+theorem DeployedAlgebraicDecode.ipaRelation [Inhabited G]
     {shape : Shape} {urs : URS G} {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp G} {instanceCommitment : Fin shape.numProofs → Nat → G}
     {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
     {aggregate : Fin (2 ^ urs.k) -> Fp} {aggregateU aggregateW : Fp}
@@ -476,7 +476,7 @@ theorem committedPreXConstraintDifference_eq [Inhabited G] {shape : Shape}
 /-- Computed comparison between the decoded vanishing member and a pre-`x` quotient assembled
 from explicit online quotient-piece coordinates. -/
 def DeployedAlgebraicDecode.quotientEvalEqCommittedPreXOrRelationWitness
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     {shape : Shape} {urs : URS G} {hk : shape.k = urs.k}
     {vk : VerifyingKey shape Fp G} {instanceCommitment : Fin shape.numProofs → Nat → G}
     {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
@@ -533,7 +533,7 @@ def DeployedAlgebraicDecode.quotientEvalEqCommittedPreXOrRelationWitness
 /-! ## Routed feeds from a deterministic member source -/
 
 /-- Computed carrier selection for one rotated query feed. -/
-structure DeployedRotatedFeedBinding [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedRotatedFeedBinding [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -553,7 +553,7 @@ structure DeployedRotatedFeedBinding [DecidableEq G] [Inhabited G] {shape : Shap
 
 /-- Build a rotated feed from computed grouped routes.  Query existence is used only to certify the
 canonical query; all set/member indices are returned by the deterministic route search. -/
-def deployedRotatedFeedBindingOfSpecs [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedRotatedFeedBindingOfSpecs [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -596,7 +596,7 @@ def deployedRotatedFeedBindingOfSpecs [DecidableEq G] [Inhabited G] {shape : Sha
     rw [hclaimsZero q n (Nat.not_lt.mp h)]
 
 /-- Computed advice-column carrier selection. -/
-def adviceFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def adviceFeedBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -617,7 +617,7 @@ def adviceFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : 
       (lt_of_lt_of_le j.isLt hAdvLen) j.isLt)
 
 /-- Computed instance-column carrier selection. -/
-def instanceFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def instanceFeedBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -638,7 +638,7 @@ def instanceFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape 
       (lt_of_lt_of_le j.isLt hInstLen) j.isLt)
 
 /-- Computed fixed-column carrier selection. -/
-def fixedFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def fixedFeedBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -660,7 +660,7 @@ def fixedFeedBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : S
 
 open Classical in
 /-- Permutation-set carriers from rewind-free member polynomials. -/
-structure DeployedPermSetsBinding [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedPermSetsBinding [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch) where
@@ -682,7 +682,7 @@ structure DeployedPermSetsBinding [DecidableEq G] [Inhabited G] {shape : Shape}
       subProofPermSets ps q
 
 /-- Computed permutation-product carrier selection and binding. -/
-def permSetsBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def permSetsBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -754,7 +754,7 @@ def permSetsBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Sh
 
 open Classical in
 /-- Lookup carriers from rewind-free member polynomials. -/
-structure DeployedLookupsBinding [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedLookupsBinding [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch) where
@@ -792,7 +792,7 @@ structure DeployedLookupsBinding [DecidableEq G] [Inhabited G] {shape : Shape}
       subProofLookups vk ps q
 
 /-- Computed lookup carrier selection and binding. -/
-def lookupsBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def lookupsBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -898,7 +898,7 @@ def lookupsBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Sha
 
 open Classical in
 /-- Permutation-common feed binding from rewind-free member polynomials. -/
-structure DeployedPermCommonBinding [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedPermCommonBinding [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch) where
@@ -914,7 +914,7 @@ structure DeployedPermCommonBinding [DecidableEq G] [Inhabited G] {shape : Shape
     else 0).eval ch.x = finFn ps.permutationCommonEvals n
 
 /-- Computed permutation-common carrier selection. -/
-def permCommonBindingOfMemberPolynomials [DecidableEq G] [Inhabited G] {shape : Shape}
+def permCommonBindingOfMemberPolynomials [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (src : DeployedMemberPolynomials vk instanceCommitment ps ch)
@@ -953,7 +953,7 @@ polynomials used by `circuitSatViaConstraints`, so the left branch carries the v
 full-list identity while the right branch remains an explicit relation witness. The identity is
 not yet row-level semantic satisfaction: that promotion also needs the `y`, `beta`, `gamma`, and
 `theta` good-challenge conditions priced by the semantic capstone. -/
-structure DeployedConstraintWitness [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedConstraintWitness [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -1052,7 +1052,7 @@ or joint-acceptance premises.  The relation branch is the computable quotient co
 `deployedConstraintQuotientFinder`.  The polynomial success branch is finite executable arithmetic
 over `Fp`, so the complete outcome remains computed data. -/
 def deployedConstraintOutcomeOfDecode
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {aggregate : Fin (2 ^ urs.k) -> Fp} {aggregateU aggregateW : Fp}
@@ -1424,7 +1424,7 @@ def deployedConstraintOutcomeOfDecode
 The active composition consumes `deployedConstraintOutcomeOfDecode` itself so relation
 coefficients remain data. -/
 theorem constraints_supply_of_deployedAlgebraicDecode
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

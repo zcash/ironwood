@@ -22,13 +22,13 @@ open Polynomial
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
 /-- The points of deployed point set `j`, as a finite set. -/
-def deployedSetPts [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedSetPts [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (j : ℕ) : Finset Fp :=
   ((constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD j []).toFinset
 
 /-- The union of all the deployed point sets — the roots of the vanishing polynomial `D`. -/
-def deployedAllPts [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAllPts [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) :
     Finset Fp :=
   (Finset.range (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.length).biUnion
@@ -36,7 +36,7 @@ def deployedAllPts [DecidableEq G] [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- Each deployed point set sits inside the union of all points. -/
-theorem deployedSetPts_subset [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedSetPts_subset [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     (j : ℕ) : deployedSetPts vk instanceCommitment ps ch j ⊆ deployedAllPts vk instanceCommitment ps ch := by
   rcases lt_or_ge j (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.length
@@ -53,7 +53,7 @@ commitment slot names member `m` of deployed point set `si` (`deployedSetCommIds
 opening point lies in `deployedSetPts vk instanceCommitment ps ch si`. This is the bridge the layout hypotheses
 (`hadviceLayout`/`hinstanceLayout`) feed the value check: it turns the member's slot identity into
 the rotated query point being a genuine node of the set, so the per-set node binding applies there. -/
-theorem deployed_query_point_mem [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployed_query_point_mem [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {q : VerifierQuery shape.k Fp G} (hq : q ∈ assembleQueries vk instanceCommitment ps ch)
     {si m : ℕ} {d₀ : CommitmentId}
