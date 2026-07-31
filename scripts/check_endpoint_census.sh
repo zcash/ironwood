@@ -33,8 +33,9 @@ cd "$(dirname "$0")/.."
 # A declaration is a deliverable endpoint when its base name matches this pattern. These are the
 # capstone families: the verifier-soundness rungs (`orchard_verifier_*`), the composed Action
 # probability endpoints (`orchard_action_*`), the captured knowledge-error endpoints
-# (`orchard_deployed_*`), and the concrete-statement terminals (`*bundleStatement_or_relation*`).
-ENDPOINT_RE="^(orchard_verifier_|orchard_action_|orchard_deployed_)|bundleStatement_or_relation"
+# (`orchard_deployed_*`), the two Lean → Rocq Action bridge capstones named exactly below, and the
+# concrete-statement terminals (`*bundleStatement_or_relation*`).
+ENDPOINT_RE="^(orchard_verifier_|orchard_action_|orchard_deployed_|validActionInputs_iff_exists_proverAssumptionsPost$|proverAssumptionsPost_implies_gardenOrchardAction_output$)|bundleStatement_or_relation"
 
 # Sources scanned for endpoint declarations. `Zcash/Meta/Tests/` is excluded: it holds forged
 # adversarial declarations that exercise the rejection paths of the census macros themselves.

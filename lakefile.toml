@@ -62,3 +62,10 @@ globs = [
 [[lean_lib]]
 name = "CircuitCheck"
 globs = ["Zcash.Circuits.Tests.+"]
+
+# Parser-only helper used by the ActionGarden Lean-to-Rocq generator. It is
+# intentionally not a default target: bridge generation builds it explicitly.
+[[lean_exe]]
+name = "actionGardenToIR"
+root = "scripts.action_garden_to_ir.Main"
+supportInterpreter = true

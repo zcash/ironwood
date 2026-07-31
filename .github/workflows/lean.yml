@@ -110,6 +110,28 @@ jobs:
       - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
         with:
           build-args: "--wfail"
+      # The ActionGarden translation is generated from Lean's parser tree by a
+      # deliberately non-default executable. Exercise its closed subset,
+      # mutation regressions, and checked-in review diff after lean-action has
+      # installed the pinned toolchain.
+      - name: Verify the ActionGarden Lean-to-Rocq translator
+        run: |
+          lake --wfail build actionGardenToIR
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v \
+            Zcash/Circuits/Action/IronwoodGardenActionBridge/test_lean_to_rocq.py
+          bridge=Zcash/Circuits/Action/IronwoodGardenActionBridge
+          generated="$(mktemp -d)"
+          trap 'rm -rf "$generated"' EXIT
+          python3 "$bridge/lean_to_rocq.py" \
+            "$bridge/ActionGarden.lean" \
+            "$generated/action_garden_generated.v" \
+            --constants-output "$generated/action_garden_constants.v"
+          python3 "$bridge/lean_to_rocq.py" \
+            "$bridge/ActionGarden.lean" \
+            "$generated/action_garden_generated.v" \
+            --constants-output "$generated/action_garden_constants.v" \
+            --diff "$bridge/ActionGarden.lean-rocq.diff" \
+            --check
 
   lean-ci:
     # The single stable check to mark as a required status check. It always

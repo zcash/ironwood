@@ -1,4 +1,5 @@
 import Zcash.Circuits.Action.RealBases
+import Zcash.Circuits.Action.IronwoodGardenActionBridge.ActionGardenBridge
 import Zcash.Security.Ledger.Bridge
 import Zcash.Security.Ledger.SinsemillaDLR
 import Zcash.Arithmetic.FastMsm
@@ -1932,6 +1933,84 @@ assert_axioms Zcash.Circuits.Action.orchardActionCircuit +native(
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+
+/-! ### Lean → Rocq Action bridge capstones
+
+These review-facing leaves connect the executable Garden model to the proved Action circuit.
+They are pinned directly because no later deliverable is required to depend on them. Their
+`native_decide` budget names the deployed-constant and fixed-base certificate owners reached by
+each proof. -/
+
+assert_axioms Zcash.Circuits.Action.Circuit.ActionGardenBridge.validActionInputs_iff_exists_proverAssumptionsPost +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.baseInverseExponent_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.coreValidActionInputs_has_proverCompletion,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.extractX_pointToZ,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_five,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_inv,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_nat_two,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_nat_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_one,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_poseidonCapacity,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_three,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fp_pow_card_sub_two_eq_inv,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardCommitIvkQ_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardCommitIvkRG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardMerkleCrhQ_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNoteCommitQ_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNoteCommitRG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNullifierKG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardPoseidonMds_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardPoseidonRoundConstant_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardSinsemillaGenerator_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardSpendAuthG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardValueCommitRG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardValueCommitVG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pallasBaseCard_lt_twoTo255,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pallasBaseModulus_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pallasScalarModulus_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pointToZ_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.wordsLe_ofNat,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check)
+assert_axioms Zcash.Circuits.Action.Circuit.ActionGardenBridge.proverAssumptionsPost_implies_gardenOrchardAction_output +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.baseInverseExponent_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.extractX_pointToZ,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_inv,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_nat_two,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_nat_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_one,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_poseidonCapacity,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_three,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fpToZ_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.fp_pow_card_sub_two_eq_inv,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardMerkleCrhQ_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNoteCommitQ_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNoteCommitRG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardNullifierKG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardPoseidonMds_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardPoseidonRoundConstant_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardSinsemillaGenerator_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardSpendAuthG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardValueCommitRG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.orchardValueCommitVG_deployed,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pallasBaseModulus_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pallasScalarModulus_eq,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.pointToZ_zero,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.signedNetValueGarden_negOne,
+  Zcash.Circuits.Action.Circuit.ActionGardenBridge.wordsLe_ofNat,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check)
 
 /-! ## The circuit → ledger bridge — exported refinement theorems
 
