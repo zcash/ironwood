@@ -949,8 +949,7 @@ theorem fpToZ_inv (value : Fp) :
             (Int.toNat
               (ActionGarden.zSub ActionGarden.pallasBaseModulus ActionGarden.zTwo)))
     rw [baseNormalize_fpToZ]
-    simp only [ActionGarden.zEq, decide_eq_false_iff_not, representativeNonzero,
-      ↓reduceIte]
+    simp only [ActionGarden.zEq, representativeNonzero]
     change fpToZ value⁻¹ =
       ActionGarden.baseNormalize
         (ActionGarden.zPowNat (fpToZ value)
@@ -1055,13 +1054,10 @@ theorem pointIsIdentity_pointToZ (point : Point Fp) :
   cases point with
   | mk x y =>
       unfold ActionGarden.pointIsIdentity
-      simp only [pointToZ, Point.zero_def, ActionGarden.pointIdentity]
+      simp only [pointToZ, Point.zero_def]
       rw [← fpToZ_zero]
       rw [baseEqual_fpToZ, baseEqual_fpToZ]
       simp only [Point.mk.injEq]
-      change
-        (decide (x = 0) && decide (y = 0)) =
-          decide (x = 0 ∧ y = 0)
       by_cases xZero : x = 0 <;> by_cases yZero : y = 0 <;>
         simp [xZero, yZero]
 
@@ -1085,7 +1081,6 @@ theorem pointToZ_add (left right : Point Fp) :
     rw [CompElliptic.CurveForms.ShortWeierstrass.zero_add]
     unfold ActionGarden.pointAdd
     rw [pointIsIdentity_pointToZ]
-    simp only [decide_true, ↓reduceIte]
     exact (pointNormalize_pointToZ right).symm
   ·
     by_cases rightIdentity : right = 0
@@ -1239,14 +1234,13 @@ theorem pointToZ_addGarden
         · simp only [inverse, decide_true, ↓reduceIte]
           simp only [Point.ofCoords]
           exact pointToZ_zero
-        · simp only [inverse, decide_false, Bool.false_eq_true, ↓reduceIte]
+        · simp only [inverse, decide_false, ↓reduceIte]
           simp only [Bool.and_false, Bool.false_eq_true, ↓reduceIte]
           simp only [Point.ofCoords, pallasA, add_zero, pow_two]
           simp only [ActionGarden.zTwo]
           rw [← fpToZ_nat_two, ← fpToZ_three]
-          simp only [← fpToZ_add, ← fpToZ_sub, ← fpToZ_mul,
-            ← fpToZ_div]
-          simp only [div_eq_mul_inv, add_zero]
+          simp only [← fpToZ_sub, ← fpToZ_mul, ← fpToZ_div]
+          simp only [div_eq_mul_inv]
       · simp only [xEqual, decide_false, Bool.false_eq_true, ↓reduceIte]
         simp only [Point.ofCoords, pow_two]
         simp only [← fpToZ_sub, ← fpToZ_mul, ← fpToZ_div]
@@ -1286,8 +1280,6 @@ theorem pointToZ_fullScalarMul
       ActionGarden.scalarMul (fqToZ scalar) (pointToZ base.point)
   unfold Ecc.MulFixed.FixedBase.scalarMul ActionGarden.scalarMul
   rw [scalarNat_fqToZ]
-  change pointToZ (scalar.val • base.point) =
-    ActionGarden.pointNatMul scalar.val (pointToZ base.point)
   exact pointToZ_nsmul scalar.val base.point
 
 theorem pointToZ_shortScalarMul
@@ -1299,8 +1291,6 @@ theorem pointToZ_shortScalarMul
       ActionGarden.scalarMul (fqToZ scalar) (pointToZ base.point)
   unfold Ecc.MulFixed.Short.FixedBase.scalarMul ActionGarden.scalarMul
   rw [scalarNat_fqToZ]
-  change pointToZ (scalar.val • base.point) =
-    ActionGarden.pointNatMul scalar.val (pointToZ base.point)
   exact pointToZ_nsmul scalar.val base.point
 
 def fieldPoseidonFullRound
@@ -1350,11 +1340,8 @@ theorem stateToZ_fullRound
   cases state with
   | mk x0 x1 x2 =>
       simp only [fieldPoseidonFullRound, Poseidon.FullRound.value,
-        Poseidon.FullRound.params, Poseidon.FullRound.Gate.Params.mk,
-        Poseidon.Permute.State.mk.injEq, stateToZ,
+        Poseidon.FullRound.params, stateToZ,
         ActionGarden.poseidonFullRound, poseidonParameters,
-        ActionGarden.PoseidonParameters.roundConstant,
-        ActionGarden.PoseidonParameters.mds,
         intToNat_ofNat, ActionGarden.matrixApply]
       simp only [← fpToZ_add, ← fpToZ_mul, ← fpToZ_pow5]
 
@@ -1367,12 +1354,8 @@ theorem stateToZ_partialPair
   | mk x0 x1 x2 =>
       simp only [fieldPoseidonPartialPair, Poseidon.PartialRounds.value,
         Poseidon.PartialRounds.paramsP128, Poseidon.PartialRounds.params,
-        Poseidon.PartialRounds.Gate.Params.mk,
-        Poseidon.PartialRounds.mid0SboxValue,
-        Poseidon.Permute.State.mk.injEq, stateToZ,
+        Poseidon.PartialRounds.mid0SboxValue, stateToZ,
         ActionGarden.poseidonPartialPair, poseidonParameters,
-        ActionGarden.PoseidonParameters.roundConstant,
-        ActionGarden.PoseidonParameters.mds,
         ActionGarden.zAdd, ActionGarden.zOne, intToNat_ofNat,
         intToNat_roundSuccessor,
         ActionGarden.matrixApply]
@@ -1399,7 +1382,7 @@ theorem stateToZ_foldl
       simp only [Fin.foldl_zero, ActionGarden.iterateIndexedFrom]
   | succ count inductionHypothesis =>
       rw [Fin.foldl_succ]
-      simp only [Fin.val_zero, Nat.zero_add]
+      simp only [Fin.val_zero]
       have shiftedStep :
           (fun (state : Poseidon.Permute.State Fp) (index : Fin count) =>
               fieldStep (Nat.add index.succ.val offset) state) =
@@ -1760,7 +1743,7 @@ theorem incompleteAdd_some_components
       left = 0 ∨ right = 0 ∨ left.x = right.x
   · simp only [invalid, ↓reduceIte, reduceCtorEq] at defined
   · simp only [invalid, ↓reduceIte, Option.some.injEq] at defined
-    push_neg at invalid
+    push Not at invalid
     exact ⟨invalid.1, invalid.2.1, invalid.2.2, defined.symm⟩
 
 /-- The standalone incomplete chord formula agrees with Ironwood whenever
@@ -1782,7 +1765,7 @@ theorem pointToZ_incompleteAdd_of_some
     rw [inv_neg]
     ring
   unfold Point.nondegenerateAdd ActionGarden.pointAddIncomplete
-  simp only [pointToZ, div_eq_mul_inv]
+  simp only [pointToZ]
   simp only [← fpToZ_sub, ← fpToZ_mul, ← fpToZ_div]
   rw [← slopeEquality]
 
@@ -1816,10 +1799,10 @@ theorem sinsemillaStep_of_doubleAndAdd
   cases firstResult :
       accumulator ⸭ G.S chunk with
   | none =>
-      simp only [firstResult, Option.bind_none, reduceCtorEq] at defined
+      simp only [firstResult] at defined
       simp at defined
   | some intermediate =>
-      simp only [firstResult, Option.bind_some] at defined
+      simp only [firstResult] at defined
       have firstComponents :=
         incompleteAdd_some_components firstResult
       have secondComponents :=
@@ -1849,7 +1832,7 @@ theorem sinsemillaStep_of_doubleAndAdd
         rw [pointXBaseEqual_pointToZ]
         simp only [accumulatorNonzero, generatorNonzero,
           firstXDistinct, intermediateNonzero, secondXDistinct,
-          decide_false, Bool.false_eq_true, not_false_eq_true]
+          decide_false]
         simp
 
 /-- Standalone step definedness is also sufficient for Ironwood's two
@@ -2485,6 +2468,7 @@ theorem pointParity_pointToZ (point : Point Fp) :
   unfold ProofCore.pointParity ActionGarden.zMod ActionGarden.zTwo pointToZ fpToZ
   rfl
 
+set_option exponentiation.threshold 900 in
 theorem noteCommitMessage_pointToZ
     (gd pkd : Point Fp) (value rho psi : Fp) :
     ProofCore.noteCommitMessage
@@ -2693,8 +2677,7 @@ theorem merkleStep_pointToZ_of_some
       hashDefined
   by_cases positionIsRight : position = (1 : Fp)
   · simp only [Sinsemilla.Merkle.proverChunks, positionIsRight,
-      decide_true, Bool.true_eq, Bool.true_eq_false, Bool.false_eq_true,
-      ↓reduceIte] at correspondence
+      decide_true, ↓reduceIte] at correspondence
     rw [← merkleChunks_ofNat] at correspondence
     constructor
     · unfold ProofCore.merkleStep ProofCore.merkleChildren pathElementOf
@@ -2708,20 +2691,20 @@ theorem merkleStep_pointToZ_of_some
       simp only [positionIsRight, decide_true, ↓reduceIte]
       exact correspondence.2
   · simp only [Sinsemilla.Merkle.proverChunks, positionIsRight,
-      decide_false, Bool.false_eq, Bool.true_eq_false, Bool.false_eq_true,
+      decide_false, Bool.false_eq, Bool.true_eq_false,
       ↓reduceIte] at correspondence
     rw [← merkleChunks_ofNat] at correspondence
     constructor
     · unfold ProofCore.merkleStep ProofCore.merkleChildren pathElementOf
-      simp only [positionIsRight, decide_false, ↓reduceIte]
+      simp only [positionIsRight, decide_false]
       simp only [parameters]
       simp only [parameters] at correspondence
-      simp only [Bool.true_eq_false, Bool.false_eq_true, ↓reduceIte,
+      simp only [Bool.false_eq_true, ↓reduceIte,
         fpToZ] at correspondence ⊢
       rw [correspondence.1]
       simpa only [fpToZ] using extractX_pointToZ hashPoint
     · unfold ProofCore.merkleStepDefined ProofCore.merkleChildren pathElementOf
-      simp only [positionIsRight, decide_false, ↓reduceIte]
+      simp only [positionIsRight, decide_false]
       exact correspondence.2
 
 set_option maxRecDepth 100000 in
@@ -4093,8 +4076,7 @@ theorem noteCommitGarden_pointToZ_of_some
     simpa only [chunks] using hashCorrespondence.2
   constructor
   · unfold ActionGarden.noteCommit
-    simp only [ActionGarden.orchardParams,
-      ActionGarden.Params.noteCommitQ]
+    simp only [ActionGarden.orchardParams]
     rw [orchardNoteCommitQ_deployed]
     rw [noteCommitMessageGarden_pointToZ]
     rw [hashResult]
@@ -4105,8 +4087,7 @@ theorem noteCommitGarden_pointToZ_of_some
       (randomness •
         Zcash.Circuits.Action.orchardBases.noteCommitR)
       hashValid randomnessValid]
-  · simp only [ActionGarden.orchardParams,
-      ActionGarden.Params.noteCommitQ]
+  · simp only [ActionGarden.orchardParams]
     rw [orchardNoteCommitQ_deployed]
     rw [noteCommitMessageGarden_pointToZ]
     exact hashIsDefined
@@ -4251,7 +4232,7 @@ theorem fpToZ_inRange_of_lt
     ActionGarden.inRange (fpToZ value) (Int.ofNat upperBound) := by
   unfold ActionGarden.inRange fpToZ ActionGarden.zZero
   constructor
-  · exact Int.ofNat_zero_le value.val
+  · exact Int.natCast_nonneg value.val
   · exact Int.ofNat_lt.mpr upper
 
 theorem pallasBaseCard_lt_twoTo255 :
@@ -5285,7 +5266,7 @@ theorem actionParametersValid_orchard :
         (Specs.Sinsemilla.orchardGenerators.S index.val),
      pointOnCurve_pointToZ
         (Specs.Sinsemilla.orchardGenerators.S_onCurve
-          (by simpa [Specs.K] using upperBound))⟩
+          (by simp [Specs.K]))⟩
 
 /-- Storing a layer beside each path row does not change the sibling-range
 condition. -/
@@ -5307,8 +5288,7 @@ theorem gardenPathFrom_siblingRanges_iff
         nomatch membership
   | cons head tail inductionHypothesis =>
       constructor
-      · intro gardenRanges
-        intro element membership
+      · intro gardenRanges element membership
         rcases List.mem_cons.mp membership with rfl | elementInTail
         ·
           exact gardenRanges
@@ -5322,8 +5302,7 @@ theorem gardenPathFrom_siblingRanges_iff
                     (Int.ofNat layer, head.sibling, head.isRight)
                     gardenMembership))
               element elementInTail
-      · intro coreRanges
-        intro element membership
+      · intro coreRanges element membership
         rcases List.mem_cons.mp membership with rfl | elementInTail
         ·
           exact coreRanges head List.mem_cons_self

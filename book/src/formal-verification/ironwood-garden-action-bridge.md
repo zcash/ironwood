@@ -69,19 +69,28 @@ lake build \
   +Zcash.Circuits.Action.IronwoodGardenActionBridge.ActionGardenBridge
 ```
 
-## Checked Rocq mirror
+## Generated Lean-to-Rocq boundary
 
-`ActionGarden.v.in` is the declaration-for-declaration Rocq template.
-`ActionGardenConstants.v.in` holds the special rendering of the two large
-literal tables. The generator:
+There is no hand-maintained Rocq body mirror. A Lean frontend elaborates the
+supplied source, parses the same immutable byte snapshot without `.olean`
+reuse, and emits a schema-versioned syntax representation; the closed Rocq
+emitter then resolves and translates every supported body. Both Rocq files,
+including the primitive-array storage declarations, are emitted directly—no
+`.v.in` semantic template remains. The generator:
 
-1. accepts only the restricted standalone Lean subset;
-2. rejects axioms, theorem dependencies, type classes, notation, and extra
-   imports;
-3. checks all 120 Lean/template declarations and their order;
-4. extracts the 64 and 1,024 literal rows from Lean;
+1. accepts only the restricted standalone Lean subset and consumes the whole
+   file;
+2. rejects axioms, theorem dependencies, type classes, notation, extra
+   imports, unsupported syntax, and unresolved names;
+3. accounts for all 119 Lean declarations in source order;
+4. translates ordinary bodies and the audited representation lowerings for
+   the 64 and 1,024-row constant tables;
 5. stamps both generated files with the exact Lean SHA-256;
 6. checks the committed complete source diff.
+
+A body-only source change therefore changes the corresponding generated Rocq
+body or is rejected before any output is written; updating only the source
+hash cannot make a stale translation pass.
 
 The generated constants use Rocq primitive arrays. Their signed-`Z` accessor
 preserves Lean's behavior: negative indices select row zero and indices past
