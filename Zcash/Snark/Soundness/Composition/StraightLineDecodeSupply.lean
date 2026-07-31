@@ -20,7 +20,7 @@ vector is a decode at any other; every field transports by `rfl`.  Deployed acce
 round-blind — the final IPA equation reads `ch.ipaRound` — which is why the root layer's
 zero-round record and an accepting run's true record need this bridge at all. -/
 def DeployedAlgebraicDecode.reRound {G : Type*} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     {urs : URS G} {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp G}
     {ic : Fin shape.numProofs → Nat → G} {ps : ProofString shape Fp G}
     {nu : Fin 11 → Fp} {r₁ : Fin shape.k → Fp}

@@ -260,7 +260,7 @@ private theorem mem_foldl_collect {α β : Type*} (g : α → β) (c : List β �
 
 /-- Every commitment reference routed into a point set is the commitment of one of the assembled
 queries: the grouping reorders and deduplicates, but never invents a reference. -/
-theorem constructIntermediateSets_sets_ref_provenance [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets_sets_ref_provenance [DecidableEq F]
     (queries : List (VerifierQuery k F G))
     {set : List (CommitmentRef k F G × List F)}
     (hset : set ∈ (constructIntermediateSets queries).sets)
@@ -332,7 +332,7 @@ whose two group-valued commitment families are zero, zero instance commitments, 
 string assemble — through whatever scalar layouts the key carries — an MSM whose basis scalars
 vanish and whose every appended point is the zero point. -/
 theorem assembledMsm_zeroData {shape : Shape} [Field F] [DecidableEq F]
-    [DecidableEq G] [Inhabited G] [Zero G]
+    [Inhabited G] [Zero G]
     (hdefault : (default : G) = 0)
     (vk : VerifyingKey shape F G)
     (hfixed : ∀ i, vk.fixedCommitment i = 0)
@@ -360,7 +360,7 @@ theorem assembledMsm_zeroData {shape : Shape} [Field F] [DecidableEq F]
 /-- **The multiopen commitment of zero data is the zero point, at every shape**, for every basis
 and every challenge record. -/
 theorem multiopenCommitment_zeroData {shape : Shape} [Field F] [DecidableEq F]
-    [AddCommGroup G] [Module F G] [DecidableEq G] [Inhabited G]
+    [AddCommGroup G] [Module F G] [Inhabited G]
     (hdefault : (default : G) = 0)
     (g : Fin (2 ^ shape.k) → G) (w u : G)
     (vk : VerifyingKey shape F G)
@@ -487,7 +487,7 @@ theorem multiopenCombine_snd_zero [Field F] [Zero G] (x4 : F) (qPrime : G)
 
 /-- Every evaluation routed into a point set is the claimed evaluation of one assembled query:
 the grouping reorders and deduplicates, but never invents a value. -/
-theorem constructIntermediateSets_sets_eval_provenance [DecidableEq F] [DecidableEq G]
+theorem constructIntermediateSets_sets_eval_provenance [DecidableEq F]
     (queries : List (VerifierQuery k F G))
     {set : List (CommitmentRef k F G × List F)}
     (hset : set ∈ (constructIntermediateSets queries).sets)
@@ -506,7 +506,7 @@ theorem constructIntermediateSets_sets_eval_provenance [DecidableEq F] [Decidabl
 assembled query claims a zero evaluation and the prover's claimed set quotient evaluations vanish,
 the whole value side collapses. -/
 theorem multiopenValue_of_zeroEvals {shape : Shape} [Field F] [DecidableEq F]
-    [DecidableEq G] [Inhabited G] [Zero G]
+    [Inhabited G] [Zero G]
     (vk : VerifyingKey shape F G) (ic : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
     (hevals : ∀ q ∈ assembleQueries vk ic ps ch, q.eval = 0)
@@ -582,7 +582,7 @@ theorem assembleQueries_zeroEval {shape : Shape} [Field F] [Inhabited G] [Zero G
 
 /-- **The multiopen value of the zero proof string vanishes at every instance-free shape.** -/
 theorem multiopenValue_zeroProofString {shape : Shape} [Field F] [DecidableEq F]
-    [DecidableEq G] [Inhabited G] [Zero G]
+    [Inhabited G] [Zero G]
     (hproofs : shape.numProofs = 0)
     (vk : VerifyingKey shape F G) (ic : Fin shape.numProofs → ℕ → G)
     (ch : Challenges shape.k F) :

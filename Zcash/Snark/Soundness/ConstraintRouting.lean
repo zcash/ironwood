@@ -18,7 +18,7 @@ open Classical CompPoly.CPolynomial
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
 /-- Acceptance supplies the duplicate-query and grouped-`u` guards. -/
-theorem deployedAccepts_pipeline [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedAccepts_pipeline [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -74,7 +74,7 @@ theorem deployedAccepts_pipeline [DecidableEq G] [Inhabited G] {shape : Shape}
 
 omit [AddCommGroup G] [Module Fp G] in
 /-- A routed member retains the canonical commitment named by its slot identity. -/
-theorem deployed_member_commitment_eq_assembled [DecidableEq G] [Inhabited G]
+theorem deployed_member_commitment_eq_assembled [Inhabited G]
     {shape : Shape} (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (i : Nat)

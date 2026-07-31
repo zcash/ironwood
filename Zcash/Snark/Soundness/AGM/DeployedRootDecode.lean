@@ -19,7 +19,7 @@ attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchComm
   x4BatchEvals deployedSetMemberCommitments
 
 /-- The concrete output of rewind-free deployed value decoding. -/
-structure DeployedAlgebraicDecode [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedAlgebraicDecode [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -36,7 +36,7 @@ structure DeployedAlgebraicDecode [DecidableEq G] [Inhabited G] {shape : Shape}
         (idx : Nat) 0
 
 /-- Avoiding all explicit deployed root sets gives the complete member-value decode. -/
-def deployedAlgebraicDecode_of_good_roots [DecidableEq G] [Inhabited G]
+def deployedAlgebraicDecode_of_good_roots [Inhabited G]
     {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)

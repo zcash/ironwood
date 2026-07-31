@@ -18,7 +18,7 @@ namespace Halo2.TopLevelCircuit
 open Zcash Zcash.Snark Zcash.Snark.Keygen Polynomial
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 variable
     {Config : Type} {PublicInput : TypeMap}
@@ -54,7 +54,6 @@ def instanceCommitment
     (top.instanceCommitmentKey pp urs).commitInstance
       (top.publicInputRows (inputs proofIndex) ⟨column⟩) 1
 
-omit [DecidableEq G] in
 @[simp] theorem instanceCommitment_column
     (top : TopLevelCircuit Fp Config PublicInput)
     (pp : ProofParams) (urs : URS G) {numProofs : ℕ}
@@ -67,7 +66,6 @@ omit [DecidableEq G] in
 
 assert_no_sorry instanceCommitment_column
 
-omit [DecidableEq G] in
 /--
 Every public instance-column commitment is the monomial-URS commitment to its
 layout-derived row polynomial, with Halo 2's default blind.
@@ -98,7 +96,7 @@ namespace TopLevelInstanceCommitment
 
 variable
     {G : Type} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)

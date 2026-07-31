@@ -125,7 +125,7 @@ def deriveChallenges {shape : Shape} {F G : Type*} [Zero F] (fs : FiatShamir F G
 /-- The deployed verifier's fingerprint MSM: `assemble` at the Fiat–Shamir challenges.
 
 The random-oracle assumption is what transfers interactive soundness to this non-interactive MSM. -/
-def nonInteractiveFingerprint {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G]
+def nonInteractiveFingerprint {shape : Shape} {F G : Type*} [Field F] [DecidableEq F]
     [Inhabited G] (fs : FiatShamir F G) (init : List (TranscriptElt F G))
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) : Msm shape.k F G :=

@@ -22,7 +22,7 @@ attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchComm
   x4BatchEvals
 
 /-- The represented deployed point-set aggregate polynomials, in `x2`/`x4` reverse order. -/
-def deployedAlgebraicSetColumns [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAlgebraicSetColumns [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -33,7 +33,7 @@ def deployedAlgebraicSetColumns [DecidableEq G] [Inhabited G] {shape : Shape}
   fun j => coeffsToPoly (batch.coeffs ⟨(j : Nat), Nat.lt_succ_of_lt j.isLt⟩)
 
 /-- The represented top `x4` slot is the fixed `qPrime` polynomial. -/
-def deployedAlgebraicQPrime [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAlgebraicQPrime [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -44,7 +44,7 @@ def deployedAlgebraicQPrime [DecidableEq G] [Inhabited G] {shape : Shape}
     ⟨deployedX4PairCount vk instanceCommitment ps ch, Nat.lt_succ_self _⟩)
 
 /-- Claimed set interpolants, in the reverse order paired with ascending `x2` powers. -/
-def deployedAlgebraicSetInterpolants [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAlgebraicSetInterpolants [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :
     Fin (deployedX4PairCount vk instanceCommitment ps ch) -> CPoly :=
@@ -53,7 +53,7 @@ def deployedAlgebraicSetInterpolants [DecidableEq G] [Inhabited G] {shape : Shap
     ((deployedSetsForEval vk instanceCommitment ps ch).reverse.getD (j : Nat) ([], [], 0)).2.1
 
 /-- Deployed point sets in the reverse order paired with ascending `x2` powers. -/
-def deployedAlgebraicSetPoints [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedAlgebraicSetPoints [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) :
     Fin (deployedX4PairCount vk instanceCommitment ps ch) -> Finset Fp :=
@@ -62,7 +62,7 @@ def deployedAlgebraicSetPoints [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- The exact deployed `x3` error polynomial.  All of its ingredients are fixed before `x3`
 provided the AGM representations are online and squeeze-pinned. -/
-def deployedX3ErrorPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX3ErrorPolynomial [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -79,7 +79,7 @@ def deployedX3ErrorPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
 /-- The direct `x3` error polynomial has the deployed degree bound needed to price its sampled
 root. -/
 theorem deployedX3ErrorPolynomial_natDegree_le
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -113,7 +113,7 @@ theorem deployedX3ErrorPolynomial_natDegree_le
 /-- The `x4` value equations turn the current deployed multiopen equation into the full cleared
 quotient identity, except exactly on the explicit `x3` root set. -/
 theorem deployedClearedQuotientIdentity_of_good_x3
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -165,7 +165,7 @@ theorem deployedClearedQuotientIdentity_of_good_x3
 /-- Once the cleared identity is known, a good single `x2` binds an aggregate polynomial to its
 claimed interpolant at any deployed node. -/
 theorem deployedAggregateNodeBinding_of_good_x2
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -201,7 +201,7 @@ theorem deployedAggregateNodeBinding_of_good_x2
 omit [AddCommGroup G] [Module Fp G] in
 /-- Reflecting the reverse-order `x2` slot for set `i` reads the original deployed set entry `i`. -/
 theorem deployedSetsForEval_reverse_getD_reflect
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) {i : Nat} (hi : i < deployedX4PairCount vk instanceCommitment ps ch) :
     (deployedSetsForEval vk instanceCommitment ps ch).reverse.getD
@@ -217,7 +217,7 @@ theorem deployedSetsForEval_reverse_getD_reflect
 /-- The reconstructed within-set `x1` batch gives the aggregate polynomial's evaluation as the
 `x1` power sum of its represented member polynomials. -/
 theorem deployedX1Aggregate_eval
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -252,7 +252,7 @@ omit [Module Fp G] in
 /-- At a routed node, the deployed set interpolant is exactly the `x1` power sum of the member
 claimed values stored in the proof string. -/
 theorem deployedSetInterpolant_eval_eq_memberPowerSum
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → Nat → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) (i : Nat) (hi : i < deployedX4PairCount vk instanceCommitment ps ch)
     (hql : ∀ qc ∈ deployedSetQueries vk instanceCommitment ps ch i,
@@ -279,7 +279,7 @@ theorem deployedSetInterpolant_eval_eq_memberPowerSum
 the value-side companion of `deployedX1AlgebraicBatchWithSourceOrRelation`; no accepting `x1` rewinds are
 used. -/
 theorem deployedMemberNodeBinding_of_good_x1
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -337,7 +337,7 @@ theorem deployedMemberNodeBinding_of_good_x1
 `x4` column values supplied by the recursive IPA/AGM batch, good `x3`, `x2`, and `x1` challenges
 yield the member's claimed value.  The theorem contains no accepting rewind family. -/
 theorem deployedMemberNodeBinding_of_good_challenges
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

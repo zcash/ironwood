@@ -82,7 +82,7 @@ theorem realizes :
     actionCircuit realizationFailures_eq_nil
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 /--
 Construct the Action fixed-coherence package from generic Lagrange-basis setup

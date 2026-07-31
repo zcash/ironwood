@@ -24,7 +24,7 @@ open Zcash.Arithmetic (scalarFieldOrder)
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
-variable [DecidableEq G] [Inhabited G] {shape : Shape}
+variable [Inhabited G] {shape : Shape}
 
 attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchCommitments
   x4BatchEvals deployedSetMemberCommitments

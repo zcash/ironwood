@@ -30,13 +30,13 @@ open CompElliptic.Curves.Pasta
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
 
-omit [AddCommGroup G] [Module Fp G] [DecidableEq G] in
+omit [AddCommGroup G] [Module Fp G] in
 /--
 A fixed-column entry in the accepted key's query layout produces the assembled
 query used by canonical member routing.
@@ -69,7 +69,7 @@ theorem fixedQuery_of_layout
   · rw [List.getD_eq_getElem _ _ hqueryIndex, hentry] at hqid
     exact hqid
 
-omit [AddCommGroup G] [Module Fp G] [DecidableEq G] in
+omit [AddCommGroup G] [Module Fp G] in
 /-- A fixed-column identity can occur in the assembled verifier queries only through
 the verifying key's fixed-query layout. -/
 theorem fixedLayout_of_assembledQuery
@@ -400,7 +400,6 @@ structure TopLevelFixedCoherence
 
 namespace TopLevelFixedCoherence
 
-omit [DecidableEq G] in
 /-- The circuit-derived VK's fixed commitment at one in-range column is the
 full-list commitment of the corresponding keygen row vector. -/
 theorem fixedCommitment_eq_commitInstance
@@ -495,7 +494,7 @@ def ofKeygen
 
 end TopLevelFixedCoherence
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 /--
 Binding every fixed-column resolver polynomial to the circuit's dense keygen rows
 supplies the exact fixed-column encoding expected by `TopLevelAssignment`.
@@ -546,7 +545,7 @@ theorem topLevelFixedColumnEncoding_of_binding
         (row.natMod (2 ^ top.domainExponent)) 0
   simpa only [domainRow] using heval
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 /--
 One required sparse fixed entry reads back from its canonically bound dense-row
 polynomial, or the caller's shared exceptional branch fires.
@@ -590,7 +589,7 @@ theorem topLevelFixedEntryRead_of_column
     (instanceRowPolynomial_eval hrows
       ⟨row, hrow'⟩).trans hvalue
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 /--
 The same entry read, carrying the caller's shared exceptional branch as data: either the entry
 reads back, or the binding family has computed a break at this entry's column.
@@ -631,7 +630,7 @@ def topLevelFixedEntryRead_or_bad
     (binding column (realizes column row value hentry).2.1)
     (topLevelFixedEntryRead_of_column poly rows hrows hn realizes proofIndex hentry)
 
-omit [Module Fp G] [DecidableEq G] in
+omit [Module Fp G] in
 /--
 Polynomial binding for every used fixed column supplies selector and fixed/table
 semantics. This lemma is independent of decoded-member provenance; callers choose

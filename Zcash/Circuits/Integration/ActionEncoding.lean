@@ -34,7 +34,7 @@ open Keygen
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 /--
 Package the Action circuit's gate, fixed, copy, and lookup representation laws for

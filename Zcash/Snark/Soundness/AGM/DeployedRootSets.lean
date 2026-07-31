@@ -25,7 +25,7 @@ attribute [local irreducible] deployedSetQueries deployedX4PairCount x4BatchComm
   x4BatchEvals deployedSetMemberCommitments
 
 /-- The rewind-free algebraic batches needed by the deployed value decoder. -/
-structure DeployedAlgebraicBatches [DecidableEq G] [Inhabited G] {shape : Shape}
+structure DeployedAlgebraicBatches [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -39,7 +39,7 @@ structure DeployedAlgebraicBatches [DecidableEq G] [Inhabited G] {shape : Shape}
       (x4.wComp ⟨deployedX4PairCount vk instanceCommitment ps ch - 1 - i, by omega⟩) ch.x1
 
 /-- The `x4` value-unbatching root set. -/
-def deployedX4RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX4RootSet [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -50,7 +50,7 @@ def deployedX4RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
     batches.x4.coeffs (x4BatchEvals vk instanceCommitment ps ch))
 
 /-- The `x3` cleared-quotient root set, including collisions with any opened point. -/
-def deployedX3RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX3RootSet [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -61,7 +61,7 @@ def deployedX3RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
     deployedAllPts vk instanceCommitment ps ch)
 
 /-- All `x2` set-separation roots, united over deployed opened nodes. -/
-def deployedX2RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX2RootSet [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -75,7 +75,7 @@ def deployedX2RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
       (deployedAlgebraicSetInterpolants vk instanceCommitment ps ch) node)}
 
 /-- The member-binding polynomial for one deployed point set and one node in that set. -/
-def deployedX1RootPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX1RootPolynomial [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -94,7 +94,7 @@ def deployedX1RootPolynomial [DecidableEq G] [Inhabited G] {shape : Shape}
 
 /-- All `x1` member-separation roots for one point set, united over that set's nodes.  Out-of-range
 shape slots are empty, allowing the final root family to use the fixed size `shape.numPointSets`. -/
-def deployedX1RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX1RootSet [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -109,7 +109,7 @@ def deployedX1RootSet [DecidableEq G] [Inhabited G] {shape : Shape}
   else ∅
 
 /-- Direct price of the `x4` root set. -/
-theorem deployedX4RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4RootSet_measure_le [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -121,7 +121,7 @@ theorem deployedX4RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shap
     batches.x4.coeffs (x4BatchEvals vk instanceCommitment ps ch)
 
 /-- Direct price of the `x3` identity and point-collision union. -/
-theorem deployedX3RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX3RootSet_measure_le [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -145,7 +145,7 @@ theorem deployedX3RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shap
   exact_mod_cast hcard
 
 /-- Direct price of all `x2` node roots. -/
-theorem deployedX2RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX2RootSet_measure_le [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -162,7 +162,7 @@ theorem deployedX2RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shap
     (deployedX4PairCount vk instanceCommitment ps ch) (fun _ _ => powerErrorPolynomial_natDegree_le _)
 
 /-- Direct price of one point set's `x1` member roots. -/
-theorem deployedX1RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX1RootSet_measure_le [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -195,7 +195,7 @@ theorem deployedX1RootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shap
   next hi => simp
 
 /-- All deployed `x1` root sets, united into the single event at the one `x1` squeeze. -/
-def deployedX1AllRootSet [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX1AllRootSet [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -206,7 +206,7 @@ def deployedX1AllRootSet [DecidableEq G] [Inhabited G] {shape : Shape}
     x ∈ deployedX1RootSet urs hk vk instanceCommitment ps ch batches i}
 
 /-- Every in-range per-set `x1` root belongs to the single union charged at the `x1` squeeze. -/
-theorem mem_deployedX1AllRootSet_of_mem [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem mem_deployedX1AllRootSet_of_mem [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -218,7 +218,7 @@ theorem mem_deployedX1AllRootSet_of_mem [DecidableEq G] [Inhabited G] {shape : S
   ⟨⟨i, lt_of_lt_of_le hi (deployedX4PairCount_le_numPointSets vk instanceCommitment ps ch)⟩, hx⟩
 
 /-- Avoiding the union at `x1` avoids every in-range per-set root set. -/
-theorem not_mem_deployedX1RootSet_of_not_mem_all [DecidableEq G] [Inhabited G]
+theorem not_mem_deployedX1RootSet_of_not_mem_all [Inhabited G]
     {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
@@ -232,7 +232,7 @@ theorem not_mem_deployedX1RootSet_of_not_mem_all [DecidableEq G] [Inhabited G]
   exact hgood (mem_deployedX1AllRootSet_of_mem urs hk vk instanceCommitment ps ch batches i hi hbad)
 
 /-- Direct price of the union of every deployed `x1` root set. -/
-theorem deployedX1AllRootSet_measure_le [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX1AllRootSet_measure_le [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -264,7 +264,7 @@ theorem deployedX1AllRootSet_measure_le [DecidableEq G] [Inhabited G] {shape : S
 /-! ## Shape-only prices used by the final pinned-root family -/
 
 /-- Conservative shape price for the `x4` root. -/
-theorem deployedX4RootSet_measure_le_shape [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4RootSet_measure_le_shape [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -277,7 +277,7 @@ theorem deployedX4RootSet_measure_le_shape [DecidableEq G] [Inhabited G] {shape 
   exact deployedX4PairCount_le_numPointSets vk instanceCommitment ps ch
 
 /-- Conservative shape price for the `x3` identity and collision root. -/
-theorem deployedX3RootSet_measure_le_shape [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX3RootSet_measure_le_shape [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -300,7 +300,7 @@ theorem deployedX3RootSet_measure_le_shape [DecidableEq G] [Inhabited G] {shape 
   exact_mod_cast hnum
 
 /-- Conservative shape price for all `x2` node roots. -/
-theorem deployedX2RootSet_measure_le_shape [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX2RootSet_measure_le_shape [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → Nat → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)

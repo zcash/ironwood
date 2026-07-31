@@ -184,7 +184,7 @@ queried column commitment — in augmented form, and the honest opened `x₄`-de
 `i`'s batch position is the `ch.x1`-power combination of the decoded triples. The AGM adapters
 `DeployedAlgebraicDecode.toMemberDecode` and `deployedSyntheticMemberDecode` produce this object;
 the canonical and Action terminals consume it. -/
-structure OpenedMemberDecode [DecidableEq G] [Inhabited G] {shape : Shape}
+structure OpenedMemberDecode [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
     {b : Fin (2 ^ urs.k) → Fp} {a : Fin (2 ^ urs.k) → Fp} {pU pW : Fp}

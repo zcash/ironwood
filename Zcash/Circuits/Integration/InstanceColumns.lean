@@ -18,10 +18,9 @@ open CompPoly.CPolynomial
 set_option maxHeartbeats 20000
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
-  [DecidableEq G] [Inhabited G]
+  [Inhabited G]
 
 omit [AddCommGroup G] [Module Fp G] in
-omit [DecidableEq G] in
 /--
 An instance-column entry in the accepted key's query layout is enough to produce
 the assembled query consumed by canonical member routing.

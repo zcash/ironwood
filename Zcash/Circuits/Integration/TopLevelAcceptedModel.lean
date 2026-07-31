@@ -19,7 +19,7 @@ namespace TopLevelAcceptedModel
 
 variable
     {G : Type} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)

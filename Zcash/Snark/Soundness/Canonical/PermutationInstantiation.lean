@@ -704,7 +704,7 @@ theorem ConstraintSatisfaction.resolverPermutationConstraints
 /-- Successful rejecting assembly supplies the permutation last-evaluation read schedule used by
 the resolver-backed set records. -/
 theorem permutationLastEvalsWellFormed_of_assemble?_eq_some
-    {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G] [Inhabited G]
+    {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [Inhabited G]
     (vk : VerifyingKey shape F G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F)
@@ -722,7 +722,7 @@ retained. -/
 def eval_permutationDataOfDecodedResolver_or_relation
     {shape : Shape} {G : Type*} [AddCommGroup G] [Module Fp G]
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
-    [DecidableEq G] [Inhabited G]
+    [Inhabited G]
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)

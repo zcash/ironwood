@@ -399,7 +399,7 @@ def zeroPowerBatchOf {G : Type*} [AddCommGroup G] [Module Fp G]
 
 /-- All-zero deployed batches with the aggregates supplied as equations. -/
 def zeroDeployedBatchesOf {G : Type*} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -416,7 +416,7 @@ commitment is zero.** With no pairs the per-member family is vacuous, so only th
 carries data — and that is the all-zero power batch. Stating it over variables keeps the pair
 count an opaque atom, which is what lets the vacuity discharge by `omega`. -/
 def zeroDeployedBatches {G : Type*} [AddCommGroup G] [Module Fp G]
-    [DecidableEq G] [Inhabited G] {shape : Shape}
+    [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -606,7 +606,7 @@ theorem isEmpty_fin_pairCount_witness (ν : Fin 11 → Fp) :
 
 section RootSetCollapse
 
-variable {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+variable {G : Type*} [AddCommGroup G] [Module Fp G] [Inhabited G]
 variable (urs : URS G) (hk : witnessShape.k = urs.k)
   (vk : VerifyingKey witnessShape Fp G) (ic : Fin witnessShape.numProofs → ℕ → G)
   (ps : ProofString witnessShape Fp G) (ch : Challenges witnessShape.k Fp)
@@ -777,7 +777,7 @@ theorem assembleQueries_x3_blind {G : Type*} [Field Fp] [Inhabited G] {shape : S
     assembleQueries vk ic ps {ch with x3 := v} = assembleQueries vk ic ps ch := rfl
 
 /-- Hence the deployed point sets never read `x₃`. -/
-theorem deployedAllPts_x3_blind {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G]
+theorem deployedAllPts_x3_blind {G : Type*} [AddCommGroup G] [Module Fp G]
     [Inhabited G] {shape : Shape}
     (vk : VerifyingKey shape Fp G) (ic : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp) (v : Fp) :
@@ -786,7 +786,7 @@ theorem deployedAllPts_x3_blind {G : Type*} [AddCommGroup G] [Module Fp G] [Deci
 /-- The deployed point sets depend on a challenge record only through the fields used before the
 multiopen squeezes. -/
 theorem deployedAllPts_congr_preMultiopen
-    {G : Type*} [AddCommGroup G] [Module Fp G] [DecidableEq G] [Inhabited G]
+    {G : Type*} [AddCommGroup G] [Module Fp G] [Inhabited G]
     {shape : Shape} (vk : VerifyingKey shape Fp G) (ic : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G) (ch ch' : Challenges shape.k Fp)
     (htheta : ch.theta = ch'.theta) (hbeta : ch.beta = ch'.beta)

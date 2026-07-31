@@ -162,9 +162,9 @@ end FoldProvenance
 
 section GroupingProvenance
 
-variable {k : ℕ} {F G : Type*} [DecidableEq F] [DecidableEq G]
+variable {k : ℕ} {F G : Type*} [DecidableEq F]
 
-omit [DecidableEq F] [DecidableEq G] in
+omit [DecidableEq F] in
 private theorem mem_comms_foldl (queries : List (VerifierQuery k F G)) :
     ∀ (init : List (CommitmentId × CommitmentRef k F G)),
     ∀ ce ∈ queries.foldl (fun acc q =>

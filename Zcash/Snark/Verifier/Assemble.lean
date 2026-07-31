@@ -664,6 +664,27 @@ private theorem getElem?_findIdx_self {α : Type*} [DecidableEq α] {l : List α
   simp only [decide_eq_true_eq] at hval
   rw [hval]
 
+/-- Locating a member by its key: over duplicate-free keys, `findIdx` on a member's key finds
+the member itself. The keyed analogue of `getElem?_findIdx_self` — it lets routing proofs
+recover a member from its slot identity without comparing the other components. -/
+private theorem getElem?_findIdx_key {α β : Type*} [DecidableEq β] {f : α → β} {b : β} :
+    ∀ {l : List α}, (l.map f).Nodup → ∀ {x : α}, x ∈ l → f x = b →
+      l[l.findIdx (fun y => decide (f y = b))]? = some x
+  | [], _, _, hx, _ => absurd hx List.not_mem_nil
+  | a :: t, hnodup, x, hx, hfx => by
+      rw [List.map_cons, List.nodup_cons] at hnodup
+      rcases List.mem_cons.mp hx with rfl | hxt
+      · simp [List.findIdx_cons, hfx]
+      · have hkey : ¬ (f a = b) := by
+          intro hab
+          apply hnodup.1
+          rw [hab, ← hfx]
+          exact List.mem_map.mpr ⟨x, hxt, rfl⟩
+        rw [List.findIdx_cons]
+        have hpa : decide (f a = b) = false := decide_eq_false_iff_not.mpr hkey
+        rw [hpa, cond_false, List.getElem?_cons_succ]
+        exact getElem?_findIdx_key hnodup.2 hxt hfx
+
 /-- **Point routing (F4 core).** Every query's point lands in the point list of the set its
 commitment slot is routed to: if `q ∈ queries` and `q.commId` names member `m` of point set `si`
 (`ids[si][m] = q.commId`), then `q.point` appears in set `si`'s points. The point companion of
@@ -1032,6 +1053,48 @@ private theorem range_filter_eq_singleton {j n : ℕ} (h : j < n) :
           exact Nat.ne_of_lt (List.mem_range.mp ha)
         rw [h1, List.nil_append]
         simp
+
+/-- The keyed dedup fold appends an entry only when its key is absent, so the accumulated keys
+are pairwise distinct. -/
+private theorem cisComms_fold_keys_nodup {k : ℕ} {F G : Type*}
+    (l : List (VerifierQuery k F G)) :
+    ∀ (init : List (CommitmentId × CommitmentRef k F G)), (init.map (·.1)).Nodup →
+      ((l.foldl (fun acc q => if acc.any (fun c => decide (c.1 = q.commId)) then acc
+        else acc ++ [(q.commId, q.commitment)]) init).map (·.1)).Nodup := by
+  induction l with
+  | nil => intro init h; simpa using h
+  | cons a l ih =>
+      intro init h
+      rw [List.foldl_cons]
+      by_cases hmem : init.any (fun c => decide (c.1 = a.commId))
+      · rw [if_pos hmem]; exact ih init h
+      · rw [if_neg hmem]
+        refine ih _ ?_
+        rw [List.map_append]
+        refine List.Nodup.append h (List.nodup_singleton _) ?_
+        rw [List.map_singleton, List.disjoint_singleton]
+        intro hmem'
+        obtain ⟨c, hc, hck⟩ := List.mem_map.mp hmem'
+        exact hmem (List.any_eq_true.mpr ⟨c, hc, by simp [hck]⟩)
+
+/-- The members routed to a point set have pairwise-distinct slot identities: the routed list is
+a filtered reversal of `cisData`, whose keys are `cisComms`'s dedup-fold keys. So a member is
+recoverable from its slot identity alone — no curve-value comparison. -/
+private theorem cisRouted_keys_nodup {k : ℕ} {F G : Type*} [DecidableEq F]
+    (queries : List (VerifierQuery k F G)) (si : ℕ) :
+    ((cisRouted queries si).map (·.1)).Nodup := by
+  have hcomms : ((cisComms queries).map (·.1)).Nodup :=
+    cisComms_fold_keys_nodup queries [] (by simp)
+  have hdata : ((cisData queries).map (·.1)).Nodup := by
+    rw [cisData, List.map_map]
+    simpa [Function.comp] using hcomms
+  have hrev : (((cisData queries).reverse).map (·.1)).Nodup := by
+    rw [List.map_reverse]
+    exact List.nodup_reverse.mpr hdata
+  have hsub : List.Sublist ((cisRouted queries si).map (·.1))
+      (((cisData queries).reverse).map (·.1)) :=
+    List.Sublist.map _ List.filter_sublist
+  exact hrev.sublist hsub
 
 /-- A unique-slot query's per-commitment data entry: its own identity and curve value, the
 singleton index set of its point, and the singleton eval list of its claimed evaluation. -/
@@ -2002,16 +2065,19 @@ theorem constructIntermediateSets_comm_routed {k : ℕ} {F G : Type*} [Decidable
     rw [cisRouted]
     refine List.mem_filter.mpr ⟨List.mem_reverse.mpr hcd, ?_⟩
     simp [hsi]
-  set m := (cisRouted queries si).findIdx
-    (fun x => decide (x = (e.1, e.2, idxSet, evals))) with hmdef
+  -- the member index, located by slot identity alone (`cisRouted_keys_nodup` makes the slot
+  -- identity a key) — no curve-value comparison
+  set m := (cisRouted queries si).findIdx (fun x => decide (x.1 = e.1)) with hmdef
   have hm : m < (cisRouted queries si).length := by
     rw [hmdef]
     exact List.findIdx_lt_length_of_exists
       ⟨(e.1, e.2, idxSet, evals), hrouted, by simp⟩
   have hrm : (cisRouted queries si)[m] = (e.1, e.2, idxSet, evals) := by
-    have hget := getElem?_findIdx_self hrouted
+    have hget : (cisRouted queries si)[m]? = some (e.1, e.2, idxSet, evals) := by
+      rw [hmdef]
+      exact getElem?_findIdx_key (cisRouted_keys_nodup queries si) hrouted rfl
     rw [List.getElem?_eq_getElem hm] at hget
-    exact Option.some.inj (by simpa [hmdef] using hget)
+    exact Option.some.inj hget
   -- the set's point list is the everywhere-defined extraction over the index set
   have hpts : ((cisSetList queries).map fun s => s.filterMap
       fun i => (cisPts queries)[i]?).getD si [] = idxSet.filterMap fun i => (cisPts queries)[i]? := by
@@ -2177,16 +2243,19 @@ def constructIntermediateSets_comm_route {k : ℕ} {F G : Type*} [DecidableEq F]
     rw [cisRouted]
     refine List.mem_filter.mpr ⟨List.mem_reverse.mpr hcd, ?_⟩
     simp [hsi]
-  set m := (cisRouted queries si).findIdx
-    (fun x => decide (x = (e.1, e.2, idxSet, evals))) with hmdef
+  -- the member index, located by slot identity alone (`cisRouted_keys_nodup` makes the slot
+  -- identity a key) — no curve-value comparison
+  set m := (cisRouted queries si).findIdx (fun x => decide (x.1 = e.1)) with hmdef
   have hm : m < (cisRouted queries si).length := by
     rw [hmdef]
     exact List.findIdx_lt_length_of_exists
       ⟨(e.1, e.2, idxSet, evals), hrouted, by simp⟩
   have hrm : (cisRouted queries si)[m] = (e.1, e.2, idxSet, evals) := by
-    have hget := getElem?_findIdx_self hrouted
+    have hget : (cisRouted queries si)[m]? = some (e.1, e.2, idxSet, evals) := by
+      rw [hmdef]
+      exact getElem?_findIdx_key (cisRouted_keys_nodup queries si) hrouted rfl
     rw [List.getElem?_eq_getElem hm] at hget
-    exact Option.some.inj (by simpa [hmdef] using hget)
+    exact Option.some.inj hget
   have hpts : ((cisSetList queries).map fun s => s.filterMap
       fun i => (cisPts queries)[i]?).getD si [] = idxSet.filterMap fun i => (cisPts queries)[i]? := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, hsiget]

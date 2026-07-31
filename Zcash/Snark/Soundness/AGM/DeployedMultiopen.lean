@@ -14,7 +14,7 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
 /-- Provenance-preserving deployed `x₄` unbatch.  The successful branch records that every
 recovered column is exactly the online column representation passed to the executable walk. -/
-def deployedX4AlgebraicBatchWithSourceOrRelation [DecidableEq G] [Inhabited G]
+def deployedX4AlgebraicBatchWithSourceOrRelation [Inhabited G]
     {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs -> Nat -> G)
@@ -35,7 +35,7 @@ def deployedX4AlgebraicBatchWithSourceOrRelation [DecidableEq G] [Inhabited G]
 /-- At the deployed `x₄` collapse, online representations of the individual aggregate columns
 either reconstruct the aggregate AGM coordinates immediately or expose an augmented-basis relation.
 No accepting `x₄` rewinds are used. -/
-def deployedX4AlgebraicBatchOrRelation [DecidableEq G] [Inhabited G] {shape : Shape}
+def deployedX4AlgebraicBatchOrRelation [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs -> Nat -> G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
@@ -54,7 +54,7 @@ def deployedX4AlgebraicBatchOrRelation [DecidableEq G] [Inhabited G] {shape : Sh
 
 /-- Once the clean aggregate opens to the verifier's deployed value, a good `x₄` challenge makes
 the represented aggregate columns open to all of the verifier's claimed `x₄` column values. -/
-theorem deployedX4AlgebraicValues_of_good [DecidableEq G] [Inhabited G] {shape : Shape}
+theorem deployedX4AlgebraicValues_of_good [Inhabited G] {shape : Shape}
     (urs : URS G) (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs -> Nat -> G)
     (ps : ProofString shape Fp G) (ch : Challenges shape.k Fp)
