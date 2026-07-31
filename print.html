@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-649ab140.js";
+            window.path_to_searchindex_js = "searchindex-769057d8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1152,10 +1152,11 @@ multiset identity), <code>Permutation</code>, <code>PermutationConstruction</cod
 <code>CommitFold</code>; the executable extraction route itself lives in <code>AGM/StraightLineIpa</code>. <code>InstanceBinding</code> closes the public-instance gap: a decoded instance column is the
 polynomial halo2 committed from its <code>instances</code> argument, or a <code>(g, U, W)</code> relation is computed.
 <code>ZeroData</code> supplies the zero-data multiopen keystone the constant prover families
-are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve. <code>TopLevelTerminal</code> turns
-canonical constraint satisfaction into the Spec of an arbitrary top-level circuit.
-<code>StraightLineActionTerminal</code> and <code>StraightLineActionEvent</code> connect the one-run computed decode to
-the concrete Action statement and carry a failure as explicit relation data.</p>
+are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve.
+<code>TopLevelTerminal</code> connects canonical constraint satisfaction to the Spec of an
+arbitrary top-level circuit using that circuit's derived verifier key and public
+inputs. <code>Action/StraightLineTerminal</code> and <code>Action/StraightLineEvent</code> connect the one-run computed
+decode to the concrete Action statement and carry a failure as explicit relation data.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
 <li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
@@ -1189,10 +1190,10 @@ interpolates rows on the <code>ω</code> domain (<code>PolynomialEnvironment</co
 instance commitments to the extractor's monomial coefficient vectors (<code>InstanceCommitment</code>), and
 instantiates the permutation and lookup arguments at routed decoded polynomials
 (<code>PermutationInstantiation</code>, <code>PermutationSemantics</code>, <code>LookupInstantiation</code>, <code>LookupSemantics</code>,
-<code>LookupRows</code>), ending at <code>Terminal</code> and its Vesta adapter.</li>
+<code>LookupRows</code>), ending at <code>Terminal</code>.</li>
 <li><strong><code>Composition/</code></strong> — joining the two halves the architecture keeps apart and bounding the
 probability loss the join costs. <code>Bridge</code>
-identifies the algebraic extraction's aggregate witness with the deployed decoded capstone's
+identifies the algebraic extraction's aggregate witness with the deployed decoded terminal's
 opened commitment.
 <code>DeployedAcceptance</code> and <code>DeployedRuntime</code> name the deployed decision on one oracle table;
 <code>DeployedRootContainment</code> and
@@ -1614,7 +1615,7 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 <div class="g"><div class="g-head"><span class="term">captured knowledge-error bound</span><span class="anchor">Fixture2.orchard_deployed_knowledge_error_captured_straightLine_generatorRO</span></div><div class="def">The additive deployed extraction bound at the captured key. The straight-line AGM endpoint uses the staged representations and a fixed four-call finder, adding the <code>2k</code> IPA-root term and no expected-runs or Markov term. It includes the tight DLOG term, the shape's root budget, and the concrete <code>(Q+1)·20470/|𝔽|</code> constraint-root term. It is a compressed-identity statement; row-level gate, permutation, and lookup semantics carry the four explicitly priced <code>y</code>/<code>β</code>/<code>γ</code>/<code>θ</code> budgets through the matching semantic promotion (<code>straightLineConstraintSemanticFailure_prob_le_of_generatorRO_dlogProfile</code>).</div></div>
 </section>
 <section>
-<div class="grp">Capstones &amp; hypotheses</div>
+<div class="grp">Capstones</div>
 <div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor">Fixtures/MultiAction/ActionCapstone.lean</span></div><div class="def">The top-level results a route ends at. The consensus-generic adaptive Action knowledge capstone runs one cached executable terminal, returns Type-valued private witnesses or relation data, and bounds acceptance when witness extraction fails by profiled DLOG advantage plus the statistical remainder. The ordinary false-statement and sequential endpoints remain useful corollaries and presentation-specific variants.</div></div>
 <div class="g"><div class="g-head"><span class="term">knowledge-failure event</span><span class="anchor">AdaptiveActionEvent.adaptiveActionKnowledgeFailureEvent</span></div><div class="def">The event that the deployed Action verifier accepts but the executable extractor does not return private witnesses for the entire bundle. The capstone bounds this event directly.</div></div>
 <div class="g"><div class="g-head"><span class="term">semantic residuals</span><span class="anchor">AdaptiveActionEvent.adaptiveActionSemanticResidualEvent</span></div><div class="def">The explicitly priced <code>y</code>, <code>β</code>, <code>γ</code>, and <code>θ</code> challenge surfaces needed to promote the compressed constraint identity to row-level gate, permutation, and lookup semantics.</div></div>

@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-649ab140.js";
+            window.path_to_searchindex_js = "../searchindex-769057d8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -327,10 +327,11 @@ multiset identity), <code>Permutation</code>, <code>PermutationConstruction</cod
 <code>CommitFold</code>; the executable extraction route itself lives in <code>AGM/StraightLineIpa</code>. <code>InstanceBinding</code> closes the public-instance gap: a decoded instance column is the
 polynomial halo2 committed from its <code>instances</code> argument, or a <code>(g, U, W)</code> relation is computed.
 <code>ZeroData</code> supplies the zero-data multiopen keystone the constant prover families
-are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve. <code>TopLevelTerminal</code> turns
-canonical constraint satisfaction into the Spec of an arbitrary top-level circuit.
-<code>StraightLineActionTerminal</code> and <code>StraightLineActionEvent</code> connect the one-run computed decode to
-the concrete Action statement and carry a failure as explicit relation data.</p>
+are built on. <code>Vesta</code> pins the abstract group to the actual Vesta curve.
+<code>TopLevelTerminal</code> connects canonical constraint satisfaction to the Spec of an
+arbitrary top-level circuit using that circuit's derived verifier key and public
+inputs. <code>Action/StraightLineTerminal</code> and <code>Action/StraightLineEvent</code> connect the one-run computed
+decode to the concrete Action statement and carry a failure as explicit relation data.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
 <li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
@@ -364,10 +365,10 @@ interpolates rows on the <code>ω</code> domain (<code>PolynomialEnvironment</co
 instance commitments to the extractor's monomial coefficient vectors (<code>InstanceCommitment</code>), and
 instantiates the permutation and lookup arguments at routed decoded polynomials
 (<code>PermutationInstantiation</code>, <code>PermutationSemantics</code>, <code>LookupInstantiation</code>, <code>LookupSemantics</code>,
-<code>LookupRows</code>), ending at <code>Terminal</code> and its Vesta adapter.</li>
+<code>LookupRows</code>), ending at <code>Terminal</code>.</li>
 <li><strong><code>Composition/</code></strong> — joining the two halves the architecture keeps apart and bounding the
 probability loss the join costs. <code>Bridge</code>
-identifies the algebraic extraction's aggregate witness with the deployed decoded capstone's
+identifies the algebraic extraction's aggregate witness with the deployed decoded terminal's
 opened commitment.
 <code>DeployedAcceptance</code> and <code>DeployedRuntime</code> name the deployed decision on one oracle table;
 <code>DeployedRootContainment</code> and
