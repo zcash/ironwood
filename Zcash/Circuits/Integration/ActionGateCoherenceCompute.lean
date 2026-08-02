@@ -5,7 +5,7 @@ import Zcash.Circuits.Integration.TopLevelGates
 import Mathlib.Util.AssertNoSorry
 
 /-!
-# Closed computations for Action gate coherence
+# Closed computations for Action configure coherence
 
 This small module isolates the native computation certificates needed to lift the
 Action configure proofs to the synthesis-closed top-level constraint system.
@@ -33,6 +33,15 @@ theorem gateData_eq :
           Specs.Sinsemilla.orchardGenerators {}).2.numSelectors := by
   native_decide
 
+/--
+Closing the Action configure result under its own synthesis does not add lookups.
+-/
+theorem lookupData_eq :
+    actionCircuit.constraintSystem.lookups =
+      (Action.Circuit.configure
+        Specs.Sinsemilla.orchardGenerators {}).2.lookups := by
+  native_decide
+
 /-- The derived Action constraint-system degree is below the Pasta field order. -/
 theorem selectorDegree :
     csDegree actionCircuit.constraintSystem < scalarFieldOrder := by
@@ -44,6 +53,7 @@ theorem domainExponent_lt :
   native_decide
 
 assert_no_sorry gateData_eq
+assert_no_sorry lookupData_eq
 assert_no_sorry selectorDegree
 assert_no_sorry domainExponent_lt
 

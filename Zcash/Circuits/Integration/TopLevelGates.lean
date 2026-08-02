@@ -5,7 +5,7 @@ import Zcash.Circuits.Integration.SelectorCoherence
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 
 /-!
-# Generic top-level gate bridge
+# Generic top-level gate bridge and configure coherence
 
 This module packages the static facts needed to use a closed formal circuit's own
 derived verifying key. The package is circuit-independent and cannot be paired with
@@ -28,9 +28,8 @@ Static coherence for a top-level circuit's own derived verifying key.
 
 No placement, operation stream, selector map, or pinned constraint system is supplied
 by the caller: all four are derived from `top`, and the key is fixed to
-`top.toVerifierKey urs`. Gate/lookup registration coherence is absent because the
-circuit-derived constraint system closes the raw configure result under synthesis by
-construction.
+`top.toVerifierKey urs`. Lookup registration is certified against the raw configure
+result so synthesis closure cannot hide a missing Halo 2 lookup registration.
 -/
 structure TopLevelGateCoherence
     {Config : Type} {PublicInput : TypeMap}
@@ -38,6 +37,9 @@ structure TopLevelGateCoherence
     (top : TopLevelCircuit Fp Config PublicInput) : Prop where
   gateSelectorsAllocated :
     top.constraintSystem.GateSelectorsAllocated
+  lookups_eq_configure :
+    top.constraintSystem.lookups =
+      (top.formalCircuit.configure () {}).2.lookups
   domainExponent_lt : top.domainExponent < 33
   selectorDegree :
     csDegree top.constraintSystem < scalarFieldOrder

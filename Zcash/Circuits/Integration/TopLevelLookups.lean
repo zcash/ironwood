@@ -245,6 +245,21 @@ end EnabledLookup.SelectorProjection
 
 namespace TopLevelGateCoherence
 
+/--
+Every synthesis-enabled lookup was present in the raw configure result. The equality
+field makes the synthesis-closure membership proof transport back to Halo 2's actual
+configuration boundary.
+-/
+theorem enabledLookup_configured
+    (coherence : TopLevelGateCoherence top)
+    (lookup : EnabledLookup Fp)
+    (henabled :
+      lookup ∈ operationEnabledLookups (top.operations) 0) :
+    lookup.argument ∈
+      (top.formalCircuit.configure () {}).2.lookups := by
+  rw [← coherence.lookups_eq_configure]
+  exact OperationsKeygenCoherent.lookup top.keygenCoherent henabled
+
 /-- The resolver feeds interpret the complete circuit-derived pinned query state. -/
 theorem resolverInterpretsPinned
     (coherence : TopLevelGateCoherence top)
@@ -383,10 +398,17 @@ theorem projectedValues
   dsimp only
   let route :=
     lookup.topLevelRoute (top := top) henabled
+  have hlookupConfigured :=
+    gateCoherence.enabledLookup_configured lookup henabled
+  have hlookupClosed :
+      lookup.argument ∈ top.constraintSystem.lookups := by
+    rw [gateCoherence.lookups_eq_configure]
+    exact hlookupConfigured
   have hrouteMem :
       top.constraintSystem.lookups[route.index.val] ∈
-        top.constraintSystem.lookups :=
-    List.getElem_mem ..
+        top.constraintSystem.lookups := by
+    rw [route.argument]
+    exact hlookupClosed
   have hinputCoverage :=
     topLevelLookupInputs_selectorsCovered top
       top.constraintSystem.lookups[route.index.val]

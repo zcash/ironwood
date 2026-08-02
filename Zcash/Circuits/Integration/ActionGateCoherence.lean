@@ -2,10 +2,10 @@ import Zcash.Circuits.Integration.ActionGateCoherenceCompute
 import Mathlib.Util.AssertNoSorry
 
 /-!
-# Action top-level gate coherence
+# Action top-level configure coherence
 
 This module packages the circuit-owned configure certificates and the small derived
-layout computations into the generic static gate-coherence boundary.
+layout computations into the generic static gate/lookup-coherence boundary.
 -/
 
 namespace Zcash.Circuits
@@ -82,12 +82,13 @@ private theorem gateSelectorsAllocated :
     Circuits.ActionGateCoherence.configureProgram_gateSelectorsAllocated
 
 /--
-The deployed Orchard Action circuit satisfies the complete static gate boundary
+The deployed Orchard Action circuit satisfies the complete static gate/lookup boundary
 against its own derived verifying key.
 -/
 theorem topLevel :
     TopLevelGateCoherence actionCircuit where
   gateSelectorsAllocated := gateSelectorsAllocated
+  lookups_eq_configure := lookupData_eq
   domainExponent_lt := domainExponent_lt
   selectorDegree := selectorDegree
 

@@ -11,13 +11,14 @@ Checking that the circuit-derived key equals the deployed Orchard key is a legit
 concrete trust-boundary check. It must not, however, double as evidence that the Clean
 formal circuit is internally lawful.
 
-There are currently 22 Action-specific computations on the live integration path.
+There are currently 23 Action-specific computations on the live integration path.
 That number understates the architectural debt:
 
 * `ActionGateCoherence.gateData_eq` bundles two independent facts;
 * the VK-match bundle contains two further non-capture wellformedness checks; and
-* `ConstraintSystem.closeWithOperations` silently repairs one further missing
-  configure/synthesis fact without proving that the repair is inactive.
+* `ActionGateCoherence.lookupData_eq` proves the lookup component of closure
+  inactivity as one concrete whole-Action computation rather than a compositional
+  configure/synthesis law.
 
 The cleanup backlog therefore contains **26 atomic lawfulness obligations**. The
 tables below keep the original 22 rows recognizable, then list the four extra atomic
@@ -52,7 +53,9 @@ synthesis stream. Closure:
 This produces a self-consistent internal object, but it is not the algorithm Halo2
 uses. In Halo2, synthesis can enable only a gate or lookup already established by
 configuration. If closure changes the raw constraint system, the model has repaired
-an invalid formal circuit instead of rejecting it.
+an invalid formal circuit instead of rejecting it. The live Action path now rules out
+the lookup-list case explicitly; the generic compiler still performs the repair for
+an arbitrary `FormalCircuit`.
 
 The problem is not cured by comparing the resulting pinned CS with a captured VK.
 Such a comparison says that the *repaired derivation* matches the deployed data; it
@@ -145,10 +148,16 @@ still corresponds to the original 22 theorem rows.
 |---:|---|:---:|---|---|
 | 24 | `action_queriedCells_wellFormed` in the VK-match bundle | L | Gate/lookup query declarations consist only of valid query atoms and match expression support. This belongs in argument lawfulness, not in a concrete capture. | Easy–medium |
 | 25 | `action_gates_selectorsCovered` in the VK-match bundle, currently replaced by the Action-specific `Action/SelectorCoherence.lean` sidecar | L | Move gate-selector allocation into the `FormalCircuit` lawfulness package or enforce it through the configure API. The existing compositional proof can discharge that packaged law during migration; selector-compression coverage then follows from a generic compiler theorem. | Medium |
-| 26 | lookup component of closure inactivity | L | Every synthesis-enabled lookup is present in the raw configure lookup list. This is currently repaired by `closeWithOperations` and is not directly proved for Action. | Medium |
+| 26 | `ActionGateCoherence.lookupData_eq` | L | Every synthesis-enabled lookup is present in the raw configure lookup list. The live Action path now proves exact raw/closed lookup-list equality and carries it through `TopLevelGateCoherence`; replace the whole-Action computation with a compositional configure/synthesis law. | Medium |
 
 Together with rows 12a and 12b, these bring the inventory to 26 atomic obligations.
 The VK bundle's `actionK_eq` is not another item because row 16 already covers it.
+
+Obligation 26 is therefore enforced on the live theorem path, but remains in this
+cleanup inventory because its discharge is computational rather than compositional.
+`TopLevelLookup.projectedValues` first transports every enabled lookup back to the raw
+configure list through `TopLevelGateCoherence.lookups_eq_configure`; selector coverage
+and resolver projection are proved only after that check.
 
 The old `invalidQueriedCells = []` check was previously easy to dismiss because it
 was not imported by the capstone. It belongs here nevertheless: this arc is about the
@@ -203,7 +212,7 @@ shared concrete-circuit evaluation, and proof checking are included.
 
 | Certificate group | Containing module | Approximate compile time | Approximate peak memory |
 |---|---|---:|---:|
-| Gate data, degree, domain | `ActionGateCoherenceCompute.lean` | 10 s | 7.0 GB |
+| Gate/lookup data, degree, domain | `ActionGateCoherenceCompute.lean` | 10 s | 7.0 GB |
 | Primary-instance registration | `ActionInstanceCommitmentCompute.lean` | 4 s | 3.8 GB |
 | Domain, chunks, layouts, routing, delta powers | `ActionPermutationDomainCompute.lean` | 1–2 min | 7.4 GB |
 | Copy bounds, addresses, constants | `ActionCopyWitness.lean` | 30–40 s | 7.7 GB |
