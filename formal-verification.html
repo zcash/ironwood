@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-1d497644.js";
+            window.path_to_searchindex_js = "searchindex-4ae314ed.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -251,20 +251,24 @@ lemma itself. The underlying mechanism study — what <code>native_decide</code>
 precompiled native code actually trust — is
 <a href="https://github.com/daira/CompElliptic/blob/main/design/lean-native-trust-research.md"><code>design/lean-native-trust-research.md</code></a>
 in the CompElliptic repository.</p>
-<p><strong>Native-executing checks are opt-in.</strong> Executing a check through locally compiled native
-code (a <code>precompileModules</code> dylib — ours, or the CompElliptic pin's) trusts the C emitter,
-the local C toolchain, and the loader, coarse-grained and with no axiom trace. Loading a
+<p><strong>Native-executing checks are temporary, and opt-in until they go.</strong> Executing a check through
+locally compiled native code (a <code>precompileModules</code> dylib — ours, or the CompElliptic pin's)
+trusts the C emitter, the local C toolchain, and the loader, coarse-grained and with no axiom
+trace. That is a real extension of the trusted base, and the performance it buys does not
+justify it: these checks are slated for removal rather than for permanent accommodation, and
+the discipline below is what contains them in the meantime, not a settled design. Loading a
 lane's dylib is inseparable from elaborating modules that import it, so the enforced
 invariant sits at the level of checks: no module whose import closure reaches a lane module
 may contain an evaluation-based check (<code>#eval</code>, <code>#guard</code>, <code>native_decide</code>) unless explicitly
-opted in, enforced by <code>scripts/check_native_optin.py</code> in CI. Appendix C of the research
-document linked above records the observed Lake behaviour behind this rule.</p>
+opted in — a documented review discipline; nothing in CI enforces it today. Appendix C of the
+research document linked above records the observed Lake behaviour behind this rule.</p>
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
-the kernel's GMP-backed bignum arithmetic. The principal such fact in this repository is the
-captured fingerprint match <code>fingerprint_matches</code>: a single numeric check that the Lean
-verifier's assembled multi-scalar multiplication equals the Rust verifier's on a captured
-proof. The CompElliptic dependency applies the same discipline to its concrete
+the kernel's GMP-backed bignum arithmetic. The principal such facts in this repository are the
+four derived-form fingerprint boundary theorems <code>nonInteractiveFingerprint_matches_derived</code>
+(the generated per-capture <code>fingerprint_matches</code> are their raw forms): numeric checks that the
+Lean verifier's assembled multi-scalar multiplication equals the Rust verifier's on each
+captured proof — two honest, two at random inputs. The CompElliptic dependency applies the same discipline to its concrete
 curve-arithmetic facts (cardinalities, primality certificates). Such facts are independently
 re-checkable (another implementation, or hand computation, would compute the same result),
 so a miscompiled or buggy oracle could in principle be caught by disagreement.</p>
@@ -293,17 +297,24 @@ admitted only through erased <code>Prop</code> certificate fields (<code>+choice
 direct terms of the inputs, so the break data cannot have been conjured from mere propositional
 existence. <code>+native</code> covers the Vesta producers.</li>
 </ul>
-<p>The boundaries kept as literal pins are the two fixture censuses,
-<code>Zcash.Snark.Fixtures.SingleAction.TrustBoundary</code> and <code>…MultiAction.TrustBoundary</code>, which belong to
+<p>The boundaries kept as literal pins are the four fixture censuses —
+<code>Zcash.Snark.Fixtures.SingleAction.Honest.TrustBoundary</code>, <code>…MultiAction.Honest.TrustBoundary</code>,
+and their two <code>…Random.TrustBoundary</code> siblings — which belong to
 the <code>FixtureCheck</code> target (kept out of <code>lake build Zcash</code> because the captures are large and slow).
 Each states its tier with <code>assert_axioms</code> like the rest of the development, and <em>additionally</em>
-retains a <code>#guard_msgs</code>-pinned <code>#print axioms fingerprint_matches</code> documenting precisely <em>which</em>
+retains <code>#guard_msgs</code>-pinned <code>#print axioms</code> checks on <code>fingerprint_matches</code> and the derived
+boundary theorems, documenting precisely <em>which</em>
 compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
 (<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global <code>Lean.ofReduceBool</code> —
 because for a captured fingerprint match the exact axiom set <em>is</em> the claim, the case
 <code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds <code>Zcash</code> and <code>FixtureCheck</code> as
-default targets, and <code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs
+default targets, and each <code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs
 the verifier, so anything <code>noncomputable</code> on the assembled-verifier path fails the build.</p>
+<p>What the fixture captures actually <em>check</em> is the statement of record in each family's
+<code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived</code> — with the quantified match and its
+ε in <code>Snark/Fingerprint/Epsilon.lean</code> and the per-capture headliners in
+<code>Fixtures/*/Random/Epsilon.lean</code>. Capture lineage, seeds, and the reproducibility pipeline are in
+<code>Zcash/Snark/Fixtures/PROVENANCE.md</code>.</p>
 <p>Coined terms and shorthand for the development, including the two conventions above, are
 collected in the <a href="formal-verification/glossary.html">glossary</a>.</p>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>

@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-1d497644.js";
+            window.path_to_searchindex_js = "../searchindex-4ae314ed.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -263,6 +263,12 @@ query back to the canonical group element it references.</li>
 <li><code>Expressions</code> recomputes the vanishing argument's <code>expected_h_eval</code>.</li>
 <li><code>Ipa</code> is the inner-product-argument opening (<code>compute_s</code> / <code>compute_b</code>).</li>
 <li><code>FiatShamir</code> models halo2's Blake2b challenge schedule as an abstract <code>squeeze</code>.</li>
+<li><code>AssembleSpec</code> says what the rejecting <code>assemble?</code> returns when it does not reject — exactly
+the total assembly's value — the operational interface both the fingerprint walk and the
+deployed soundness layer consume.</li>
+<li><code>OrchardShape</code> specializes the verifier shape to the captured Orchard column and query
+dimensions while leaving the action count free; every consensus-valid action count
+instantiates it.</li>
 <li><code>Parametric</code> proves the assembly and schedule traverse every sub-proof for an arbitrary proof
 count; every consensus-valid Orchard action count is one such count. At zero, this describes the
 transaction-level absence of an Orchard bundle, not a verifier call with an empty bundle. Actual
@@ -281,33 +287,63 @@ built from the closed coefficient rows, and conversely the derived basis's <code
 monomial commitment to that same closed row. <code>Certificate</code> holds the one slow check — a single
 bundled
 <code>native_decide</code> comparing every field of the derived key against the capture, which dominates the
-elaboration time of the lane — and so is built only in the fixture lane.</p>
+elaboration time of the lane — and so is built only in the fixture lane. <code>InstanceCapture</code> joins
+the fixture's captured instance commitments to the circuit-derived family the deployed capstone
+consumes: the Lagrange commitment key is identified with the certified monomial derivation, and
+the captured public-input column is read back as the circuit's own <code>PublicInputs</code> record.</p>
 <h3 id="fingerprint--the-cross-check-and-its-soundness"><a class="header" href="#fingerprint--the-cross-check-and-its-soundness"><code>Fingerprint/</code> — the cross-check and its soundness</a></h3>
 <p><code>Match</code> is the fingerprint match: running the deployed Rust verifier and the Lean <code>assemble</code>
 on the same proof and challenges and comparing the assembled MSMs coefficient-for-coefficient
 — the cross-check that validates the Lean assembly in place of a line-by-line translation
-proof. <code>SchwartzZippel</code> supplies the abstract random-evaluation bound. Outer batching of separate
-proof blobs by Halo2's optional <code>BatchVerifier</code> is outside this formalization's scope.</p>
+proof; the per-family <code>Boundary</code> modules under <code>Fixtures/</code> restate it at the Lean-derived key
+and schedule as the statements of record. <code>SchwartzZippel</code> supplies the abstract
+random-evaluation bound: a fingerprint agrees with a random evaluation only with negligible
+probability. Outer batching of separate proof blobs by Halo2's optional <code>BatchVerifier</code> is
+outside this formalization's scope.</p>
+<p><code>SampleSpace</code> encodes the proof-string scalars and challenges as one product sample space
+(<code>ScalarSlot</code>, with the deployed read schedule's <code>lastEval</code> shape baked into the type).
+<code>Rational/</code> instantiates the Schwartz–Zippel bound at <code>assemble</code>'s own coefficients — the
+quantified random match. <code>GoodEvent</code> enumerates the challenge-only denominator factors whose
+joint nonvanishing is the good event; <code>Representation</code> is the representation toolkit (cleared
+<code>num/den</code> identities on the event, with challenge folds costing one degree unit per element);
+<code>Family</code> holds <code>RationalCoeffFamily</code>, the object the walk constructs and the ε theorem
+consumes. <code>ConstraintWalk</code>, <code>GroupingTable</code> (with <code>Verifier/GroupingRef</code>), <code>OpeningWalk</code>,
+<code>IpaWalk</code>, <code>OtherCoefficients</code>, and <code>Capstone</code> walk the whole
+assembly — grouping stability through a fixed reference table, the opening value, the IPA
+scalars, and the positional <code>other</code> coefficient stream — into <code>assembleCoeffFamily</code>: every
+MSM coefficient as a polynomial numerator over enumerated denominators with one degree budget.
+<code>Epsilon</code> then prices it: a competing coefficient family that differs from Lean's anywhere
+agrees at a uniform point with probability at most <code>(D + B)/p</code> — the invariant's concrete ε —
+with per-capture literals in the random families' <code>Epsilon</code> modules.</p>
 <h3 id="fixtures--captured-proofs-and-boundary-checks"><a class="header" href="#fixtures--captured-proofs-and-boundary-checks"><code>Fixtures/</code> — captured proofs and boundary checks</a></h3>
 <p>Concrete Orchard captures that exercise the assembly end-to-end and make the Rust/Lean boundary
 less silent. This subtree is the <code>FixtureCheck</code> lake target, kept out of <code>lake build Zcash</code> (the
-captures are large, generated, and slow) but built by CI. <code>MaxShape</code> specializes the verifier shape
-to the captured column and query dimensions while leaving the action count free, and
-<code>MaxShapeBounds</code> and
-<code>StraightLineMaxShapeBounds</code> evaluate the composite bounds at that shape and at the consensus
-maximum; <code>ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
-<code>PostNu63</code> pins the canonical post-NU 6.3 verifying key and URS so fixture drift is visible here;
-<code>InstanceWitness</code> computes the inverse DFT of each capture's public inputs in Lean, then checks the
-result two ways: its monomial commitment under halo2's default blind is the commitment the deployed
-verifier used, and its polynomial takes the public inputs on every domain row.</p>
-<p><code>SingleAction/</code> and <code>MultiAction/</code> hold the captured single- and multi-action proofs, each with its
-<strong>Fiat–Shamir</strong> schedule check and its checked <code>TrustBoundary</code> turning the fingerprint match into
-build-time obligations; <code>SingleAction/VkMatch</code> computes the capture's constraint-system fields equal
+captures are large, generated, and slow) but built by CI.
+<code>Shared/ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
+<code>Shared/TamperSweep</code> is the shared mutation vocabulary of the per-slot negative sweeps; <code>PostNu63</code> pins
+the canonical post-NU 6.3 verifying key and URS so fixture drift is visible here, and
+<code>PostNu63Random</code> extends the same point equalities to the random captures — kept separate so the
+honest lane does not depend on compiling the random data modules. (The join between the captured
+instance commitments and the circuit-derived family lives in <code>Keygen/InstanceCapture</code>.)</p>
+<p><code>SingleAction/Honest/</code> and <code>MultiAction/Honest/</code> hold the captured honest single- and
+multi-action proofs, each
+with its <strong>Fiat–Shamir</strong> schedule check, its <code>Boundary</code> statement of record at the Lean-derived
+key and schedule, its per-slot tamper sweep (<code>Negative/Sweep</code>), and its checked <code>TrustBoundary</code>
+turning the fingerprint match into
+build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported <code>configure</code>. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
 schedule and static-check modules, the two knowledge-error endpoints (compressed-identity and
 straight-line), and <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.</p>
+<p>Each family's <code>Random/</code> subfolder holds the random match-only
+captures — the deployed verifier run on random proof strings, deliberately non-accepting. Each has
+the same schedule checks and <code>Faithfulness</code>, a <code>VkCertificate</code> transporting the single-action
+keygen certificate along <code>PostNu63Random</code>'s point equalities, its <code>Boundary</code> statement of record,
+aliveness guards in <code>Negative</code> (the model assembles at the random point, the capture is genuinely
+non-accepting, and one tamper canary), and its own <code>TrustBoundary</code> census. What the four families
+jointly check is that Lean's assembled MSM equals the deployed one coefficient-for-coefficient at
+each captured proof, priced by <code>Fingerprint/Epsilon.lean</code>.</p>
 <h3 id="soundness--the-soundness-argument"><a class="header" href="#soundness--the-soundness-argument"><code>Soundness/</code> — the soundness argument</a></h3>
 <p>The core argument that an accepting proof yields a witness or a computed break. The top-level
 modules cover the argument end to end: <code>Main</code> (the deployed-acceptance predicate and explicit
@@ -377,7 +413,9 @@ of explicit bad-root events, each fixed before its own squeeze, so the residual 
 has no fourth root. <code>Quotient</code> reconstructs a genuinely pre-<code>x</code> quotient, <code>PrefixedSqueeze</code> and
 <code>ScheduleBudget</code> bound the probability loss at the <code>x</code> squeeze, and <code>ActionBudget</code> and
 <code>AlgebraicRootBudget</code> cap the
-action-dependent counts at the consensus maximum. The straight-line route is
+action-dependent counts at the consensus maximum, with <code>OrchardConsensusBounds</code> (and its
+straight-line sibling under <code>AGM/</code>) evaluating the composite bounds at the captured Orchard
+shape up to that maximum. The straight-line route is
 <code>StraightLineDeployed</code> (the primary deployed path), <code>StraightLineConstraint</code>,
 <code>StraightLineDecodeSupply</code>, and the two inhabitants of its interface — <code>StraightLineWitness</code> at
 the degenerate shape and <code>ZeroStraightLine</code> with eleven live IPA rounds.
