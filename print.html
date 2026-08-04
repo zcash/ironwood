@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-769057d8.js";
+            window.path_to_searchindex_js = "searchindex-1d497644.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1364,12 +1364,12 @@ probability.</li>
 Layer-A break (<code>NontrivialRelation.ofImbalance</code>, <code>Merkle.collisionOfWrongLeaf</code>,
 <code>noteCommitBreakOfNe</code>). Deterministic; no hardness assumption.</li>
 <li><strong>Layer C — probability.</strong> The bound that producing the break is hard: the birthday bound
-<code>q(q-1)/|F|</code>, or the discrete-log advantage. The only layer that consumes an assumption.</li>
+<code>q(q-1)/|𝔽|</code>, or the discrete-log advantage. The only layer that consumes an assumption.</li>
 </ul>
 <h2 id="one-connected-picture"><a class="header" href="#one-connected-picture">One connected picture</a></h2>
 <pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; }&quot;}}%%
 flowchart TD
-  subgraph GAMES[&quot;Ledger security games — the capstones&quot;]
+  subgraph GAMES[&quot;Ledger capstones&quot;]
     BAL[&quot;Balance integrity&lt;br/&gt;orchardBalanceIntegrity_measure_le&quot;]
     SPEND[&quot;Spendability&lt;br/&gt;faerieGoldCore&lt;br/&gt;validLedger_append&quot;]
     SPENDAUTH[&quot;Spend authority&lt;br/&gt;orchardSpendAuthority_measure_le&quot;]
@@ -1379,10 +1379,12 @@ flowchart TD
   BAL --&gt; NCB[&quot;Note-commitment&lt;br/&gt;binding&quot;]
   BAL --&gt; MERK[&quot;Merkle-path&lt;br/&gt;binding&quot;]
   BAL --&gt; KB[&quot;Key binding&lt;br/&gt;ZIP 2005&quot;]
-  SPEND --&gt; NCB
-  SPEND --&gt; MERK
-  SPEND --&gt; KB
-  SPEND --&gt; NFB[&quot;Nullifier binding&quot;]
+  SPEND --&gt; BAL
+  SPEND ---&gt; NCB
+  SPEND ---&gt; MERK
+  SPEND ---&gt; KB
+  SPEND ---&gt; NFB[&quot;Nullifier binding&quot;]
+  SPEND ---&gt; SPENDAUTH
   SPENDAUTH --&gt; KB
 
   subgraph ASSUMPTIONS[&quot;Hardness assumptions&quot;]
@@ -1393,30 +1395,33 @@ flowchart TD
     ROM[(&quot;Random oracle&quot;)]
   end
 
-  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| NDLR[&quot;NontrivialRelation&lt;br/&gt;(V,R) discrete-log&lt;br/&gt;relation&quot;]
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| NDLR[&quot;NontrivialRelation&lt;br/&gt;(&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;V&lt;/span&gt;&lt;/span&gt;,&amp;nbsp;&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;R&lt;/span&gt;&lt;/span&gt;) discrete-log&lt;br/&gt;relation&quot;]
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionArm.lean'&gt;verifying signature&lt;br/&gt;the extractor misses&lt;/a&gt;&quot;| KERR[&quot;RedDSA&lt;br/&gt;extractability&quot;]
   BS --&gt; STMT[&quot;Witness or replay&lt;br/&gt;evidence&lt;br/&gt;ActionSatisfied&lt;br/&gt;§4.17.4&quot;]
   NCB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean'&gt;wrong note&lt;br/&gt;opening computes&lt;/a&gt;&quot;| NCBK[&quot;NoteCommitBreak&quot;]
   NCB --&gt; STMT
   MERK --&gt; STMT
-  MERK ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean'&gt;wrong Merkle&lt;br/&gt;path computes&lt;/a&gt;&quot;| MC[&quot;DefinedCollision&lt;br/&gt;(one height, encoding&lt;br/&gt;domain, success-only)&quot;]
+  MERK ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean'&gt;wrong Merkle&lt;br/&gt;path computes&lt;/a&gt;&quot;| MC[&quot;DefinedCollision&lt;br/&gt;one height,&lt;br/&gt;encoding domain&quot;]
   KB --&gt; STMT
-  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&quot;]
   KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/KeyBindingDLR.lean'&gt;Orchard-protocol&lt;br/&gt;CommitIvkCollision&lt;br/&gt;computes&lt;/a&gt;&quot;| SDLR
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&quot;]
   NFB --&gt; STMT
   NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
   SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
 
-  STMT -. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor;&lt;br/&gt;hencodes gap&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  STMT -. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor;&lt;br/&gt;circuit-correctness&lt;br/&gt;conditions&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
   NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
 
+  KERR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
+  KERR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/KnowledgeError.lean'&gt;challenge hash as random&lt;br/&gt;oracle; query-time labels&lt;br/&gt;pin the bad challenge (AGM)&lt;/a&gt;&quot;| ROM
   NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Circuits/Integration/AdaptiveActionEvent.lean'&gt;online AGM +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
   MC --&gt; SDLR
-  CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/|F|,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
+  CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/|𝔽|,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
   NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'&gt;distinct-note openings&lt;br/&gt;compute&lt;/a&gt;&quot;| SDLR
-  SAF --&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
+  SAF ---&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
   RDSA --&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;forking extraction&quot;| DL
   RDSA --&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
 
@@ -1439,7 +1444,8 @@ flowchart TD
   click KS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/KnowledgeSoundness.lean&quot; _blank
   click DL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
   click ROM &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
-  click RDSA &quot;https://github.com/zcash/ironwood/issues/22&quot; _blank
+  click KERR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionKappaArm.lean&quot; _blank
+  click RDSA &quot;https://github.com/zcash/ironwood/issues/121&quot; _blank
 
   classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
   classDef checked fill:#0969da,stroke:#0550ae,color:#ffffff
@@ -1447,14 +1453,14 @@ flowchart TD
   classDef hyp fill:#cf222e,stroke:#a40e26,color:#ffffff
   classDef assumed fill:#57606a,stroke:#424a53,color:#ffffff
   class BAL,SPEND,SPENDAUTH,KS partial
-  class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF,SDLR checked
+  class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF,SDLR,KERR checked
   class RDSA hyp
   class DL,ROM assumed
 </pre>
 <p>
 <span style="color:#1a7f37">■</span> fully proven — nothing here yet<br/>
 <span style="color:#0969da">■</span> stated and machine-checked in Lean, over abstract primitives<br/>
-<span style="color:#9a6700">■</span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end: the key-binding oracle connection, the binding-signature extractability, RedDSA; knowledge soundness's <code>hencodes</code> bridge)<br/>
+<span style="color:#9a6700">■</span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end: composing the per-arm oracle-model discharges into one experiment, RedDSA unforgeability; knowledge soundness's circuit-correctness conditions)<br/>
 <span style="color:#cf222e">■</span> named hypothesis; formalization deferred<br/>
 <span style="color:#57606a">■</span> assumption or heuristic model; terminal by design
 </p>
@@ -1462,7 +1468,13 @@ flowchart TD
 proceeds. The RedDSA node is a named hypothesis rather than a terminal assumption: its
 discharge edge names the reduction for security of signatures with re-randomizable keys
 [<a href="https://eprint.iacr.org/2015/395">FKMSSS2016</a>, section 3], adapted to the
-±-randomized variant, together with forking extraction of the Schnorr witness.</p>
+±-randomized variant, together with forking extraction of the Schnorr witness. The
+binding-signature extractability node, by contrast, is discharged via the straight-line
+AGM+ROM extraction of Fuchsbauer–Plouviez–Seurin
+[<a href="https://eprint.iacr.org/2019/877">2019/877</a>, Theorem 1], at
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mord">/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DL</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>. In that setting there is
+no signing oracle to simulate, because the signature extracted from is the adversary's
+own.</p>
 <p>Every solid arrow reads "rests on"; where an edge carries a label, the label names the
 computed break object flowing along it, or the adversary model or side condition under which
 the reduction holds (the AGM restriction, base independence from hash-to-curve, the birthday
@@ -1472,9 +1484,42 @@ statement (<code>ActionSatisfied</code>) — in the replay case the ledger oracl
 previously supplied witness. Each component argument consumes the statement's satisfaction
 <em>on that witness</em>. Knowledge soundness is what justifies the modelling: whenever the ledger
 layer needs a witness, the extractor computes one —or computes break data— from the accepting
-proof. The dashed edge marks that justification, which crosses the <code>hencodes</code> gap — "gate
-satisfaction implies the intended high-level statement". The latter is the subject of the
-circuit soundness proof.</p>
+proof. The dashed edge marks that justification, which crosses the remaining semantic bridge:
+the Clean/Ironwood circuit-correctness conditions (<code>TopLevelCircuitCorrectness</code>) — named
+component conditions rather than a proved implication. Discharging them is the subject of
+the circuit soundness proof.</p>
+<h2 id="fixed-bases-and-the-reference-string-heuristic"><a class="header" href="#fixed-bases-and-the-reference-string-heuristic">Fixed bases and the reference-string heuristic</a></h2>
+<p>Several reductions above bottom out at discrete log by treating a set of group elements as
+<em>independent</em> — for example the value-commitment bases <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08222em;">V</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>, the
+Sinsemilla generators, and the proof system's inner-product reference string. Independence
+is what turns "find a nontrivial relation among these elements" into the discrete-log game:
+the reduction models each base as a random multiple of one generator and embeds its
+discrete-log challenge into that randomness.</p>
+<p>In the deployed protocol, though, these bases are <em>fixed</em>. Each is produced once, by
+hashing public strings to the curve, and the resulting outputs are baked into the protocol
+as a Uniform Reference String. The gap between the two is the standard gap for protocols
+with a URS. We prove security for the family of protocols that sample the bases at
+random, over the distribution of that randomness. Then we argue heuristically that the
+deployed protocol, which fixes them via hash-to-curve, inherits it — provided that the
+hash-to-curve scheme admits no attack more efficient than the generic ones bounded by the
+proven reductions. The same heuristic underlies every use of hash-to-curve for fixed bases
+here, of which the value and note commitments, the Merkle hash, and the proof system's
+reference string are examples.</p>
+<p>This heuristic comes with an important caveat: an adversary has the protocol's <em>entire
+lifetime</em> to attack that one specific reference string. A bound that holds for random
+bases does not preclude an attack tuned to the deployed bases, and the cost of finding
+one is amortized over every transaction ever made against them. That is a known,
+acknowledged limitation of this development.</p>
+<p>This sharpens the potential threat from quantum computers or other discrete-log attacks:
+a single discrete-log computation is catastrophic to the protocol as a whole, rather than
+localized to a specific user or key. Against these fixed bases, <strong>one</strong> discrete-log
+computation is sufficient to break binding/knowledge-soundness properties for the
+entire protocol, not just for a single transaction or user. That includes Balance
+properties, Spendability, and Spend authority, although not privacy. Migrating away
+from reliance on discrete-log binding/knowledge-soundness is therefore a whole-protocol
+concern, not a per-transaction one. See
+<a href="https://zips.z.cash/zip-2005#effectsofdiscrete-logarithm-breakingattacksbeforetheswitchtotherecoveryprotocol">ZIP 2005</a>
+for further discussion.</p>
 <h2 id="the-definitions"><a class="header" href="#the-definitions">The definitions</a></h2>
 <style>
 /* "One connected picture" links: labels keep their ordinary colour at rest
@@ -1517,7 +1562,7 @@ circuit soundness proof.</p>
 <section>
 <div class="grp">Binding-signature balance — value preservation</div>
 <div class="g"><div class="g-head"><span class="term">balance</span><span class="anchor">Security.BindingSignature.Balance</span></div><div class="def">No transaction creates or destroys value (spec §4.13 Sapling / §4.14 Orchard). Value commitments are <code>cv v rcv = v • V + rcv • R</code>; a bundle's binding verification key collects to <code>bvk = A • V + B • R</code> with <code>A</code> the net value imbalance. The property is <em>not</em> "no discrete-log relation between <code>V</code> and <code>R</code> exists" — one always does in a prime-order group — but the reduction below.</div></div>
-<div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">BindingSignature.NontrivialRelation · .ofImbalance</span></div><div class="def">The break, as computed data: a nontrivial <code>F</code>-linear relation between the value base <code>V</code> and randomness base <code>R</code>. <code>ofImbalance</code> (and the bundle forms <code>ofBundleModImbalance</code>, <code>ofOrchardImbalance</code>, <code>ofSaplingImbalance</code>) computes one from a non-balancing verifying bundle, with no cryptographic hypothesis — equivalently the discrete log <code>dlog_R V</code> (<code>imbalance_yields_discrete_log</code>).</div></div>
+<div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">BindingSignature.NontrivialRelation · .ofImbalance</span></div><div class="def">The break, as computed data: a nontrivial <code>F</code>-linear relation between the value base <code>Vbase</code> and randomness base <code>Rbase</code>. <code>ofImbalance</code> (and the bundle forms <code>ofBundleModImbalance</code>, <code>ofOrchardImbalance</code>, <code>ofSaplingImbalance</code>) computes one from a non-balancing verifying bundle, with no cryptographic hypothesis — equivalently the discrete log <code>dlog_Rbase Vbase</code> (<code>imbalance_yields_discrete_log</code>).</div></div>
 <div class="g"><div class="g-head"><span class="term">integer no-overflow lift</span><span class="anchor">intBalance_eq_zero_of_lt · orchard_natAbs_lt · sapling_natAbs_lt</span></div><div class="def">Lifts field balance (<code>A = 0</code> in <code>ZMod r</code>) to integer balance: with per-action 64-bit value ranges and a bounded action count, <code>|A| &lt; r</code>, so the residue being zero forces the integer to be zero. Discharged per pool from the value-type subranges.</div></div>
 <div class="g"><div class="g-head"><span class="term">reduces to DL</span><span class="anchor">Snark.Soundness.AGM.BindingSignature</span></div><div class="def">Turns the computed Orchard/Sapling relations into plain discrete-log solutions: <em>if you can unbalance, you can solve DL</em>. DLR and DL are tightly equivalent (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a>, Lemma 3), so this assumes no more than DL hardness, given the independence of the hash-to-curve bases.</div></div>
 </section>
@@ -1539,12 +1584,13 @@ circuit soundness proof.</p>
 <div class="g"><div class="g-head"><span class="term">Balance integrity</span><span class="anchor">Model.balanceIntegrityOrBreak · balanceIntegrityPerTxViolation</span></div><div class="def">The shielded pool is non-negative and the pools sum to the minted issuance. The deterministic <code>balanceIntegrityOrBreak</code> proves it up to a computed break; the probabilistic violation events mirror its conclusion (the transparent conjunct cannot fail on the valid sample space). The interval consequence <code>pool ∈ [0, issuanceTotal]</code> is weaker, and survives as the separate shielded-balance-cap capstones.</div></div>
 <div class="g"><div class="g-head"><span class="term">events as branch preimages</span><span class="anchor">Model.balanceSubsetBreakEvent · txBalanceBreakEvent</span></div><div class="def">An adversary is a <code>PMF</code> over valid annotated ledgers; each event is "the computed reduction lands in this branch on this sample", so no choice is needed to extract break data. Violation events are contained in unions of break events, and each break event's probability is a named ε hypothesis.</div></div>
 <div class="g"><div class="g-head"><span class="term">all-prefixes bounds, no factor of k</span><span class="anchor">Model.balanceIntegrity_measure_le · *Before / *UpTo</span></div><div class="def">One ε per shared break event bounds the violation at <em>every</em> prefix below a bound, where a naive union bound would pay <code>k · ε</code>. Prefix-indexed value events are named <code>*Before</code> and step-indexed Balance-subset events <code>*UpTo</code> (EWD 831 half-open ranges, exclusive bound as the parameter); the one step/prefix crossing is confined to <code>_succ</code>-marked lemmas.</div></div>
-<div class="g"><div class="g-head"><span class="term">the Orchard single-ε collapse</span><span class="anchor">Bridge.orchardRelationEvent · orchardBalanceIntegrity_measure_le</span></div><div class="def">At the Orchard-protocol bases, every Balance-subset arm's break computes a nontrivial discrete-log relation among the fixed Sinsemilla bases, so one <code>ε_sinsemilladlr</code> replaces the three per-arm ε's — and every prefix lands in the same relation event, so the all-prefixes bounds cost no factor of <code>k</code>. <code>ε_sinsemilladlr</code> reduces tightly to discrete-log hardness (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a> Lemma 3, re-proved as <code>relation_prob_le_of_textbookDL</code>); the witness-level model abstracts away Halo 2 knowledge soundness, a separate, lossy reduction on the different Halo 2 bases. <code>ε_bindsig</code> bounds the conservation side (RedDSA discharge: <a href="https://github.com/zcash/ironwood/issues/22">#22</a>).</div></div>
+<div class="g"><div class="g-head"><span class="term">the Orchard single-ε collapse</span><span class="anchor">Bridge.orchardRelationEvent · orchardBalanceIntegrity_measure_le</span></div><div class="def">At the Orchard-protocol bases, every Balance-subset arm's break computes a nontrivial discrete-log relation among the fixed Sinsemilla bases, so one <code>ε_sinsemilladlr</code> replaces the three per-arm ε's — and every prefix lands in the same relation event, so the all-prefixes bounds cost no factor of <code>k</code>. <code>ε_sinsemilladlr</code> reduces tightly to discrete-log hardness (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a> Lemma 3, re-proved as <code>relation_prob_le_of_textbookDL</code>); the witness-level model abstracts away Halo 2 knowledge soundness, a separate, lossy reduction on the different Halo 2 bases. <code>ε_bindsig</code> names the bound on the conservation side; the extractor-plus-knowledge-error forms and the κ discharge below replace it with named bounds further down the reduction (<a href="https://github.com/zcash/ironwood/issues/107">#107</a> tracks the remaining glue).</div></div>
+<div class="g"><div class="g-head"><span class="term">the knowledge error κ, discharged</span><span class="anchor">RedDSA.kappaEvent_measure_le · Model.balanceConservation_extractFailArm_measure_le</span></div><div class="def">The binding signature is a signature of knowledge of <code>bsk</code>, the discrete log of <code>bvk</code> base <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>; the conservation reduction's extraction-failure arm is bounded at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mord">/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DL</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> for any query-bounded algebraic ledger adversary — the straight-line AGM+ROM extraction of Fuchsbauer–Plouviez–Seurin (<a href="https://eprint.iacr.org/2019/877">2019/877</a>, Theorem 1), in the key-only setting — no signing oracle, because the signature extracted from is the adversary's own. Challenge queries carry the adversary's representations as labels the oracle never sees. The representation in effect at the output's query point — the run's first annotation there, or the announced output representation when the run never queried the point — pins the query's one bad challenge before the answer is drawn, and away from it the verification equation computes a relation over the presented basis. The extractor reads the key's <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>-coefficient off that effective representation, and the reference-string heuristic above carries the random-basis game to the deployed bases.</div></div>
 </section>
 <section>
 <div class="grp">Shared foundation · Zcash/Security/Common</div>
 <div class="g"><div class="g-head"><span class="term">collision vocabulary</span><span class="anchor">Security.RandomOracle.Collision · CollisionUpToSign</span></div><div class="def">Layer-A break events for the classical ROM: a <code>Collision</code> is two distinct queries with equal outputs; a <code>CollisionUpToSign</code> (<code>a =± b</code>) is the shape produced by arguments passing through the <code>Extract</code> coordinate extractor, whose fibres are <code>{P, −P}</code>. Key binding bottoms out here, as does the nullifier (Faerie-Gold) argument for the Recovery Statement; the deployed nullifier argument bottoms out in the Sinsemilla discrete-log relation instead.</div></div>
-<div class="g"><div class="g-head"><span class="term">birthday bound</span><span class="anchor">Security.Birthday.birthday_closed_form</span></div><div class="def">The Layer-C probability: the shifted <code>±</code>-collision event over <code>q</code> uniform oracle outputs has probability at most <code>q(q-1)/|F|</code>, by union-bounding the per-pair fraction <code>2/|F|</code>. Counted in the random-oracle model with no hardness assumption; proven as a probability statement over the uniform oracle table (#73).</div></div>
+<div class="g"><div class="g-head"><span class="term">birthday bound</span><span class="anchor">Security.Birthday.birthday_closed_form</span></div><div class="def">The Layer-C probability: the shifted <code>±</code>-collision event over <code>q</code> uniform oracle outputs has probability at most <code>q(q-1)/|𝔽|</code>, by union-bounding the per-pair fraction <code>2/|𝔽|</code>. Counted in the random-oracle model with no hardness assumption; proven as a probability statement over the uniform oracle table (#73).</div></div>
 </section>
 </div>
 <p>New to the shorthand? See the <a href="formal-verification/glossary.html"><strong>Glossary</strong></a>.  ·  For the verifier-soundness half, the <a href="formal-verification/proof-map.html"><strong>Proof Map</strong></a>.</p>
