@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-4ae314ed.js";
+            window.path_to_searchindex_js = "../searchindex-668fc85c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -448,6 +448,18 @@ AGM unbatching chain; and <code>ConstraintResolver</code>, <code>CanonicalSelect
 <code>CanonicalRelation</code> route the decoded members into the canonical constraint model, which is the
 semantic handoff to the formal circuit.</li>
 </ul>
+<h3 id="capstones--the-advertised-endpoints"><a class="header" href="#capstones--the-advertised-endpoints"><code>Capstones/</code> — the advertised endpoints</a></h3>
+<p>Where the deployed Action circuit's own statements are stated. <code>ActionEvents</code> says which runs the
+endpoints are about, <code>ActionChecks</code> carries the captured key's scalars and static checks,
+<code>ActionBudgets</code> discharges the semantic surfaces, and <code>Action</code> states the twelve endpoints — the
+ordinary- and knowledge-soundness bounds for every consensus-valid bundle size, in compositional
+error-formula and resource-accounted finite-security forms.</p>
+<p>Endpoints about the <em>verifier's algebra</em> rather than the circuit statement live with the layer that
+proves them: the captured straight-line knowledge errors in
+<code>Fixtures/MultiAction/Honest/StraightLineKnowledgeError</code>, and the consensus-maximum work factors in
+<code>Soundness/AGM/StraightLineOrchardConsensusBounds</code>. Every endpoint, wherever it sits, is a
+top-level leaf that nothing else depends on, which is why each must be named directly in a
+<code>TrustBoundary.lean</code> census entry — see <code>scripts/check_endpoint_census.sh</code>.</p>
 <h2 id="circuit-layer--zcashcircuits"><a class="header" href="#circuit-layer--zcashcircuits">Circuit layer — <code>Zcash/Circuits/</code></a></h2>
 <p>A port of the Orchard Action circuit onto <a href="https://github.com/Verified-zkEVM/clean">Clean</a>'s
 Halo 2 formalization, with elliptic-curve arithmetic from
