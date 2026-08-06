@@ -9,7 +9,10 @@ total function computes.
 
 * `constructIntermediateSets?_eq_some` — the non-rejecting grouping.
 * `assembleOpening?_eq_some`, `assembleFinalMsm?_eq_some` — the opening and the final MSM.
-* `assemble?_eq_some` — `assemble? … = some m` gives `m = assemble …`.
+* `assemble?_eq_some` — `assemble? … = some m` gives `m = assembleFinalMsm …` over the derived
+  grouping.
+* `assemble_eq_of_assemble?_eq_some` — the same `some m` pins the total wrapper:
+  `assemble … = m`, not the zero-MSM rejection fallback.
 
 They are operational facts about the verifier, not about soundness, so they sit with the
 verifier. Both the deployed soundness layer and the fingerprint representation walk consume
@@ -86,5 +89,19 @@ theorem assemble?_eq_some {shape : Shape} [DecidableEq F] [DecidableEq G] [Inhab
             exact assembleFinalMsm?_eq_some ps ch grouped h
           · rw [if_neg hpts] at h; exact absurd h (by simp)
   · rw [if_neg hwf] at h; exact absurd h (by simp)
+
+omit [AddCommGroup G] [Module F G] in
+/-- `assemble?` returning `some m` pins the total `assemble` to `m` — acceptance facts stated
+about `assemble` transfer to the `some` payload, with the zero-MSM rejection fallback ruled
+out by the `some` itself. -/
+theorem assemble_eq_of_assemble?_eq_some {shape : Shape} [DecidableEq F]
+    [DecidableEq G] [Inhabited G]
+    (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
+    (ps : ProofString shape F G) (ch : Challenges shape.k F)
+    {m : Msm shape.k F G} (h : assemble? vk instanceCommitment ps ch = some m) :
+    assemble vk instanceCommitment ps ch = m := by
+  unfold assemble
+  rw [h]
+  rfl
 
 end Zcash.Snark
