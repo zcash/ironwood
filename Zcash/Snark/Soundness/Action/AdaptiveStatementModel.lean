@@ -608,13 +608,6 @@ def accepts {pp : ProofParams} (family : ComputedAdaptiveActionStatementFSFamily
     (adaptiveActionStatementInstanceCommitment pp basis output.inputs)
     output.toAlgebraicWfProof.proof.1 (family.runRecord basis O)
 
-/-- The strong soundness event: the adversary jointly outputs an accepted proof and false statement. -/
-def acceptFalseStatementEvent {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp) :
-    Set ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) × family.Coins) :=
-  {q | family.accepts q.1 q.2 ∧
-    ¬BundleStatement (family.runOutput q.1 q.2).inputs}
-
 end ComputedAdaptiveActionStatementFSFamily
 
 end Zcash.Snark

@@ -3,10 +3,10 @@ import Zcash.Snark.Soundness.Composition.PrefixedSqueeze
 import Zcash.Snark.Soundness.AGM.StraightLineFiniteSecurity
 
 /-!
-# Action soundness and knowledge soundness as priced straight-line events
+# Action knowledge soundness as priced straight-line events
 
-Prices straight-line false-statement and extraction failures. Witness and relation projections
-share one executable outcome.
+Prices straight-line extraction failures. Witness and relation projections share one executable
+outcome.
 -/
 
 namespace Zcash.Snark
@@ -25,31 +25,6 @@ variable (pp : ProofParams)
   (family : ComputedStraightLineDeployedFSFamily (actionCircuit.shape.withProofParams pp))
   (static : DeployedConstraintStaticChecks family.toRootFamily)
   (inputs : Fin pp.numProofs → PublicInputs Fp)
-
-/-- **The exact Action semantic target.** The bundle statement itself holds. Computed relation
-data is represented separately by `actionTerminalRelationEvent` and priced through the executable
-relation finder. -/
-def actionBundleStatementDecoded :
-    (AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-    (BTranscript Fp VestaG
-      (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-        + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) → Prop :=
-  fun _ _ => BundleStatement inputs
-
-/-- Runs on which an executable Action-terminal finder returns explicit augmented-basis relation
-coefficients.  The finder, not propositional relation existence, is the DLOG-priced event. -/
-def actionTerminalRelationEvent
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis)) :
-    Set ((AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) ×
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)) :=
-  {q | (finder q.1 q.2).isSome}
 
 variable
   (hvk : ∀ basis, family.vk basis =
@@ -414,8 +389,8 @@ theorem actionRelationFinder_covers :
       rfl
 
 set_option maxHeartbeats 800000 in
-/-- Straight-line knowledge failure is covered by the same compressed failure, computed DLOG
-relation, and four semantic challenge surfaces as ordinary Action soundness. -/
+/-- Straight-line knowledge failure is covered by the compressed failure, the computed DLOG
+relation, and the four semantic challenge surfaces. -/
 theorem actionKnowledgeFailure_subset_union :
     actionKnowledgeFailureEvent pp family static inputs hvk hI hchar ⊆
       (family.straightLineConstraintFailureEvent static ∪
@@ -619,125 +594,8 @@ theorem actionBaseUnion_probability_bound_of_dlogProfile
     (actionRelationFinder_extends_constraint pp family static inputs hvk hI hchar)
     schedule profile.hardness
 
-/-- Outside decode and semantic failures, false acceptance forces the terminal relation branch. -/
-theorem actionBundleStatementUpgradeContained
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis))
-    (hcovers : actionTerminalRelationFinderCovers pp family static inputs hvk hI hchar finder) :
-    family.StraightLineConstraintSemanticUpgradeContained static
-      (actionBundleStatementDecoded pp family inputs)
-      (actionXYFailureEvent pp family static inputs hvk hI hchar)
-      (actionBetaFailureEvent pp family static inputs hvk hI hchar)
-      (actionGammaFailureEvent pp family static inputs hvk hI hchar)
-      (actionThetaFailureEvent pp family static inputs hvk hI hchar ∪
-        actionTerminalRelationEvent pp family finder) := by
-  rintro q ⟨hdecoded, hfalse⟩
-  by_cases hXY : q ∈ actionXYFailureEvent pp family static inputs hvk hI hchar
-  · exact Or.inl hXY
-  by_cases hBeta : q ∈ actionBetaFailureEvent pp family static inputs hvk hI hchar
-  · exact Or.inr (Or.inl hBeta)
-  by_cases hGamma : q ∈ actionGammaFailureEvent pp family static inputs hvk hI hchar
-  · exact Or.inr (Or.inr (Or.inl hGamma))
-  by_cases hTheta : q ∈ actionThetaFailureEvent pp family static inputs hvk hI hchar
-  · exact Or.inr (Or.inr (Or.inr (Or.inl hTheta)))
-  refine Or.inr (Or.inr (Or.inr (Or.inr ?_)))
-  exact hcovers q.1 q.2 hdecoded hXY hBeta hGamma hTheta hfalse
-
-/-- False Action-statement acceptance lies in one base union plus four semantic surfaces. -/
-theorem actionBundleStatementFailure_subset_union
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis))
-    (hcovers : actionTerminalRelationFinderCovers pp family static inputs hvk hI hchar finder) :
-    family.straightLineConstraintSemanticFailureEvent
-        (actionBundleStatementDecoded pp family inputs) <=
-      (family.straightLineConstraintFailureEvent static ∪
-        family.straightLineRelationEvent finder) ∪
-      (actionXYFailureEvent pp family static inputs hvk hI hchar ∪
-        (actionBetaFailureEvent pp family static inputs hvk hI hchar ∪
-          (actionGammaFailureEvent pp family static inputs hvk hI hchar ∪
-            actionThetaFailureEvent pp family static inputs hvk hI hchar))) := by
-  rintro q ⟨haccept, hfalse⟩
-  by_cases hdecoded : family.straightLineConstraintDecoded static q.1 q.2
-  · have hsemantic : family.straightLineConstraintDecoded static q.1 q.2 ∧
-        ¬actionBundleStatementDecoded pp family inputs q.1 q.2 := ⟨hdecoded, hfalse⟩
-    rcases actionBundleStatementUpgradeContained pp family static inputs hvk hI hchar
-        finder hcovers hsemantic with hXY | hBeta | hGamma | hTheta | hrelation
-    · exact Or.inr (Or.inl hXY)
-    · exact Or.inr (Or.inr (Or.inl hBeta))
-    · exact Or.inr (Or.inr (Or.inr (Or.inl hGamma)))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr hTheta)))
-    · exact Or.inl (Or.inr hrelation)
-  · exact Or.inl (Or.inl ⟨haccept, hdecoded⟩)
-
-/-- Probability bound for exact Action-statement failure from a supplied base-union bound, with
-the combined relation event priced once. -/
-theorem actionBundleStatementFailure_probability_bound_of_baseUnionBound
-    {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → T)
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis))
-    (hcovers : actionTerminalRelationFinderCovers pp family static inputs hvk hI hchar finder)
-    {baseBound xyBound betaBound gammaBound thetaBound : ENNReal}
-    (hbase : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          (family.straightLineConstraintFailureEvent static ∪
-            family.straightLineRelationEvent finder)) ≤ baseBound)
-    (hXY : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype _)).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionXYFailureEvent pp family static inputs hvk hI hchar) ≤ xyBound)
-    (hBeta : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype _)).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionBetaFailureEvent pp family static inputs hvk hI hchar) ≤ betaBound)
-    (hGamma : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype _)).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionGammaFailureEvent pp family static inputs hvk hI hchar) ≤ gammaBound)
-    (hTheta : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype _)).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionThetaFailureEvent pp family static inputs hvk hI hchar) ≤ thetaBound) :
-    (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintSemanticFailureEvent
-            (actionBundleStatementDecoded pp family inputs)) <=
-      baseBound + (xyBound + (betaBound + (gammaBound + thetaBound))) := by
-  refine le_trans (MeasureTheory.measure_mono
-    (Set.preimage_mono (actionBundleStatementFailure_subset_union pp family static inputs
-      hvk hI hchar finder hcovers))) ?_
-  rw [Set.preimage_union, Set.preimage_union, Set.preimage_union, Set.preimage_union]
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  refine add_le_add hbase ?_
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  refine add_le_add hXY ?_
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  refine add_le_add hBeta ?_
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  exact add_le_add hGamma hTheta
-
 /-- Probability bound for end-to-end straight-line Action knowledge failure, factored through the
-same profiled base-union and four semantic challenge bounds as the ordinary-soundness endpoint. -/
+profiled base-union and the four semantic challenge bounds. -/
 theorem actionKnowledgeFailure_probability_bound_of_baseUnionBound
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → T)
@@ -787,103 +645,6 @@ theorem actionKnowledgeFailure_probability_bound_of_baseUnionBound
   refine add_le_add hBeta ?_
   refine le_trans (MeasureTheory.measure_union_le _ _) ?_
   exact add_le_add hGamma hTheta
-
-/-- Probability bound for literal false-statement acceptance from a supplied compressed bound,
-leaving the computed relation event to a DLOG profile. -/
-theorem actionBundleStatementFailure_probability_bound_of_compressedBound
-    {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → T)
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis))
-    (hcovers : actionTerminalRelationFinderCovers pp family static inputs hvk hI hchar finder)
-    {compressedBound xyBound betaBound gammaBound thetaBound relationBound : ENNReal}
-    (hcompressed : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) ≤ compressedBound)
-    (hXY : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionXYFailureEvent pp family static inputs hvk hI hchar) ≤ xyBound)
-    (hBeta : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionBetaFailureEvent pp family static inputs hvk hI hchar) ≤ betaBound)
-    (hGamma : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionGammaFailureEvent pp family static inputs hvk hI hchar) ≤ gammaBound)
-    (hTheta : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionThetaFailureEvent pp family static inputs hvk hI hchar) ≤ thetaBound)
-    (hRelation : (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionTerminalRelationEvent pp family finder) ≤ relationBound) :
-    (independentProductPMF (orchardGeneratorROSetup query)
-      (PMF.uniformOfFintype
-        (BTranscript Fp VestaG
-          (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-            + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
-        ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintSemanticFailureEvent
-            (actionBundleStatementDecoded pp family inputs))
-      ≤ compressedBound +
-          (xyBound + (betaBound + (gammaBound + (thetaBound + relationBound)))) := by
-  refine family.straightLineConstraintSemanticFailure_prob_le_of_compressed_bound query static
-    (actionBundleStatementDecoded pp family inputs)
-    (actionXYFailureEvent pp family static inputs hvk hI hchar)
-    (actionBetaFailureEvent pp family static inputs hvk hI hchar)
-    (actionGammaFailureEvent pp family static inputs hvk hI hchar)
-    (actionThetaFailureEvent pp family static inputs hvk hI hchar ∪
-      actionTerminalRelationEvent pp family finder)
-    (actionBundleStatementUpgradeContained pp family static inputs hvk hI hchar finder hcovers)
-    hcompressed hXY hBeta hGamma ?_
-  calc
-    (independentProductPMF (orchardGeneratorROSetup query)
-        (PMF.uniformOfFintype _)).toOuterMeasure
-      ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-        (actionThetaFailureEvent pp family static inputs hvk hI hchar ∪
-          actionTerminalRelationEvent pp family finder))
-        = (independentProductPMF (orchardGeneratorROSetup query)
-            (PMF.uniformOfFintype _)).toOuterMeasure
-          (((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-              actionThetaFailureEvent pp family static inputs hvk hI hchar) ∪
-            ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-              actionTerminalRelationEvent pp family finder)) := by rw [Set.preimage_union]
-    _ ≤ (independentProductPMF (orchardGeneratorROSetup query)
-            (PMF.uniformOfFintype _)).toOuterMeasure
-          ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-            actionThetaFailureEvent pp family static inputs hvk hI hchar) +
-        (independentProductPMF (orchardGeneratorROSetup query)
-            (PMF.uniformOfFintype _)).toOuterMeasure
-          ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-            actionTerminalRelationEvent pp family finder) :=
-      MeasureTheory.measure_union_le _ _
-    _ ≤ thetaBound + relationBound := add_le_add hTheta hRelation
 
 /-! ## Pricing the events over their squeezes
 

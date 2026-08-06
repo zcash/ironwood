@@ -1,11 +1,20 @@
 import Zcash.Snark.Capstones.ActionBudgets
 
 /-!
-# Exact Action soundness and knowledge-soundness capstones
+# Exact Action knowledge-soundness capstones
 
 Captured checks and executable terminals yield knowledge-soundness bounds against an adversary
 that chooses the public statement and proof together, for every consensus-valid Action bundle
-size. Each is censused directly in `Fixtures/MultiAction/Honest/TrustBoundary.lean`.
+size. Two endpoints state them: the consensus-generic compositional error formula, and its
+instantiation at the `2^123` work-factor target.
+
+Knowledge soundness is the only property advertised here.  Ordinary soundness is not stated
+separately because it is the weaker consequence at the same error:
+`ComputedAdaptiveActionStatementFSFamily.acceptFalseStatement_subset_knowledgeFailure` proves the
+accepting-false-statement set is contained in the event these endpoints bound, so a soundness
+bound is `measure_mono` away and carries no independent content.
+
+Each is censused directly in `Fixtures/MultiAction/Honest/TrustBoundary.lean`.
 -/
 
 namespace Zcash.Snark.Capstone

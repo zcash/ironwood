@@ -194,16 +194,6 @@ def relationEvent {pp : ProofParams}
     Set ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) × family.Coins) :=
   {q | (family.relationFinder hchar q.1 q.2).isSome}
 
-/-- False-statement acceptance not already converted into explicit relation data. -/
-def statisticalResidualEvent {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder) :
-    Set ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) × family.Coins) :=
-  family.acceptFalseStatementEvent \ family.relationEvent hchar
-
 /-! ## Concrete statistical surface events -/
 
 /-- The selected statement's `z = 0` slice. -/
@@ -373,22 +363,6 @@ theorem BatchWitnessV.goodRoots_of_not_rootEvent {pp : ProofParams}
     rw [adaptiveZRootSet_strictPrefix]
     rw [hsets.2.2.2.2.2]
     simpa [runView_output, runView_pre, runView_rounds, runPreIpaRecord, runProof] using hz
-
-
-/-- The adaptive false-statement event is exhausted by the relation event and its literal
-statistical residual. -/
-theorem acceptFalseStatementEvent_subset {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder) :
-    family.acceptFalseStatementEvent ⊆
-      family.relationEvent hchar ∪ family.statisticalResidualEvent hchar := by
-  intro q hq
-  by_cases hrelation : q ∈ family.relationEvent hchar
-  · exact Or.inl hrelation
-  · exact Or.inr ⟨hq, hrelation⟩
 
 /-! ## Surface pricing -/
 
@@ -630,41 +604,6 @@ theorem statisticalSurfaceEvent_prob_le {pp : ProofParams}
   ring_nf
   exact le_rfl
 
-/-- Once the deterministic terminal bridge places the literal residual in the concrete surface
-union, its probability is fully discharged by the table bounds above. -/
-theorem statisticalResidualEvent_prob_le_of_surface_cover {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder)
-    (B : VestaG) (epsilon : Fin 5 → ENNReal)
-    (hsurface : ∀
-      (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-      (n : Fin 5)
-      (instanceCommitment :
-        Fin (AdaptiveActionStatementShape pp).numProofs → Nat → VestaG)
-      (ps : ProofString (AdaptiveActionStatementShape pp) Fp VestaG)
-      (source : List (AlgebraicPoint (F := Fp) basis))
-      (earlier : Fin (n : Nat) → Fp),
-      uniformChallenge.toOuterMeasure
-        (adaptiveActionSurfaceAtOf basis instanceCommitment n ps source earlier) ≤ epsilon n)
-    (hcover : family.statisticalResidualEvent hchar ⊆ family.statisticalSurfaceEvent) :
-    (PMF.uniformOfFintype
-      ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-        family.Coins)).toOuterMeasure
-      ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-        family.statisticalResidualEvent hchar) ≤
-      (family.Q + 1 : Nat) *
-        (1 / Fintype.card Fp +
-          (AdaptiveActionStatementShape pp).k *
-            (2 / (Fintype.card Fp : ENNReal)) +
-          algebraicRootBudget (AdaptiveActionStatementShape pp)
-            (AdaptiveActionStatementShape pp).k +
-          ∑ n : Fin 5, epsilon n) := by
-  refine le_trans (MeasureTheory.measure_mono (Set.preimage_mono hcover)) ?_
-  exact family.statisticalSurfaceEvent_prob_le B epsilon hsurface
-
 /-- The combined adaptive-statement finder has the standard textbook-DLOG reduction. -/
 theorem relation_prob_le_of_textbookDL {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -681,95 +620,6 @@ theorem relation_prob_le_of_textbookDL {pp : ProofParams}
       bound + 1 / Fintype.card Fp := by
   simpa [relationEvent, relSetWithCoins] using
     (relationWithCoins_prob_le_of_textbookDL B (family.relationFinder hchar) hDL)
-
-/-- Adaptive-statement soundness composition with the statistical residual exposed as a premise. -/
-theorem acceptFalseStatement_prob_le {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder)
-    (B : VestaG) {dlBound residualBound : ENNReal}
-    (hDL : TextbookDLWithCoinsAdvantageLE B (family.relationFinder hchar) dlBound)
-    (hresidual :
-      (PMF.uniformOfFintype
-        ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-          family.Coins)).toOuterMeasure
-        ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-          family.statisticalResidualEvent hchar) ≤ residualBound) :
-    (PMF.uniformOfFintype
-      ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-        family.Coins)).toOuterMeasure
-      ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-        family.acceptFalseStatementEvent) ≤
-      (dlBound + 1 / Fintype.card Fp) + residualBound := by
-  refine le_trans (MeasureTheory.measure_mono (Set.preimage_mono
-    (family.acceptFalseStatementEvent_subset hchar))) ?_
-  rw [Set.preimage_union]
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  exact add_le_add (family.relation_prob_le_of_textbookDL hchar B hDL) hresidual
-
-/-- When the residual surfaces share the existing adaptive query accounting, statement selection
-adds no second multiplicative loss: the capstone contains one `(Q + 1)` factor. -/
-theorem acceptFalseStatement_prob_le_of_query_accounting {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder)
-    (B : VestaG) {dlBound epsilon : ENNReal}
-    (hDL : TextbookDLWithCoinsAdvantageLE B (family.relationFinder hchar) dlBound)
-    (hresidual :
-      (PMF.uniformOfFintype
-        ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-          family.Coins)).toOuterMeasure
-        ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-          family.statisticalResidualEvent hchar) ≤ (family.Q + 1 : Nat) * epsilon) :
-    (PMF.uniformOfFintype
-      ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-        family.Coins)).toOuterMeasure
-      ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-        family.acceptFalseStatementEvent) ≤
-      (dlBound + 1 / Fintype.card Fp) + (family.Q + 1 : Nat) * epsilon :=
-  family.acceptFalseStatement_prob_le hchar B hDL hresidual
-
-/-- Adaptive-statement false-statement soundness with every statistical surface instantiated.
-The deterministic surface-cover premise is separated so its terminal proof remains auditable. -/
-theorem acceptFalseStatement_prob_le_of_surface_cover {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1 (family.runRecord basis O) <
-        Zcash.Arithmetic.scalarFieldOrder)
-    (B : VestaG) {dlBound : ENNReal} (epsilon : Fin 5 → ENNReal)
-    (hDL : TextbookDLWithCoinsAdvantageLE B (family.relationFinder hchar) dlBound)
-    (hsurface : ∀
-      (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-      (n : Fin 5)
-      (instanceCommitment :
-        Fin (AdaptiveActionStatementShape pp).numProofs → Nat → VestaG)
-      (ps : ProofString (AdaptiveActionStatementShape pp) Fp VestaG)
-      (source : List (AlgebraicPoint (F := Fp) basis))
-      (earlier : Fin (n : Nat) → Fp),
-      uniformChallenge.toOuterMeasure
-        (adaptiveActionSurfaceAtOf basis instanceCommitment n ps source earlier) ≤ epsilon n)
-    (hcover : family.statisticalResidualEvent hchar ⊆ family.statisticalSurfaceEvent) :
-    (PMF.uniformOfFintype
-      ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → Fp) ×
-        family.Coins)).toOuterMeasure
-      ((fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-        family.acceptFalseStatementEvent) ≤
-      (dlBound + 1 / Fintype.card Fp) +
-        (family.Q + 1 : Nat) *
-          (1 / Fintype.card Fp +
-            (AdaptiveActionStatementShape pp).k *
-              (2 / (Fintype.card Fp : ENNReal)) +
-            algebraicRootBudget (AdaptiveActionStatementShape pp)
-              (AdaptiveActionStatementShape pp).k +
-            ∑ n : Fin 5, epsilon n) := by
-  apply family.acceptFalseStatement_prob_le hchar B hDL
-  exact family.statisticalResidualEvent_prob_le_of_surface_cover hchar B epsilon
-    hsurface hcover
 
 end ComputedAdaptiveActionStatementFSFamily
 
