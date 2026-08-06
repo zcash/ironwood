@@ -45,7 +45,15 @@ set; and `lookupInput/TableExprs` are the per-lookup input/table expressions.
 The instance commitment is deliberately **not** a field: like halo2's `verify_proof`, the verifier
 computes it per proof from the public instances (`commit_lagrange`) rather than reading it from the
 VK, and supplies it to the assembly as a separate argument (`instanceCommitment` of
-`assembleQueries`/`assemble`). This keeps the VK a faithful image of the pinned Rust key. -/
+`assembleQueries`/`assemble`). This keeps the VK a faithful image of the pinned Rust key.
+
+Two conventions the model does not enforce structurally, discharged at the derived key:
+`n` stands for both of halo2's `params.n` (the `xⁿ` exponent and the `x^n = 1` rejection) and
+`vk.domain`'s size (the Lagrange denominators) — equal in every deployed configuration, and
+asserted equal by the fixture exporter. And `permutationChunks` must pack its columns at
+`chunkLen` stride, since `permChunkExpression` derives each chunk's δ-offset from
+`chunkIndex * chunkLen` exactly as halo2's `chunks(chunk_len)` positioning does; the captured
+key packs 7/7/1 at `chunkLen = 7`. -/
 structure VerifyingKey (shape : CircuitShape) (F G : Type*) where
   omega : F
   n : ℕ

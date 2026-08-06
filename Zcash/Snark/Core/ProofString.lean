@@ -90,7 +90,12 @@ structure ProofString (shape : Shape) (F G : Type*) where
   multiopenU : Fin shape.numPointSets → F
   ipaS : G
   ipaRounds : Fin shape.k → G × G
+  /-- The IPA final scalar `c`. halo2 absorbs it (`read_scalar`) but squeezes no further
+  challenge, so it is bound by no challenge on either side — the standard IPA final message,
+  outside the modeled transcript (relevant to proof malleability, not to challenge fidelity). -/
   ipaC : F
+  /-- The IPA final blind `f`; absorbed after the last squeeze like `ipaC`, and likewise
+  challenge-unbound on both sides. -/
   ipaF : F
 
 end Zcash.Snark

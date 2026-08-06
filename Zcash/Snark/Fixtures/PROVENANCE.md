@@ -99,8 +99,8 @@ adversarial proofs.
 Distributional caveat, stated plainly: fixed public seeds make the fabricated scalars
 *constants*, not samples — "nothing up my sleeve" rules out adversarial seed selection but
 does not create the uniform distribution the ε theorems count over. Reading the literal ε at
-these captures rests on the seeded-expansion idealization recorded in the trust chapter's
-uniformity section. The reduction-backed alternative, if ever wanted: freeze both
+these captures rests on the seeded-expansion idealization, enumerated as a trusted premise
+(*the sampled-point distribution*) in `Zcash/Snark/Fingerprint/Match.lean`. The reduction-backed alternative, if ever wanted: freeze both
 implementations, draw one seed from a future public randomness beacon (drand or equivalent),
 and regenerate — the drivers make this a ~17 s operation — then state the error as ε plus the
 ChaCha PRG advantage plus the sampler's reduction distances.
