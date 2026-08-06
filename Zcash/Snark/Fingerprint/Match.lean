@@ -113,8 +113,9 @@ actual Vesta points,
 and the boundary statements above restate it at the derived key and schedule. The generator
 emits every distinct affine coordinate, validates it on `Vesta.curve`, and supplies the complete
 Halo2 URS. On the honest captures `capturedMsm_eval_eq_zero` computes the captured MSM to the
-identity and `assembledMsm_eval_eq_zero` transfers that result to Lean's assembly — the
-non-vacuity witness that no match-only capture can provide. All four fixtures regenerate
+identity, and each honest family composes the run into `capture_deployedAccepts` — a witness
+that `DeployedAccepts`, the hypothesis every soundness endpoint consumes, is satisfiable,
+which no match-only capture can provide. All four fixtures regenerate
 byte-for-byte from the pinned `zcash/orchard` 0.15.5 release via
 `scripts/regenerate-fingerprint-fixtures.sh`, run in CI
 (`.github/workflows/fixtures.yml`); pins, seeds, and rationale in
