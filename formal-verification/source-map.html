@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-668fc85c.js";
+            window.path_to_searchindex_js = "../searchindex-e6b8ac48.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -333,8 +333,8 @@ turning the fingerprint match into
 build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported <code>configure</code>. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
-schedule and static-check modules, the two knowledge-error endpoints (compressed-identity and
-straight-line), and <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
+schedule and static-check modules, the exact straight-line false-statement endpoint and the
+adaptive-statement knowledge-failure endpoint with its <code>2^123</code> work-factor instantiation, and <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.</p>
 <p>Each family's <code>Random/</code> subfolder holds the random match-only
 captures — the deployed verifier run on random proof strings, deliberately non-accepting. Each has
@@ -367,7 +367,19 @@ are built on. <code>Vesta</code> pins the abstract group to the actual Vesta cur
 <code>TopLevelTerminal</code> connects canonical constraint satisfaction to the Spec of an
 arbitrary top-level circuit using that circuit's derived verifier key and public
 inputs. <code>Action/StraightLineTerminal</code> and <code>Action/StraightLineEvent</code> connect the one-run computed
-decode to the concrete Action statement and carry a failure as explicit relation data.</p>
+decode to the concrete Action statement and carry a failure as explicit relation data.
+<code>Action/AdaptiveStatement*</code> is the adaptive-statement stack, the strongest Action notion: one
+online-AGM adversary returns the public inputs and proof together. <code>AdaptiveStatementModel</code>
+defines the game and binds the verifying key and selected instance commitments before <code>theta</code>;
+<code>Accounting</code>, <code>Terminal</code>, and <code>Surfaces</code> decode arbitrary statement prefixes and price the
+root, IPA, and semantic surfaces under the single <code>(Q + 1)</code> query factor; <code>Provenance</code>,
+<code>Semantic</code>, and <code>Complete</code> identify the selected statement's decoded polynomials with the
+executable resolver stages; <code>Event</code> unions the priced events and <code>Capstone</code> discharges the
+statistical residual against them; <code>Knowledge</code> ends at the executable knowledge extractor and
+its failure bound; and <code>Profile</code> prices the whole reduction at the <code>2^123</code> computational work
+target. The shared <code>AdaptiveSurfaces</code> and <code>AdaptiveTerminal</code> supply the per-commitment
+activity predicates, challenge surfaces, and pointwise semantic terminal both Action routes
+consume.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
 <li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
@@ -390,7 +402,10 @@ the explicit root sets it must avoid (<code>DeployedRootSets</code>, <code>Deplo
 the opened-batch interfaces (<code>SyntheticOpened</code>, <code>DeployedSyntheticOpened</code>,
 <code>DecodeToOpened</code>). <code>StraightLineIpa</code> and <code>StraightLinePinnedRoots</code> classify one accepting
 algebraic transcript as a clean opening, an explicit relation, or a squeeze-pinned bad-challenge
-event, from a single execution with no rewinding; <code>StraightLineFiniteSecurity</code> records group
+event, from a single execution with no rewinding; <code>AdaptiveOnline</code>, <code>AdaptiveRootCore</code>,
+<code>AdaptiveDecode</code>, <code>AdaptiveIpaSurfaces</code>, and the <code>AdaptiveStatement*</code> modules extend the same
+rewind-free machinery to adversaries that choose their statement online, decoding accepting
+prefixes and pricing the per-round IPA surfaces; <code>StraightLineFiniteSecurity</code> records group
 work, random-oracle queries and direct-decode field work as distinct quantities and asserts no
 generic-group DLOG formula. <code>ZeroFamily</code> and <code>ZeroFamilyRoots</code> are the constant zero-data prover
 at an arbitrary shape, whose multiopen obligation reduces to <code>0 = 0</code>.</li>
