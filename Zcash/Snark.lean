@@ -113,12 +113,12 @@ import Zcash.Snark.Soundness.Canonical.Terminal
 import Zcash.Snark.Soundness.Circuit.Terminal
 import Zcash.Snark.Soundness.Decoded.Vesta
 -- AGM binding reduction: consume computed deployed relations through the programmed-basis
--- discrete-log adapter and representation-carrying algebraic-prover model.
+-- discrete-log adapter and representation-carrying algebraic-prover model. The adapter and its
+-- pricing are model-free and live in `Zcash.Common.{AlgebraicRelation,RelationProbability}`;
+-- what is AGM here is the URS view and the represented prover.
 import Zcash.Snark.Soundness.AGM.Adapter
-import Zcash.Snark.Soundness.AGM.Probability
 import Zcash.Snark.Soundness.AGM.ProbabilityVesta
 import Zcash.Snark.Soundness.AGM.Peel
-import Zcash.Snark.Soundness.AGM.BindingSignature
 -- Rewind-free deployed multiopen decoding and additive pinned-root composition.
 import Zcash.Snark.Soundness.Composition.DeployedRootContainment
 -- The straight-line AGM route: staged IPA representations, fixed-call deployed constraint

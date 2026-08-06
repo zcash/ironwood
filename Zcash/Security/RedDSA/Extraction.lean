@@ -1,6 +1,6 @@
 import Mathlib.Tactic
+import Zcash.Common.AlgebraicRelation
 import Zcash.Security.RedDSA.Basic
-import Zcash.Snark.Soundness.AGM.Adapter
 
 /-!
 # RedDSA extractability: a verifying binding signature computes a discrete-log relation
@@ -58,8 +58,6 @@ prime-order group; it is not definitionally true for signature schemes in genera
 -/
 
 namespace Zcash.Security.RedDSA
-
-open Zcash.Snark
 
 variable {F M : Type*} [Field F] [AddCommGroup M] [Module F M]
 

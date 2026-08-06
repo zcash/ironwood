@@ -24,7 +24,7 @@ import Zcash.Meta.AxiomCheck
 import Zcash.Snark.Soundness.Ipa.CommitFold
 import Zcash.Snark.Soundness.Decoded.Vesta
 import Zcash.Snark.Soundness.Decoded.VacuityWitness
-import Zcash.Snark.Soundness.AGM.BindingSignature
+import Zcash.Security.BindingSignature.DiscreteLog
 import Zcash.Snark.Soundness.AGM.DeployedConstraintSupply
 import Zcash.Snark.Soundness.AGM.ProbabilityVesta
 import Zcash.Snark.Soundness.FiatShamir.Adversary
@@ -668,14 +668,16 @@ assert_computable Zcash.NontrivialRelation.ofCombinationCollision +choice
 /-! ### AGM / Fiat–Shamir soundness
 
 The AGM kernels compute representations, openings, and relations as data (`assert_computable`); the
-probability layer and the binding endpoints are theorems (`assert_axioms`). -/
+probability layer and the binding endpoints are theorems (`assert_axioms`). The relation types, the
+relation-to-DL adapters, and their programmed-basis pricing carry no adversary restriction and are
+pinned under their `Zcash.` names; the AGM restriction enters with the represented prover. -/
 
-assert_computable Zcash.Snark.discreteLogOfBasis_of_relation +choice
-assert_computable Zcash.Snark.discreteLogOfChallenge_of_relation +choice
-assert_computable Zcash.Snark.programmedExtractOrMiss +choice
-assert_computable Zcash.Snark.AugmentedRelationWitness.toAlgebraicRelationWitness +choice
+assert_computable Zcash.discreteLogOfBasis_of_relation +choice
+assert_computable Zcash.discreteLogOfChallenge_of_relation +choice
+assert_computable Zcash.programmedExtractOrMiss +choice
+assert_computable Zcash.AugmentedRelationWitness.toAlgebraicRelationWitness +choice
 assert_computable Zcash.Snark.relationWitnessOfCollision +choice
-assert_computable Zcash.Snark.discreteLogOfAugmentedRelationAtChallenge +choice
+assert_computable Zcash.discreteLogOfAugmentedRelationAtChallenge +choice
 assert_computable Zcash.Snark.separateOrRelationWitness +choice
 assert_computable Zcash.Snark.algebraicPowerBatchWithSourceOrRelation +choice
 assert_computable Zcash.Snark.finForallOrRelationWitness
@@ -715,7 +717,7 @@ assert_axioms Zcash.Snark.orchardGeneratorROSetup
 assert_axioms Zcash.Snark.orchardGeneratorROBasis
 assert_axioms Zcash.Snark.orchard_uniformURSIdentification_of_generatorRO +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.AlgebraicRelationWitness.augment
+assert_axioms Zcash.AlgebraicRelationWitness.augment
 assert_axioms Zcash.Snark.bindingWin_unbounded_measure_le +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.queryCharge
@@ -734,7 +736,7 @@ assert_axioms Zcash.Snark.OracleComp.restrictSum
 assert_axioms Zcash.Snark.fsWinsFull_restrictSum_le
 assert_axioms Zcash.Snark.uniformURS_basis_transfer +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.AlgebraicPoint.point_eq_components +native(
+assert_axioms Zcash.AlgebraicPoint.point_eq_components +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Msm.eval_repr +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.RepresentedMultiopen.ofCoveredList +native(
@@ -759,25 +761,25 @@ assert_computable Zcash.Security.BindingSignature.NontrivialRelation.toAlgebraic
 assert_computable Zcash.Security.BindingSignature.NontrivialRelation.toDiscreteLog +choice
 assert_axioms Zcash.Security.BindingSignature.orchardImbalanceToDiscreteLog
 assert_axioms Zcash.Security.BindingSignature.saplingImbalanceToDiscreteLog
-assert_axioms Zcash.Snark.programmedRelSet_card
-assert_axioms Zcash.Snark.programmedRelSet_subset_win_union_miss
-assert_axioms Zcash.Snark.missSet_card_le
-assert_axioms Zcash.Snark.relation_prob_le_of_textbookDL
-assert_axioms Zcash.Snark.programmedRelSetWithCoins_card
-assert_axioms Zcash.Snark.programmedRelSetWithCoins_subset_win_union_miss
-assert_axioms Zcash.Snark.missSetWithCoins_card_le
-assert_axioms Zcash.Snark.relationWithCoins_prob_le_of_textbookDL
-assert_axioms Zcash.Snark.truncateRelationFinder
-assert_axioms Zcash.Snark.truncatedRelationFinderCalls
-assert_axioms Zcash.Snark.truncatedRelationFinderCalls_le
-assert_axioms Zcash.Snark.TextbookDLWithCoinsFixedCallsAdvantageLE
-assert_axioms Zcash.Snark.TextbookDLWithCoinsTruncatedAdvantageLE
-assert_axioms Zcash.Snark.textbookDLWithCoinsTruncatedAdvantageLE_iff
-assert_axioms Zcash.Snark.RelationFinderExpectedCallsLE
-assert_axioms Zcash.Snark.relationFinderCallTail
-assert_axioms Zcash.Snark.relSetWithCoins_subset_truncate_union_tail
-assert_axioms Zcash.Snark.relationFinderCallTail_prob_le
-assert_axioms Zcash.Snark.relationWithCoins_prob_le_of_truncated_textbookDL
+assert_axioms Zcash.programmedRelSet_card
+assert_axioms Zcash.programmedRelSet_subset_win_union_miss
+assert_axioms Zcash.missSet_card_le
+assert_axioms Zcash.relation_prob_le_of_textbookDL
+assert_axioms Zcash.programmedRelSetWithCoins_card
+assert_axioms Zcash.programmedRelSetWithCoins_subset_win_union_miss
+assert_axioms Zcash.missSetWithCoins_card_le
+assert_axioms Zcash.relationWithCoins_prob_le_of_textbookDL
+assert_axioms Zcash.truncateRelationFinder
+assert_axioms Zcash.truncatedRelationFinderCalls
+assert_axioms Zcash.truncatedRelationFinderCalls_le
+assert_axioms Zcash.TextbookDLWithCoinsFixedCallsAdvantageLE
+assert_axioms Zcash.TextbookDLWithCoinsTruncatedAdvantageLE
+assert_axioms Zcash.textbookDLWithCoinsTruncatedAdvantageLE_iff
+assert_axioms Zcash.RelationFinderExpectedCallsLE
+assert_axioms Zcash.relationFinderCallTail
+assert_axioms Zcash.relSetWithCoins_subset_truncate_union_tail
+assert_axioms Zcash.relationFinderCallTail_prob_le
+assert_axioms Zcash.relationWithCoins_prob_le_of_truncated_textbookDL
 assert_axioms Zcash.Snark.orchard_relation_prob_le_of_textbookDL +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.commitment_binding_prob_le_of_textbookDL +native(
@@ -2218,8 +2220,8 @@ assert_axioms Zcash.Snark.escapesDuringC_measure_le
 assert_axioms Zcash.Snark.lookup_beta_failure_measure_le
 assert_axioms Zcash.Snark.lookup_gamma_failure_measure_le
 
--- Pricing/UniformMeasure.lean
-assert_axioms Zcash.Snark.sum_point_mem_measure_le
+-- Common/UniformMeasure.lean
+assert_axioms Zcash.sum_point_mem_measure_le
 
 -- Probability-bound leaves matched by the `_probability_bound` suffix. Like the `_measure_le`
 -- block above, these are per-challenge surface and residual-event measures inside the Action

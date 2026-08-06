@@ -27,7 +27,15 @@ directory level, naming the notable modules as entry points.
   `DiscreteLogRelation` carries a nontrivial `F`-linear (discrete-log) relation among a family of
   generators as *computed data* — the coefficients — so the reduction-style security arguments can
   produce a break rather than merely assert one exists (see *breaks as computed data* on the
-  [Formal Verification](../formal-verification.md) page). `Expr` is the gate-polynomial AST exactly
+  [Formal Verification](../formal-verification.md) page). `AlgebraicRelation` carries the same
+  relation over an arbitrary indexed basis (`AlgebraicRelationWitness`) and turns one into a
+  discrete log, either against known slot logs or against a basis programmed from the DL challenge
+  (Jaeger–Tessaro, [2020/1213](https://eprint.iacr.org/2020/1213), Lemma 3); `RelationProbability`
+  and `RelationProbabilityCoins` price that reduction's single miss hyperplane at `1/|F|`, and
+  `UniformMeasure` holds the distribution facts they count with. None of these restrict the
+  adversary — they consume relation coefficients from any source, and what scopes them is how the
+  basis is sampled — so they sit here rather than under `Snark/Soundness/AGM/`. `Expr` is the
+  gate-polynomial AST exactly
   as halo2 evaluates it, produced by the circuit-side VK-match projection and consumed by the
   verifier stack. `RelationWitness` supplies the combinators for sequencing a computed break branch:
   a conclusion `A ⊕' R` cannot be case-split classically, so composing such reductions — and
@@ -226,13 +234,13 @@ consume.
 
 Six subtrees carry the heavier machinery:
 
-- **`AGM/`** — the algebraic-group-model layer. It turns relation coefficients returned by the
-  represented online and straight-line finders into a discrete-log solution over the
-  augmented basis `(g, U, W)` (`Adapter`, following
-  [Fuchsbauer–Kiltz–Loss 2018](https://eprint.iacr.org/2017/620)), adds the algebraic
-  coefficients to the online prover interfaces (`OnlineMembers`, `OnlineMultiopen`), feeds the
-  binding-signature relations in as AGM inputs (`BindingSignature`), and bounds the reduction's
-  probability loss (`Probability`, `ProbabilityCoins`, `ProbabilityVesta`) — programming *every*
+- **`AGM/`** — the algebraic-group-model layer: what it adds is the restriction on the *prover*,
+  namely that it emits a representation alongside every group element. The relation-to-discrete-log
+  machinery itself is model-free and lives in `Common/AlgebraicRelation` (following
+  [Fuchsbauer–Kiltz–Loss 2018](https://eprint.iacr.org/2017/620)); `Adapter` supplies only the view
+  of the deployed URS as an augmented basis `(g, U, W)`. This subtree adds the algebraic
+  coefficients to the online prover interfaces (`OnlineMembers`, `OnlineMultiopen`) and evaluates
+  the reduction's probability loss at Vesta (`ProbabilityVesta`) — programming *every*
   basis slot from the
   DL challenge rather than guessing which slot the relation will hit, so the loss is an additive
   `1/|F|` with no multiplicative factor. The bulk of the subtree is the rewind-free deployed
@@ -403,7 +411,10 @@ computed data.
 - **`BindingSignature/`** — the binding-signature *balance* argument (spec §4.13 Sapling /
   §4.14 Orchard). `Balance` is the shared algebraic core over an arbitrary `F`-module;
   `Orchard` and `Sapling` add the per-pool no-overflow bounds that keep the value sums below
-  the scalar-field order.
+  the scalar-field order. `DiscreteLog` carries the computed relation the rest of the way, to
+  the discrete log of `Vbase` base `Rbase`: *if you can unbalance, you can solve DL*. It is
+  scoped by the sampling of the two bases, not by any restriction on the adversary, which is
+  why it sits here rather than under `Snark/Soundness/AGM/`.
 - **`KeyBinding/`** — the key-binding theorem (ZIP 2005, ROM). `Basic` is the deterministic
   layer: a verifying Recovery-Statement witness pins the key components (`ak` up to y-sign,
   `nk`, and the `qk`/`sk` branch) to `ivk` unless an explicit break is computed. `Instance`

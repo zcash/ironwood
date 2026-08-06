@@ -1,14 +1,18 @@
+import Zcash.Common.AlgebraicRelation
 import Zcash.Security.BindingSignature.Orchard
 import Zcash.Security.BindingSignature.Sapling
-import Zcash.Snark.Soundness.AGM.Adapter
 
 /-!
-# Binding-signature relations as AGM inputs
+# Binding-signature relations as discrete logs
 
-The binding-signature reduction computes `NontrivialRelation Vbase Rbase`. This module converts it to the
-generic AGM relation type and, when `Rbase ≠ 0`, computes the discrete log of `Vbase` base `Rbase`. The Orchard
-and Sapling endpoints include their integer range and no-overflow checks. All relations remain
-explicit data.
+The binding-signature reduction computes `NontrivialRelation Vbase Rbase`. This module converts it
+to the generic relation type over a two-element basis and, when `Rbase ≠ 0`, computes the discrete
+log of `Vbase` base `Rbase`. The Orchard and Sapling endpoints include their integer range and
+no-overflow checks. All relations remain explicit data.
+
+Nothing here restricts the adversary: the input is relation coefficients, whoever produced them,
+and the output is a field solve. What scopes the conclusion is the sampling of `Vbase` and `Rbase`
+as an unpredictable reference string, not an algebraic-prover assumption.
 -/
 
 namespace Zcash.Security.BindingSignature
@@ -26,15 +30,14 @@ def bindingSignatureCoeffs (α β : F) : Fin 2 → F
   | 1 => β
 
 theorem representationEval_bindingSignatureBasis (Vbase Rbase : M) (α β : F) :
-    Zcash.Snark.representationEval (bindingSignatureBasis Vbase Rbase) (bindingSignatureCoeffs α β)
+    representationEval (bindingSignatureBasis Vbase Rbase) (bindingSignatureCoeffs α β)
       = α • Vbase + β • Rbase := by
-  simp [Zcash.Snark.representationEval, bindingSignatureBasis, bindingSignatureCoeffs,
-    Fin.sum_univ_two]
+  simp [representationEval, bindingSignatureBasis, bindingSignatureCoeffs, Fin.sum_univ_two]
 
-/-- Convert a binding-signature relation to the generic AGM relation type. -/
+/-- Convert a binding-signature relation to the generic relation type over a public basis. -/
 def NontrivialRelation.toAlgebraicRelationWitness (Vbase Rbase : M)
     (r : NontrivialRelation (F := F) Vbase Rbase) :
-    Zcash.Snark.AlgebraicRelationWitness (F := F) (bindingSignatureBasis Vbase Rbase) :=
+    AlgebraicRelationWitness (F := F) (bindingSignatureBasis Vbase Rbase) :=
   { coeffs := bindingSignatureCoeffs r.α r.β
     nontrivial := by
       intro hzero
@@ -56,7 +59,7 @@ def NontrivialRelation.toAlgebraicRelationWitness (Vbase Rbase : M)
 /-- Compute the discrete log of `Vbase` base `Rbase` from a two-base relation, assuming `Rbase ≠ 0`. -/
 def NontrivialRelation.toDiscreteLog [DecidableEq F] (Vbase Rbase : M)
     (r : NontrivialRelation (F := F) Vbase Rbase)
-    (hR : Rbase ≠ 0) : Zcash.Snark.DiscreteLogWitness (F := F) Rbase Vbase := by
+    (hR : Rbase ≠ 0) : DiscreteLogWitness (F := F) Rbase Vbase := by
   by_cases hα : r.α = 0
   · exfalso
     have hβ : r.β ≠ 0 := by
@@ -66,12 +69,12 @@ def NontrivialRelation.toDiscreteLog [DecidableEq F] (Vbase Rbase : M)
         · exact False.elim (hα' hα)
         · exact hβ'
     have hβR : r.β • Rbase = 0 := by
-      simpa [Zcash.commitGen, hα] using r.relation
+      simpa [commitGen, hα] using r.relation
     have hR0 : Rbase = 0 := by
       have h := congrArg (fun X : M => r.β⁻¹ • X) hβR
       simpa [smul_smul, inv_mul_cancel₀ hβ] using h
     exact hR hR0
-  · exact Zcash.Snark.discreteLogOfU_of_augmentedRelation Rbase (Fin.elim0 : Fin 0 → M) Vbase Rbase
+  · exact discreteLogOfU_of_augmentedRelation Rbase (Fin.elim0 : Fin 0 → M) Vbase Rbase
       Fin.elim0 1 r (fun i => Fin.elim0 i) (by simp) hα
 
 /-- Turn a verifying, range-bounded Orchard imbalance into the discrete log of `Vbase` base `Rbase`. -/
@@ -86,7 +89,7 @@ def orchardImbalanceToDiscreteLog {M : Type*} [AddCommGroup M]
     (hExtract : bindingVK Vbase Rbase (castBundle actions) (castBundle [])
       (vBalance : ZMod pallasScalarOrder) = bsk • Rbase)
     (hR : Rbase ≠ 0) :
-    Zcash.Snark.DiscreteLogWitness (F := ZMod pallasScalarOrder) Rbase Vbase :=
+    DiscreteLogWitness (F := ZMod pallasScalarOrder) Rbase Vbase :=
   (NontrivialRelation.ofOrchardImbalance Vbase Rbase actions vBalance bsk hne hv hn hvBalance
     hExtract).toDiscreteLog Vbase Rbase hR
 
@@ -104,7 +107,7 @@ def saplingImbalanceToDiscreteLog {M : Type*} [AddCommGroup M]
     (hExtract : bindingVK Vbase Rbase (castBundle spends) (castBundle outputs)
       (vBalance : ZMod jubjubScalarOrder) = bsk • Rbase)
     (hR : Rbase ≠ 0) :
-    Zcash.Snark.DiscreteLogWitness (F := ZMod jubjubScalarOrder) Rbase Vbase :=
+    DiscreteLogWitness (F := ZMod jubjubScalarOrder) Rbase Vbase :=
   (NontrivialRelation.ofSaplingImbalance Vbase Rbase spends outputs vBalance bsk hne hOld hNew
     hnOld hnNew hvBalance hExtract).toDiscreteLog Vbase Rbase hR
 

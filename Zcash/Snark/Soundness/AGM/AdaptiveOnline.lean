@@ -907,7 +907,7 @@ end AlgebraicTranscriptQuery
 
 /-- An algebraic point is determined by its ordinary point and coefficient vector; representation
 equalities themselves are proof-irrelevant. -/
-theorem AlgebraicPoint.eq_of_point_eq_of_coeffs_eq
+theorem _root_.Zcash.AlgebraicPoint.eq_of_point_eq_of_coeffs_eq
     {F G ι : Type*} [Field F] [AddCommGroup G] [Module F G] [Fintype ι]
     {basis : ι → G} {P Q : AlgebraicPoint (F := F) basis}
     (hpoint : P.point = Q.point) (hcoeff : P.coeffs = Q.coeffs) : P = Q := by

@@ -1,17 +1,18 @@
-import Zcash.Snark.Soundness.AGM.Probability
+import Zcash.Common.RelationProbability
 
 /-!
 # Relation-to-DL probability with extractor coins
 
 Carry independent extractor coins through the programmed-basis DL reduction. The experiment,
-the counting, and the `bound + 1/|F|` pricing are those of `Soundness.AGM.Probability`; only the
-coin space gains the extractor's `ρ`.
+the counting, and the `bound + 1/|F|` pricing are those of `Common.RelationProbability`; only the
+coin space gains the extractor's `ρ`. Like that file, this one restricts how the basis is sampled
+and not how the finder computes.
 -/
 
 open scoped ENNReal
 open Classical
 
-namespace Zcash.Snark
+namespace Zcash
 
 variable {F G ρ : Type*} [Field F] [AddCommGroup G] [Module F G]
 
@@ -484,4 +485,4 @@ theorem relationWithCoins_prob_le_of_truncated_textbookDL
 
 end Reduction
 
-end Zcash.Snark
+end Zcash
