@@ -213,4 +213,32 @@ assert_computable Zcash.Meta.Tests.AxiomCheck.UnneededChoice.choiceUsingReductio
 
 end UnneededChoice
 
+namespace CompiledOverrides
+
+/-! `implemented_by` and `extern` alter native execution without entering the logical dependency
+or axiom graph.  Check the whole Ironwood dependency cone, not only the pinned declaration: both
+forgeries sit one helper below the otherwise ordinary endpoint. -/
+
+unsafe def dishonestImplementation (n : Nat) : Nat := n + 2
+
+@[implemented_by dishonestImplementation]
+def implementedHelper (n : Nat) : Nat := n + 1
+
+def throughImplementedBy (n : Nat) : Nat := implementedHelper n
+
+/-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughImplementedBy reaches unchecked compiled replacement(s): Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.implementedHelper @[implemented_by Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.dishonestImplementation] -/
+#guard_msgs (whitespace := lax) in
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughImplementedBy
+
+@[extern "ironwood_axiom_check_extern_helper"]
+def externHelper (n : Nat) : Nat := n + 1
+
+def throughExtern (n : Nat) : Nat := externHelper n
+
+/-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughExtern reaches unchecked compiled replacement(s): Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.externHelper @[extern] -/
+#guard_msgs (whitespace := lax) in
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughExtern
+
+end CompiledOverrides
+
 end Zcash.Meta.Tests.AxiomCheck

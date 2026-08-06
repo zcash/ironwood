@@ -1,6 +1,9 @@
 import Lean.Util.CollectAxioms
+import Lean.Util.FoldConsts
 import Lean.Elab.Command
 import Lean.DeclarationRange
+import Lean.Compiler.ExternAttr
+import Lean.Compiler.ImplementedByAttr
 import Mathlib.Util.AssertNoSorry
 
 /-!
@@ -43,6 +46,44 @@ namespace Zcash.Meta
 
 /-- The standard axioms of Lean's trusted base — the whole budget for a general theorem. -/
 def standardAxioms : Array Name := #[``propext, ``Classical.choice, ``Quot.sound]
+
+/-- Whether a declaration belongs to Ironwood rather than the ambient Lean/Mathlib runtime.
+
+The latter deliberately contains trusted `@[extern]` and `@[implemented_by]` primitives.  What
+`assert_computable` forbids is adding the same unchecked compiled replacement anywhere in the
+Ironwood dependency cone while continuing to advertise the endpoint as computed by its checked
+Lean body. -/
+def isIronwoodName (n : Name) : Bool :=
+  n == `Zcash || n.toString.startsWith "Zcash."
+
+/-- Every unchecked compiled replacement in the transitive Ironwood dependency cone of `root`.
+
+`implemented_by` implementations are not logical dependencies: the compiler silently substitutes
+them after elaboration.  Likewise an `extern` declaration's Lean body is what the kernel sees, not
+what native execution calls.  Consequently neither replacement can be discovered by
+`collectAxioms`; inspect the compiler attribute tables while walking the ordinary dependency cone.
+Ambient Lean/Mathlib replacements remain part of the explicitly accepted compiler/runtime TCB. -/
+def ironwoodCompiledOverrides (root : Name) : CommandElabM (Array String) := do
+  let env ← getEnv
+  let mut todo : Array Name := #[root]
+  let mut seen : Std.HashSet Name := {}
+  let mut found : Array String := #[]
+  while !todo.isEmpty do
+    let name := todo.back!
+    todo := todo.pop
+    if seen.contains name then
+      continue
+    seen := seen.insert name
+    let some info := env.find? name | continue
+    if isIronwoodName name then
+      if let some implementation := Compiler.getImplementedBy? env name then
+        found := found.push s!"{name} @[implemented_by {implementation}]"
+      if Lean.isExtern env name then
+        found := found.push s!"{name} @[extern]"
+    for dep in info.getUsedConstantsAsSet do
+      if !seen.contains dep then
+        todo := todo.push dep
+  return found.qsort fun a b => a < b
 
 /-- The declaration an alleged `native_decide` axiom names as its owner. The compiler-generated
 name has an `_native.native_decide` marker after the owning declaration; only the tail after that
@@ -204,7 +245,9 @@ elab "assert_axioms " n:ident native:(nativeFlag)? : command => do
 marked neither `unsafe`/`partial` nor `noncomputable` — depending on no axioms beyond
 `propext` / `Quot.sound`. This is the breaks-as-computed-data check: the data is genuinely
 computed, and with `Classical.choice` excluded it cannot have been conjured from mere
-propositional existence even in erased positions.
+propositional existence even in erased positions. Its transitive Ironwood dependency cone must
+also contain no `@[extern]` or `@[implemented_by]` declaration: either attribute can make native
+execution ignore the kernel-checked Lean body without changing the logical axiom footprint.
 
 `assert_computable foo +choice` additionally permits `Classical.choice`. Together with the
 plain-`def` check this asserts choice enters only through erased `Prop` fields: had it touched the
@@ -237,6 +280,10 @@ elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : com
   | .partial => throwError "{n} is marked partial"
   if Lean.isNoncomputable env name then
     throwError "{n} is marked noncomputable"
+  let compiledOverrides ← ironwoodCompiledOverrides name
+  unless compiledOverrides.isEmpty do
+    let details := String.intercalate ", " compiledOverrides.toList
+    throwError "{n} reaches unchecked compiled replacement(s): {details}"
   let axs ← collectAxioms name
   let allowChoice := choice.isSome
   if allowChoice && !axs.contains ``Classical.choice then
