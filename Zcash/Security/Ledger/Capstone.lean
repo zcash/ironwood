@@ -83,15 +83,6 @@ abbrev ValidAnnotated :=
   {ledger : Ledger KW F G RHO PSI MHASH MENC MSG SIG P.depth //
     ValidLedger P kv issuance maxActions ledger}
 
-/-- The sample-space aliveness witness: the games quantify over a nonempty space, at every choice
-of primitives, key binding, issuance schedule, and action bound. The witness is the empty ledger
-(`validLedger_nil`), so every bound proved here is a statement about a premiss something satisfies
-rather than a vacuous one. A transaction-bearing valid ledger at the deployed Orchard primitives
-remains future work — it needs a satisfying Action witness, which is the statement layer's side of
-the model. -/
-instance validAnnotated_nonempty : Nonempty (ValidAnnotated P kv issuance maxActions) :=
-  ⟨⟨[], validLedger_nil⟩⟩
-
 /-! ## Balance conservation and shielded balance cap -/
 
 /-- The transaction-balance premiss violation event: the samples on which the

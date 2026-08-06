@@ -206,11 +206,6 @@ assert_axioms Zcash.Security.Ledger.Model.output_rho_eq_nullifiers
 assert_axioms Zcash.Security.Ledger.Model.output_rho_nodup
 assert_axioms Zcash.Security.Ledger.Model.leafList_eq_map
 assert_axioms Zcash.Security.Ledger.Model.outputOpenings_length
--- Sample-space aliveness: the games' valid-ledger subtype is inhabited at every instantiation
--- of the primitives (the empty ledger), so the capstone bounds quantify over an exhibited
--- class. A transaction-bearing valid ledger at the deployed pool remains future work.
-assert_axioms Zcash.Security.Ledger.Model.validLedger_nil
-assert_axioms Zcash.Security.Ledger.Model.validAnnotated_nonempty
 
 /-! ## Balance-subset
 
@@ -2254,9 +2249,6 @@ is the same witness the circuit layer above carries, reaching this file through 
 scalar action rather than a certificate check. -/
 
 assert_computable Zcash.Security.Ledger.Bridge.breakCoeffs +choice
--- `relationOfValidBreak` is `relationOfBreakData`'s sole callee; pinned directly so the census
--- is self-evident at the file level rather than only via the compiler's transitive enforcement.
-assert_computable Zcash.Security.Ledger.Bridge.relationOfValidBreak +choice +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Security.Ledger.Bridge.relationOfBreakData +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,

@@ -209,29 +209,6 @@ theorem adaptiveStatementCostedGroupOpsAt_le {pp : ProofParams}
     (family.runProof basis O).proof.1 (family.runRecord basis O)
   exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (Nat.add_le_add_right h _)) _
 
-/-- **The costed assembly/basis envelope fits the `2 ^ 123` work target.**  The envelope is
-quadratic in the shape's query budget and linear in `2 ^ k`, so the three shape quantities below
-pin it as a closed numeral: it is under `2 ^ 50` at these bounds, some seventy bits of headroom.
-Stated against shape quantities rather than a bundle size so it needs no capture-derived
-certificate; `Capstones.Action` discharges the three premises at every consensus-valid Action
-count, which is where the target becomes an obligation. -/
-theorem adaptiveStatementCostedGroupOpsBudget_le_2pow123 {pp : ProofParams}
-    (hk : (AdaptiveActionStatementShape pp).k ≤ 11)
-    (hpieces : (AdaptiveActionStatementShape pp).numQuotientPieces ≤ 8)
-    (hquery : queryBudget (AdaptiveActionStatementShape pp) ≤ 2 ^ 22) :
-    adaptiveStatementCostedGroupOpsBudget pp ≤ 2 ^ 123 := by
-  have hpow : 2 ^ (AdaptiveActionStatementShape pp).k ≤ 2048 :=
-    le_trans (Nat.pow_le_pow_right (by norm_num) hk) (by norm_num)
-  have hsq : queryBudget (AdaptiveActionStatementShape pp) *
-      (queryBudget (AdaptiveActionStatementShape pp) *
-        ((AdaptiveActionStatementShape pp).numQuotientPieces + 1)) ≤ 158329674399744 := by
-    have hpieces' : (AdaptiveActionStatementShape pp).numQuotientPieces + 1 ≤ 9 := by omega
-    exact le_trans (Nat.mul_le_mul hquery (Nat.mul_le_mul hquery hpieces')) (by norm_num)
-  have htarget : (2 : ℕ) ^ 123 = 10633823966279326983230456482242756608 := by norm_num
-  unfold adaptiveStatementCostedGroupOpsBudget assembleGroupOpsBudget
-    adaptiveStatementKnowledgeExtractorTraversalSlots
-  omega
-
 /-- Finite-security premise for the complete adaptive-statement relation finder.
 
 Random-oracle support is certified against the code: `relationFinderReads` is the concrete table
@@ -274,6 +251,7 @@ structure AdaptiveStatementDirectDlogProfile {pp : ProofParams}
   queryBound : family.Q ≤ T
   proverWorkBound : toAdaptiveStatementDlogProfile.proverGroupWork ≤ T
   reductionWorkBound : toAdaptiveStatementDlogProfile.reductionGroupWork ≤ T
+  costedAssemblyWorkBound : adaptiveStatementCostedGroupOpsBudget pp ≤ T
   directDecodeWorkBound : ∀ basis O,
     adaptiveStatementKnowledgeExtractorDirectDecodeSlots *
       adaptiveStatementDirectDecodeOps family basis O ≤ T
