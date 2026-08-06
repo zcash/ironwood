@@ -56,7 +56,16 @@ cd "$(dirname "$0")/.."
 # either family is demanded rather than silently unpinned: `orchard_verifier_*`, whose rungs were
 # retired with the legacy rewind paths, and `*workFactor*`, whose consensus-maximum packages were
 # renamed onto the `orchard_deployed_*` prefix and the `_finite_security` suffix.
-ENDPOINT_RE='(^orchard_(verifier|action|deployed)_)|(^competing_)|(^nonInteractiveFingerprint_matches_derived)|(bundleStatement_or_relation)|(workFactor)|(fingerprint_matches_positional)|(_(error_bound|finite_security|measure_le|probability_bound|capstone)$)'
+#
+# `_prob_le` is the current spelling for a probability bound, alongside the two older ones; it is
+# matched for the same reason they are. The optional trailing `_for` covers the consensus-generic
+# forms, which take the bundle size as a parameter instead of fixing it at the captured shape:
+# without it a `_measure_le` endpoint disappeared from this check the moment it was generalized
+# over `numProofs`, which is the opposite of the intended direction — generalizing an endpoint
+# should never retire its census obligation. Anchoring the suffix group rather than the whole
+# name keeps `_prob_le_of_<premise>` spellings out: those name the premise they are conditional
+# on, are pinned under their full names where they are deliverable, and are not leaves.
+ENDPOINT_RE='(^orchard_(verifier|action|deployed)_)|(^competing_)|(^nonInteractiveFingerprint_matches_derived)|(bundleStatement_or_relation)|(workFactor)|(fingerprint_matches_positional)|(_(error_bound|finite_security|measure_le|probability_bound|prob_le|capstone)(_for)?$)'
 
 # Sources scanned for endpoint declarations. `Zcash/Meta/Tests/` is excluded: it holds forged
 # adversarial declarations that exercise the rejection paths of the census macros themselves.

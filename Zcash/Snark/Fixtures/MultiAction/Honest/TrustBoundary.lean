@@ -441,6 +441,11 @@ assert_axioms Zcash.Snark.Capstone.capturedActionXSqueezeSchedule +native(
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 
+-- The per-surface bound the adaptive-statement capstones consume. Its `_for` form takes the
+-- bundle size as a parameter; the census pattern reaches it for the same reason it reaches the
+-- other `_measure_le` surfaces, not as an independent claim.
+assert_axioms Zcash.Snark.Capstone.orchard_adaptiveActionStatementSurface_measure_le_for
+
 -- Adaptive-statement knowledge soundness binds the statement-selected instance prefix before
 -- `theta` and conservatively charges every stage of the combined finder.
 assert_axioms Zcash.Snark.Capstone.orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for +native(

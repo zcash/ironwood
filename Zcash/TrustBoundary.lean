@@ -2441,3 +2441,19 @@ assert_axioms Zcash.Snark.adaptiveX3RootSet_measure_le +native(CompElliptic.Curv
 assert_axioms Zcash.Snark.adaptiveX4RootSet_measure_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.adaptiveXiRootSet_measure_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.adaptiveZRootSet_measure_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+
+/-! ## Probability bounds spelled `_prob_le`
+
+`scripts/check_endpoint_census.sh` matches `_prob_le` alongside the older `_measure_le` and
+`_probability_bound` spellings, and matches the consensus-generic `_for` forms of all three.
+These entries are the bounds that spelling newly reaches. Like the `_measure_le` surface and
+root-set measures above, they are pinned because the census pattern reaches them, not as
+independent claims: each is consumed by a capstone that carries its own pin. -/
+
+assert_axioms Zcash.Snark.ComputedStraightLineIpaFSFamily.straightLineBindingZero_prob_le
+assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineRootZero_prob_le
+assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineDeployedRoots_prob_le
+assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintBadX_prob_le
+assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statisticalSurfaceEvent_prob_le
+assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.acceptFalseStatement_prob_le
+assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailure_prob_le

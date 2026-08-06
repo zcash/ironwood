@@ -4,8 +4,8 @@ Ironwood's formal verification is a Lean 4 development (over Mathlib) in this re
 verifier soundness for the deployed Halo 2 verifier under `Zcash/Snark/`, and the protocol
 security-property layers (binding-signature balance, key binding, and the ledger-model
 security games) under `Zcash/Security/`. This page documents two development-wide
-conventions: how security breaks are represented, and what the development is allowed to
-trust.
+conventions — how security breaks are represented, and what the development is allowed to
+trust — and the boundaries of what the statements model.
 
 ## Breaks as computed data
 
@@ -152,6 +152,26 @@ What the fixture captures actually *check* is the statement of record in each fa
 post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
 domain-prefix bytes, and Blake2b remain external; `Snark/Fingerprint/Match.lean` enumerates this
 boundary, tracked in [#66](https://github.com/zcash/ironwood/issues/66).
+
+## Modeling boundaries
+
+The trust discipline above bounds what the *proofs* rest on. Two boundaries sit outside it, in
+what the statements *model* — neither is an axiom or a compiler-trust question, and neither is
+visible to the censuses:
+
+* **The verifier is the per-proof one.** The soundness statements are about
+  `halo2_proofs::plonk::verify_proof` applied to a single proof — the call Orchard's
+  `Proof::verify` makes, covering all of a bundle's actions under one set of challenges and one
+  opening. Halo 2's optional `BatchVerifier`, which combines *separate* proof blobs under
+  freshly sampled random factors before a single multiscalar multiplication, is outside this
+  formalization's scope.
+* **Fiat–Shamir is idealized.** The deployed verifier derives each challenge by hashing the
+  transcript so far with Blake2b and reducing 64 bytes to a field element. The development
+  models that as an abstract `squeeze` (`Verifier/FiatShamir.lean`) and, in the security layer,
+  as a uniform random oracle. Blake2b itself, the byte serialization of absorbed points and
+  scalars, the transcript domain-prefix bytes, and the challenge encoding are not formalized;
+  identifying them with the idealized oracle is external, and the fixtures check schedules
+  against typed captures rather than transcript bytes.
 
 Coined terms and shorthand for the development, including the two conventions above, are
 collected in the [glossary](formal-verification/glossary.md).
