@@ -102,12 +102,33 @@ theorem orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for
           (adaptiveStatement_pairCount_lt numProofs family) B epsilon
             profile.finderAdvantageLE hsurface)
 
+/-- **The costed assembly/basis envelope meets the `2 ^ 123` work target at every consensus-valid
+bundle.**  The Action shape fixes `k = 11` and eight quotient pieces, and its query budget is
+`50 · numProofs + 46`, so consensus's `numProofs ≤ 2¹⁶ − 1` caps the envelope near `2 ^ 49`.  This
+is derived, not assumed: the capstone below discharges its assembly-work conjunct with this
+theorem rather than reading a profile field. -/
+theorem adaptiveStatementCostedGroupOpsBudget_le_of_consensus {numProofs : ℕ}
+    (hn : numProofs ≤ orchardConsensusMaxProofs) :
+    adaptiveStatementCostedGroupOpsBudget (actionProofParamsFor numProofs) ≤ 2 ^ 123 := by
+  have hshape : AdaptiveActionStatementShape (actionProofParamsFor numProofs) =
+      Zcash.Snark.FixtureMax.shape numProofs := actionProofShape_eq_maxShape numProofs
+  refine adaptiveStatementCostedGroupOpsBudget_le_2pow123 ?_ ?_ ?_
+  · rw [hshape]
+    exact le_rfl
+  · rw [hshape]
+    exact le_rfl
+  · rw [hshape, Zcash.Snark.FixtureMax.queryBudget_at_captured_shape]
+    have hn' : numProofs ≤ 65535 := by simpa [orchardConsensusMaxProofs] using hn
+    calc 50 * numProofs + 46 ≤ 50 * 65535 + 46 := by omega
+      _ ≤ 2 ^ 22 := by norm_num
+
 /-- **Adaptive-statement knowledge capstone.**  At `Q ≤ 2^123`, joint statement/proof
 selection, the executable witness projection, and the shared relation finder fit a `2^126`
 random-oracle/group-work envelope and `2^-83` statistical remainder; the finder and the
 extractor consult the table only inside the certified read set.  Complete adversary and reduction
-group work are explicit profile premises; the separately costed assembly/basis component fits its
-derived formula at every table. -/
+group work are explicit profile premises; the separately costed assembly/basis component is
+derived from the consensus action bound (`adaptiveStatementCostedGroupOpsBudget_le_of_consensus`)
+and fits its formula at every table. -/
 theorem orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
@@ -207,7 +228,7 @@ theorem orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_gen
     simp only [div_eq_mul_inv]
     ring_nf
     exact le_rfl
-  refine ⟨hprob, hqueries, hgroup, profile.costedAssemblyWorkBound,
+  refine ⟨hprob, hqueries, hgroup, adaptiveStatementCostedGroupOpsBudget_le_of_consensus hn,
     fun basis O => adaptiveStatementCostedGroupOpsAt_le family basis O, hcost.2.2,
     fun basis O => le_trans
       (family.relationFinderReads_card_le_knowledgeExtractorQueries basis O) hqueries,

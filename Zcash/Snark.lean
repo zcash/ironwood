@@ -154,3 +154,4 @@ import Zcash.Snark.Soundness.Action.AdaptiveStatementCapstone
 import Zcash.Snark.Soundness.Action.AdaptiveStatementKnowledge
 import Zcash.Snark.Soundness.Action.AdaptiveStatementProfile
 import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
+import Zcash.Snark.Soundness.Action.AdaptiveStatementInhabitant

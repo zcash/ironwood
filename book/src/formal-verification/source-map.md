@@ -149,9 +149,13 @@ consumes. `ConstraintWalk`, `GroupingTable` (with `Verifier/GroupingRef`), `Open
 assembly — grouping stability through a fixed reference table, the opening value, the IPA
 scalars, and the positional `other` coefficient stream — into `assembleCoeffFamily`: every
 MSM coefficient as a polynomial numerator over enumerated denominators with one degree budget.
-`Epsilon` then prices it: a competing coefficient family that differs from Lean's anywhere
-agrees at a uniform point with probability at most `(D + B)/p` — the invariant's concrete ε —
-with per-capture literals in the random families' `Epsilon` modules.
+`Epsilon` then prices it: a competing coefficient family — polynomial numerators of bounded
+degree over the walk's enumerated challenge-only denominators — that differs from Lean's
+anywhere agrees at a uniform point with probability at most `(D + B)/p` — the invariant's
+concrete ε — with per-capture literals in the random families' `Epsilon` modules. The premises
+this reading rests on (among them that the deployed coefficient map lies in that priced class,
+and the sampled-point distribution behind "a uniform point") are enumerated in
+`Fingerprint/Match.lean`.
 
 ### `Fixtures/` — captured proofs and boundary checks
 
@@ -184,7 +188,8 @@ keygen certificate along `PostNu63Random`'s point equalities, its `Boundary` sta
 aliveness guards in `Negative` (the model assembles at the random point, the capture is genuinely
 non-accepting, and one tamper canary), and its own `TrustBoundary` census. What the four families
 jointly check is that Lean's assembled MSM equals the deployed one coefficient-for-coefficient at
-each captured proof, priced by `Fingerprint/Epsilon.lean`.
+each captured proof; the two `Random/` families additionally carry the per-capture ε modules that
+price the quantified match (`Fingerprint/Epsilon.lean`, `Fixtures/*/Random/Epsilon.lean`).
 
 ### `Soundness/` — the soundness argument
 
@@ -309,11 +314,13 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `ActionEvents` says which runs the
-endpoints are about, `ActionChecks` carries the captured key's scalars and static checks,
-`ActionBudgets` discharges the semantic surfaces, and `Action` states the twelve endpoints — the
-ordinary- and knowledge-soundness bounds for every consensus-valid bundle size, in compositional
-error-formula and resource-accounted finite-security forms.
+Where the deployed Action circuit's own statements are stated. `ActionEvents` carries the shape
+transport joining the Action proof parameters to the fixture shape, `ActionChecks` carries the
+captured key's scalars and static checks, `ActionBudgets` discharges the semantic surfaces, and
+`Action` states the two adaptive-statement knowledge-soundness endpoints — the compositional
+error-formula bound and its resource-accounted `2^123` work-factor form — for every
+consensus-valid bundle size. (The fixed-statement ordinary-soundness endpoints that once lived
+here were retired with the legacy adaptive-action path; their events went with them.)
 
 Endpoints about the *verifier's algebra* rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in

@@ -9,11 +9,13 @@ import Zcash.Snark.Soundness.Action.AdaptiveStatementProfile
 import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
 
 /-!
-# The events the Action endpoints bound
+# Shape transport for the Action endpoints
 
-The accepting-false-statement and knowledge-failure sets, at the captured Action parameters
-and at arbitrary bundle size. The endpoints in `Capstones.Action` bound their probability;
-this module only says which runs they are.
+Joins the Action circuit's proof-parameterized shape to the fixture shape the
+consensus-maximum bounds are stated at. The adaptive-statement endpoints in `Capstones.Action`
+bound events defined alongside their model (`Soundness/Action/AdaptiveStatementModel.lean`,
+`…/AdaptiveStatementKnowledge.lean`); no event definitions live here — the false-statement
+event definitions that once did were retired with the legacy fixed-statement capstones.
 -/
 
 namespace Zcash.Snark.Capstone
@@ -37,39 +39,5 @@ theorem actionProofShape_eq_maxShape (numProofs : ℕ) :
       Zcash.Snark.FixtureMax.shape numProofs := by
   rw [actionShapeFor_eq_fixtureShape]
   rfl
-
-/-! ## Exact false-statement events -/
-
-/-- **The captured Action-soundness event.**  This definition is the set of captured-shape
-experiment outcomes on which the deployed verifier accepts while the Orchard Action statement at
-its supplied public inputs is false; the capstone theorem separately bounds its probability. -/
-def capturedActionAcceptFalseStatementEvent
-    (family : ComputedStraightLineDeployedFSFamily
-      (actionCircuit.shape.withProofParams actionProofParams))
-    (inputs : Fin actionProofParams.numProofs →
-      PublicInputs Fp) :
-    Set ((AugmentedIndex actionCircuit.n → VestaG) ×
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams actionProofParams) family.init.length 10
-          + 3 * actionCircuit.domainExponent) → Fp)) :=
-  family.straightLineConstraintSemanticFailureEvent
-    (topLevelBundleStatementDecoded actionCircuit actionProofParams family inputs)
-
-/-- The generic accepting-false-`BundleStatement` event at arbitrary `numProofs`.  This definition
-is the outcome set; the corresponding soundness theorem separately supplies its probability
-bound. -/
-def actionAcceptFalseStatementEvent (numProofs : ℕ)
-    (family : ComputedStraightLineDeployedFSFamily
-      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)))
-    (inputs : Fin (actionProofParamsFor numProofs).numProofs →
-      PublicInputs Fp) :
-    Set ((AugmentedIndex
-      actionCircuit.n → VestaG) ×
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs))
-          family.init.length 10 +
-          3 * actionCircuit.domainExponent) → Fp)) :=
-  family.straightLineConstraintSemanticFailureEvent
-    (topLevelBundleStatementDecoded actionCircuit (actionProofParamsFor numProofs) family inputs)
 
 end Zcash.Snark.Capstone

@@ -86,6 +86,15 @@ assert_axioms Zcash.Snark.assemble
 -- tamper sensitivity detects a sourcing error in `assemble` on honest captures.
 assert_axioms Zcash.Snark.Fixture2.valid_capture_assembles +native(
   Zcash.Snark.Fixture2.valid_capture_assembles)
+-- The aliveness join: acceptance of the deployed predicate is the conjunction of the two halves
+-- above, so it carries their union. The one addition is CompElliptic's Vesta point-order
+-- certificate, which the `evalNat`-to-`eval` bridge needs to install the `Fp`-module structure the
+-- generic acceptance predicate is stated over.
+assert_axioms Zcash.Snark.Fixture2.capture_deployedAccepts +native(
+  Zcash.Snark.Fixture2.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.unexpected_last_permutation_eval_rejected +native(
   Zcash.Snark.Fixture2.unexpected_last_permutation_eval_rejected)
 assert_axioms Zcash.Snark.Fixture2.missing_nonlast_permutation_eval_rejected +native(
@@ -376,16 +385,6 @@ assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- Census the captured and consensus-generic Action capstones with their fixtures.
-assert_axioms Zcash.Snark.Capstone.capturedActionAcceptFalseStatementEvent +native(
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
-  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 assert_axioms Zcash.Snark.Capstone.action_semantic_count_le
 assert_axioms Zcash.Snark.Capstone.two_pow_254_le_card
 assert_axioms Zcash.Snark.Capstone.action_semantic_terms_le

@@ -210,6 +210,28 @@ variable {P : Primitives F G IVK NK RHO PSI MHASH MENC MSG SIG}
 variable {kv : KeyBindingInterface KW G IVK NK}
 variable {ledger : Ledger KW F G RHO PSI MHASH MENC MSG SIG P.depth}
 
+/-- The empty ledger is valid, at every choice of primitives, key binding, issuance schedule, and
+action bound. The six per-transaction rules are vacuous; the empty ledger reveals no nullifier,
+commits no leaf, has no anchor to check, and leaves the transparent pool at zero.
+
+This is the aliveness witness for the games' sample space: `ValidLedger` — and so
+`ValidAnnotated`, which bundles it — is inhabited, so every bound proved over that space is a
+statement about a nonempty premiss. A transaction-bearing valid ledger at the deployed Orchard
+primitives remains future work: it needs a concrete satisfying Action witness, which is the
+`ActionSatisfied` side of the model rather than the ledger side. -/
+theorem validLedger_nil {issuance : ℕ → ℕ} {maxActions : ℕ} :
+    ValidLedger P kv issuance maxActions
+      ([] : Ledger KW F G RHO PSI MHASH MENC MSG SIG P.depth) where
+  satisfied := by simp
+  nf_nodup := by simp [nullifiers]
+  anchor_valid := fun i => i.elim0
+  capacity := by simp [leafList]
+  sig_verifies := by simp
+  binding_verified := by simp
+  vbalance_bound := by simp
+  transparent_nonneg := by simp [transparentPoolBalance]
+  action_bound := by simp
+
 /-- On a statement-satisfying ledger, the output notes' ρ list is the nullifier list:
 each output's ρ is its action's revealed nullifier (`ρ_new_eq`). -/
 theorem output_rho_eq_nullifiers
