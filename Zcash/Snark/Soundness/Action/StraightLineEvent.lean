@@ -170,53 +170,6 @@ def actionThetaFailureEvent :
         (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1)
         (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h))}
 
-/-- The Action terminal on a decoded run outside all four challenge-failure events.  This is a
-specification object: the DLOG reduction must not project its relation branch noncomputably, but
-must cover that branch with `actionTerminalRelationFinderCovers` below. -/
-def actionTerminalOutcomeOfGood
-    (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG)
-    (O : BTranscript Fp VestaG
-      (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-        + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)
-    (hdecoded : family.straightLineConstraintDecoded static basis O)
-    (hXY : (basis, O) ∉ actionXYFailureEvent pp family static inputs hvk hI hchar)
-    (hBeta : (basis, O) ∉ actionBetaFailureEvent pp family static inputs hvk hI hchar)
-    (hGamma : (basis, O) ∉ actionGammaFailureEvent pp family static inputs hvk hI hchar)
-    (hTheta : (basis, O) ∉ actionThetaFailureEvent pp family static inputs hvk hI hchar) :
-    BundleStatement inputs ⊕'
-      NontrivialRelation (F := Fp)
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis).g
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis).u
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis).w := by
-  have hxy := not_exists.mp hXY hdecoded
-  rw [not_not] at hxy
-  have hbeta := not_exists.mp hBeta hdecoded
-  rw [not_not] at hbeta
-  have hgamma := not_exists.mp hGamma hdecoded
-  rw [not_not] at hgamma
-  have htheta := not_exists.mp hTheta hdecoded
-  rw [not_not] at htheta
-  exact action_bundleStatement_or_relation_of_straightLineDecoded pp family static
-    basis O inputs (hvk basis) (hI basis) hdecoded (hchar basis O)
-    hxy.1 hxy.2 ⟨hgamma.1, hbeta.1⟩ ⟨hgamma.2, hbeta.2, htheta⟩
-
-/-- Coverage requires every decoded good false-statement run to return explicit relation data. -/
-def actionTerminalRelationFinderCovers
-    (finder :
-      (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-      (BTranscript Fp VestaG
-        (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-      Option (AlgebraicRelationWitness (F := Fp) basis)) : Prop :=
-  ∀ basis O,
-    family.straightLineConstraintDecoded static basis O →
-    (basis, O) ∉ actionXYFailureEvent pp family static inputs hvk hI hchar →
-    (basis, O) ∉ actionBetaFailureEvent pp family static inputs hvk hI hchar →
-    (basis, O) ∉ actionGammaFailureEvent pp family static inputs hvk hI hchar →
-    (basis, O) ∉ actionThetaFailureEvent pp family static inputs hvk hI hchar →
-    ¬BundleStatement inputs →
-    (finder basis O).isSome
-
 set_option maxHeartbeats 800000 in
 /-- Outside the four semantic challenge surfaces, a decoded run computes either all private
 witnesses or explicit relation data. -/
@@ -371,22 +324,6 @@ theorem actionKnowledgeOutcome_isSome_of_good
         simpa only [hgoodYEq] using hgoodYSome
     · rename_i hxgoodEq
       simpa only [hxgoodEq] using hxgoodSome
-
-/-- The relation projection covers every good decoded run whose extracted witness would
-contradict a claimed false bundle statement. -/
-theorem actionRelationFinder_covers :
-    actionTerminalRelationFinderCovers pp family static inputs hvk hI hchar
-      (actionRelationFinder pp family static inputs hvk hI hchar) := by
-  intro basis O hdecoded hXY hBeta hGamma hTheta hfalse
-  have hsome := actionKnowledgeOutcome_isSome_of_good pp family static inputs hvk hI hchar
-    basis O hdecoded hXY hBeta hGamma hTheta
-  obtain ⟨outcome, houtcome⟩ := Option.isSome_iff_exists.mp hsome
-  cases outcome with
-  | inl witness => exact False.elim (hfalse witness.statement)
-  | inr relation =>
-      unfold actionRelationFinder
-      rw [houtcome]
-      rfl
 
 set_option maxHeartbeats 800000 in
 /-- Straight-line knowledge failure is covered by the compressed failure, the computed DLOG
