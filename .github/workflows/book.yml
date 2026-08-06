@@ -57,8 +57,8 @@ jobs:
         with:
           tool: mdbook@0.4.52,mdbook-katex@0.9.4,mdbook-mermaid@0.16.2,mdbook-admonish@1.20.0
 
-      - name: Fetch pinned proof-stack source
-        run: git fetch --no-tags https://github.com/zcash/ironwood.git pull/31/head
+      - name: Fetch pinned proof-journey source
+        run: git fetch --no-tags https://github.com/zcash/ironwood.git main
 
       - name: Validate proof journey data
         run: python3 validate-proof-journey.py
