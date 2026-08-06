@@ -443,8 +443,28 @@ assert_axioms Zcash.Snark.Capstone.capturedActionXSqueezeSchedule +native(
 
 -- The per-surface bound the adaptive-statement capstones consume. Its `_for` form takes the
 -- bundle size as a parameter; the census pattern reaches it for the same reason it reaches the
--- other `_measure_le` surfaces, not as an independent claim.
-assert_axioms Zcash.Snark.Capstone.orchard_adaptiveActionStatementSurface_measure_le_for
+-- other `_measure_le` surfaces, not as an independent claim. Like the captured `x`-schedule
+-- above it prices against the captured key, so it carries the derived key's certificate and the
+-- degree caps read off it, plus the two lookup-shape and permutation-cell counts the surfaces
+-- are evaluated at.
+assert_axioms Zcash.Snark.Capstone.orchard_adaptiveActionStatementSurface_measure_le_for +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt,
+  Zcash.Snark.Capstone.actionLookupActivationCount_le,
+  Zcash.Snark.Capstone.actionLookupInputArity_le,
+  Zcash.Snark.Capstone.resolverPermutationCell_card_eq,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 
 -- Adaptive-statement knowledge soundness binds the statement-selected instance prefix before
 -- `theta` and conservatively charges every stage of the combined finder.
