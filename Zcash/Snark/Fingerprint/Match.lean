@@ -19,13 +19,10 @@ This module provides the match's logical content:
   captured proof's own commitments as bases, so the match is a comparison of `F_p` scalars.
 * `fingerprint_match_random_eval_sound` — soundness of the cheaper random-evaluation match: a
   nonzero coefficient difference evades a uniformly random evaluation with probability `≤ d / p`
-  (Schwartz–Zippel). Instantiated at `assemble`'s realized coefficients by the representation
-  walk (`Fingerprint/Rational/`, priced in `Fingerprint/Epsilon.lean`): a competing coefficient
-  family — polynomial numerators of total degree ≤ `D` over the walk's enumerated challenge-only
-  denominators — that differs from Lean's anywhere agrees at a uniform point with probability
-  `≤ (D + B) / p`, with per-capture literals beside the random fixtures
-  (`Fixtures/*/Random/Epsilon.lean`; ε ≈ 2⁻²⁴⁰). The `native_decide` fixture match is what
-  establishes agreement, on each of the four captured proofs — two of them at random inputs.
+  (Schwartz–Zippel). The representation walk instantiates this for polynomial numerators of degree
+  at most `D` over its enumerated challenge denominators, giving probability `≤ (D + B) / p`
+  (`Fingerprint/Epsilon.lean`; ε ≈ 2⁻²⁴⁰). `native_decide` checks all four captures, including two
+  random inputs.
 * `gScalars_card` — the structural cross-check: the assembled MSM carries `2 ^ k` URS-generator
   coefficients, matching the captured Orchard fingerprint's `2 ^ 11 = 2048`.
 * `perm_reindex_of_nodup_snd` / `msmMatch_other_reindex_of_nodup` — the `Perm`→positional
@@ -123,8 +120,7 @@ byte-for-byte from the pinned `zcash/orchard` 0.15.5 release via
 (`.github/workflows/fixtures.yml`); pins, seeds, and rationale in
 `Fixtures/PROVENANCE.md`.
 
-What is trusted rather than checked stays enumerated here — eleven premises no fixture design can
-absorb, the obligation being to keep them enumerated, audited, and small:
+Eleven premises remain trusted rather than fixture-checked:
 
 * capture faithfulness — the exporter is the deployed strategy minus the final `eval()`, a
   few-line reviewed diff;
@@ -134,23 +130,16 @@ absorb, the obligation being to keep them enumerated, audited, and small:
 * Fiat–Shamir bytes and Blake2b — the typed schedule is not a transcript-binding model;
 * the pinned-point caveat — a published capture could be special-cased by a malicious edit,
   excluded by review and by seeds fixed before code;
-* the sampled-point distribution — the captures' proof scalars expand from fixed public seeds,
-  so reading the literal ε at a capture treats the seeded expansion as the uniform sample the
-  ε theorems count over (the seeded-expansion idealization; `Fixtures/PROVENANCE.md`, *Seeds*);
-* ε-class membership — the deployed verifier's coefficient map, as a function of the sampled
-  slots, is taken to lie in the priced class: polynomial numerators of total degree ≤ `D` over
-  the enumerated denominator closure. A divergence outside the class — higher degree, a
-  denominator outside the closure, behavior keyed on group values (the sample space carries no
-  group coordinates) or on decode branches — is outside ε's coverage and rests on the four
-  pointwise matches alone;
-* positional frame stability — the base-matching re-indexing that turns the `Perm` match
-  positional is one fixed function across the good event (the frame note in
-  `Fingerprint/Epsilon.lean`);
-* container-merge exclusion — halo2's `MSM` merges same-x-coordinate terms and drops identity
-  bases where Lean's assembly deliberately does neither; such captures are rejected at export
-  rather than compared, so the match never covers a merging proof. Harmless because both
-  transforms preserve evaluation — an inspection argument on `poly/commitment/msm.rs`, not a
-  theorem;
+* sampled-point distribution — applying the literal ε treats scalar expansion from fixed public
+  seeds as a uniform sample (`Fixtures/PROVENANCE.md`, *Seeds*);
+* ε-class membership — the deployed coefficient map is assumed to use numerators of degree at
+  most `D` over the enumerated denominator closure. Divergences outside this class are covered only
+  by the four pointwise matches;
+* positional frame stability — the base re-indexing that makes the `Perm` match positional stays
+  fixed across the good event (`Fingerprint/Epsilon.lean`);
+* container-merge exclusion — the exporter rejects captures where Halo2 would merge equal-x terms
+  or drop identity bases. That these transforms preserve evaluation follows from code inspection,
+  not a Lean theorem;
 * exporter determinism — the regenerate-and-diff pipeline above;
 * compiler trust for the fixture checks — censused per declaration in each family's
   `TrustBoundary.lean`.

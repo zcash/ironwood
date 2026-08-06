@@ -21,15 +21,9 @@ open Zcash.Arithmetic (Msm)
 theorem valid_capture_assembles : (assemble? vk derivedInstanceCommitment ps ch).isSome = true := by
   native_decide
 
-/-- The aliveness join: the captured two-action proof is a real accepting run of the deployed
-acceptance predicate at the captured URS. The two halves are proved separately —
-`valid_capture_assembles` says the typed read schedule succeeds, `assembledMsm_eval_eq_zero` says the
-assembled MSM evaluates to zero — and only their conjunction is acceptance. Neither half carries it
-alone: `assemble`'s zero-MSM rejection fallback also evaluates to zero, which is exactly why
-`DeployedAccepts` routes through `assemble?` and reads `none` as `False`.
-
-The sampled-basis soundness events remain a separate frame; lifting this witness there would require
-representing the captured commitments in a sampled AGM basis. -/
+/-- The captured two-action proof satisfies `DeployedAccepts`: assembly succeeds and the assembled
+MSM evaluates to zero. This witnesses an accepting run at the captured URS; sampled-basis
+soundness remains separate. -/
 theorem capture_deployedAccepts :
     DeployedAccepts shape capturedURS rfl vk derivedInstanceCommitment ps ch := by
   unfold DeployedAccepts

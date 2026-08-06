@@ -1929,11 +1929,8 @@ assert_computable Zcash.Snark.ActionTerminal.actionKnowledgeExtractor +choice +n
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
--- The adaptive-statement lane's executable extraction chain, pinned like its straight-line
--- siblings above: the staged relation finder (with its call counter), the three Vesta
--- outcome/extractor view wrappers, and the witness-only knowledge projection stay plain defs,
--- so the capstones' "executable witness extraction" claim is compiler-checked rather than
--- incidental.
+-- Keep the adaptive-statement relation finder and extractor wrappers compiler-checked as
+-- executable.
 assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.relationFinderWithCalls +choice +native(
   Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
   Zcash.Snark.actionCopyActiveRowFailures_eq_nil,
@@ -2072,10 +2069,7 @@ assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveSt
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
--- The adaptive-statement interface's non-vacuity smoke test, mirroring the straight-line
--- lane's `straightLineInterface_nonempty_at_captured_shape`: a computable zero-adversary
--- inhabitant at every proof-parameter choice, so the capstones quantify over a class that is
--- exhibited rather than merely typed.
+-- Pin the zero-query adversary that witnesses the adaptive-statement interface is inhabited.
 assert_computable Zcash.Snark.zeroAdaptiveStatementFamily +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,

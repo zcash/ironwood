@@ -47,13 +47,10 @@ computes it per proof from the public instances (`commit_lagrange`) rather than 
 VK, and supplies it to the assembly as a separate argument (`instanceCommitment` of
 `assembleQueries`/`assemble`). This keeps the VK a faithful image of the pinned Rust key.
 
-Two conventions the model does not enforce structurally, discharged at the derived key:
-`n` stands for both of halo2's `params.n` (the `xⁿ` exponent and the `x^n = 1` rejection) and
-`vk.domain`'s size (the Lagrange denominators) — equal in every deployed configuration, and
-asserted equal by the fixture exporter. And `permutationChunks` must pack its columns at
-`chunkLen` stride, since `permChunkExpression` derives each chunk's δ-offset from
-`chunkIndex * chunkLen` exactly as halo2's `chunks(chunk_len)` positioning does; the captured
-key packs 7/7/1 at `chunkLen = 7`. -/
+Two conventions hold for the deployed key but are not enforced by this structure:
+* `n` is both Halo2's `params.n` and the domain size; the fixture exporter checks their equality.
+* `permutationChunks` uses `chunkLen` as its stride, matching Halo2's `chunks(chunk_len)`; the
+  captured key packs 7/7/1 columns with `chunkLen = 7`. -/
 structure VerifyingKey (shape : CircuitShape) (F G : Type*) where
   omega : F
   n : ℕ

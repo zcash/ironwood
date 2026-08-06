@@ -1748,12 +1748,10 @@ Two of these rejections abstract deployed *panics*, not error returns: at `xⁿ 
 challenges (`card_vanishingPanic_le`, `card_multiopenPanic_le`) and are non-accepting either way, which is
 the property the soundness layer consumes; the model just renders "crash" as `none`.
 
-The `u`-count check compares the shape-fixed `multiopenU` length against the *derived* point-set
-count, where halo2 reads exactly `point_sets.len()` scalars; the two agree at the deployed key
-because off the rejected challenge collisions the grouping is one fixed combinatorial object —
-the only collapsing value, `x = 0`, duplicates each permutation product's query point and is
-rejected by the duplicate guard on both sides. Layout/evals length agreement is likewise a
-derived-key fact (`Keygen/Pipeline.lean`'s `toVerifierKey_*QueryCount` lemmas). -/
+Halo2 reads one `u` per derived point set; `assemble?` checks that count against the shape-fixed
+`multiopenU`. The counts agree at the deployed key because grouping is fixed away from rejected
+collisions, and the duplicate guard rejects the only collapsing value, `x = 0`. The derived-key
+query-count lemmas in `Keygen/Pipeline.lean` also keep layout/evaluation zips from truncating. -/
 def assemble? {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) :

@@ -110,10 +110,8 @@ assert_axioms Zcash.Snark.assemble
 -- tamper sensitivity detects a sourcing error in `assemble` on honest captures.
 assert_axioms Zcash.Snark.Fixture.valid_capture_assembles +native(
   Zcash.Snark.Fixture.valid_capture_assembles)
--- The aliveness join: acceptance of the deployed predicate is the conjunction of the two halves
--- above, so it carries their union. The one addition is CompElliptic's Vesta point-order
--- certificate, which the `evalNat`-to-`eval` bridge needs to install the `Fp`-module structure the
--- generic acceptance predicate is stated over.
+-- Acceptance joins successful assembly with zero MSM evaluation. The Vesta order certificate
+-- supports the `evalNat`-to-`eval` bridge.
 assert_axioms Zcash.Snark.Fixture.capture_deployedAccepts +native(
   Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
   Zcash.Snark.Fixture.fingerprint_matches,

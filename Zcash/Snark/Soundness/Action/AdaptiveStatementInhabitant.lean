@@ -5,20 +5,13 @@ import Zcash.Snark.Soundness.AGM.ZeroFamily
 # Non-vacuity of the adaptive-statement Action interface
 
 `ComputedAdaptiveActionStatementFSFamily` is the adversary type the adaptive-statement Action
-capstones quantify over.  This module exhibits one inhabitant at every `ProofParams` — in
-particular at the capstones' `actionProofParamsFor numProofs` — so those capstones are not
-vacuously true.  It is the adaptive-statement counterpart of
-`straightLineInterface_nonempty_at_captured_shape`, and a smoke test only: the adversary reads no
-oracle, selects the all-zero public statement and the all-zero proof string, and is not claimed to
-be accepted.
+capstones quantify over. This module constructs an inhabitant for every `ProofParams`: a
+zero-query adversary that returns an all-zero statement and proof. It is not claimed to be
+accepted; it only rules out vacuous quantification.
 
-The interface's representation obligations are what make this more than the existing zero prover.
-The verifying key is the canonically derived `actionCircuit.toVerifierKey`, whose fixed-column and
-common-permutation commitments are nonzero Lagrange commitments, so the zero-key shortcut of
-`Zcash/Snark/Soundness/AGM/ZeroFamily.lean` does not apply.  Instead every verifier-side
-commitment is given its actual augmented-basis representation: the Lagrange rows commit through
-`LagrangeCommitmentKey.commitInstance` with halo2's default blind `1`, which is where the blind on
-the `w` generator enters each representation below.
+The derived Action key has nonzero fixed and permutation commitments, so the generic zero-key
+family does not apply. We instead provide each commitment's augmented-basis representation,
+including Halo2's default blind `1` on the `w` generator.
 -/
 
 namespace Zcash.Snark
@@ -92,8 +85,8 @@ def adaptiveStatementFixedCoherence :
   ActionFixedCoherence.ofDerived
     (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
 
-/-- The derived Lagrange generators of the AGM basis, in the closed monomial form the
-common-permutation commitment identity consumes. -/
+/-- Rewrite the derived Lagrange generators into the monomial form used by permutation
+commitments. -/
 theorem adaptiveStatementLagrangePrefix :
     ∀ i : Fin (2 ^ (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis).k),
       (i : ℕ) <
@@ -111,9 +104,8 @@ theorem adaptiveStatementLagrangePrefix :
     (derivedUrsGLagrange_generator_eq _
       (Nat.le_of_lt_succ ActionPermutationDomain.domainExponent_lt))
 
-/-- The canonical augmented-basis coordinates of one derived fixed-column commitment.  The
-coefficients are the monomial form of the circuit's dense keygen row; the blind is halo2's default
-`Blind(1)` on the `w` generator. -/
+/-- The canonical augmented-basis representation of a fixed-column commitment, using the dense
+keygen row and Halo2's default blind `1`. -/
 def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCount) :
     AlgebraicPoint (F := Fp) basis :=
   algebraicPointOfCommit (basis := basis)
@@ -141,8 +133,8 @@ def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCo
     (canonicalActionFixedRepresentation pp basis column).point =
       (adaptiveActionStatementVk pp basis).fixedCommitment (column : ℕ) := rfl
 
-/-- The canonical augmented-basis coordinates of one derived common-permutation commitment, from
-the keygen σ rows under the same default blind. -/
+/-- The canonical augmented-basis representation of a common-permutation commitment, using its
+keygen σ row and the default blind `1`. -/
 def canonicalActionPermutationRepresentation
     (c : Fin (AdaptiveActionStatementShape pp).numPermutationColumns) :
     AlgebraicPoint (F := Fp) basis :=
@@ -192,9 +184,8 @@ def canonicalActionPermutationRepresentation
     (canonicalActionPermutationRepresentation pp basis c).point =
       (adaptiveActionStatementVk pp basis).permutationCommonCommitment c := rfl
 
-/-- **The verifier-known representation source of the zero adaptive-statement adversary**: the
-zero point, the blinding generator, and the canonical representation of every derived fixed-column
-and common-permutation commitment. -/
+/-- The zero adversary's verifier-known representations: zero, the blinding generator, and every
+derived fixed-column and common-permutation commitment. -/
 def zeroAdaptiveFixedRepresentations : List (AlgebraicPoint (F := Fp) basis) :=
   zeroAlgebraicPoint (shape := AdaptiveActionStatementShape pp) basis ::
     blindAlgebraicPoint basis ::
@@ -252,8 +243,8 @@ end DerivedKey
 
 /-! ## Coverage of the assembled multiopen data by a representation source
 
-These are the `MsmZeroData` arguments of `Zcash/Snark/Soundness/Multiopen/ZeroData.lean` with the
-zero-content invariant replaced by source coverage, which is what a nonzero verifying key needs.
+These lemmas generalize `MsmZeroData` from zero commitments to commitments represented by a
+source, as required by a nonzero verifying key.
 -/
 
 section Coverage
@@ -261,7 +252,7 @@ section Coverage
 variable {shape : Shape} {basis : AugmentedIndex (2 ^ shape.k) → VestaG}
   {source : List (AlgebraicPoint (F := Fp) basis)}
 
-/-- Every point an MSM appends carries a representation in the source. -/
+/-- Every nongenerator point in the MSM has a representation in `source`. -/
 def MsmCovered (source : List (AlgebraicPoint (F := Fp) basis))
     (m : Msm shape.k Fp VestaG) : Prop :=
   ∀ t ∈ m.other, ∃ ap ∈ source, ap.point = t.2
@@ -391,9 +382,8 @@ theorem columnQueries_covered (omega x : Fp) (commitment : ℕ → VestaG)
   obtain ⟨e, he, rfl⟩ := List.mem_map.mp hq
   exact hcomm e.1 (List.of_mem_zip he).1
 
-/-- **Every query assembled from the zero proof string is covered** once the source represents the
-zero point, the statement-derived instance commitments, the key's queried fixed-column
-commitments, and its common-permutation commitments. -/
+/-- Every query from the zero proof string is covered when the source represents zero, instance,
+fixed-column, and common-permutation commitments. -/
 theorem assembleQueries_covered_zeroProofString
     (vk : VerifyingKey shape Fp VestaG) (ic : Fin shape.numProofs → ℕ → VestaG)
     (hzero : ∃ ap ∈ source, ap.point = (0 : VestaG))
@@ -472,8 +462,7 @@ theorem assembleQueries_covered_zeroProofString
         exact hzero
       · exact absurd hq List.not_mem_nil
 
-/-- Every reference routed into a deployed point set is one of the assembled queries', hence
-covered. -/
+/-- Every reference routed to a deployed point set comes from an assembled query and is covered. -/
 theorem deployedSetQueries_covered
     (vk : VerifyingKey shape Fp VestaG) (ic : Fin shape.numProofs → ℕ → VestaG)
     (ps : ProofString shape Fp VestaG) (ch : Challenges shape.k Fp)
@@ -530,8 +519,7 @@ variable (pp : ProofParams)
 def zeroAdaptiveInputs : Fin pp.numProofs → PublicInputs Fp :=
   fun _ => zeroActionPublicInputs
 
-/-- The representation source the zero adversary's proof data is covered by: its canonical
-instance representations followed by the verifier-known key representations. -/
+/-- The zero adversary's instance and verifier-known key representations. -/
 def zeroAdaptiveSource : List (AlgebraicPoint (F := Fp) basis) :=
   adaptiveStatementInstanceRepresentationList
     (canonicalAdaptiveStatementInstanceRepresentation pp basis (zeroAdaptiveInputs pp)) ++
@@ -551,8 +539,8 @@ theorem zeroAdaptiveSource_zero :
     mem_zeroAdaptiveSource_of_mem_fixed pp basis
       (zeroAlgebraicPoint_mem_zeroAdaptiveFixedRepresentations pp basis), rfl⟩
 
-/-- Every statement-derived instance commitment is represented in the source: the configured
-columns by their canonical representations, the remaining ones by the blinding generator. -/
+/-- Every statement-derived instance commitment is represented: configured columns canonically,
+and remaining columns by the blinding generator. -/
 theorem zeroAdaptiveSource_instance
     (p : Fin (AdaptiveActionStatementShape pp).numProofs) (column : ℕ) :
     ∃ ap ∈ zeroAdaptiveSource pp basis,
@@ -592,9 +580,7 @@ theorem zeroAdaptiveSource_assembleQueries (ch : Challenges (AdaptiveActionState
       exact ⟨ap, mem_zeroAdaptiveSource_of_mem_fixed pp basis hap, hpoint⟩)
     ch
 
-/-- **The zero adversary's online proof data**: the all-zero algebraic proof string, with every
-assembled multiopen point and every routed member reference covered by the canonical
-representation source. -/
+/-- All-zero proof data whose assembled and routed commitments have canonical representations. -/
 def zeroAdaptiveProofData :
     OnlineMemberProofData
       (vk := adaptiveActionStatementVk pp basis)
@@ -629,7 +615,7 @@ def zeroAdaptiveProofData :
       (deployedSetQueries_covered _ _ _ _
         (zeroAdaptiveSource_assembleQueries pp basis (chRecord nu (fun _ => 0))) i _ hmem)
 
-/-- **The zero adversary's jointly selected statement and proof.** -/
+/-- The zero adversary's statement and proof output. -/
 def zeroAdaptiveStatementOutput :
     AdaptiveActionStatementOutput pp basis (zeroAdaptiveFixedRepresentations pp basis) where
   inputs := zeroAdaptiveInputs pp
@@ -640,10 +626,8 @@ def zeroAdaptiveStatementOutput :
 
 end Adversary
 
-/-- **The zero adaptive-statement adversary at any proof parameters.**  It reads no random-oracle
-point, selects the all-zero Action statement and the all-zero proof string, and represents every
-verifier-known commitment of the canonically derived key.  Acceptance is not claimed: this
-inhabits the interface, nothing more. -/
+/-- A zero-query family that returns an all-zero statement and proof and represents every
+derived-key commitment. It inhabits the interface but is not claimed to be accepted. -/
 def zeroAdaptiveStatementFamily (pp : ProofParams) :
     ComputedAdaptiveActionStatementFSFamily pp where
   vkHash := fun _ _ => 0
@@ -654,10 +638,7 @@ def zeroAdaptiveStatementFamily (pp : ProofParams) :
   Q := 0
   queryBound := fun _ => .pure _ 0
 
-/-- **The adaptive-statement interface is inhabited at every proof parameterization** — the
-non-vacuity smoke test of the adaptive-statement capstones, mirroring
-`straightLineInterface_nonempty_at_captured_shape` one interface up.  The capstones quantify at
-`actionProofParamsFor numProofs`, which is one instance of this. -/
+/-- The adaptive-statement adversary interface is inhabited for every proof parameterization. -/
 theorem adaptiveStatementInterface_nonempty (pp : ProofParams) :
     Nonempty (ComputedAdaptiveActionStatementFSFamily pp) :=
   ⟨zeroAdaptiveStatementFamily pp⟩

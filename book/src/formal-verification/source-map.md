@@ -149,13 +149,10 @@ consumes. `ConstraintWalk`, `GroupingTable` (with `Verifier/GroupingRef`), `Open
 assembly — grouping stability through a fixed reference table, the opening value, the IPA
 scalars, and the positional `other` coefficient stream — into `assembleCoeffFamily`: every
 MSM coefficient as a polynomial numerator over enumerated denominators with one degree budget.
-`Epsilon` then prices it: a competing coefficient family — polynomial numerators of bounded
-degree over the walk's enumerated challenge-only denominators — that differs from Lean's
-anywhere agrees at a uniform point with probability at most `(D + B)/p` — the invariant's
-concrete ε — with per-capture literals in the random families' `Epsilon` modules. The premises
-this reading rests on (among them that the deployed coefficient map lies in that priced class,
-and the sampled-point distribution behind "a uniform point") are enumerated in
-`Fingerprint/Match.lean`.
+`Epsilon` then prices the match. For bounded-degree polynomial numerators over the walk's
+enumerated challenge denominators, a family that differs from Lean's agrees at a uniform point
+with probability at most `(D + B)/p`. The random fixtures state the concrete ε values;
+`Fingerprint/Match.lean` lists the premises, including class membership and sample uniformity.
 
 ### `Fixtures/` — captured proofs and boundary checks
 
@@ -314,13 +311,11 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `ActionEvents` carries the shape
-transport joining the Action proof parameters to the fixture shape, `ActionChecks` carries the
-captured key's scalars and static checks, `ActionBudgets` discharges the semantic surfaces, and
-`Action` states the two adaptive-statement knowledge-soundness endpoints — the compositional
-error-formula bound and its resource-accounted `2^123` work-factor form — for every
-consensus-valid bundle size. (The fixed-statement ordinary-soundness endpoints that once lived
-here were retired with the legacy adaptive-action path; their events went with them.)
+Where the deployed Action circuit's statements are stated. `ActionEvents` transports proof
+parameters to the fixture shape, `ActionChecks` holds captured-key scalars and static checks,
+`ActionBudgets` discharges semantic surfaces, and `Action` states two adaptive-statement
+knowledge-soundness bounds for every consensus-valid bundle size: the compositional formula and
+the resource-accounted `2^123` form. Legacy fixed-statement endpoints and their events are retired.
 
 Endpoints about the *verifier's algebra* rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in

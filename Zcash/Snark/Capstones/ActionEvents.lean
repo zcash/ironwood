@@ -11,11 +11,8 @@ import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
 /-!
 # Shape transport for the Action endpoints
 
-Joins the Action circuit's proof-parameterized shape to the fixture shape the
-consensus-maximum bounds are stated at. The adaptive-statement endpoints in `Capstones.Action`
-bound events defined alongside their model (`Soundness/Action/AdaptiveStatementModel.lean`,
-`…/AdaptiveStatementKnowledge.lean`); no event definitions live here — the false-statement
-event definitions that once did were retired with the legacy fixed-statement capstones.
+Connects the Action circuit's proof-parameterized shape to the fixture shape used by the
+consensus-maximum bounds. Adaptive-statement events are defined with their model, not here.
 -/
 
 namespace Zcash.Snark.Capstone

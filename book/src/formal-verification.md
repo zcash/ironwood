@@ -148,11 +148,10 @@ What the fixture captures actually *check* is the statement of record in each fa
 `Boundary.lean` — `nonInteractiveFingerprint_matches_derived` — with the quantified match and its
 ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headliners in
 `Fixtures/*/Random/Epsilon.lean`. Capture lineage, seeds, and the reproducibility pipeline are in
-`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the Rust↔Lean
-boundary at the typed, post-decoding layer; they do not claim or prove universal byte-level
-refinement. Byte encoding, transcript domain-prefix bytes, and Blake2b remain the explicit external
-boundary enumerated in `Snark/Fingerprint/Match.lean` and tracked in
-[#66](https://github.com/zcash/ironwood/issues/66).
+`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed,
+post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
+domain-prefix bytes, and Blake2b remain external; `Snark/Fingerprint/Match.lean` enumerates this
+boundary, tracked in [#66](https://github.com/zcash/ironwood/issues/66).
 
 Coined terms and shorthand for the development, including the two conventions above, are
 collected in the [glossary](formal-verification/glossary.md).
