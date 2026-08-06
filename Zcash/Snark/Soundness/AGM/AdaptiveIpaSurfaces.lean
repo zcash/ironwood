@@ -41,6 +41,9 @@ structure DecodedIpaPrefix
   proof : WfProof shape
   point_eq : fullPrefixes init proof j = t
 
+/-- Choose an IPA-round prefix decode when the bounded transcript is a valid deployed squeeze
+point; failure produces `none` and callers assign the empty bad set. This choice is used only to
+describe a probability surface; all relation-producing branches remain executable. -/
 noncomputable def decodeIpaPrefix?
     (init : List (TranscriptElt Fp VestaG)) (j : Fin shape.k)
     (t : BTranscript Fp VestaG

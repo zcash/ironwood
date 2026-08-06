@@ -234,13 +234,16 @@ structure DecodedStatementIpaPrefix (pp : ProofParams)
   proof : WfProof (AdaptiveActionStatementShape pp)
   point_eq : prefixesOf vkTranscriptRepr instanceCommitment proof j = t
 
-/-- Choose a canonical pre-IPA decode when one exists; unrelated oracle queries decode to `none`. -/
+/-- Choose a canonical pre-IPA decode when one exists; unrelated oracle queries decode to `none`.
+This choice is used only to describe a probability surface; all relation-producing branches
+remain executable (the census pins them `assert_computable`). -/
 noncomputable def decodeStatementPrePrefix? {pp : ProofParams} (n : Fin 11)
     (t : AdaptiveActionStatementTranscript pp) :
     Option (DecodedStatementPrePrefix pp n t) :=
   if h : Nonempty (DecodedStatementPrePrefix pp n t) then some (Classical.choice h) else none
 
-/-- Choose a canonical IPA decode when one exists. -/
+/-- Choose a canonical IPA decode when one exists. This choice is used only to describe a
+probability surface; all relation-producing branches remain executable. -/
 noncomputable def decodeStatementIpaPrefix? {pp : ProofParams}
     (j : Fin (AdaptiveActionStatementShape pp).k)
     (t : AdaptiveActionStatementTranscript pp) :

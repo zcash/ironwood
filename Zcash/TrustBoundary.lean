@@ -72,6 +72,7 @@ import Mathlib.Util.AssertNoSorry
 import Zcash.Snark.Soundness.AGM.AdaptiveIpaSurfaces
 import Zcash.Snark.Soundness.AGM.AdaptiveRootSurfaces
 import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
+import Zcash.Snark.Soundness.Action.AdaptiveStatementInhabitant
 
 /-!
 # Trust boundary, build-checked
@@ -205,6 +206,11 @@ assert_axioms Zcash.Security.Ledger.Model.output_rho_eq_nullifiers
 assert_axioms Zcash.Security.Ledger.Model.output_rho_nodup
 assert_axioms Zcash.Security.Ledger.Model.leafList_eq_map
 assert_axioms Zcash.Security.Ledger.Model.outputOpenings_length
+-- Sample-space aliveness: the games' valid-ledger subtype is inhabited at every instantiation
+-- of the primitives (the empty ledger), so the capstone bounds quantify over an exhibited
+-- class. A transaction-bearing valid ledger at the deployed pool remains future work.
+assert_axioms Zcash.Security.Ledger.Model.validLedger_nil
+assert_axioms Zcash.Security.Ledger.Model.validAnnotated_nonempty
 
 /-! ## Balance-subset
 
@@ -1928,6 +1934,116 @@ assert_computable Zcash.Snark.ActionTerminal.actionKnowledgeExtractor +choice +n
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+-- The adaptive-statement lane's executable extraction chain, pinned like its straight-line
+-- siblings above: the staged relation finder (with its call counter) and the witness-only
+-- knowledge projection stay plain defs, so the capstones' "executable witness extraction"
+-- claim is compiler-checked rather than incidental.
+assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.relationFinderWithCalls +choice +native(
+  Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
+  Zcash.Snark.actionCopyActiveRowFailures_eq_nil,
+  Zcash.Snark.actionCopyAddressFailures_eq_nil, Zcash.Snark.actionCopyBounds,
+  Zcash.Snark.actionMissingConstantAllocations_eq_nil,
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,
+  Zcash.Snark.ActionFixedCoherence.realizationFailures_eq_nil,
+  Zcash.Snark.ActionGateCoherence.adviceQueryColumnsAllocated,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt, Zcash.Snark.ActionGateCoherence.gateData_eq,
+  Zcash.Snark.ActionGateCoherence.selectorDegree,
+  Zcash.Snark.ActionPermutationDomain.instanceQueryLayout_columns_lt,
+  Zcash.Snark.ActionPermutationDomain.numInstanceColumns_eq,
+  Zcash.Snark.ActionPermutationDomain.permutationColumnCount_eq,
+  Zcash.Snark.ActionPermutationDomain.routingFailures_eq_nil,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.relationFinder +choice +native(
+  Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
+  Zcash.Snark.actionCopyActiveRowFailures_eq_nil,
+  Zcash.Snark.actionCopyAddressFailures_eq_nil, Zcash.Snark.actionCopyBounds,
+  Zcash.Snark.actionMissingConstantAllocations_eq_nil,
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,
+  Zcash.Snark.ActionFixedCoherence.realizationFailures_eq_nil,
+  Zcash.Snark.ActionGateCoherence.adviceQueryColumnsAllocated,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt, Zcash.Snark.ActionGateCoherence.gateData_eq,
+  Zcash.Snark.ActionGateCoherence.selectorDegree,
+  Zcash.Snark.ActionPermutationDomain.instanceQueryLayout_columns_lt,
+  Zcash.Snark.ActionPermutationDomain.numInstanceColumns_eq,
+  Zcash.Snark.ActionPermutationDomain.permutationColumnCount_eq,
+  Zcash.Snark.ActionPermutationDomain.routingFailures_eq_nil,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeExtractor +choice +native(
+  Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
+  Zcash.Snark.actionCopyActiveRowFailures_eq_nil,
+  Zcash.Snark.actionCopyAddressFailures_eq_nil, Zcash.Snark.actionCopyBounds,
+  Zcash.Snark.actionMissingConstantAllocations_eq_nil,
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,
+  Zcash.Snark.ActionFixedCoherence.realizationFailures_eq_nil,
+  Zcash.Snark.ActionGateCoherence.adviceQueryColumnsAllocated,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt, Zcash.Snark.ActionGateCoherence.gateData_eq,
+  Zcash.Snark.ActionGateCoherence.selectorDegree,
+  Zcash.Snark.ActionPermutationDomain.instanceQueryLayout_columns_lt,
+  Zcash.Snark.ActionPermutationDomain.numInstanceColumns_eq,
+  Zcash.Snark.ActionPermutationDomain.permutationColumnCount_eq,
+  Zcash.Snark.ActionPermutationDomain.routingFailures_eq_nil,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+-- The adaptive-statement interface's non-vacuity smoke test, mirroring the straight-line
+-- lane's `straightLineInterface_nonempty_at_captured_shape`: a computable zero-adversary
+-- inhabitant at every proof-parameter choice, so the capstones quantify over a class that is
+-- exhibited rather than merely typed.
+assert_computable Zcash.Snark.zeroAdaptiveStatementFamily +choice +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,
+  Zcash.Snark.ActionFixedCoherence.realizationFailures_eq_nil,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt,
+  Zcash.Snark.ActionPermutationDomain.numInstanceColumns_eq,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+assert_axioms Zcash.Snark.adaptiveStatementInterface_nonempty +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.ActionFixedCoherence.queryCoverageFailures_eq_nil,
+  Zcash.Snark.ActionFixedCoherence.realizationFailures_eq_nil,
+  Zcash.Snark.ActionGateCoherence.domainExponent_lt,
+  Zcash.Snark.ActionPermutationDomain.numInstanceColumns_eq,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintRelationFinderCalls_le_four +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintFailureSet_subset +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -2071,6 +2187,9 @@ is the same witness the circuit layer above carries, reaching this file through 
 scalar action rather than a certificate check. -/
 
 assert_computable Zcash.Security.Ledger.Bridge.breakCoeffs +choice
+-- `relationOfValidBreak` is `relationOfBreakData`'s sole callee; pinned directly so the census
+-- is self-evident at the file level rather than only via the compiler's transitive enforcement.
+assert_computable Zcash.Security.Ledger.Bridge.relationOfValidBreak +choice +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Security.Ledger.Bridge.relationOfBreakData +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
