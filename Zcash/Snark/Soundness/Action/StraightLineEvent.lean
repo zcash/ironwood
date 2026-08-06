@@ -53,6 +53,24 @@ def actionKnowledgeFailureEvent :
       (algebraicFullPrefixesPre family.init) (algebraicFullPrefixes family.init) q.2 ∧
     actionKnowledgeExtractor pp family static inputs hvk hI hchar q.1 q.2 = none}
 
+/-- Accepting a false bundle statement is a knowledge failure.  A returned witness entails
+`BundleStatement` by `ActionBundleWitness.statement`, so on a false statement the executable
+projection must have returned `none`.
+
+This is the straight-line counterpart of
+`ComputedAdaptiveActionStatementFSFamily.acceptFalseStatement_subset_knowledgeFailure`, and the
+step by which the advertised knowledge endpoints imply ordinary Action soundness at the same
+error.  It is a containment, not an endpoint -- no probability is claimed here. -/
+theorem acceptFalseStatement_subset_knowledgeFailure :
+    family.straightLineConstraintSemanticFailureEvent
+        (fun _ _ => BundleStatement inputs) ⊆
+      actionKnowledgeFailureEvent pp family static inputs hvk hI hchar := by
+  rintro q ⟨haccept, hfalse⟩
+  refine ⟨haccept, ?_⟩
+  cases hextract : actionKnowledgeExtractor pp family static inputs hvk hI hchar q.1 q.2 with
+  | none => rfl
+  | some witness => exact absurd (ActionBundleWitness.statement witness) hfalse
+
 /-- The accepted constraint model at the run's own decode. -/
 abbrev actionRunModel
     (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG)
