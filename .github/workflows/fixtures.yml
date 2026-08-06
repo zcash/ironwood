@@ -67,9 +67,10 @@ jobs:
         with:
           persist-credentials: false
       # Repo-local, filter-independent guards: the committed capture-artifact set equals the
-      # script's pinned regeneration list, and every capture carries the exporter header. A
-      # new or renamed fixture family fails here on the PR that adds it, instead of sitting
-      # in the tree as a "capture" nothing regenerates.
+      # script's pinned regeneration list, every capture carries the exporter header, and any
+      # header-carrying Lean file outside the pinned list fails whatever its basename. A new
+      # or renamed fixture family fails here on the PR that adds it, instead of sitting in
+      # the tree as a "capture" nothing regenerates.
       - name: Check the committed capture-artifact set against the pinned list
         run: ./scripts/regenerate-fingerprint-fixtures.sh --check-set
       # Regeneration is expensive (real k=11 Orchard proofs + verifier runs), so only run

@@ -215,9 +215,9 @@ end UnneededChoice
 
 namespace CompiledOverrides
 
-/-! `implemented_by` and `extern` alter native execution without entering the logical dependency
-or axiom graph.  Check the whole Ironwood dependency cone, not only the pinned declaration: both
-forgeries sit one helper below the otherwise ordinary endpoint. -/
+/-! `implemented_by`, `extern`, and `csimp` alter native execution without entering the logical
+dependency or axiom graph.  Check the whole Ironwood dependency cone, not only the pinned
+declaration: the forgeries sit one helper below the otherwise ordinary endpoint. -/
 
 unsafe def dishonestImplementation (n : Nat) : Nat := n + 2
 
@@ -238,6 +238,49 @@ def throughExtern (n : Nat) : Nat := externHelper n
 /-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughExtern reaches unchecked compiled replacement(s): Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.externHelper @[extern] -/
 #guard_msgs (whitespace := lax) in
 assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughExtern
+
+/-! A `private` helper's environment name carries the `_private.<module>.0.` prefix, so a scope
+test on the raw name would wave its replacement through.  The check must normalize through
+`privateToUserName?`. -/
+
+unsafe def dishonestPrivateImplementation (n : Nat) : Nat := n + 4
+
+@[implemented_by dishonestPrivateImplementation]
+private def privateImplementedHelper (n : Nat) : Nat := n + 1
+
+def throughPrivateImplementedBy (n : Nat) : Nat := privateImplementedHelper n
+
+/-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughPrivateImplementedBy reaches unchecked compiled replacement(s): Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.privateImplementedHelper @[implemented_by Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.dishonestPrivateImplementation] -/
+#guard_msgs (whitespace := lax) in
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughPrivateImplementedBy
+
+/-! `@[csimp]` substitutes compiled code on the strength of its equation theorem.  An equation
+resting on a bespoke axiom is an unchecked substitution wearing a proof's clothes; one resting on
+the standard axioms is the sanctioned mechanism and must keep passing. -/
+
+def csimpVictim (n : Nat) : Nat := n + 1
+
+def csimpDishonest (n : Nat) : Nat := n + 2
+
+axiom forgedCsimpEq : @csimpVictim = @csimpDishonest
+
+@[csimp] theorem csimpVictim_eq_dishonest : @csimpVictim = @csimpDishonest := forgedCsimpEq
+
+def throughForgedCsimp (n : Nat) : Nat := csimpVictim n
+
+/-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughForgedCsimp reaches the csimp replacement of Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.csimpVictim, whose equation Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.csimpVictim_eq_dishonest depends on unexpected axiom(s): [Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.forgedCsimpEq] -/
+#guard_msgs (whitespace := lax) in
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughForgedCsimp
+
+def csimpHonestSlow (n : Nat) : Nat := n + 1
+
+def csimpHonestFast (n : Nat) : Nat := n + 1
+
+@[csimp] theorem csimpHonestSlow_eq_fast : @csimpHonestSlow = @csimpHonestFast := rfl
+
+def throughHonestCsimp (n : Nat) : Nat := csimpHonestSlow n
+
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughHonestCsimp
 
 end CompiledOverrides
 
