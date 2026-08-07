@@ -302,8 +302,8 @@
       "id": "agm",
       "chapter": "AGM to discrete log",
       "title": "Price the relation branch",
-      "claim": "The algebraic Fiat-Shamir game produces PR #28's deployed instances, states binding as a computable value mismatch against the carried aggregate opening (never as nonexistence of an opening, which holds vacuously in a prime-order group), and feeds every mismatch run's explicit relation to the plain-DL probability bound.",
-      "summary": "The programmed-basis relation-to-DL reduction plants the challenge in every basis slot and loses only one 1/|F| hyperplane. The live straight-line and adaptive-statement Action finders use executable outcomes and explicit finite-resource profiles. The earlier recursive finder remains visible only in the pinned historical stages; #142 removed it from the live reduction stack.",
+      "claim": "For represented online algebraic adversaries, with Fiat–Shamir challenges modelled as a random oracle, every explicit relation is reduced to discrete log with separately accounted oracle-query, Vesta group-work, and statistical terms.",
+      "summary": "The programmed-basis reduction plants the challenge in every basis slot and loses only one 1/|F| hyperplane. The adaptive-statement route erases its cost instrumentation back to the original game and reuses one cached execution for relation finding and witness extraction. Its quoted powers are resource coverage for a probability bound, not a universal security ceiling. The earlier recursive finder remains visible only in the pinned historical stages; #142 removed it from the live reduction stack.",
       "nodes": [
         "relation",
         "fsAdversary",
@@ -480,13 +480,13 @@
         "Every group point in the adaptive Fiat-Shamir adversary's proof output carries its representation over (g,U,W).",
         "The pinned historical stack records how the retired recursive extractor computed an AlgebraicDForkCert; the live reduction no longer imports that route.",
         "Every binding mismatch yields explicit relation data, and the programmed-basis conversion loses only one 1/|F| miss hyperplane.",
-        "The straight-line constraint finder has a pointwise four-run bound; the composed sequential Action finder uses six runs, while the adaptive-statement knowledge outcome retains one output and annotation log for its provenance checks and charges the later quotient, identity, and terminal stages separately.",
+        "The adaptive-statement finder and witness extractor reuse one adversary output, annotation log, and challenge vectors; the cached finder is pointwise equal to the original finder and extraction succeeds on exactly the same oracle tables.",
         "The Action knowledge extractors are executable and return the actual private witnesses for every proof in the bundle together with proofs that they satisfy the compiled Action specification; both the adaptive-statement and straight-line/sequential relation projections share their route's data-bearing outcome.",
-        "The direct profiles separately account for random-oracle, group, and direct-coordinate work while leaving the finite-security Vesta DLOG advantage as a caller premise.",
-        "For every numProofs at or below Orchard's consensus maximum, the generic adaptive-statement Action knowledge endpoint bounds verifier acceptance when executable private-witness extraction fails by <code>Adv_DLOG(2^126,2^126) + 2^-83</code> at a <code>2^123</code> computational work target. It prices the four semantic challenge surfaces (<code>θ, β, γ, y</code>) and the constraint surface (<code>x</code>), profiles the shared extractor, and exposes an explicit <code>PMFEventBiasLE</code> transport conjunct. The <code>2^-83</code> term is an independent statistical soundness error, and the endpoint requires no externally supplied traces, cuts, or views."
+        "The resource model keeps random-oracle queries, Vesta group operations, and direct-coordinate work separate. The DLOG advantage term is the conclusion of the programmed-basis reduction; the theorem does not take a DLOG-hardness proposition as a premise.",
+        "For every Action count at or below Orchard's consensus maximum, the conditionally staged-certified adaptive-statement endpoints bound verifier acceptance with failed executable witness extraction by <code>Adv_DLOG(2^124,2^126) + 2^-83</code>. They cover represented online-AGM adversaries with random-oracle challenge derivation. At the separate <code>Q ≤ 2^123</code> oracle parameter, both <code>2^123</code> and <code>2^125</code> adversary group-work budgets are covered; the latter's adversary-plus-reduction group work is at most <code>2^126</code>. One closed program constructs the charged basis, specializes the exact adversary path with its annotations and group nodes, builds a proof-carrying cache, and feeds that same cache through reified verifier postprocessing. Lean proves its counter decomposition. Because the embedding is shallow, staging fidelity remains explicit for both the supplied adversary and generic host callbacks in the complete program. The three-decode bound follows from a required family representation-length invariant, not a concrete deployment family constructed here; the executable read-set bound also remains separate from the DLOG group budget."
       ],
       "residuals": [
-        "Identify Blake2b and halo2's concrete hash-to-curve with their modeled random oracles; supply finite-security Vesta DL hardness and implementation work bounds; and identify the extracted circuit private witnesses and compiled Action specification with the ledger-level Orchard witness relation. The result covers represented online-AGM adversaries, not arbitrary non-algebraic random-oracle adversaries."
+        "Identify Blake2b and halo2's concrete hash-to-curve with their modeled random oracles, relate a concrete implementation to the costed algebraic program, choose a concrete interpretation of the resulting finite-resource Vesta DLOG advantage, and identify the extracted circuit witnesses with the ledger-level Orchard witness relation. The theorem covers represented online-AGM adversaries, not arbitrary non-algebraic random-oracle adversaries."
       ],
       "durationMs": 10000
     },
@@ -597,8 +597,8 @@
       "id": "compose",
       "chapter": "Capstones",
       "title": "Compose legacy opening and circuit satisfaction",
-      "claim": "The extracted opening and gate identity form SnarkRelation, which the legacy propositional Vesta capstone family exposes at the verifier boundary.",
-      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. The legacy opening and constraint capstones package this route across abstract, deployed, adaptive, rewind, xgood, and x4 variants; the computed explicit-certificate AGM/DL endpoint is tracked separately.",
+      "claim": "Given the accepting rewind data and structural premises named by a legacy Vesta rung, Lean constructs one SnarkRelation joining the extracted IPA opening to circuit satisfaction for the same witness.",
+      "summary": "These are conditional extraction theorems over explicit transcript trees or accepting rewinds, not finite-resource guarantees for an executable adversary. They cover the abstract, deployed, adaptive, xgood, and x4 variants without assigning a numerical query or work envelope. The live represented-adversary probability guarantees and their coverage parameters are stated separately in the AGM stage.",
       "nodes": [
         "IpaRelation",
         "circuitSat",
@@ -643,10 +643,10 @@
       ],
       "proves": [
         "The legacy opening and constraint branches refer to the same pinned verifier statement.",
-        "The legacy capstone family makes each modeled adversary and residual hypothesis explicit."
+        "Each legacy rung exposes the accepting execution data and structural conditions it requires."
       ],
       "residuals": [
-        "Different legacy capstones retain different structural and probability premises.",
+        "These rungs do not by themselves model or resource-bound an executable adversary; different variants retain different structural and probability premises.",
         "SnarkRelation is not yet the intended high-level Ironwood security statement."
       ],
       "durationMs": 9500
@@ -655,8 +655,8 @@
       "id": "boundary",
       "chapter": "Trust boundary",
       "title": "Stop at the exact formal boundary",
-      "claim": "The formal chain reaches SnarkRelation and explicit reduction disjunctions; it does not erase the remaining modeling and composition gaps.",
-      "summary": "The final view keeps hypotheses and out-of-Lean assumptions visible. This is the honest endpoint: a large mechanized core with named inputs, probability budgets, computational assumptions, and uncomposed execution semantics rather than an all-green claim of end-to-end verification.",
+      "claim": "The formal chain reaches executable Action witnesses or explicit relation data and states every remaining model boundary as a premise or documented interpretation step.",
+      "summary": "The strongest adaptive capstones cover represented online algebraic adversaries in the random-oracle model at explicit query and group-work parameters. Exact reduction data flow and counter composition are derived. The shallow cost language leaves explicit fidelity obligations for the supplied adversary and for generic host callbacks in the complete program; the direct-decode derivation depends on a required family length invariant. Legacy rewind rungs remain conditional on supplied accepting trees. Neither route identifies concrete hashes, the captured verifier artifact, or the compiled circuit witness with the ledger-level Orchard relation inside Lean.",
       "nodes": [
         "capstones",
         "structural",
@@ -706,8 +706,8 @@
         "The endpoint records reduction outcomes and residual premises without hiding them."
       ],
       "residuals": [
-        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, generator hash-to-curve-as-RO, the AGM idealization, and DL hardness.",
-        "Runtime extraction, real-adversary execution, oracle-query loss, and combined error budgeting."
+        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, generator hash-to-curve-as-RO, the AGM idealization, and a concrete interpretation of the finite-resource DLOG advantage.",
+        "The adaptive group-work result remains conditional on external adversary fidelity and on no hidden Vesta work in generic host callbacks of the complete shallow program. Exact reduction composition is derived; direct-decode coverage follows once the family supplies its required representation-length invariant. The legacy rewind capstones still require their named execution and probability premises."
       ],
       "durationMs": 11000
     }
