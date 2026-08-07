@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-e6b8ac48.js";
+            window.path_to_searchindex_js = "searchindex-902a38be.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -917,8 +917,9 @@ boundary theorems, documenting precisely <em>which</em>
 compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
 (<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global <code>Lean.ofReduceBool</code> —
 because for a captured fingerprint match the exact axiom set <em>is</em> the claim, the case
-<code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds <code>Zcash</code> and <code>FixtureCheck</code> as
-default targets, and each <code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs
+<code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds all five default targets —
+<code>Zcash</code>, <code>FixtureCheck</code>, <code>CircuitCheck</code>, <code>MetaCheck</code>, and <code>SecurityCheck</code> — and each
+<code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs
 the verifier, so anything <code>noncomputable</code> on the assembled-verifier path fails the build.</p>
 <p>What the fixture captures actually <em>check</em> is the statement of record in each family's
 <code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived</code> — with the quantified match and its
