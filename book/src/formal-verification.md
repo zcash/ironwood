@@ -4,8 +4,8 @@ Ironwood's formal verification is a Lean 4 development (over Mathlib) in this re
 verifier soundness for the deployed Halo 2 verifier under `Zcash/Snark/`, and the protocol
 security-property layers (binding-signature balance, key binding, and the ledger-model
 security games) under `Zcash/Security/`. This page documents two development-wide
-conventions: how security breaks are represented, and what the development is allowed to
-trust.
+conventions — how security breaks are represented, and what the development is allowed to
+trust — and where the model idealizes the deployed verifier.
 
 ## Breaks as computed data
 
@@ -148,7 +148,36 @@ What the fixture captures actually *check* is the statement of record in each fa
 `Boundary.lean` — `nonInteractiveFingerprint_matches_derived` — with the quantified match and its
 ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headliners in
 `Fixtures/*/Random/Epsilon.lean`. Capture lineage, seeds, and the reproducibility pipeline are in
-`Zcash/Snark/Fixtures/PROVENANCE.md`.
+`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed,
+post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
+domain-prefix bytes, and Blake2b remain external; `Snark/Fingerprint/Match.lean` enumerates this
+boundary, tracked in [#66](https://github.com/zcash/ironwood/issues/66).
+
+**The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
+`CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off
+instrumentation of halo2/orchard that was never published, so unlike the verifier-fingerprint
+captures they have no regenerate-and-diff pipeline: CI pins their bytes (`SHA256SUMS`, with a
+set-equality check so an unpinned dump cannot be added), and those pins live in the same
+repository they guard. Independent anchoring exists at verifying-key granularity —
+`Keygen/Certificate.lean` checks the key derived from the ported circuit against the
+release-regenerated capture — but the row-level layout content below the key, and the
+base-circuit dump (`actionBaseLayout.json`), which has no capture-side anchor at all, rest on the
+pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
+are recorded in `Zcash/Circuits/Fixtures/PROVENANCE.md`.
+
+## Modeling boundaries
+
+The trust discipline above bounds what the *proofs* rest on. One boundary sits outside it, in
+what the statements *model*: it is neither an axiom nor a compiler-trust question, so no census
+sees it.
+
+**Fiat–Shamir is idealized.** The deployed verifier derives each challenge by hashing the
+transcript so far with Blake2b and reducing 64 bytes to a field element. The development models
+that as an abstract `squeeze` (`Verifier/FiatShamir.lean`) and, in the security layer, as a
+uniform random oracle — the assumption that carries interactive soundness to the deployed
+non-interactive check. Identifying the deployed hash with that oracle is external, over and
+above the byte-level boundary noted above: the fixtures check challenge schedules against typed
+captures, not against transcript bytes.
 
 Coined terms and shorthand for the development, including the two conventions above, are
 collected in the [glossary](formal-verification/glossary.md).

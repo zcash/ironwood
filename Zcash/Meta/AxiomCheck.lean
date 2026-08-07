@@ -1,9 +1,11 @@
 import Lean.Util.CollectAxioms
+import Lean.Util.FoldConsts
 import Lean.Elab.Command
 import Lean.DeclarationRange
-import Lean.Compiler.ImplementedByAttr
-import Lean.Compiler.ExternAttr
 import Lean.Compiler.CSimpAttr
+import Lean.Compiler.ExternAttr
+import Lean.Compiler.ImplementedByAttr
+import Lean.PrivateName
 import Mathlib.Util.AssertNoSorry
 
 /-!
@@ -164,6 +166,90 @@ def checkCompiledBodyDisclosure (n : Ident) : CommandElabM Unit := do
       compiler runs is unconstrained by anything proved about it. Use the proven-equality \
       `@[csimp]` instead, or — if the substitution really belongs in the trusted base — disclose it \
       in `Zcash.TrustBoundary` and add it to `Zcash.Meta.allowedCompiledBodyOverrides`."
+
+/-- Whether a declaration belongs to Ironwood rather than the ambient runtime — the environment
+name, normalized through `privateToUserName?` so a `private def`'s `_private.<module>.0.` prefix
+cannot hide an Ironwood declaration from the scope test.
+
+The ambient side deliberately contains trusted `@[extern]` and `@[implemented_by]` primitives.
+What `assert_computable` forbids is adding the same unchecked compiled replacement anywhere in
+the Ironwood dependency cone while continuing to advertise the endpoint as computed by its
+checked Lean body. Everything outside the `Zcash` namespace is in the accepted bucket — Lean,
+Mathlib, and also the rev-pinned third-party dependencies (Clean, CompElliptic, CompPoly); a
+dependency bump that introduces a replacement there is a review obligation, not a census
+failure. -/
+def isIronwoodName (n : Name) : Bool :=
+  let n := (privateToUserName? n).getD n
+  n == `Zcash || n.toString.startsWith "Zcash."
+
+/-- Whether a declaration was *authored* in an Ironwood module. Distinct from `isIronwoodName`:
+an Ironwood module can attach a `@[csimp]` replacement to an ambient declaration, so for
+attribute registrations the declaring module is the trust-relevant scope, not the namespace. -/
+def isIronwoodAuthored (env : Environment) (n : Name) : Bool :=
+  match env.getModuleIdxFor? n with
+  | some idx =>
+    let module := (env.header.moduleNames[idx.toNat]?).getD .anonymous
+    module == `Zcash || module.toString.startsWith "Zcash."
+  | none => true -- declared in the module currently elaborating, which is Ironwood's
+
+/-- The compiled replacements found in the transitive Ironwood dependency cone of a root:
+`overrides` are the forbidden unchecked ones, `csimpReplacements` the `(replaced function,
+equation theorem)` pairs whose trust `assert_computable` checks separately. -/
+structure CompiledOverrideScan where
+  overrides : Array String
+  csimpReplacements : Array (Name × Name)
+
+/-- Every compiled replacement in the transitive Ironwood dependency cone of `root`.
+
+`implemented_by` implementations are not logical dependencies: the compiler silently substitutes
+them after elaboration.  Likewise an `extern` declaration's Lean body is what the kernel sees, not
+what native execution calls.  Consequently neither replacement can be discovered by
+`collectAxioms`; inspect the compiler attribute tables while walking the ordinary dependency cone.
+Ambient replacements (Lean, Mathlib, and the pinned third-party dependencies) remain part of the
+explicitly accepted compiler/runtime TCB.
+
+`@[csimp]` is the third substitution mechanism, and the sanctioned one (`Arithmetic/FastMsm.lean`):
+the compiler rewrites call sites to the replacement, in `native_decide` runs included, on the
+strength of a kernel-checked equation.  That strength is only real if the equation's own proof is
+trustworthy, and like the other two mechanisms the theorem is not a logical dependency of the
+endpoint, so `collectAxioms` at the root never sees it
+([lean4#7463](https://github.com/leanprover/lean4/issues/7463)).  `Zcash/TrustBoundary.lean`'s
+csimp section pins each known lemma by hand; the walk enforces the same policy mechanically at
+every endpoint, so a new registration cannot rely on someone remembering the manual entry.  It
+collects every csimp entry that is Ironwood-relevant — the replaced function is Ironwood's, or
+the registration was authored in an Ironwood module (which can target an ambient function) — and
+continues the walk into the replacement's own cone, since that is what actually executes. -/
+def ironwoodCompiledOverrides (root : Name) : CommandElabM CompiledOverrideScan := do
+  let env ← getEnv
+  let csimpMap := (Compiler.CSimp.ext.getState env).map
+  let mut todo : Array Name := #[root]
+  let mut seen : Std.HashSet Name := {}
+  let mut found : Array String := #[]
+  let mut csimps : Array (Name × Name) := #[]
+  while !todo.isEmpty do
+    let name := todo.back!
+    todo := todo.pop
+    if seen.contains name then
+      continue
+    seen := seen.insert name
+    let some info := env.find? name | continue
+    if isIronwoodName name then
+      if let some implementation := Compiler.getImplementedBy? env name then
+        found := found.push
+          s!"{(privateToUserName? name).getD name} @[implemented_by \
+            {(privateToUserName? implementation).getD implementation}]"
+      if Lean.isExtern env name then
+        found := found.push s!"{(privateToUserName? name).getD name} @[extern]"
+    if let some entry := csimpMap.find? name then
+      if isIronwoodName name || isIronwoodAuthored env entry.thmName then
+        csimps := csimps.push (name, entry.thmName)
+        if !seen.contains entry.toDeclName then
+          todo := todo.push entry.toDeclName
+    for dep in info.getUsedConstantsAsSet do
+      if !seen.contains dep then
+        todo := todo.push dep
+  return { overrides := found.qsort (fun a b => a < b)
+           csimpReplacements := csimps.qsort (fun a b => a.1.toString < b.1.toString) }
 
 /-- The declaration an alleged `native_decide` axiom names as its owner. The compiler-generated
 name has an `_native.native_decide` marker after the owning declaration; only the tail after that
@@ -420,7 +506,13 @@ elab "assert_axioms " n:ident native:(nativeFlag)? : command => do
 marked neither `unsafe`/`partial` nor `noncomputable` — depending on no axioms beyond
 `propext` / `Quot.sound`. This is the breaks-as-computed-data check: the data is genuinely
 computed, and with `Classical.choice` excluded it cannot have been conjured from mere
-propositional existence even in erased positions.
+propositional existence even in erased positions. Its transitive Ironwood dependency cone must
+also contain no `@[extern]` or `@[implemented_by]` declaration: either attribute can make native
+execution ignore the kernel-checked Lean body without changing the logical axiom footprint.
+`@[csimp]` replacements substitute the same way but carry a kernel-checked equation, so an
+Ironwood-relevant one is permitted exactly when that equation's theorem rests on the standard
+axioms alone — a csimp theorem reaching `sorry`, `native_decide`, or a bespoke axiom would be an
+unchecked substitution wearing a proof's clothes, and is rejected with no allowance flag.
 
 `assert_computable foo +choice` additionally permits `Classical.choice`. Together with the
 plain-`def` check this asserts choice enters only through erased `Prop` fields: had it touched the
@@ -444,7 +536,12 @@ kernel. `Zcash.Meta.Tests.AxiomCheck.ComputableSafety` pins the rejection.
 "Genuinely computed" is a claim about the *compiled* body, which none of the checks above can see,
 so the assertion additionally rejects a definition whose compiled body is substituted and any
 censused-scope declaration that substitutes one (`checkNoCompiledBodyOverride`,
-`checkCompiledBodyDisclosure`); `Zcash.Meta.Tests.CompiledOverride` pins both rejections.
+`checkCompiledBodyDisclosure`); `Zcash.Meta.Tests.CompiledOverride` pins both rejections. The
+transitive Ironwood dependency cone is walked too (`ironwoodCompiledOverrides`): it must contain
+no `@[extern]` or `@[implemented_by]` declaration, and an Ironwood-relevant `@[csimp]`
+replacement is permitted exactly when that equation's theorem rests on the standard axioms
+alone — a csimp theorem reaching `sorry`, `native_decide`, or a bespoke axiom would be an
+unchecked substitution wearing a proof's clothes, and is rejected with no allowance flag.
 -/
 elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : command => do
   let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo n
@@ -459,6 +556,16 @@ elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : com
   if Lean.isNoncomputable env name then
     throwError "{n} is marked noncomputable"
   checkNoCompiledBodyOverride n name
+  let scan ← ironwoodCompiledOverrides name
+  unless scan.overrides.isEmpty do
+    let details := String.intercalate ", " scan.overrides.toList
+    throwError "{n} reaches unchecked compiled replacement(s): {details}"
+  for (replaced, thm) in scan.csimpReplacements do
+    let thmAxioms ← collectAxioms thm
+    let bad := thmAxioms.filter fun ax => !standardAxioms.contains ax
+    unless bad.isEmpty do
+      throwError "{n} reaches the csimp replacement of {replaced}, whose equation {thm} \
+        depends on unexpected axiom(s): {bad.toList}"
   let axs ← collectAxioms name
   let allowChoice := choice.isSome
   if allowChoice && !axs.contains ``Classical.choice then

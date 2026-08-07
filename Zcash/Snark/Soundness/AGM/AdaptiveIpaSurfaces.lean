@@ -41,6 +41,8 @@ structure DecodedIpaPrefix
   proof : WfProof shape
   point_eq : fullPrefixes init proof j = t
 
+/-- Choose a valid IPA-prefix decode at a deployed squeeze point, or `none`. This noncomputable
+choice only defines a probability surface; relation extraction remains executable. -/
 noncomputable def decodeIpaPrefix?
     (init : List (TranscriptElt Fp VestaG)) (j : Fin shape.k)
     (t : BTranscript Fp VestaG

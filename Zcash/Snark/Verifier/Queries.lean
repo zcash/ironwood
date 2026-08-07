@@ -42,7 +42,9 @@ structure LookupCommitments (G : Type*) where
 /-- Queries for one column family — instance / advice / fixed (halo2 `plonk/verifier.rs`): for each
 layout entry `(columnIndex, rotation)` paired with its claimed evaluation, open the column's
 commitment at `rotate_omega x rotation`. `commitment` resolves a column index to its commitment;
-`layout` is the VK-fixed `(column, rotation)` list. -/
+`layout` is the VK-fixed `(column, rotation)` list. Because `zip` truncates on mismatched lengths,
+the derived-key query-count lemmas in `Keygen/Pipeline.lean` prove that `layout` and `evals` agree.
+Halo2 enforces the same invariant by reading one evaluation per query. -/
 def columnQueries {k : ℕ} {F G : Type*} [Field F] (omega x : F) (commitment : ℕ → G)
     (mkId : ℕ → CommitmentId) (layout : List (ℕ × ℤ)) (evals : List F) : List (VerifierQuery k F G) :=
   (layout.zip evals).map fun e =>

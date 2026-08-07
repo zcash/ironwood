@@ -1,4 +1,5 @@
 import Zcash.Snark.Fixtures.MultiAction.Honest.FiatShamir
+import Zcash.Snark.Soundness.Decoded.Vesta
 
 /-!
 # Negative fixtures for the multi-action capture
@@ -19,6 +20,24 @@ open Zcash.Arithmetic (Msm)
 
 theorem valid_capture_assembles : (assemble? vk derivedInstanceCommitment ps ch).isSome = true := by
   native_decide
+
+/-- The captured two-action proof satisfies `DeployedAccepts`: assembly succeeds and the assembled
+MSM evaluates to zero. This witnesses an accepting run at the captured URS; sampled-basis
+soundness remains separate. -/
+theorem capture_deployedAccepts :
+    DeployedAccepts shape capturedURS rfl vk derivedInstanceCommitment ps ch := by
+  unfold DeployedAccepts
+  split
+  · rename_i m hm
+    have hassemble : assemble vk derivedInstanceCommitment ps ch = m := by
+      simp [assemble, hm]
+    have hzero := assembledMsm_eval_eq_zero
+    rw [hassemble, Msm.evalNat_eq_eval_vesta] at hzero
+    exact hzero
+  · rename_i hm
+    have hsome := valid_capture_assembles
+    rw [hm] at hsome
+    simp at hsome
 
 def psUnexpectedLastPermutationEval : ProofString shape Fp G :=
   { ps with

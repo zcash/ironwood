@@ -48,8 +48,8 @@ between two concrete assemblies. `perm_reindex_of_nodup_snd` (`Fingerprint/Match
 passing match into a re-indexing, unique because the captured bases are pairwise distinct
 (`capturedMsm_other_bases_nodup`, `fingerprint_matches_positional`), and precomposing the
 competing family with a fixed re-indexing changes neither degrees nor ε. That the re-indexing
-*is* fixed across the good event is the trust chapter's positional-frame-stability premise, not
-a theorem here.
+*is* fixed across the good event is the positional-frame-stability premise enumerated in
+`Fingerprint/Match.lean`, not a theorem here.
 
 ## Scope
 

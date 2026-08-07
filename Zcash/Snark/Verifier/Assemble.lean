@@ -1750,7 +1750,12 @@ Two of these rejections abstract deployed *panics*, not error returns: at `xⁿ 
 `(xn - 1).invert().unwrap()` (`vanishing/verifier.rs`), and at `x₃` hitting an opened point on
 `(x₃ - point).invert().unwrap()` (`multiopen/verifier.rs`). Both strike a negligible proportion of
 challenges (`card_vanishingPanic_le`, `card_multiopenPanic_le`) and are non-accepting either way, which is
-the property the soundness layer consumes; the model just renders "crash" as `none`. -/
+the property the soundness layer consumes; the model just renders "crash" as `none`.
+
+Halo2 reads one `u` per derived point set; `assemble?` checks that count against the shape-fixed
+`multiopenU`. The counts agree at the deployed key because grouping is fixed away from rejected
+collisions, and the duplicate guard rejects the only collapsing value, `x = 0`. The derived-key
+query-count lemmas in `Keygen/Pipeline.lean` also keep layout/evaluation zips from truncating. -/
 def assemble? {shape : Shape} {F G : Type*} [Field F] [DecidableEq F] [DecidableEq G] [Inhabited G]
     (vk : VerifyingKey shape F G) (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape F G) (ch : Challenges shape.k F) :

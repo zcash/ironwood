@@ -90,7 +90,10 @@ structure ProofString (shape : Shape) (F G : Type*) where
   multiopenU : Fin shape.numPointSets → F
   ipaS : G
   ipaRounds : Fin shape.k → G × G
+  /-- The IPA final scalar `c`. Halo2 absorbs it only after the last squeeze, so Lean's omitted
+  final absorption does not affect challenge derivation. -/
   ipaC : F
+  /-- The IPA final blind `f`; like `ipaC`, Halo2 absorbs it only after the last squeeze. -/
   ipaF : F
 
 end Zcash.Snark

@@ -264,8 +264,8 @@ after the base-matching re-indexing `σ`, in the stated `idxOf` form. With
 Lean's passes this capture positionally only on the ≤ ε event.
 
 `σ` is read off the assembled base list at the captured point, so naming one competing family
-also needs that base list to be the same across the good event — the trust chapter's
-positional-frame-stability premise, unproven while only the coefficient stream has
+also needs that base list to be the same across the good event — the positional-frame-stability
+premise enumerated in `Fingerprint/Match.lean`, unproven while only the coefficient stream has
 `assembleAt_other_map_fst`. -/
 theorem fingerprint_matches_positional :
     ∃ m : Msm shape.k Fp G,

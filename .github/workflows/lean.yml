@@ -152,28 +152,33 @@ jobs:
             lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-
             lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-
       # Installs the toolchain from lean-toolchain, fetches the Mathlib olean cache, and runs
-      # `lake build --wfail`, which rejects all warnings and builds the lakefile's
-      # `defaultTargets`: `Zcash`, `FixtureCheck`, `CircuitCheck`, `MetaCheck`, and
-      # `SecurityCheck`.
+      # `lake build --wfail <targets>`, which rejects all warnings. The targets are named
+      # explicitly rather than left to the lakefile's `defaultTargets`, so CI's build surface
+      # is pinned here: dropping a check library from the lakefile (or narrowing its globs)
+      # cannot silently shrink what CI builds without a visible diff in this workflow. Keep
+      # the list in sync with `lakefile.toml`'s `defaultTargets`.
       #
       # `Zcash` imports the fixture-free top-level trust census. Concrete capstone census entries
       # live beside their captures and are built through `FixtureCheck`.
       #
-      # `FixtureCheck` covers the deployed Action/Vesta capstone lane, whose
-      # `Keygen/Certificate.lean` natively certifies the deployed verifying key against the
-      # derivation (~45 s). It also elaborates `Zcash.Snark.Fingerprint.Fixture`, whose
-      # `fingerprint_matches := by native_decide` compiles and *runs* the Lean verifier
-      # `assemble` on the captured proof — the authoritative whole-path computability check,
-      # since anything noncomputable on that path fails to compile. Its sorry-freeness and
-      # axiom set are pinned by `Zcash.Snark.Fingerprint.TrustBoundary`.
+      # `FixtureCheck` covers the fixture families under `Zcash/Snark/Fixtures/` and the deployed
+      # capstone lane, whose `Keygen/Certificate.lean` natively certifies the deployed verifying
+      # key against the derivation (~45 s). Each family's `fingerprint_matches := by
+      # native_decide` compiles and *runs* the Lean verifier `assemble` on the captured proof —
+      # the authoritative whole-path computability check, since anything noncomputable on that
+      # path fails to compile. Sorry-freeness and axiom sets are pinned by each family's
+      # `TrustBoundary.lean` census.
       #
       # `CircuitCheck` covers `Zcash/Circuits/Tests/TestVk*`, which compare the ported
       # `configure`/`synthesize` against the CS and layout fixtures dumped from the Rust
       # circuit, so a divergence between the Lean circuit model and the deployed VK fails here.
+      #
+      # `MetaCheck` runs the census machinery's own negative regression suite, and
+      # `SecurityCheck` the ledger-bridge regression checks.
       - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
         id: lake
         with:
-          build-args: "--wfail"
+          build-args: "--wfail Zcash FixtureCheck CircuitCheck MetaCheck SecurityCheck"
           # Caching is handled by the explicit layered restore/save steps
           # around this action; see the caching comment above.
           use-github-cache: "false"

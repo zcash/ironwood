@@ -107,7 +107,9 @@ theorem permChunk_right_map {F G : Type*} [CommRing F] [CommRing G] (f : F →+*
 `value + β·name + γ` under the column's own cell name and divides out the same factor under the
 name `σ` assigns it. Over the whole table the two must cancel — the multiset identity that
 `Soundness/Argument/Permutation.lean` turns into the copy constraints. Switched off on the
-last/blinding rows. -/
+last/blinding rows. The δ-offset `chunkIndex * chunkLen` uses the declared stride. This matches
+Halo2's positional `chunks(chunk_len)` when `vk.permutationChunks` is packed at that stride, as
+documented by `VerifyingKey`. -/
 def permChunkExpression {F : Type*} [CommRing F] (beta gamma x delta : F) (chunkLen chunkIndex : ℕ)
     (set : PermSetEval F) (pairs : List (F × F)) (lLast lBlind : F) : F :=
   let left := pairs.foldl (fun acc p => acc * (p.1 + beta * p.2 + gamma)) set.nextEval

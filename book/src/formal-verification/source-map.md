@@ -157,9 +157,10 @@ consumes. `ConstraintWalk`, `GroupingTable` (with `Verifier/GroupingRef`), `Open
 assembly — grouping stability through a fixed reference table, the opening value, the IPA
 scalars, and the positional `other` coefficient stream — into `assembleCoeffFamily`: every
 MSM coefficient as a polynomial numerator over enumerated denominators with one degree budget.
-`Epsilon` then prices it: a competing coefficient family that differs from Lean's anywhere
-agrees at a uniform point with probability at most `(D + B)/p` — the invariant's concrete ε —
-with per-capture literals in the random families' `Epsilon` modules.
+`Epsilon` then prices the match. For bounded-degree polynomial numerators over the walk's
+enumerated challenge denominators, a family that differs from Lean's agrees at a uniform point
+with probability at most `(D + B)/p`. The random fixtures state the concrete ε values;
+`Fingerprint/Match.lean` lists the premises, including class membership and sample uniformity.
 
 ### `Fixtures/` — captured proofs and boundary checks
 
@@ -192,7 +193,8 @@ keygen certificate along `PostNu63Random`'s point equalities, its `Boundary` sta
 aliveness guards in `Negative` (the model assembles at the random point, the capture is genuinely
 non-accepting, and one tamper canary), and its own `TrustBoundary` census. What the four families
 jointly check is that Lean's assembled MSM equals the deployed one coefficient-for-coefficient at
-each captured proof, priced by `Fingerprint/Epsilon.lean`.
+each captured proof; the two `Random/` families additionally carry the per-capture ε modules that
+price the quantified match (`Fingerprint/Epsilon.lean`, `Fixtures/*/Random/Epsilon.lean`).
 
 ### `Soundness/` — the soundness argument
 
@@ -323,7 +325,7 @@ scalars and static checks, `ActionBudgets` discharges the semantic surfaces, and
 the two endpoints — knowledge-soundness bounds for every consensus-valid bundle size, one in
 compositional error-formula form and one in resource-accounted finite-security form. Knowledge
 soundness is the only property advertised: it implies the plain-soundness statement, so that is
-not stated separately.
+not stated separately. Legacy fixed-statement endpoints and their events are retired.
 
 Endpoints about the *verifier's algebra* rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in

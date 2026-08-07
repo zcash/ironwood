@@ -110,6 +110,13 @@ assert_axioms Zcash.Snark.assemble
 -- tamper sensitivity detects a sourcing error in `assemble` on honest captures.
 assert_axioms Zcash.Snark.Fixture.valid_capture_assembles +native(
   Zcash.Snark.Fixture.valid_capture_assembles)
+-- Acceptance joins successful assembly with zero MSM evaluation. The Vesta order certificate
+-- supports the `evalNat`-to-`eval` bridge.
+assert_axioms Zcash.Snark.Fixture.capture_deployedAccepts +native(
+  Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture.unexpected_last_permutation_eval_rejected +native(
   Zcash.Snark.Fixture.unexpected_last_permutation_eval_rejected)
 assert_axioms Zcash.Snark.Fixture.missing_nonlast_permutation_eval_rejected +native(

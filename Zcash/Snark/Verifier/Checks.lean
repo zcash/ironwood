@@ -105,7 +105,9 @@ def multiopenCombine {k : ℕ} {F G : Type*} [Field F] (x4 : F) (qPrime : G)
 
 /-- The value at `x` of the polynomial interpolating `(points, evals)`, in barycentric Lagrange
 form `Σᵢ evalsᵢ · ∏_{j≠i} (x − pⱼ)/(pᵢ − pⱼ)` — the same field element as halo2's
-`eval_polynomial (lagrange_interpolate points evals) x`. -/
+`eval_polynomial (lagrange_interpolate points evals) x` when `points` are distinct.
+`constructIntermediateSets_points_nodup` proves this on the assembly path, matching Halo2's
+`BTreeSet` deduplication, so their different zero-denominator behavior is unreachable. -/
 def lagrangeEval {F : Type*} [Field F] (x : F) (points evals : List F) : F :=
   let n := points.length
   (List.range n).foldl (fun acc i =>

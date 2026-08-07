@@ -24,14 +24,14 @@ open Zcash.Arithmetic (Msm)
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
--- Tracked semantic-adequacy gap: `S` is a free `Prop`, and the Clean/Ironwood representation
--- work is exposed as the named component conditions of `TopLevelCircuitCorrectness` rather than
--- proved, so the chain stops at "the extracted witness satisfies the gates" (`SnarkRelation`) and
--- never reaches "…therefore a valid Orchard action" (note well-formed, value balanced, nullifier
--- correctly derived, spend authorized). Closing the generic form means instantiating `S` to the
--- concrete Orchard statement and discharging those conditions. The deployed Action key is derived
--- and certified against the capture by `Keygen/Certificate.lean`; only the capture's Rust provenance
--- remains an input-side boundary. The semantic bridge described here remains open.
+-- Semantic reach of the chain built on this predicate: `TopLevelCircuitCorrectness`'s component
+-- conditions are discharged for the deployed Action circuit, so the adaptive-statement stack ends
+-- at `ActionTerminal.ActionBundleWitness` — the circuit's private witnesses with their `ActionSpec`
+-- satisfaction proofs at the adversary's public inputs — rather than at gate satisfaction. The
+-- remaining output-side boundary is composing `ActionSpec`, including its `HashGuarded` Sinsemilla
+-- escape branches, with the abstract Orchard ledger relation. On the input side, the deployed Action
+-- key is derived and certified against the capture by `Keygen/Certificate.lean`; identifying that
+-- capture with the deployed Rust artifact and serialization remains external.
 def DeployedAccepts [DecidableEq G] [Inhabited G] (shape : Shape) (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) : Prop :=

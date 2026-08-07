@@ -30,10 +30,21 @@ name: Fixtures
 # `on.paths` would leave a required check pending). The heavy regeneration is instead
 # gated on a path filter computed inside the run, so it only builds Rust when the
 # fixtures or the pins (the regeneration script, or this workflow) actually change.
+# Two cheap guards run on every event regardless of the filter: the committed
+# capture-artifact set must equal the script's pinned regeneration list, and every
+# capture must carry the exporter header (`--check-set` below).
+#
+# The weekly schedule and manual dispatch bypass the filter and regenerate
+# unconditionally: pin rot — a moved or deleted upstream tag, a toolchain drift — then
+# surfaces on a clock, attributed to the pin, instead of failing the next unlucky PR
+# that happens to touch a filtered path.
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "23 5 * * 1" # weekly pin canary (Mondays 05:23 UTC)
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -48,15 +59,25 @@ jobs:
     permissions:
       contents: read
     outputs:
-      fixtures: ${{ steps.filter.outputs.fixtures }}
+      # Scheduled and manually dispatched runs bypass the filter (the filter step is
+      # skipped, and this expression then forces regeneration).
+      fixtures: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'true' || steps.filter.outputs.fixtures }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+      # Repo-local, filter-independent guards: the committed capture-artifact set equals the
+      # script's pinned regeneration list, every capture carries the exporter header, and any
+      # header-carrying Lean file outside the pinned list fails whatever its basename. A new
+      # or renamed fixture family fails here on the PR that adds it, instead of sitting in
+      # the tree as a "capture" nothing regenerates.
+      - name: Check the committed capture-artifact set against the pinned list
+        run: ./scripts/regenerate-fingerprint-fixtures.sh --check-set
       # Regeneration is expensive (real k=11 Orchard proofs + verifier runs), so only run
       # it when a committed capture artifact or the pins change.
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         id: filter
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         with:
           filters: |
             fixtures:
