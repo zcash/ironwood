@@ -356,7 +356,7 @@
         },
         {
           "symbol": "programmedExtractOrMiss",
-          "path": "Zcash/Common/AlgebraicRelation.lean",
+          "path": "Zcash/Snark/Soundness/AGM/Adapter.lean",
           "source": "runtimeAgmStack"
         },
         {
@@ -406,7 +406,7 @@
         },
         {
           "symbol": "relationWithCoins_prob_le_of_truncated_textbookDL",
-          "path": "Zcash/Common/RelationProbabilityCoins.lean",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityCoins.lean",
           "source": "runtimeAgmStack"
         },
         {
