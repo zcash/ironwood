@@ -1,6 +1,6 @@
+import Zcash.Common.RelationProbabilityCoins
 import Zcash.Snark.Soundness.Decoded.Vesta
 import Zcash.Snark.Soundness.AGM.ProbabilityVesta
-import Zcash.Snark.Soundness.AGM.ProbabilityCoins
 import Zcash.Snark.Soundness.FiatShamir.Adversary.PreIpa
 import Zcash.Snark.Soundness.FiatShamir.Adversary.DomainReduction
 
@@ -468,12 +468,13 @@ section Adapter
 variable {shape : Shape} {basis : AugmentedIndex (2 ^ shape.k) → VestaG}
 
 /-- The generator components of an augmented-basis representation. -/
-def AlgebraicPoint.gPart (P : AlgebraicPoint (F := Fp) basis) : Fin (2 ^ shape.k) → Fp :=
+def _root_.Zcash.AlgebraicPoint.gPart (P : AlgebraicPoint (F := Fp) basis) :
+    Fin (2 ^ shape.k) → Fp :=
   fun i => P.coeffs (AugmentedIndex.gen i)
 
 /-- An augmented-basis point is its generator commitment plus its declared `U` and `W`
 components. -/
-theorem AlgebraicPoint.point_eq_components (P : AlgebraicPoint (F := Fp) basis) :
+theorem _root_.Zcash.AlgebraicPoint.point_eq_components (P : AlgebraicPoint (F := Fp) basis) :
     P.point = commit (ursOfAugmentedBasis shape.k basis) P.gPart
       + P.coeffs AugmentedIndex.u • (ursOfAugmentedBasis shape.k basis).u
       + P.coeffs AugmentedIndex.w • (ursOfAugmentedBasis shape.k basis).w := by

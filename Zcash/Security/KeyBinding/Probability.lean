@@ -1,6 +1,6 @@
+import Zcash.Common.UniformMeasure
 import Zcash.Security.KeyBinding.Basic
 import Zcash.Security.Common.Birthday
-import Zcash.Snark.Soundness.Pricing.UniformMeasure
 import Zcash.Snark.Soundness.FiatShamir.Adversary.OracleComp
 
 /-!

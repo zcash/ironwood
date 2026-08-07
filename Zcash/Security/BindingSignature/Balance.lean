@@ -39,8 +39,8 @@ binding hypothesis. Instead we phrase binding as a reduction:
   ∃-closed relation Prop would be vacuous, since a relation always exists in a prime-order
   group.
 
-  `Zcash.Snark.Soundness.AGM.BindingSignature` turns the computed Orchard and Sapling relations into
-  plain-DL solutions: *if you can unbalance, you can solve DL*. DLR and DL are tightly equivalent
+  `Zcash.Security.BindingSignature.DiscreteLog` turns the computed Orchard and Sapling relations
+  into plain-DL solutions: *if you can unbalance, you can solve DL*. DLR and DL are tightly equivalent
   (Jaeger and Tessaro, https://eprint.iacr.org/2020/1213, Lemma 3), so this assumes no more than DL
   hardness.
 

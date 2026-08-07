@@ -1,16 +1,19 @@
-import Zcash.Snark.Soundness.AGM.Adapter
-import Zcash.Snark.Soundness.Pricing.UniformMeasure
+import Zcash.Common.AlgebraicRelation
+import Zcash.Common.UniformMeasure
 
 /-!
 # From relation probability to DL probability
 
 Programming every basis slot converts a relation into a discrete log except on one `1/|F|`
-hyperplane. Finder efficiency and finite-resource DLOG hardness remain premises.
+hyperplane, so a relation finder is priced by the textbook single-generator DL advantage plus
+`1/|F|` (`relation_prob_le_of_textbookDL`). The counting is over how the basis is sampled, not
+over the finder: `A` is an arbitrary basis-indexed producer of relations, with no restriction on
+how it computes one. Finder efficiency and finite-resource DLOG hardness remain premises.
 -/
 
 open scoped ENNReal
 
-namespace Zcash.Snark
+namespace Zcash
 
 variable {F G : Type*} [Field F] [AddCommGroup G] [Module F G]
 
@@ -60,7 +63,7 @@ theorem returnedCoeffs_of_eq_some {s : ι → F}
 -- of `exists_nonzero_coeff`. Neither is repairable by enumeration here — `Finset.toList` is itself
 -- noncomputable (`Multiset.toList` goes through `Quot.out`), so `[Fintype ι]` supplies no list to
 -- search. Making it computable would mean strengthening the interface to carry an explicit
--- enumeration, which the index type of an AGM basis has no reason to.
+-- enumeration, which the index type of a public basis has no reason to.
 /-- A pivot slot where the returned relation has nonzero coefficient; arbitrary when none
 returns. -/
 noncomputable def pivotSlot (s : ι → F) : ι :=
@@ -217,7 +220,7 @@ Only a nonzero `B` makes this a hardness claim. At `B = 0` the presented basis i
 carries no challenge, so a fixed nonzero relation wins on all but a `1/|F|` fraction of coins and
 no `bound` below `1 - 1/|F|` holds. The degenerate case is not unsound — the bounds below stay
 true and go trivial — and `B ≠ 0` is demanded where it is load-bearing, at
-`orchard_uniformURSIdentification_of_generatorRO`. -/
+`Zcash.Snark.orchard_uniformURSIdentification_of_generatorRO`. -/
 def TextbookDLAdvantageLE (bound : ℝ≥0∞) : Prop :=
   (PMF.uniformOfFintype (F × (ι → F) × (ι → F))).toOuterMeasure (winSet B A) ≤ bound
 
@@ -284,5 +287,4 @@ theorem relation_prob_le_of_textbookDL {bound : ℝ≥0∞} (h : TextbookDLAdvan
 
 end Reduction
 
-
-end Zcash.Snark
+end Zcash

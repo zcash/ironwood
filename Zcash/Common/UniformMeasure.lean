@@ -14,12 +14,14 @@ Distribution facts about `PMF.uniformOfFintype`, kept independent of any extract
 pushforwards along equivalences and injections, product and fibre bounds, and point and blind-set
 measures.
 
-These are factored into a standalone module so the straight-line consumers
-(`Soundness.GoodChallenge`, `Soundness.Multiopen.*`, `Security.KeyBinding.Probability`, and
-`Soundness.AGM.*`) depend only on the distribution facts they use.
+These are factored into a standalone module so the consumers on both sides of the repository
+(`Snark.Soundness.GoodChallenge`, `Snark.Soundness.Multiopen.*`, `Security.KeyBinding.Probability`,
+`Common.RelationProbability`, and `Snark.Soundness.AGM.*`) depend only on the distribution facts
+they use. It sits under `Common/` because nothing here is specific to either side: these are facts
+about the uniform distribution on a finite type.
 -/
 
-namespace Zcash.Snark
+namespace Zcash
 
 open scoped ENNReal
 
@@ -329,4 +331,4 @@ theorem uniformOfFintype_point_mem_blind_le {T F : Type*} [Fintype T] [Decidable
     _ = ε := ENNReal.mul_div_cancel_right (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
         (ENNReal.natCast_ne_top _)
 
-end Zcash.Snark
+end Zcash

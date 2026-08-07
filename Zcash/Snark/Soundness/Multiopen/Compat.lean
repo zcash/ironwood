@@ -3,8 +3,8 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import Zcash.Common.UniformMeasure
 import Zcash.Snark.Soundness.Main
-import Zcash.Snark.Soundness.Pricing.UniformMeasure
 import Zcash.Snark.Soundness.Multiopen.Decode
 
 /-!

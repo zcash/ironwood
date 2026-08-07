@@ -1,5 +1,5 @@
+import Zcash.Common.RelationProbability
 import Zcash.Security.RedDSA.Extraction
-import Zcash.Snark.Soundness.AGM.Probability
 import Zcash.Snark.Soundness.AGM.AdaptiveOnline
 
 /-!

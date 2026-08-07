@@ -1,10 +1,11 @@
+import Zcash.Common.RelationProbability
+import Zcash.Snark.Soundness.AGM.Adapter
 import Zcash.Snark.Soundness.Decoded.Vesta
-import Zcash.Snark.Soundness.AGM.Probability
 
 /-!
 # Vesta AGM probability bounds
 
-`Soundness.AGM.Probability` specialized to Vesta and the deployed augmented basis `(g, U, W)`:
+`Common.RelationProbability` specialized to Vesta and the deployed augmented basis `(g, U, W)`:
 relation finding costs the textbook DL advantage plus `1/|Fp|`, with no augmented-basis
 cardinality factor.
 
