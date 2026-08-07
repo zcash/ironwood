@@ -80,15 +80,7 @@ theorem accepts?V_isSome_of {pp : ProofParams}
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
     (view : RunView pp family basis) (haccepts : family.acceptsV basis view) :
     (family.accepts?V basis view).isSome := by
-  unfold acceptsV DeployedAccepts at haccepts
-  unfold accepts?V
-  split
-  · rename_i hassemble
-    rw [hassemble] at haccepts
-    exact False.elim haccepts
-  · rename_i msm hassemble
-    rw [hassemble] at haccepts
-    simp [haccepts]
+  simp [accepts?V, haccepts]
 
 theorem accepts?_isSome_of {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -420,9 +412,10 @@ theorem preXIdentityOutcomeV_isSome_of {pp : ProofParams}
   dsimp only
   split <;> rfl
 
-/-- Execute just the identically-zero pre-`x` relation branch over one run view, with the
-source-mismatch verdict supplied as an input. -/
-def identityRelationFinderV {pp : ProofParams}
+/-- Execute the identically-zero pre-`x` relation branch from a supplied acceptance result.  This
+form lets the costed reduction feed in the result of its reified verifier MSM without evaluating
+that group equation a second time. -/
+def identityRelationFinderWithAcceptanceV {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
     (view : RunView pp family basis)
@@ -431,6 +424,7 @@ def identityRelationFinderV {pp : ProofParams}
       view.output.toAlgebraicWfProof.proof.1
       (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
         scalarFieldOrder)
+    (acceptance : Option (PLift (family.acceptsV basis view)))
     (source : Option (AlgebraicRelationWitness (F := Fp) basis))
     (hfacts : source = none → family.SemanticStageFacts basis view) :
     Option (AlgebraicRelationWitness (F := Fp) basis) :=
@@ -440,11 +434,18 @@ def identityRelationFinderV {pp : ProofParams}
     let proof := view.output.toAlgebraicWfProof
     let nu := view.pre
     let rounds := view.rounds
-    match family.accepts?V basis view with
+    match acceptance with
     | none => none
     | some hacceptsProof =>
         let haccepts : family.acceptsV basis view := hacceptsProof.down
         if hz : nu 10 ≠ 0 then
+          letI : Decidable (fullAlgebraicBindingAttackZ basis
+              (adaptiveActionStatementVk pp basis)
+              (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+              proof nu rounds) :=
+            decidable_of_iff (family.bindingValueMismatchV basis view)
+              (family.fullAlgebraicBindingAttackZ_iff_bindingValueMismatchV
+                basis view haccepts hz).symm
           if hattack : fullAlgebraicBindingAttackZ basis
               (adaptiveActionStatementVk pp basis)
               (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
@@ -474,6 +475,23 @@ def identityRelationFinderV {pp : ProofParams}
                       rawDecode rfl hacceptsFull hcharFull
         else none
 
+/-- Execute just the identically-zero pre-`x` relation branch over one run view, with the
+source-mismatch verdict supplied as an input. -/
+def identityRelationFinderV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        scalarFieldOrder)
+    (source : Option (AlgebraicRelationWitness (F := Fp) basis))
+    (hfacts : source = none → family.SemanticStageFacts basis view) :
+    Option (AlgebraicRelationWitness (F := Fp) basis) :=
+  family.identityRelationFinderWithAcceptanceV basis view hcharV
+    (family.accepts?V basis view) source hfacts
+
 /-- Identity relation branch at one table. -/
 abbrev identityRelationFinder {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -495,7 +513,8 @@ theorem identityRelationFinder_none_source {pp : ProofParams}
     (O : family.Coins)
     (hnone : family.identityRelationFinder hchar basis O = none) :
     family.semanticSourceMismatchRelationFinder basis O = none := by
-  unfold identityRelationFinder identityRelationFinderV at hnone
+  unfold identityRelationFinder identityRelationFinderV
+    identityRelationFinderWithAcceptanceV at hnone
   split at hnone
   · simp_all
   · assumption
@@ -566,6 +585,7 @@ theorem identityRelationFinder_isSome_of {pp : ProofParams}
   obtain ⟨hrootsProof, hrootsEq⟩ := Option.isSome_iff_exists.mp hrootsSome
   obtain ⟨relation, hrelationEq⟩ := Option.isSome_iff_exists.mp hidentity
   unfold identityRelationFinder identityRelationFinderV
+    identityRelationFinderWithAcceptanceV
   split
   · simp_all
   · rw [hacceptsEq]
@@ -611,7 +631,7 @@ theorem terminalRelationFinderV_isSome_of {pp : ProofParams}
   have hrootsSome := family.batchGoodRoots?V_isSome_of basis view witness hroots
   obtain ⟨hrootsProof, hrootsEq⟩ := Option.isSome_iff_exists.mp hrootsSome
   obtain ⟨relation, hrelationEq⟩ := Option.isSome_iff_exists.mp hsemantic
-  unfold terminalRelationFinderV
+  unfold terminalRelationFinderV terminalRelationFinderWithAcceptanceV
   rw [hacceptsEq]
   dsimp only
   rw [dif_pos hz, dif_neg hattack, hout]

@@ -5,9 +5,11 @@ import Zcash.Snark.Soundness.Composition.AssembleGroupCost
 # Adaptive-statement finite-security profile
 
 This module records the four-stage price for the executable adaptive-statement relation finder and
-knowledge-failure theorem, records the direct-decode work premise, and transfers events across the
+knowledge-failure theorem, defines the direct-decode work quantity, and transfers events across the
 Orchard generator random-oracle setup.  Each run view retains one adversary output and materialized
-challenge vectors; the combined finder short-circuits after its first relation.
+challenge vectors; the combined finder short-circuits after its first relation. The certified
+capstone derives its direct-decode bound from the family's structural source-length cap; the older
+compatibility profile below retains its explicit premise.
 -/
 
 namespace Zcash.Snark
@@ -51,6 +53,16 @@ theorem relationFinderCalls_le_traversalSlots {pp : ProofParams}
   split <;> try omega
   split <;> omega
 
+/-- Length of the exact represented-point source traversed by direct-coordinate decoding. -/
+def adaptiveStatementDirectDecodeSourceLength {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (O : family.Coins) : Nat :=
+  let output := family.runOutput basis O
+  (output.proofData.algebraicProof.preX1AssemblySource
+    (adaptiveStatementInstanceRepresentationList output.instanceRepresentations ++
+      family.fixedRepresentations basis)).length
+
 /-- Direct-coordinate work of the actual selected-statement deployed-root decode. -/
 def adaptiveStatementDirectDecodeOps {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -60,9 +72,7 @@ def adaptiveStatementDirectDecodeOps {pp : ProofParams}
   deployedDirectDecodeOps (adaptiveActionStatementVk pp basis)
     (adaptiveActionStatementInstanceCommitment pp basis output.inputs)
     (family.runProof basis O).proof.1 (family.runRecord basis O)
-    (output.proofData.algebraicProof.preX1AssemblySource
-      (adaptiveStatementInstanceRepresentationList output.instanceRepresentations ++
-        family.fixedRepresentations basis)).length
+    (adaptiveStatementDirectDecodeSourceLength family basis O)
 
 /-- The relation finder may construct the direct batches in both its identity and terminal
 stages. -/

@@ -20,10 +20,10 @@ local instance adaptiveStatementKnowledgeVestaInhabited : Inhabited VestaG := �
 
 namespace ComputedAdaptiveActionStatementFSFamily
 
-/-- Post-relation-finder selected-statement outcome over one run view.  Keeping the stage
-facts as an explicit argument avoids reducing through a dependent match when proving extractor
-success. -/
-def adaptiveStatementKnowledgeOutcomeCoreV {pp : ProofParams}
+/-- Post-relation-finder selected-statement outcome from a supplied acceptance result.  Keeping
+both acceptance and the stage facts explicit lets the costed reduction drive this branch from its
+reified verifier MSM. -/
+def adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
     (view : RunView pp family basis)
@@ -32,17 +32,25 @@ def adaptiveStatementKnowledgeOutcomeCoreV {pp : ProofParams}
       view.output.toAlgebraicWfProof.proof.1
       (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
         scalarFieldOrder)
+    (acceptance : Option (PLift (family.acceptsV basis view)))
     (hfacts : family.SemanticStageFacts basis view) :
     Option (ActionTerminal.ActionBundleWitness view.output.inputs ⊕
       AlgebraicRelationWitness (F := Fp) basis) :=
   let proof := view.output.toAlgebraicWfProof
   let nu := view.pre
   let rounds := view.rounds
-  match family.accepts?V basis view with
+  match acceptance with
   | none => none
   | some hacceptsProof =>
     let haccepts : family.acceptsV basis view := hacceptsProof.down
     if hz : nu 10 ≠ 0 then
+      letI : Decidable (fullAlgebraicBindingAttackZ basis
+          (adaptiveActionStatementVk pp basis)
+          (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+          proof nu rounds) :=
+        decidable_of_iff (family.bindingValueMismatchV basis view)
+          (family.fullAlgebraicBindingAttackZ_iff_bindingValueMismatchV
+            basis view haccepts hz).symm
       if hattack : fullAlgebraicBindingAttackZ basis
           (adaptiveActionStatementVk pp basis)
           (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
@@ -86,6 +94,23 @@ def adaptiveStatementKnowledgeOutcomeCoreV {pp : ProofParams}
                   accepts := haccepts }
               family.semanticOutcome?V basis view run
     else none
+
+/-- Post-relation-finder selected-statement outcome over one run view.  Keeping the stage facts as
+an explicit argument avoids reducing through a dependent match when proving extractor success. -/
+def adaptiveStatementKnowledgeOutcomeCoreV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        scalarFieldOrder)
+    (hfacts : family.SemanticStageFacts basis view) :
+    Option (ActionTerminal.ActionBundleWitness view.output.inputs ⊕
+      AlgebraicRelationWitness (F := Fp) basis) :=
+  family.adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV basis view hcharV
+    (family.accepts?V basis view) hfacts
 
 /-- Post-relation-finder selected-statement outcome at one table. -/
 abbrev adaptiveStatementKnowledgeOutcomeCore {pp : ProofParams}
@@ -287,7 +312,8 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
           (by simpa only [acceptsV, accepts, runView_output, runView_pre, runView_rounds,
             family.runRecord_eq_chRecord] using haccepts)
         obtain ⟨hacceptsProof, hacceptsEq⟩ := Option.isSome_iff_exists.mp hacceptsSome
-        unfold terminalRelationFinder terminalRelationFinderV at hterminalNone
+        unfold terminalRelationFinder terminalRelationFinderV
+          terminalRelationFinderWithAcceptanceV at hterminalNone
         rw [hacceptsEq] at hterminalNone
         dsimp only at hterminalNone
         rw [dif_pos hz, dif_pos hattack, hsplit] at hterminalNone
@@ -299,7 +325,8 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
           (by simpa only [acceptsV, accepts, runView_output, runView_pre, runView_rounds,
             family.runRecord_eq_chRecord] using haccepts)
       obtain ⟨hacceptsProof, hacceptsEq⟩ := Option.isSome_iff_exists.mp hacceptsSome
-      unfold terminalRelationFinder terminalRelationFinderV at hterminalNone
+      unfold terminalRelationFinder terminalRelationFinderV
+        terminalRelationFinderWithAcceptanceV at hterminalNone
       rw [hacceptsEq] at hterminalNone
       dsimp only at hterminalNone
       rw [dif_pos hz, dif_neg hattack, hout] at hterminalNone
@@ -386,6 +413,7 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
             rw [family.adaptiveStatementKnowledgeOutcomeV_eq_core_of_none
               basis (runView family basis O) _ _ hfinderNone]
             unfold adaptiveStatementKnowledgeOutcomeCoreV
+              adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV
             rw [hacceptsEq]
             dsimp only
             rw [dif_pos hz, dif_neg hattack, hout]
@@ -453,6 +481,7 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
             rw [family.adaptiveStatementKnowledgeOutcomeV_eq_core_of_none
               basis (runView family basis O) _ _ hfinderNone]
             unfold adaptiveStatementKnowledgeOutcomeCoreV
+              adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV
             rw [hacceptsEq]
             dsimp only
             rw [dif_pos hz, dif_neg hattack, hout]

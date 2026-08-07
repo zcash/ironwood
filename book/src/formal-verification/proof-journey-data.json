@@ -567,7 +567,7 @@
         "Inside the generator random-oracle model, the reduction's sampled basis has the same distribution as the deployed setup."
       ],
       "residuals": [
-        "Finite-security discrete-log hardness on Vesta is a caller-supplied premise; Lean asserts no generic-group DLOG success formula.",
+        "A concrete interpretation of the finite-resource Vesta DLOG advantage remains external: the endpoints conclude with an explicit Adv_DLOG term rather than taking a DLOG-hardness proposition as a premise, and Lean asserts no generic-group DLOG success formula.",
         "Identifying halo2's concrete hash-to-curve generator derivation with the uniform generator oracle is an out-of-Lean idealization, separate from the transcript random oracle."
       ],
       "durationMs": 10000
@@ -577,7 +577,7 @@
       "chapter": "Adaptive statement",
       "title": "Let the adversary choose the statement",
       "claim": "One online-AGM adversary returns the public inputs and proof together, and an executable extractor returns the private witnesses for every proof in the bundle or explicit relation coefficients.",
-      "summary": "The adaptive-statement game reconstructs the verifier transcript from the basis-dependent VK representation and the instance commitments derived from the adversary's own output, binding the selected instance prefix before theta. Its instance, pre-IPA, IPA, semantic, and source comparisons all consume one retained execution. The straight-line family is the fixed-statement sibling: both terminate in a data-bearing outcome, so neither existential relation availability nor a merely propositional statement branch counts as extracted knowledge.",
+      "summary": "The adaptive-statement game reconstructs the verifier transcript from the basis-dependent VK representation and the instance commitments derived from the adversary's own output, binding the selected instance prefix before theta. Its instance, pre-IPA, IPA, semantic, and source comparisons all consume one retained execution. The staged-certified route additionally reifies group-work costs in a shallow cost language whose erasure is the original game: one closed program constructs the charged basis, specializes the exact adversary path with its annotations and group nodes, builds a proof-carrying cache, and feeds that same cache through charged verifier postprocessing, with the counter decomposition proven in Lean. The straight-line family is the fixed-statement sibling: both terminate in a data-bearing outcome, so neither existential relation availability nor a merely propositional statement branch counts as extracted knowledge.",
       "nodes": [
         "adaptive",
         "retained",
@@ -657,11 +657,13 @@
       "proves": [
         "The adversary selects the public statement and the proof together, with the canonical verifying key and every selected instance commitment in the transcript prefix before theta.",
         "The knowledge extractors are executable and return the actual private witnesses for every proof in the bundle, together with proofs that they satisfy the compiled Action specification.",
-        "The direct profiles separately account for random-oracle, group, and direct-coordinate work; the straight-line finder has a pointwise four-invocation bound, so no expectation or Markov tail enters the accounting."
+        "The direct profiles separately account for random-oracle, group, and direct-coordinate work; the straight-line finder has a pointwise four-invocation bound, so no expectation or Markov tail enters the accounting.",
+        "The adaptive-statement finder and witness extractor reuse one adversary output, annotation log, and challenge vectors; the cached finder is pointwise equal to the original finder, and extraction succeeds on exactly the same oracle tables."
       ],
       "residuals": [
         "The transcript representation of the verifying key is opaque: the game does not claim cross-key binding, which would need collision resistance of the concrete key hash.",
-        "Adversary PPT time and the concrete DLOG hardness bound remain external."
+        "Adversary PPT time and a concrete interpretation of the finite-resource DLOG advantage remain external.",
+        "Because the cost language is shallow, staging fidelity remains explicit for the supplied adversary and for generic host callbacks in the complete program; the three-decode bound follows from a required family representation-length invariant, not a concrete deployment family constructed here."
       ],
       "durationMs": 10500
     },
@@ -669,8 +671,8 @@
       "id": "compose",
       "chapter": "Capstones",
       "title": "Compose the opening, the circuit, and the budget",
-      "claim": "The extracted opening and the constraint identity form SnarkRelation, and the six advertised endpoints bound acceptance-with-extraction-failure at explicit resource ceilings.",
-      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. Above it sit exactly six censused endpoints: two consensus-generic adaptive-statement Action bounds, three captured straight-line knowledge errors, and one consensus-maximum finite-security package. The adaptive-statement capstone bounds verifier acceptance when executable private-witness extraction fails by Adv_DLOG(2^126, 2^126) + 2^-83 at a 2^123 computational work target, for every consensus-valid bundle size.",
+      "claim": "The extracted opening and the constraint identity form SnarkRelation, and the nine advertised endpoints bound acceptance-with-extraction-failure at explicit resource ceilings.",
+      "summary": "SnarkRelation is the conjunction of one pinned IPA opening and circuit satisfaction for the same witness. Above it sit exactly nine censused endpoints: five consensus-generic adaptive-statement Action bounds — the error-formula and 2^123 work-factor forms plus three conditionally staged-certified forms — three captured straight-line knowledge errors, and one consensus-maximum finite-security package. The work-factor capstone bounds verifier acceptance when executable private-witness extraction fails by Adv_DLOG(2^126, 2^126) + 2^-83 at a 2^123 computational work target, for every consensus-valid bundle size; the staged-certified endpoints bound it by Adv_DLOG(2^124, 2^126) + 2^-83 at the separate Q ≤ 2^123 oracle parameter, covering both 2^123 and 2^125 adversary group-work budgets, the latter with adversary-plus-reduction group work at most 2^126.",
       "nodes": [
         "SnarkRelation",
         "capstones",
@@ -734,7 +736,7 @@
       "chapter": "Trust boundary",
       "title": "Stop at the exact formal boundary",
       "claim": "The chain reaches executable witness extraction with explicit reduction disjunctions; it does not erase the remaining modeling and composition gaps.",
-      "summary": "The final view keeps hypotheses and out-of-Lean assumptions visible. The output-side floor has moved one step: Security.Ledger.Bridge.actionSpec_to_ledger now refines the Action circuit's postcondition to the games-facing ledger statement, so what is missing is the composition of the extracted bundle witness with that bridge, not the bridge itself. This is the honest endpoint: a large mechanized core with named inputs, probability budgets, and computational assumptions rather than an all-green claim.",
+      "summary": "The final view keeps hypotheses and out-of-Lean assumptions visible. The output-side floor has moved one step: Security.Ledger.Bridge.actionSpec_to_ledger now refines the Action circuit's postcondition to the games-facing ledger statement, so what is missing is the composition of the extracted bundle witness with that bridge, not the bridge itself. The strongest adaptive capstones cover represented online algebraic adversaries in the random-oracle model at explicit query and group-work parameters, with exact reduction data flow and counter composition derived. This is the honest endpoint: a large mechanized core with named inputs, probability budgets, and computational assumptions rather than an all-green claim.",
       "nodes": [
         "capstones",
         "structural",
@@ -784,8 +786,8 @@
         "The endpoint records reduction outcomes and residual premises without hiding them."
       ],
       "residuals": [
-        "Composing the extracted ActionBundleWitness with the ledger bridge; Blake2b-as-RO, generator hash-to-curve-as-RO, the online-AGM idealization, finite-security DL hardness, and Rust-capture provenance.",
-        "Adversary running time, implementation work bounds, and the combined error budget across the whole protocol stack."
+        "Composing the extracted ActionBundleWitness with the ledger bridge; Blake2b-as-RO, generator hash-to-curve-as-RO, the online-AGM idealization, a concrete interpretation of the finite-resource DLOG advantage, and Rust-capture provenance.",
+        "Adversary running time, staging fidelity for the supplied adversary and generic host callbacks of the complete shallow program, and the combined error budget across the whole protocol stack."
       ],
       "durationMs": 11000
     }

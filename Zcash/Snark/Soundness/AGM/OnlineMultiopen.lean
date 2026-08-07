@@ -30,6 +30,17 @@ def AlgebraicProofString.preX1Points (aps : AlgebraicProofString shape basis) :
   (List.ofFn fun p => List.ofFn fun i => aps.lookupProduct p i).flatten ++
   [aps.vanishingRandom] ++ List.ofFn aps.hPieces
 
+theorem AlgebraicProofString.preX1Points_length
+    (aps : AlgebraicProofString shape basis) :
+    aps.preX1Points.length =
+      shape.numProofs * shape.numAdviceColumns +
+      shape.numProofs * shape.numLookups +
+      shape.numProofs * shape.numLookups +
+      shape.numProofs * shape.numPermutationSets +
+      shape.numProofs * shape.numLookups + 1 + shape.numQuotientPieces := by
+  simp [AlgebraicProofString.preX1Points, Function.comp_def]
+  omega
+
 /-- The represented points available before the `x1` batching challenge.  `fixed` holds
 verifier-known representations per public basis; `qPrime` is excluded — it is emitted only after
 `x2`. -/
@@ -38,6 +49,12 @@ def AlgebraicProofString.preX1AssemblySource
     (fixed : List (AlgebraicPoint (F := Fp) basis)) :
     List (AlgebraicPoint (F := Fp) basis) :=
   aps.preX1Points ++ fixed
+
+theorem AlgebraicProofString.preX1AssemblySource_length
+    (aps : AlgebraicProofString shape basis)
+    (fixed : List (AlgebraicPoint (F := Fp) basis)) :
+    (aps.preX1AssemblySource fixed).length = aps.preX1Points.length + fixed.length := by
+  simp [AlgebraicProofString.preX1AssemblySource]
 
 /-- The represented points from which the final multiopen MSM may be assembled.  This extends the
 strict pre-`x1` source by the later `qPrime` commitment. -/

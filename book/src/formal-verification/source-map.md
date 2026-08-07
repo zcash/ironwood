@@ -182,8 +182,13 @@ turning the fingerprint match into
 build-time obligations; `SingleAction/Honest/VkMatch` computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported `configure`. The multi-action capture additionally
 carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree,
-schedule and static-check modules, the adaptive-statement knowledge-failure endpoint with its
-`2^123` work-factor instantiation, and `CapturedZeroFamily` — the shape-generic zero prover instantiated at the
+schedule and static-check modules, the adaptive-statement knowledge-failure endpoints with the
+`2^123` work-factor instantiation and its conditionally staged-certified `2^123` and `2^125`
+adversary-work instantiations, data-coupled programmed-basis and verifier-commitment accounting,
+explicit adversary and complete-program staging-fidelity obligations, mechanically composed
+reduction work, a direct-decode bound derived from a required family invariant, and a separate
+oracle-query budget, and
+`CapturedZeroFamily` — the shape-generic zero prover instantiated at the
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.
 
 Each family's `Random/` subfolder holds the random match-only
@@ -229,8 +234,21 @@ root, IPA, and semantic surfaces under the single `(Q + 1)` query factor; `Prove
 `Semantic`, and `Complete` identify the selected statement's decoded polynomials with the
 executable resolver stages; `Event` unions the priced events and `Capstone` discharges the
 statistical residual against them; `Knowledge` ends at the executable knowledge extractor and
-its failure bound; and `Profile` prices the whole reduction at the `2^123` computational work
-target. The shared `AdaptiveSurfaces` and `AdaptiveTerminal` supply the per-commitment
+its failure bound; `Cached` proves that one retained execution gives the same finder and extraction
+event; and `Cost` constructs the programmed basis through reified Vesta operations, feeds those
+computed points into the adversary, threads reified canonical commitments into verifier assembly,
+and derives the conditional staged `2×` group-operation bound. Its private composition carries
+one closed program that constructs the charged basis, specializes the exact adversary path with
+its annotations and group nodes, constructs a proof-carrying cache from that result, and consumes
+that same cache in reified postprocessing. Lean proves the resulting counter equals adversary work
+plus reduction work. Since the cost language is shallow, fidelity of the supplied adversary and
+of generic host callbacks inside the complete program remains external and is stated separately.
+The modeled three-decode inequality is derived from the family's required fixed-representation
+cap rather than retained as a free certified-profile number; this generic development does not
+construct the concrete deployment family that must satisfy the cap. `Profile` retains
+the older declared-resource
+compatibility theorem. The shared
+`AdaptiveSurfaces` and `AdaptiveTerminal` supply the per-commitment
 activity predicates, challenge surfaces, and pointwise semantic terminal both Action routes
 consume.
 
@@ -241,7 +259,8 @@ Six subtrees carry the heavier machinery:
   machinery itself is model-free and lives in `Common/AlgebraicRelation` (following
   [Fuchsbauer–Kiltz–Loss 2018](https://eprint.iacr.org/2017/620)); `Adapter` supplies only the view
   of the deployed URS as an augmented basis `(g, U, W)`. This subtree adds the algebraic
-  coefficients to the online prover interfaces (`OnlineMembers`, `OnlineMultiopen`) and evaluates
+  coefficients to the online prover interfaces (`OnlineMembers`, `OnlineMultiopen`), reifies
+  erasable group-work events for adaptive programs (`CostedOracle`), and evaluates
   the reduction's probability loss at Vesta (`ProbabilityVesta`) — programming *every*
   basis slot from the
   DL challenge rather than guessing which slot the relation will hit, so the loss is an additive

@@ -141,6 +141,14 @@ def adaptiveStatementInstanceRepresentationList {shape : Shape}
       AlgebraicPoint (F := Fp) basis) : List (AlgebraicPoint (F := Fp) basis) :=
   (List.ofFn fun p => List.ofFn fun column => representations p column).flatten
 
+theorem adaptiveStatementInstanceRepresentationList_length {shape : Shape}
+    {basis : AugmentedIndex (2 ^ shape.k) → VestaG}
+    (representations : Fin shape.numProofs → Fin shape.numInstanceColumns →
+      AlgebraicPoint (F := Fp) basis) :
+    (adaptiveStatementInstanceRepresentationList representations).length =
+      shape.numProofs * shape.numInstanceColumns := by
+  simp [adaptiveStatementInstanceRepresentationList, Function.comp_def]
+
 /-- The canonical augmented-basis coordinates of one selected public-instance commitment.
 Unlike an adversary-supplied representation, these coefficients are computed from the actual
 public-input rows and the verifier's default instance blind. -/
@@ -452,7 +460,18 @@ theorem adviceCommitment_mem_prefixesPre_zero {pp : ProofParams}
 
 end AdaptiveActionStatementOutput
 
-/-- A basis-indexed online-AGM adversary that chooses its public statement and proof together. -/
+/-- Generous structural cap on the verifier-known representation table traversed by decoding. -/
+def adaptiveStatementFixedRepresentationLimit : Nat := 2 ^ 89
+
+/-- A basis-indexed online-AGM adversary that chooses its public statement and proof together.
+
+The fixed representation table is part of the statement family rather than the selected proof,
+but it is traversed by direct-coordinate decoding.  Bounding its length here makes that input-size
+resource structural: every family carries the proof needed to derive the endpoint's decode-work
+bound, instead of restating a numerical decode premise in each security profile.  `2^89` is a
+deliberately generous interface cap (the captured Orchard key needs only its fixed and permutation
+commitments) and leaves room for the shape-indexed proof data inside the existing `2^90` deployed
+source envelope. -/
 structure ComputedAdaptiveActionStatementFSFamily (pp : ProofParams) where
   /-- The key digest absorbed at transcript position zero, as a function of the verifying key.
   The game always applies it to its canonical basis-dependent key.  Fixtures may instantiate a
@@ -464,6 +483,11 @@ structure ComputedAdaptiveActionStatementFSFamily (pp : ProofParams) where
   fixedRepresentations :
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       List (AlgebraicPoint (F := Fp) basis)
+  /-- Family-construction obligation, not a theorem about an unspecified deployed table.  Once a
+  concrete family supplies this invariant, the capstone derives its direct-decode work bound
+  without accepting a separate numeric work premise. -/
+  fixedRepresentations_length_le : ∀ basis,
+    (fixedRepresentations basis).length ≤ adaptiveStatementFixedRepresentationLimit
   fixedRepresented : ∀ basis i,
     (∃ rotation, (i, rotation) ∈ (adaptiveActionStatementVk pp basis).fixedQueryLayout) →
     ∃ ap ∈ fixedRepresentations basis,

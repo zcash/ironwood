@@ -409,24 +409,71 @@ def acceptsV {pp : ProofParams}
     (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
     view.output.toAlgebraicWfProof.proof.1 (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds)
 
+instance acceptsVDecidable {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis) : Decidable (family.acceptsV basis view) := by
+  unfold acceptsV DeployedAccepts
+  split <;> infer_instance
+
 /-- Executable deployed-acceptance certificate for the selected statement and proof. -/
 def accepts?V {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
     (view : RunView pp family basis) : Option (PLift (family.acceptsV basis view)) :=
-  match hassemble : assemble? (adaptiveActionStatementVk pp basis)
+  if haccepts : family.acceptsV basis view then some ⟨haccepts⟩ else none
+
+/-- The field-valued half of the binding-attack predicate.  Once `accepts?V` has established the
+verifier equation, deciding the full attack through this predicate avoids evaluating that group
+equation a second time. -/
+def bindingValueMismatchV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis) : Prop :=
+  let proof := view.output.toAlgebraicWfProof
+  let nu := view.pre
+  innerProduct (proof.aMulti nu) (evalVector (AdaptiveActionStatementShape pp).k (nu 7)) ≠
+    multiopenValue (adaptiveActionStatementVk pp basis)
+        (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+        proof.proof.1 (chRecord nu (fun _ => 0)) +
+      (nu 10)⁻¹ * (proof.multiU nu + nu 9 * proof.sU) -
+      nu 9 * innerProduct proof.s
+        (evalVector (AdaptiveActionStatementShape pp).k (nu 7))
+
+instance bindingValueMismatchVDecidable {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis) : Decidable (family.bindingValueMismatchV basis view) := by
+  unfold bindingValueMismatchV
+  infer_instance
+
+/-- Under an already-checked acceptance equation and `z ≠ 0`, the full binding-attack decision
+is exactly its field-valued mismatch. -/
+theorem fullAlgebraicBindingAttackZ_iff_bindingValueMismatchV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (haccepts : family.acceptsV basis view) (hz : view.pre 10 ≠ 0) :
+    fullAlgebraicBindingAttackZ basis (adaptiveActionStatementVk pp basis)
+        (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+        view.output.toAlgebraicWfProof view.pre view.rounds ↔
+      family.bindingValueMismatchV basis view := by
+  have hverifier : DeployedIpaVerifierEq
+      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis).g
+      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis).w
+      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis).u
+      (adaptiveActionStatementVk pp basis)
       (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
-      view.output.toAlgebraicWfProof.proof.1 (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) with
-  | none => none
-  | some msm =>
-      if hzero : msm.eval
-          (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) = 0 then
-        some ⟨by
-          unfold acceptsV
-          unfold DeployedAccepts
-          rw [hassemble]
-          exact hzero⟩
-      else none
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) := by
+    simpa using deployedAccepts_verifierEq
+      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
+      (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) haccepts
+  simp [fullAlgebraicBindingAttackZ, fullAlgebraicBindingAttack, bindingValueMismatchV,
+    hverifier, hz]
 
 /-- Executable deployed-acceptance certificate at one table. -/
 abbrev accepts? {pp : ProofParams}
@@ -724,9 +771,9 @@ theorem semanticRelation?_isSome_of_false {pp : ProofParams}
     (family.semanticRelation? basis O run).isSome :=
   family.semanticRelation?V_isSome_of_false basis (runView family basis O) run good hfalse
 
-/-- The computed relation finder for one adaptive-statement run.  Acceptance, batch construction,
-root checks, decoding, and semantic checks all use the statement selected in that same run. -/
-def terminalRelationFinderV {pp : ProofParams}
+/-- The terminal relation finder from a supplied acceptance result.  The costed reduction uses
+this entry point so the reified verifier MSM controls the remaining branches directly. -/
+def terminalRelationFinderWithAcceptanceV {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
     (view : RunView pp family basis)
@@ -734,16 +781,24 @@ def terminalRelationFinderV {pp : ProofParams}
       (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
       view.output.toAlgebraicWfProof.proof.1
       (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
-        scalarFieldOrder) :
+        scalarFieldOrder)
+    (acceptance : Option (PLift (family.acceptsV basis view))) :
     Option (AlgebraicRelationWitness (F := Fp) basis) :=
     let proof := view.output.toAlgebraicWfProof
     let nu := view.pre
     let rounds := view.rounds
-    match family.accepts?V basis view with
+    match acceptance with
     | none => none
     | some hacceptsProof =>
         let haccepts : family.acceptsV basis view := hacceptsProof.down
         if hz : nu 10 ≠ 0 then
+          letI : Decidable (fullAlgebraicBindingAttackZ basis
+              (adaptiveActionStatementVk pp basis)
+              (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+              proof nu rounds) :=
+            decidable_of_iff (family.bindingValueMismatchV basis view)
+              (family.fullAlgebraicBindingAttackZ_iff_bindingValueMismatchV
+                basis view haccepts hz).symm
           if hattack : fullAlgebraicBindingAttackZ basis
               (adaptiveActionStatementVk pp basis)
               (adaptiveActionStatementInstanceCommitment pp basis
@@ -770,6 +825,21 @@ def terminalRelationFinderV {pp : ProofParams}
                         accepts := haccepts }
                     family.semanticRelation?V basis view run
         else none
+
+/-- The computed relation finder for one adaptive-statement run.  Acceptance, batch construction,
+root checks, decoding, and semantic checks all use the statement selected in that same run. -/
+def terminalRelationFinderV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        scalarFieldOrder) :
+    Option (AlgebraicRelationWitness (F := Fp) basis) :=
+  family.terminalRelationFinderWithAcceptanceV basis view hcharV
+    (family.accepts?V basis view)
 
 
 /-- Terminal relation finder at one table. -/
