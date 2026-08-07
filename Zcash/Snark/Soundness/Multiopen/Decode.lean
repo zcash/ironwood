@@ -1,4 +1,7 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Snark.Soundness.Ipa.IpaSoundness
 import Zcash.Snark.Soundness.Relation.KnowledgeSoundness
 import Zcash.Snark.Verifier.Assemble

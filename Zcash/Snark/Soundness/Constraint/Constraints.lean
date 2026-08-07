@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Arithmetic
 import Zcash.Common.CPolynomial
 import Zcash.Snark.Verifier.Expressions

@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 
 /-!
 # The verifier's challenges

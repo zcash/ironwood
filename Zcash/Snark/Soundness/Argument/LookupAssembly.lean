@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Snark.Soundness.Argument.Lookup
 import Zcash.Snark.Soundness.Argument.GrandProductBridge
 import Zcash.Snark.Soundness.Argument.PermutationRows

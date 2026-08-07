@@ -1,4 +1,11 @@
-import Mathlib.Tactic
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Data.ZMod.Basic
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Common.DiscreteLogRelation
 
 /-!

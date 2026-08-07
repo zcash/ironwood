@@ -1,4 +1,7 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Snark.Soundness.Multiopen.ValueCheck
 import Zcash.Snark.Soundness.Multiopen.Deployed
 import Zcash.Snark.Soundness.Multiopen.Opened

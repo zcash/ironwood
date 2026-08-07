@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.DeriveFintype
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Arithmetic
 import Zcash.Arithmetic.Msm
 import Zcash.Snark.Verifier.Assemble

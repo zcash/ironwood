@@ -1,4 +1,9 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
 import Zcash.Snark.Fingerprint.SchwartzZippel
 import Zcash.Snark.Fingerprint.Rational.Family
 

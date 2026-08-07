@@ -1,4 +1,13 @@
-import Mathlib.Tactic
+import Mathlib.Algebra.Field.Defs
+import Mathlib.Algebra.Module.Defs
+import Mathlib.Algebra.NoZeroSMulDivisors.Defs
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.Prod
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Security.Common.RandomOracle
 
 /-!

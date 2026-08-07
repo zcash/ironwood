@@ -1,4 +1,14 @@
-import Mathlib.Tactic
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.Algebra.Module.NatInt
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Data.ZMod.Basic
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Arithmetic.Group
 
 /-!

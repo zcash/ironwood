@@ -24,8 +24,18 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.30.0"
 
+# The root glob alone would build only what `Zcash.lean` transitively imports. Since
+# `Zcash/Snark.lean` stopped re-exporting `Soundness/` (issue #153: the byte-locked fixture
+# captures must `import Zcash.Snark`, and re-exporting the soundness argument there put the
+# whole subtree on every capture lane's build path), the Soundness modules reach the root
+# closure only through the census imports in `Zcash/TrustBoundary.lean` — real but fragile
+# coverage, gone the moment a census entry is refactored. The explicit glob pins the whole
+# subtree into the default build regardless of what the import graph does;
+# `scripts/check_build_coverage.sh` (CI) asserts the same end-to-end property for every
+# module in the package.
 [[lean_lib]]
 name = "Zcash"
+globs = ["Zcash", "Zcash.Snark.Soundness.+"]
 
 # Test-only adversarial declarations for `Zcash.Meta.AxiomCheck`. This is a separate library so
 # forged axioms used to exercise the rejection paths never enter the production `Zcash` import

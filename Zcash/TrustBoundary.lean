@@ -290,14 +290,14 @@ The honest construction is computable data (the wallet's own algorithm, includin
 authentication data recovered from the defined tree); the two completeness endpoints
 are theorems over it. The Spendability capstone is a computed reduction: the
 roadblock branch decides nullifier membership and searches out the revealing action.
-Its `+choice` is the erased-positions tier — choice arrives with proof terms in
-`Prop` positions, never the data path. -/
+It carries no `+choice`: neither the decision nor the search reaches for choice, and
+no choice-bearing proof term survives in its erased `Prop` positions either. -/
 
 assert_computable Zcash.Security.Ledger.Model.honestTx
 assert_computable Zcash.Security.Ledger.Model.HonestAction.withDummySpend
 assert_axioms Zcash.Security.Ledger.Model.HonestAction.satisfied
 assert_axioms Zcash.Security.Ledger.Model.honestTx_valid
-assert_computable Zcash.Security.Ledger.Model.spendabilityOrBreak +choice
+assert_computable Zcash.Security.Ledger.Model.spendabilityOrBreak
 
 /-! ## Probabilistic capstones
 

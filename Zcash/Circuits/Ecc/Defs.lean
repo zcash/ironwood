@@ -2,7 +2,10 @@ import Clean.Circuit
 import CompElliptic.CurveForms.ShortWeierstrass
 import Zcash.Circuits.Specs.Pallas
 import Clean.Utils.Tactics
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 
 /-
 Some definitions useful for circuits involving points

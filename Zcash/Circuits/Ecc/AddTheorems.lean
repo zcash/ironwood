@@ -1,7 +1,11 @@
 import Zcash.Circuits.Specs.Pallas
 import Zcash.Circuits.Ecc.Defs
 import Clean.Utils.Tactics
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 
 namespace Zcash.Circuits.Ecc
 

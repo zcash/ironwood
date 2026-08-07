@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Security.Ledger.Model
 
 /-!

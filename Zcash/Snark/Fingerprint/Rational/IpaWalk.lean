@@ -1,4 +1,7 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Snark.Fingerprint.Rational.ConstraintWalk
 import Zcash.Snark.Soundness.Deployed.Fold
 import Zcash.Snark.Soundness.FiatShamir.Assembly

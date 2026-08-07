@@ -1,4 +1,10 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
 import Zcash.Snark.Soundness.Pricing.GoodChallenge
 import Zcash.Snark.Soundness.Constraint.FoldSplit
 import Zcash.Snark.Soundness.Argument.GrandProductBridge

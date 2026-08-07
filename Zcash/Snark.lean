@@ -16,7 +16,13 @@
 --   challenge bad sets and `Relation/` says what constraint satisfaction buys. Above those,
 --   `AGM/`, `StraightLine/`, and `Composition/` carry extraction and composition from the
 --   acceptance predicate (`Soundness/Main.lean`), instantiated at Vesta
---   (`Soundness/Deployed/Vesta.lean`).
+--   (`Soundness/Deployed/Vesta.lean`). Deliberately NOT re-exported by this umbrella: the
+--   byte-locked fixture captures must `import Zcash.Snark` (the header halo2's
+--   `dump_vesta_lean_fixture` emits), and re-exporting the soundness argument here put the
+--   whole `Soundness/` subtree on every capture lane's build path — most of the cold-build
+--   critical path (issue #153). Import `Soundness` modules directly. They stay in the
+--   default build through the `Zcash.Snark.Soundness.+` glob on the `Zcash` target, and
+--   `scripts/check_build_coverage.sh` asserts the closure property in CI.
 -- * `Fixtures/` — concrete Orchard captures and the boundary checks they license, split by
 --   capture kind. The namespaces (`Fixture`, `Fixture2`, `FixtureRandom`, `FixtureRandom2`) are
 --   emitted by halo2's `dump_vesta_lean_fixture` and cannot be renamed here: the fixture CI
@@ -27,7 +33,10 @@
 --   that proves them: the straight-line knowledge errors beside their capture, the
 --   consensus work factors in `Soundness/AGM/`.
 --
--- Import modules here that should be built as part of the library.
+-- Import modules here that this umbrella should re-export. Build coverage does not depend on
+-- this list: every module under `Zcash/` must be reachable from some default target, which
+-- `scripts/check_build_coverage.sh` enforces (the `Soundness/` subtree, for instance, is
+-- carried by a lakefile glob instead of an import here).
 
 -- The arithmetic tier the verifier is stated over. The umbrella also re-exports `Fp` and `URS`
 -- at the `Zcash` root, which is how they resolve unqualified across the repository.
@@ -39,6 +48,11 @@ import Zcash.Arithmetic.FastMsm
 import Zcash.Snark.Core
 import Zcash.Snark.Core.ProofString
 import Zcash.Snark.Core.Challenges
+-- The deployed verifier group. The captures state their points in `VestaG` (and open the
+-- CompElliptic Pasta namespaces this module carries), so the umbrella must supply it; it was
+-- hoisted out of `Soundness/Decoded/Vesta.lean` exactly so that supplying it does not pull
+-- the soundness stack back onto the capture lanes (issue #153).
+import Zcash.Snark.Core.Vesta
 import Zcash.Snark.Fingerprint.SchwartzZippel
 import Zcash.Snark.Verifier.Ipa
 import Zcash.Snark.Verifier.Checks
@@ -51,106 +65,10 @@ import Zcash.Snark.Verifier.Deployed
 import Zcash.Snark.Verifier.Parametric
 import Zcash.Snark.Verifier.GroupingRef
 import Zcash.Snark.Fingerprint.Match
--- The quantified random match — the sample space, the good event's enumerated
--- denominator factors, and the rational-representation walk of the assembled coefficients.
-import Zcash.Snark.Fingerprint.SampleSpace
-import Zcash.Snark.Fingerprint.Rational.GoodEvent
-import Zcash.Snark.Fingerprint.Rational.Representation
-import Zcash.Snark.Fingerprint.Rational.ConstraintWalk
-import Zcash.Snark.Fingerprint.Rational.GroupingTable
-import Zcash.Snark.Fingerprint.Rational.IpaWalk
-import Zcash.Snark.Fingerprint.Rational.OpeningWalk
-import Zcash.Snark.Fingerprint.Rational.Capstone
-import Zcash.Snark.Fingerprint.Epsilon
-import Zcash.Snark.Soundness.Argument.GrandProduct
-import Zcash.Snark.Soundness.Argument.Lookup
-import Zcash.Snark.Soundness.Argument.Permutation
-import Zcash.Snark.Soundness.Argument.PermutationConstruction
-import Zcash.Snark.Soundness.Argument.RunningProduct
-import Zcash.Snark.Soundness.Argument.GrandProductBridge
-import Zcash.Snark.Soundness.Argument.LookupAssembly
-import Zcash.Snark.Soundness.Argument.PermutationRows
-import Zcash.Snark.Soundness.Relation.ConstraintRelations
-import Zcash.Snark.Soundness.Pricing.ChallengePricing
-import Zcash.Snark.Soundness.Ipa.InnerProduct
-import Zcash.Snark.Soundness.Ipa.Halves
-import Zcash.Snark.Soundness.Constraint.Constraints
-import Zcash.Snark.Soundness.Constraint.FoldSplit
-import Zcash.Snark.Soundness.Ipa.CommitFold
-import Zcash.Snark.Soundness.Ipa.Consistency
-import Zcash.Snark.Soundness.Relation.KnowledgeSoundness
-import Zcash.Snark.Soundness.Ipa.IpaSoundness
--- Verifier-native semantic models used by the Clean integration boundary.  These
--- belong to the core SNARK library even when no capstone imports them incidentally.
-import Zcash.Snark.Soundness.Canonical.ConstraintSatisfaction
-import Zcash.Snark.Soundness.Canonical.ConstraintModel
-import Zcash.Snark.Soundness.Canonical.InstanceCommitment
--- Deployed halo2-verifier algebra and binding reductions.
-import Zcash.Snark.Soundness.Deployed.Binding
-import Zcash.Snark.Soundness.Deployed.Fold
-import Zcash.Snark.Soundness.Deployed.Verification
--- The reusable Fiat–Shamir oracle kernel and its represented adversary model: random-oracle
--- lemmas, deployed transcript ordering, closed-form IPA assembly, and the bounded
--- querying-adversary reduction.
-import Zcash.Snark.Soundness.Oracle.Model
-import Zcash.Snark.Soundness.FiatShamir.Assembly
-import Zcash.Snark.Soundness.FiatShamir.Ordering
-import Zcash.Snark.Soundness.FiatShamir.Execution
-import Zcash.Snark.Soundness.FiatShamir.Adversary
-import Zcash.Snark.Soundness.Main
--- Multiopen decode reconstruction: bind the IPA witness to real verifier columns recovered from
--- the represented `x₄` power batch (`Multiopen.Decode`, `Multiopen.Deployed`), the MSM evaluation
--- spine (`Multiopen.Compat`), and the explicit opened/member interfaces (`Multiopen.Opened`).
--- Schwartz–Zippel good-challenge budgets and production (kills `hgood` at the `_xgood` rungs).
-import Zcash.Snark.Soundness.Pricing.GoodChallenge
-import Zcash.Snark.Soundness.Multiopen.Decode
-import Zcash.Snark.Soundness.Multiopen.Compat
-import Zcash.Snark.Soundness.Multiopen.Deployed
-import Zcash.Snark.Soundness.Multiopen.Opened
-import Zcash.Snark.Soundness.Multiopen.RPoly
-import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
-import Zcash.Snark.Soundness.Canonical.Terminal
-import Zcash.Snark.Soundness.Circuit.Terminal
-import Zcash.Snark.Soundness.Decoded.Vesta
--- AGM binding reduction: consume computed deployed relations through the programmed-basis
--- discrete-log adapter and representation-carrying algebraic-prover model.
-import Zcash.Snark.Soundness.AGM.Adapter
-import Zcash.Snark.Soundness.AGM.Probability
-import Zcash.Snark.Soundness.AGM.ProbabilityVesta
-import Zcash.Snark.Soundness.AGM.Peel
-import Zcash.Snark.Soundness.AGM.BindingSignature
--- Rewind-free deployed multiopen decoding and additive pinned-root composition.
-import Zcash.Snark.Soundness.Composition.DeployedRootContainment
--- The straight-line AGM route: staged IPA representations, fixed-call deployed constraint
--- extraction, and an explicit finite-security DLOG work profile.
-import Zcash.Snark.Soundness.AGM.StraightLineFiniteSecurity
--- The constraint-level and straight-line family interfaces are inhabited at the witness shape.
-import Zcash.Snark.Soundness.Composition.StraightLineWitness
--- The zero-data keystone and the constant zero prover family, at any shape.
-import Zcash.Snark.Soundness.AGM.ZeroFamily
--- The zero family's deployed root layer: six staged root events at any shape.
-import Zcash.Snark.Soundness.AGM.ZeroFamilyRoots
--- The straight-line deployed interface, inhabited with live IPA rounds at any instance-free shape.
-import Zcash.Snark.Soundness.Composition.ZeroStraightLine
--- The direct-coordinate postprocessing carries an explicit polynomial total-cost model.
--- The Action-level semantic challenge exclusions, priced and summed.
--- A rewind-free decode presented through the opened-batch interface the Action terminal takes.
-import Zcash.Snark.Soundness.AGM.DecodeToOpened
-import Zcash.Snark.Soundness.Composition.SemanticChallengeRemainder
-import Zcash.Snark.Soundness.Composition.StraightLineDecodeSupply
-import Zcash.Snark.Soundness.Composition.SequentialLift
-import Zcash.Snark.Soundness.Composition.DirectPathCost
--- Circuit soundness specializations consume the Clean/Ironwood integration
--- boundary; they do not belong to that boundary's import graph.
-import Zcash.Snark.Soundness.StraightLine.Terminal
-import Zcash.Snark.Soundness.StraightLine.Event
-import Zcash.Snark.Soundness.Action.StraightLineTerminal
-import Zcash.Snark.Soundness.Action.StraightLineEvent
-import Zcash.Snark.Soundness.Action.AdaptiveStatementModel
-import Zcash.Snark.Soundness.Action.AdaptiveStatementAccounting
-import Zcash.Snark.Soundness.Action.AdaptiveStatementTerminal
-import Zcash.Snark.Soundness.Action.AdaptiveStatementEvent
-import Zcash.Snark.Soundness.Action.AdaptiveStatementCapstone
-import Zcash.Snark.Soundness.Action.AdaptiveStatementKnowledge
-import Zcash.Snark.Soundness.Action.AdaptiveStatementProfile
-import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
+-- The quantified random match — the sample space, the good event's enumerated denominator
+-- factors, and the rational-representation walk (`Fingerprint/SampleSpace`, `Fingerprint/
+-- Rational/`, `Fingerprint/Epsilon`) — is deliberately NOT re-exported, for the same reason
+-- as `Soundness/` above: the captures reference none of it, and its `Rational/Capstone`
+-- chain (~4 min) sat on every capture lane's build path through this umbrella. Its
+-- consumers (each random family's `Epsilon.lean`, and the census files through them)
+-- import it directly, and the `FixtureCheck` glob keeps it in the default build.

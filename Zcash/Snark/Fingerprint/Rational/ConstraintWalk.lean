@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
 import Zcash.Snark.Fingerprint.Rational.Representation
 import Zcash.Snark.Soundness.Pricing.DegreeWalk
 

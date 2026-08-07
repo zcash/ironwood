@@ -1,4 +1,7 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 import Zcash.Snark.Fingerprint.SampleSpace
 

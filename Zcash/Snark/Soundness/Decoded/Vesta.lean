@@ -1,19 +1,20 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Zcash.Snark.Core.Vesta
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.Multiopen.Deployed
-import CompElliptic.Curves.Pasta
-import CompElliptic.Curves.PastaOrder
 
 /-!
-# Vesta support for the deployed verifier
+# Vesta support for the straight-line soundness stack
 
-This module pins the verifier group to the actual Vesta curve and supplies the
-concrete-to-abstract MSM bridge and IPA witness identities used by the
-straight-line soundness stack.
-
-The only structure the `Fp` action needs that the curve does not already carry
-is the Vesta group order: every point is `p`-torsion for
-`p = scalarFieldOrder`. `CompElliptic` supplies the pinned point-count result.
+The Vesta pinning itself — `VestaG`, its group order, the `Fp`-module structure — lives
+in `Zcash/Snark/Core/Vesta.lean`, where the byte-locked fixture captures can reach it
+through the `Zcash.Snark` umbrella without importing the soundness stack (issue #153).
+This module supplies what sits on top for the soundness development: the
+concrete-to-abstract MSM bridge and the IPA witness identities used by the
+straight-line extraction.
 -/
 
 namespace Zcash.Snark
@@ -21,26 +22,6 @@ namespace Zcash.Snark
 open Zcash.Arithmetic (Msm Msm.evalNat_eq_eval scalarFieldOrder)
 open CompElliptic.Curves.Pasta CompElliptic.CurveForms.ShortWeierstrass
   CompElliptic.CurveOrder
-
-/-- The deployed verifier group `E_q`, concretely the points of `y² = x³ + 5`. -/
-abbrev VestaG := SWPoint Vesta.curve
-
-/-- Every Vesta point is `p`-torsion for `p = scalarFieldOrder`. -/
-abbrev VestaOrder : Prop := ∀ P : VestaG, (scalarFieldOrder : ℕ) • P = 0
-
-/-- Derive the Vesta group order from CompElliptic's pinned point count. -/
-theorem vestaOrder : VestaOrder := by
-  intro P
-  have hcard : Nat.card VestaG = scalarFieldOrder := Vesta.card_eq
-  rw [← hcard]
-  exact addOrderOf_dvd_iff_nsmul_eq_zero.mp (addOrderOf_dvd_natCard P)
-
-/-- Install the proved Vesta order for the `Fp`-module instance. -/
-instance : Fact VestaOrder := ⟨vestaOrder⟩
-
-/-- Give Vesta its scalar-field module structure. -/
-instance vestaFpModule [h : Fact VestaOrder] : Module Fp VestaG :=
-  AddCommGroup.zmodModule h.out
 
 /-- Natural-scalar MSM evaluation agrees with the module-theoretic evaluation
 used by the soundness development. -/

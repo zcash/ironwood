@@ -1,4 +1,7 @@
-import Mathlib.Tactic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Zcash.Snark.Soundness.Relation.KnowledgeSoundness
 import Zcash.Snark.Soundness.Argument.PermutationRows
 import Zcash.Snark.Soundness.Argument.LookupAssembly

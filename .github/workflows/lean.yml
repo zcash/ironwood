@@ -77,9 +77,11 @@ jobs:
       # native_decide axiom tracking (lean4#7463).
       - name: Verify csimp lemmas are axiom-censused
         run: scripts/check_csimp_census.sh
-      # No Lean file may import the Mathlib umbrella module: `import Mathlib` peaks around
-      # 6.5 GB RSS per Lean process, and nothing else fails when it creeps back in — builds
-      # just quietly get slow again. Import the specific Mathlib modules instead.
+      # No Lean file may import the Mathlib umbrella modules: `import Mathlib` peaks around
+      # 6.5 GB RSS per Lean process, and `import Mathlib.Tactic` costs ~+1.6 s import-load
+      # and ~+1.3 GB RSS per process over the narrow tactic modules (issue #153). Nothing
+      # else fails when either creeps back in — builds just quietly get slow again. Import
+      # the specific Mathlib modules instead.
       - name: Verify no Mathlib umbrella imports
         run: scripts/check_no_umbrella_imports.sh
       # Every deliverable soundness endpoint must use a censused protocol prefix or the semantic
@@ -91,9 +93,68 @@ jobs:
       # such a leaf, but not a stray native_decide or other unexpected axiom; the pin does.
       - name: Verify soundness endpoints are axiom-censused
         run: scripts/check_endpoint_census.sh
+      # Every module file must be reachable from the lakefile's defaultTargets — a module
+      # outside that set is not elaborated at all, and nothing else fails when one falls out.
+      # Coverage stopped being a pure import-reachability property when `Zcash/Snark.lean`
+      # ceased re-exporting `Soundness/` (issue #153); the subtree is pinned by an explicit
+      # lakefile glob, and this check asserts the end-to-end property for the whole package.
+      - name: Verify build coverage of every module
+        run: scripts/check_build_coverage.sh
+      # ── Caching (issue #153) ─────────────────────────────────────────────
+      # lean-action's built-in cache is disabled below: it archives the entire
+      # `.lake` directory (~2.6 GB compressed) under a per-commit key, so the
+      # repository's 10 GB Actions cache quota holds only ~3 entries. Any few
+      # concurrent PRs plus a couple of pushes evict each other's entries, and
+      # an evicted entry means a ~35 min cold rebuild (~135 CPU-min of Lean on
+      # a 4-vCPU runner). The cache is instead split into two layers with
+      # different lifetimes:
+      #
+      #  * Dependencies (`.lake/packages`, ~2 GB compressed): checkouts and
+      #    build artifacts of all Lake dependencies, keyed on the toolchain
+      #    and manifest pins alone — not the commit. Between dependency bumps
+      #    every PR and push reuses ONE stable entry, which stays LRU-fresh
+      #    and is never re-uploaded (the save step is skipped on an exact
+      #    key hit). Caveat: entries saved from a pull_request run are scoped
+      #    to that PR's merge ref, so after a bump each open PR cold-builds
+      #    its own entry until the first post-merge push to main publishes
+      #    the shared main-scoped one — merge bumps promptly.
+      #  * Project build (`.lake/build`, ~0.7 GB compressed): keyed per
+      #    commit and restored by key prefix from the most recent entry.
+      #    Entries are small enough that the quota holds ~10 of them next to
+      #    the dependency layer, so eviction pressure lands on old per-commit
+      #    entries instead of the expensive shared state.
+      #
+      # On a dependency bump, the restore-keys prefix warm-starts from the
+      # previous dependency entry: Lake re-materializes only the bumped
+      # checkouts, `lake exe cache get` (run by lean-action) refreshes the
+      # mathlib-ecosystem oleans in ~2 min, and only the source-built deps
+      # that actually changed (Clean, CompElliptic, CompPoly — ~16 CPU-min
+      # all told) rebuild. The prefix is scoped to the toolchain hash so a
+      # toolchain bump starts from a clean slate rather than dragging
+      # incompatible-format oleans into the fresh entry forever (stale
+      # artifacts restored under the same toolchain are trace-checked and
+      # inert — they cost entry size, not correctness).
+      - name: Restore dependency cache
+        id: restore-deps
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .lake/packages
+          key: lake-deps-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}
+          restore-keys: |
+            lake-deps-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-
+      - name: Restore project build cache
+        id: restore-build
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .lake/build
+          key: lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: |
+            lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-
+            lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-
       # Installs the toolchain from lean-toolchain, fetches the Mathlib olean cache, and runs
       # `lake build --wfail`, which rejects all warnings and builds the lakefile's
-      # `defaultTargets`: `Zcash`, `FixtureCheck`, `CircuitCheck`, and `MetaCheck`.
+      # `defaultTargets`: `Zcash`, `FixtureCheck`, `CircuitCheck`, `MetaCheck`, and
+      # `SecurityCheck`.
       #
       # `Zcash` imports the fixture-free top-level trust census. Concrete capstone census entries
       # live beside their captures and are built through `FixtureCheck`.
@@ -110,8 +171,53 @@ jobs:
       # `configure`/`synthesize` against the CS and layout fixtures dumped from the Rust
       # circuit, so a divergence between the Lean circuit model and the deployed VK fails here.
       - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        id: lake
         with:
           build-args: "--wfail"
+          # Caching is handled by the explicit layered restore/save steps
+          # around this action; see the caching comment above.
+          use-github-cache: "false"
+      # Both layers are saved explicitly rather than through the actions/cache
+      # post hook, because the post hook is gated on job *success*
+      # (`post-if: success()`): a failed build saved nothing, and — worse for
+      # a PR under active iteration — `cancel-in-progress: true` above meant a
+      # rapid push sequence cancelled each superseded run before its save, so
+      # the next run restarted from the last cache that survived, compounding
+      # the thrash.
+      #
+      # The two layers save under different conditions, deliberately:
+      #
+      #  * Project build: `always()`, which also runs during cancellation
+      #    cleanup, so partial progress from an interrupted build warms the
+      #    next attempt. Cache entries are immutable, but this layer's keys
+      #    are per-commit, so a partial entry is superseded as soon as the
+      #    next push builds further. The restore step must itself have
+      #    COMPLETED, though: a cancellation landing mid-untar would
+      #    otherwise save the truncated tree, and since restore-keys resolve
+      #    to the most recently created prefix match, every subsequent run
+      #    would warm-start from the gutted entry and re-publish it under
+      #    its own key.
+      #  * Dependencies: only if the build step actually succeeded. This
+      #    layer's key is shared and stable until the next dependency bump,
+      #    and the exact-key-hit guard (needed to avoid futile duplicate-key
+      #    saves in the steady state) means whatever gets saved first under a
+      #    new key is FINAL for that key. An `always()` save here could pin
+      #    an interrupted, mostly-empty dependency build as the shared entry
+      #    for weeks; success-gating instead lets a bump PR warm-start from
+      #    the previous entry (restore-keys above) until its first green run
+      #    publishes a complete one.
+      - name: Save project build cache
+        if: always() && steps.restore-build.outcome == 'success' && steps.restore-build.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .lake/build
+          key: lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.sha }}
+      - name: Save dependency cache
+        if: always() && steps.lake.outcome == 'success' && steps.restore-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .lake/packages
+          key: lake-deps-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}
 
   lean-ci:
     # The single stable check to mark as a required status check. It always

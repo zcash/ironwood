@@ -2,6 +2,7 @@ import Zcash.Circuits.Integration.ActionPermutationDomainCompute
 import Zcash.Circuits.Integration.PermutationCompiler
 import Zcash.Circuits.Integration.TopLevelAssignment
 import Zcash.Circuits.Integration.TopLevelConstraintModel
+import Mathlib.Tactic.NormNum.Parity
 import Mathlib.Util.AssertNoSorry
 
 /-!
