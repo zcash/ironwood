@@ -38,6 +38,14 @@ theorem numInstanceColumns_eq :
     actionCircuit.constraintSystem.numInstanceColumns = 1 := by
   native_decide
 
+/-- The Action fixed-column and common-permutation table is tiny: the adaptive-statement zero
+family carries one representation per column, and its structural `2 ^ 89` interface cap
+(`adaptiveStatementFixedRepresentationLimit`) consumes this bound. Like the counts above, this
+residual concrete bound awaits a configure law for the pinned constraint system's column lists. -/
+theorem fixedColumnCount_add_permutationColumnCount_lt :
+    actionCircuit.fixedColumnCount + actionCircuit.permutationColumnCount < 2 ^ 20 := by
+  native_decide
+
 /-- Every instance query in the Action circuit's pinned layout names the single
 configured instance column. -/
 theorem instanceQueryLayout_columns_lt :

@@ -217,7 +217,22 @@ namespace CompiledOverrides
 
 /-! `implemented_by`, `extern`, and `csimp` alter native execution without entering the logical
 dependency or axiom graph.  Check the whole Ironwood dependency cone, not only the pinned
-declaration: the forgeries sit one helper below the otherwise ordinary endpoint. -/
+declaration: the forgeries sit one helper below the otherwise ordinary endpoint.
+
+The order of this section is load-bearing, as in `Zcash.Meta.Tests.CompiledOverride`: the honest
+`@[csimp]` entry comes first, while the module still has no `@[implemented_by]`/`@[extern]`
+declaration for `checkCompiledBodyDisclosure` to report — that closure-wide check fails every
+later census entry in the module at once, so a passing entry cannot follow the forgeries. -/
+
+def csimpHonestSlow (n : Nat) : Nat := n + 1
+
+def csimpHonestFast (n : Nat) : Nat := n + 1
+
+@[csimp] theorem csimpHonestSlow_eq_fast : @csimpHonestSlow = @csimpHonestFast := rfl
+
+def throughHonestCsimp (n : Nat) : Nat := csimpHonestSlow n
+
+assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughHonestCsimp
 
 unsafe def dishonestImplementation (n : Nat) : Nat := n + 2
 
@@ -271,16 +286,6 @@ def throughForgedCsimp (n : Nat) : Nat := csimpVictim n
 /-- error: Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughForgedCsimp reaches the csimp replacement of Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.csimpVictim, whose equation Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.csimpVictim_eq_dishonest depends on unexpected axiom(s): [Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.forgedCsimpEq] -/
 #guard_msgs (whitespace := lax) in
 assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughForgedCsimp
-
-def csimpHonestSlow (n : Nat) : Nat := n + 1
-
-def csimpHonestFast (n : Nat) : Nat := n + 1
-
-@[csimp] theorem csimpHonestSlow_eq_fast : @csimpHonestSlow = @csimpHonestFast := rfl
-
-def throughHonestCsimp (n : Nat) : Nat := csimpHonestSlow n
-
-assert_computable Zcash.Meta.Tests.AxiomCheck.CompiledOverrides.throughHonestCsimp
 
 end CompiledOverrides
 

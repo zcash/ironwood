@@ -192,6 +192,18 @@ def zeroAdaptiveFixedRepresentations : List (AlgebraicPoint (F := Fp) basis) :=
       (List.ofFn (canonicalActionFixedRepresentation pp basis) ++
         List.ofFn (canonicalActionPermutationRepresentation pp basis))
 
+/-- The zero family's representation table sits far inside the structural cap: one point per
+fixed column and per common permutation column, plus the zero and blinding points. -/
+theorem zeroAdaptiveFixedRepresentations_length_le :
+    (zeroAdaptiveFixedRepresentations pp basis).length ≤
+      adaptiveStatementFixedRepresentationLimit := by
+  have hcount := ActionPermutationDomain.fixedColumnCount_add_permutationColumnCount_lt
+  simp only [zeroAdaptiveFixedRepresentations, List.length_cons, List.length_append,
+    List.length_ofFn, adaptiveStatementFixedRepresentationLimit,
+    CircuitShape.withProofParams_numPermutationColumns,
+    actionCircuit.shape_numPermutationColumns]
+  omega
+
 /-- The source carries the zero point, which represents every commitment of the zero prover. -/
 theorem zeroAlgebraicPoint_mem_zeroAdaptiveFixedRepresentations :
     zeroAlgebraicPoint (shape := AdaptiveActionStatementShape pp) basis ∈
@@ -632,6 +644,7 @@ def zeroAdaptiveStatementFamily (pp : ProofParams) :
     ComputedAdaptiveActionStatementFSFamily pp where
   vkHash := fun _ _ => 0
   fixedRepresentations := zeroAdaptiveFixedRepresentations pp
+  fixedRepresentations_length_le := zeroAdaptiveFixedRepresentations_length_le pp
   fixedRepresented := zeroAdaptiveFixedRepresentations_fixedRepresented pp
   permutationCommonRepresented := zeroAdaptiveFixedRepresentations_permutationCommonRepresented pp
   adversary := fun basis => .pure (zeroAdaptiveStatementOutput pp basis)
