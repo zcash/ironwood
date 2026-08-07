@@ -17,8 +17,10 @@ registered with `@[csimp]`:
 the compiler substitutes the fast implementation at every subsequently compiled call
 site — in particular inside the fixtures' `native_decide` auxiliaries — while the
 statement surface and the kernel-level meaning of `evalNat` are untouched. This is
-the proven-equality counterpart of `implemented_by` (which is forbidden here because
-it is unchecked).
+the proven-equality counterpart of `implemented_by`, which is forbidden here because it
+is unchecked — a ban the trusted-base census enforces rather than leaves to convention:
+`Zcash.Meta.assert_axioms` and `Zcash.Meta.assert_computable` fail the build on any
+`@[implemented_by]` or `@[extern]` outside the toolchain's own ambient surface.
 -/
 
 namespace Zcash.Arithmetic.Msm

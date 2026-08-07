@@ -91,6 +91,16 @@ Two commands from `Zcash.Meta.AxiomCheck`, per the breaks-as-computed-data disci
 * **Theorems** get `assert_axioms`, an upper bound at the standard tier
   (`propext` / `Classical.choice` / `Quot.sound`). Both commands reject `sorryAx`.
 
+Axioms bound what the *kernel* was asked to believe; they say nothing about what compiled code runs,
+and the fixtures' faithfulness certificates are `native_decide` proofs that run it. Both commands
+therefore also bound the compiled surface, and the bound is the same everywhere in this repository:
+outside the Lean toolchain and the pinned mathlib stack, nothing may substitute a compiled body
+(`@[implemented_by]`, `@[extern]`) and no `partial` declaration may appear in what a `native_decide`
+certificate evaluated. `Zcash.Meta.allowedCompiledBodyOverrides` is the disclosure list for the
+first, and it is empty: the proven-equality `@[csimp]` is used instead (`Zcash.Arithmetic.FastMsm`).
+The ambient side of that boundary is the compiler trust every `native_decide` carries, including the
+`@[extern]` `Task.spawn` / `Task.get` that `List.parMap` reaches, discussed under `@[csimp]` below.
+
 Both commands are built on `Lean.collectAxioms`, which walks a declaration's transitive
 *dependencies*. Coverage therefore flows downwards only: a declaration that nothing censused
 depends on is checked by nothing, however prominent it is. Deliverable endpoints are exactly the

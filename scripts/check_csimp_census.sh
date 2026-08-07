@@ -41,8 +41,13 @@ while IFS=: read -r file lineno line; do
     continue
   fi
   count=$((count + 1))
-  if ! grep -qE "^assert_axioms .*\.${name}( |\$)|^assert_axioms ${name}( |\$)" Zcash/TrustBoundary.lean; then
-    echo "VIOLATION: csimp declaration ${name} ($file:$lineno) has no assert_axioms entry in Zcash/TrustBoundary.lean" >&2
+  # Any census file counts, not just Zcash/TrustBoundary.lean. Census entries are spread across
+  # the per-fixture boundaries and the test-only libraries, and a lemma is pinned wherever its
+  # entry sits; requiring the main file would reject a legitimate pin in a fixture boundary, and
+  # cannot be satisfied at all by a csimp lemma in a test-only library that production must not
+  # import (`Zcash/Meta/Tests/`, the `MetaCheck` target).
+  if ! grep -rqE "^assert_axioms .*\.${name}( |\$)|^assert_axioms ${name}( |\$)" Zcash/ --include="*.lean"; then
+    echo "VIOLATION: csimp declaration ${name} ($file:$lineno) has no assert_axioms entry in any census file" >&2
     status=1
   fi
 done <<< "$matches"
