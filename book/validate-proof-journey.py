@@ -195,26 +195,51 @@ def validate_timeline(errors, data, node_set):
             fail(errors, f"PR {pr_id} has an invalid lane")
 
 
-def validate_capstone_ledger(errors, data):
-    ledger = FV_DIR / "ledger.md"
+# The endpoint families `scripts/check_endpoint_census.sh` treats as deliverable capstones. The
+# journey's `endpoints` list must name exactly the ones the pinned tree declares, in both
+# directions: a retired endpoint left in the data, or a new one the page never mentions, is drift.
+ENDPOINT_RE = re.compile(
+    r"^(?:theorem|def)\s+("
+    r"orchard_(?:verifier|action|deployed)_[A-Za-z0-9_]+"
+    r"|[A-Za-z0-9_]+_(?:error_bound|finite_security|capstone)"
+    r")",
+    flags=re.MULTILINE,
+)
+
+
+def validate_endpoints(errors, data):
+    declared = data.get("endpoints")
+    if not declared:
+        fail(errors, "the journey declares no advertised endpoints")
+        return
     source = data["sources"][data["defaultSource"]]
-    vesta_text = source_text(errors, source, "Zcash/Snark/Soundness/Vesta.lean")
-    if vesta_text is None:
-        return
-    theorem_names = re.findall(
-        r"^theorem (orchard_verifier_vesta_[A-Za-z0-9_]+)",
-        vesta_text,
-        flags=re.MULTILINE,
-    )
-    if len(theorem_names) != 36:
-        fail(errors, f"expected 36 Vesta capstones, found {len(theorem_names)}")
-    if not ledger.exists():
-        return
-    ledger_text = ledger.read_text(encoding="utf-8")
-    for theorem_name in theorem_names:
-        short_name = theorem_name.removeprefix("orchard_verifier_vesta_")
-        if f"[`{short_name}`]" not in ledger_text:
-            fail(errors, f"capstone missing from ledger: {theorem_name}")
+    # The endpoint declarations themselves, read from the pinned tree rather than trusted from the
+    # page. Paths are the files the census currently finds them in; a move shows up as a missing
+    # file, which is the drift the check exists to catch.
+    paths = [
+        "Zcash/Snark/Capstones/Action.lean",
+        "Zcash/Snark/Fixtures/MultiAction/Honest/StraightLineKnowledgeError.lean",
+        "Zcash/Snark/Soundness/AGM/StraightLineOrchardConsensusBounds.lean",
+    ]
+    found = set()
+    for source_path in paths:
+        text = source_text(errors, source, source_path)
+        if text is None:
+            continue
+        found.update(ENDPOINT_RE.findall(text))
+    for name in sorted(found - set(declared)):
+        fail(errors, f"advertised endpoint missing from the journey: {name}")
+    for name in sorted(set(declared) - found):
+        fail(errors, f"journey names a retired endpoint: {name}")
+    # Each endpoint must also be reachable from the page: named by some stage's theorem anchors.
+    anchored = {
+        theorem["symbol"]
+        for stage in data["stages"]
+        for theorem in stage["theorems"]
+    }
+    for name in sorted(set(declared) & found):
+        if name not in anchored:
+            fail(errors, f"endpoint is declared but no stage anchors it: {name}")
 
 
 def main():
@@ -229,14 +254,18 @@ def main():
 
     node_set, edge_count = validate_graph(errors, map_path.read_text(encoding="utf-8"))
     validate_timeline(errors, data, node_set)
-    validate_capstone_ledger(errors, data)
+    validate_endpoints(errors, data)
 
     if errors:
         for error in errors:
             print(f"proof journey validation: {error}", file=sys.stderr)
         return 1
     stage_count = len(data["stages"])
-    print(f"proof journey valid: {len(node_set)} nodes, {edge_count} edges, {stage_count} stages, 36 capstones")
+    endpoint_count = len(data.get("endpoints", []))
+    print(
+        f"proof journey valid: {len(node_set)} nodes, {edge_count} edges, "
+        f"{stage_count} stages, {endpoint_count} endpoints"
+    )
     return 0
 
 

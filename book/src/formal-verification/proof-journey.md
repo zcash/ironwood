@@ -1,7 +1,8 @@
 # Proof Journey
 
-Follow the verifier-soundness argument in logical order, with the stacked and parallel PR provenance
-attached to the stage where each mechanized layer enters.
+Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
+layer attached to the stage where it enters. Every anchor below is pinned at the current `main`, so
+the stages describe the tree as it stands rather than the stack that built it.
 
 <style>
 .proofjourney-shell {
