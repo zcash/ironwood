@@ -32,5 +32,6 @@ hsi = "hsi"  # hypothesis identifiers (`hsiN`) in Verifier/Assemble
 henc = "henc"  # hypothesis identifier (`henc`) in Circuits/Integration/ActionCopyWitness
 padd = "padd"  # projective point addition (`padd`) in Vendor/CompPoly/ScalarFftDefs
 Hom = "Hom"  # `RingHom`, `evalRingHom` — Mathlib's homomorphism naming
+thm = "thm"  # `thmName` is Lean core's `Compiler.CSimp.Entry` field; `thmAxioms` follows it
 advices = "advices"
 colinear = "colinear"  # deliberate English spelling; we are not writing Latin
