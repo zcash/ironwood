@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-ffeaaa7c.js";
+            window.path_to_searchindex_js = "searchindex-a943e761.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1170,12 +1170,11 @@ turning the fingerprint match into
 build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported <code>configure</code>. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
-schedule and static-check modules, the exact straight-line false-statement endpoint and the
-adaptive-statement knowledge-failure endpoints with conditionally staged-certified <code>2^123</code> and <code>2^125</code>
-adversary-work instantiations, data-coupled programmed-basis and verifier-commitment accounting,
-explicit adversary and complete-program staging-fidelity obligations, mechanically composed
-reduction work, a direct-decode bound derived from a required family invariant, and a separate
-oracle-query budget, and
+schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — its <code>2^123</code>
+work-factor instantiation and the conditionally staged-certified <code>2^123</code> and <code>2^125</code> adversary-work
+ones — data-coupled programmed-basis and verifier-commitment accounting, explicit adversary and
+complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
+bound derived from a required family invariant, and a separate oracle-query budget, and
 <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.</p>
 <p>Each family's <code>Random/</code> subfolder holds the random match-only
@@ -1321,11 +1320,14 @@ AGM unbatching chain; and <code>ConstraintResolver</code>, <code>CanonicalSelect
 semantic handoff to the formal circuit.</li>
 </ul>
 <h3 id="capstones--the-advertised-endpoints"><a class="header" href="#capstones--the-advertised-endpoints"><code>Capstones/</code> — the advertised endpoints</a></h3>
-<p>Where the deployed Action circuit's own statements are stated. <code>ActionEvents</code> says which runs the
-endpoints are about, <code>ActionChecks</code> carries the captured key's scalars and static checks,
-<code>ActionBudgets</code> discharges the semantic surfaces, and <code>Action</code> states the twelve endpoints — the
-ordinary- and knowledge-soundness bounds for every consensus-valid bundle size, in compositional
-error-formula and resource-accounted finite-security forms.</p>
+<p>Where the deployed Action circuit's own statements are stated. <code>ActionEvents</code> carries the shape
+identification the rest of the chain is stated over, <code>ActionChecks</code> carries the captured key's
+scalars and static checks, <code>ActionBudgets</code> discharges the semantic surfaces, and <code>Action</code> states
+the endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in
+compositional error-formula form, in resource-accounted finite-security form at the <code>2^123</code> work
+factor, and in the staged-certified forms carrying their group-work accounting at <code>2^123</code> and
+<code>2^125</code> adversary work. Knowledge soundness is the only property advertised: it implies the
+plain-soundness statement, so that is not stated separately.</p>
 <p>Endpoints about the <em>verifier's algebra</em> rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in
 <code>Fixtures/MultiAction/Honest/StraightLineKnowledgeError</code>, and the consensus-maximum work factors in
