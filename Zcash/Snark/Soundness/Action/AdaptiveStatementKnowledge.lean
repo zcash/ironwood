@@ -1,11 +1,11 @@
-import Zcash.Snark.Soundness.Action.AdaptiveStatementCapstone
+import Zcash.Snark.Soundness.Action.AdaptiveStatementEvent
 
 /-!
 # Adaptive-statement Action knowledge soundness
 
 This module defines the complete executable selected-statement witness projection and proves that
-failure of that projection is covered by the same combined relation finder and statistical
-surfaces as adaptive-statement false-statement soundness.
+failure of that projection is covered by the combined relation finder and the four statistical
+surfaces.
 -/
 
 namespace Zcash.Snark
@@ -214,6 +214,29 @@ def adaptiveStatementKnowledgeFailureEvent {pp : ProofParams}
     Set ((AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) × family.Coins) :=
   {q | family.accepts q.1 q.2 ∧
     family.adaptiveStatementKnowledgeExtractor hchar q.1 q.2 = none}
+
+/-- Accepting a false bundle statement is a knowledge failure.  A returned witness entails
+`BundleStatement` by `ActionTerminal.ActionBundleWitness.statement`, so on a false statement the
+executable projection must have returned `none`.
+
+This is the step by which the advertised knowledge endpoints imply ordinary Action soundness at
+the same error: the accepting-false-statement set is contained in the event they already bound,
+so that weaker property is not stated separately.  It is a containment, not an endpoint -- no
+probability is claimed here. -/
+theorem acceptFalseStatement_subset_knowledgeFailure {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
+      (family.runProof basis O).proof.1 (family.runRecord basis O) < scalarFieldOrder) :
+    {q | family.accepts q.1 q.2 ∧
+        ¬BundleStatement (family.runOutput q.1 q.2).inputs} ⊆
+      family.adaptiveStatementKnowledgeFailureEvent hchar := by
+  rintro q ⟨haccept, hfalse⟩
+  refine ⟨haccept, ?_⟩
+  cases hextract : family.adaptiveStatementKnowledgeExtractor hchar q.1 q.2 with
+  | none => rfl
+  | some witness =>
+      exact absurd (ActionTerminal.ActionBundleWitness.statement witness) hfalse
 
 set_option maxRecDepth 10000 in
 theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParams}
@@ -442,8 +465,8 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
               simpa only [run] using houtcomeEq]
             rfl
 
-/-- Extractor failure is covered by the combined relation event and the same four statistical
-surface families used by adaptive-statement false-statement soundness. -/
+/-- Extractor failure is covered by the combined relation event and the four statistical surface
+families. -/
 theorem adaptiveStatementKnowledgeFailureEvent_subset {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)

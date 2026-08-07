@@ -474,34 +474,6 @@ def actionTerminalWitnessOrRelationFinder
           | none => none
         | none => none
 
-/-- Relation-only projection retained for the ordinary-soundness reduction. -/
-def actionTerminalRelationFinder
-    (pp : ProofParams)
-    (family : ComputedStraightLineDeployedFSFamily (actionCircuit.shape.withProofParams pp))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
-    (inputs : Fin pp.numProofs → PublicInputs Fp)
-    (hvk : ∀ basis, family.vk basis =
-      actionCircuit.toVerifierKey
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-    (hI : ∀ basis, family.instanceCommitment basis =
-      actionCircuit.instanceCommitment (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) inputs)
-    (hchar : ∀ basis O, deployedX4PairCount
-      (actionCircuit.toVerifierKey
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-      (actionCircuit.instanceCommitment (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) inputs)
-      ((wrappedAdversary family.toFamily basis).run O).1.proof.1
-      (chRecord
-        (wrappedPreIpaReads ((wrappedAdversary family.toFamily basis).run O))
-        (runRounds family.toFamily basis O)) < scalarFieldOrder) :
-    (basis : AugmentedIndex (2 ^ (actionCircuit.shape.withProofParams pp).k) → VestaG) →
-    (BTranscript Fp VestaG
-      (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-        + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) →
-    Option (AlgebraicRelationWitness (F := Fp) basis) := fun basis O =>
-  match actionTerminalWitnessOrRelationFinder pp family static inputs hvk hI hchar basis O with
-  | some (Sum.inr relation) => some relation
-  | _ => none
-
 /-- One executable straight-line outcome shared by the witness extractor and DLOG projection. -/
 def actionKnowledgeOutcome
     (pp : ProofParams)

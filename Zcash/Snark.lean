@@ -28,10 +28,11 @@
 --   emitted by halo2's `dump_vesta_lean_fixture` and cannot be renamed here: the fixture CI
 --   regenerates each `Fixture.lean` and diffs it. `FixtureMax` is the shape at any action count.
 -- * `Capstones/` — the deployed Action circuit's advertised statements, all in `Capstone`:
---   `ActionEvents` -> `ActionChecks` -> `ActionBudgets` -> `Action`, ending at twelve endpoints
---   that nothing else depends on. The verifier-level endpoints are elsewhere, with the layer
---   that proves them: the straight-line knowledge errors beside their capture, the
---   consensus work factors in `Soundness/AGM/`.
+--   `ActionEvents` -> `ActionChecks` -> `ActionBudgets` -> `Action`, ending at the two
+--   knowledge-soundness endpoints that nothing else depends on — the consensus-generic error
+--   formula and its `2^123` work-factor instantiation. The verifier-level endpoints are
+--   elsewhere, with the layer that proves them: the straight-line knowledge errors beside their
+--   capture, the consensus work factors in `Soundness/AGM/`.
 --
 -- Import modules here that this umbrella should re-export. Build coverage does not depend on
 -- this list: every module under `Zcash/` must be reachable from some default target, which

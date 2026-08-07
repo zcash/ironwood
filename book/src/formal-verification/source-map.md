@@ -173,8 +173,8 @@ turning the fingerprint match into
 build-time obligations; `SingleAction/Honest/VkMatch` computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported `configure`. The multi-action capture additionally
 carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree,
-schedule and static-check modules, the exact straight-line false-statement endpoint and the
-adaptive-statement knowledge-failure endpoint with its `2^123` work-factor instantiation, and `CapturedZeroFamily` — the shape-generic zero prover instantiated at the
+schedule and static-check modules, the adaptive-statement knowledge-failure endpoint with its
+`2^123` work-factor instantiation, and `CapturedZeroFamily` — the shape-generic zero prover instantiated at the
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.
 
 Each family's `Random/` subfolder holds the random match-only
@@ -309,11 +309,13 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `ActionEvents` says which runs the
-endpoints are about, `ActionChecks` carries the captured key's scalars and static checks,
-`ActionBudgets` discharges the semantic surfaces, and `Action` states the twelve endpoints — the
-ordinary- and knowledge-soundness bounds for every consensus-valid bundle size, in compositional
-error-formula and resource-accounted finite-security forms.
+Where the deployed Action circuit's own statements are stated. `ActionEvents` carries the shape
+identification the rest of the chain is stated over, `ActionChecks` carries the captured key's
+scalars and static checks, `ActionBudgets` discharges the semantic surfaces, and `Action` states
+the two endpoints — knowledge-soundness bounds for every consensus-valid bundle size, one in
+compositional error-formula form and one in resource-accounted finite-security form. Knowledge
+soundness is the only property advertised: it implies the plain-soundness statement, so that is
+not stated separately.
 
 Endpoints about the *verifier's algebra* rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in

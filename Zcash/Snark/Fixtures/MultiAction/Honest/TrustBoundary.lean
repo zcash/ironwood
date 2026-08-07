@@ -375,17 +375,7 @@ assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct
   Zcash.Snark.Fixture2.vk_quotient_tail_le,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
--- Census the captured and consensus-generic Action capstones with their fixtures.
-assert_axioms Zcash.Snark.Capstone.capturedActionAcceptFalseStatementEvent +native(
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
-  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+-- Census the static and derived facts the Action capstones are stated over.
 assert_axioms Zcash.Snark.Capstone.action_semantic_count_le
 assert_axioms Zcash.Snark.Capstone.two_pow_254_le_card
 assert_axioms Zcash.Snark.Capstone.action_semantic_terms_le
@@ -413,10 +403,6 @@ assert_axioms Zcash.Snark.Capstone.derived_lookups +native(
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
--- The shared five-surface probability bound the two Action endpoints are built from. It is a
--- per-challenge measure rather than a protocol capstone; the pin is what the `_probability_bound`
--- suffix rule demands, not an independent claim.
-
 assert_axioms Zcash.Snark.Capstone.capturedActionStaticChecks +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.ActionGateCoherence.domainExponent_lt,
@@ -476,6 +462,9 @@ assert_axioms Zcash.Snark.Capstone.orchard_action_knowledgeFailure_prob_le_adapt
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
+
+-- The same bound priced at the `2^123` work-factor target, with the extractor's random-oracle and
+-- group-work envelopes and the finder's certified read set discharged alongside it.
 assert_axioms Zcash.Snark.Capstone.orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for +native(
   Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
   Zcash.Snark.actionCopyActiveRowFailures_eq_nil,
@@ -506,10 +495,6 @@ assert_axioms Zcash.Snark.Capstone.orchard_action_knowledgeFailure_adaptiveState
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
   Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero)
--- The unpriced-resource form of the adaptive knowledge-failure bound.
-
--- Its consensus-generic form.
-
 -- The instance-commitment derivation: the two captured claims, plus the data and functions they
 -- range over. The latter are flagless — they are ordinary definitions, so compiler trust must not
 -- reach them; only the two claims about them may spend it.

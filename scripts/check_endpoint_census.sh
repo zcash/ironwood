@@ -52,10 +52,11 @@ cd "$(dirname "$0")/.."
 # `competing_family_agreement_le*` headliners beside each random fixture), and the `Perm`→positional
 # bridges (`fingerprint_matches_positional`) that join the two.
 #
-# Two alternatives currently match nothing and are retained as guards, so a reintroduced name in
-# either family is demanded rather than silently unpinned: `orchard_verifier_*`, whose rungs were
-# retired with the legacy rewind paths, and `*workFactor*`, whose consensus-maximum packages were
-# renamed onto the `orchard_deployed_*` prefix and the `_finite_security` suffix.
+# `orchard_verifier_*` currently matches nothing and is retained as a guard, so a reintroduced
+# name in that family is demanded rather than silently unpinned: its rungs were retired with the
+# legacy rewind paths. `*workFactor*` names the Action knowledge capstone's `2^123` instantiation
+# and also guards the consensus-maximum packages, which were renamed onto the `orchard_deployed_*`
+# prefix and the `_finite_security` suffix.
 ENDPOINT_RE='(^orchard_(verifier|action|deployed)_)|(^competing_)|(^nonInteractiveFingerprint_matches_derived)|(bundleStatement_or_relation)|(workFactor)|(fingerprint_matches_positional)|(_(error_bound|finite_security|measure_le|probability_bound|capstone)$)'
 
 # Sources scanned for endpoint declarations. `Zcash/Meta/Tests/` is excluded: it holds forged
