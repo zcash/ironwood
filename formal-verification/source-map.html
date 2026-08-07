@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-a943e761.js";
+            window.path_to_searchindex_js = "../searchindex-1e547a57.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -202,7 +202,16 @@ directory level, naming the notable modules as entry points.</p>
 <code>DiscreteLogRelation</code> carries a nontrivial <code>F</code>-linear (discrete-log) relation among a family of
 generators as <em>computed data</em> — the coefficients — so the reduction-style security arguments can
 produce a break rather than merely assert one exists (see <em>breaks as computed data</em> on the
-<a href="../formal-verification.html">Formal Verification</a> page). <code>Expr</code> is the gate-polynomial AST exactly
+<a href="../formal-verification.html">Formal Verification</a> page). <code>AlgebraicRelation</code> carries the same
+relation over an arbitrary indexed basis (<code>AlgebraicRelationWitness</code>) and turns one into a
+discrete log, either against known slot logs or against a basis programmed from the DL challenge
+(Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">Expected-Time Cryptography: Generic Techniques and Applications to Concrete
+Soundness</a>, Lemma 3); <code>RelationProbability</code>
+and <code>RelationProbabilityCoins</code> price that reduction's single miss hyperplane at <code>1/|F|</code>, and
+<code>UniformMeasure</code> holds the distribution facts they count with. None of these restrict the
+adversary — they consume relation coefficients from any source, and what scopes them is how the
+basis is sampled — so they sit here rather than under <code>Snark/Soundness/AGM/</code>. <code>Expr</code> is the
+gate-polynomial AST exactly
 as halo2 evaluates it, produced by the circuit-side VK-match projection and consumed by the
 verifier stack. <code>RelationWitness</code> supplies the combinators for sequencing a computed break branch:
 a conclusion <code>A ⊕' R</code> cannot be case-split classically, so composing such reductions — and
@@ -400,14 +409,14 @@ activity predicates, challenge surfaces, and pointwise semantic terminal both Ac
 consume.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
-<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
-represented online and straight-line finders into a discrete-log solution over the
-augmented basis <code>(g, U, W)</code> (<code>Adapter</code>, following
-<a href="https://eprint.iacr.org/2017/620">Fuchsbauer–Kiltz–Loss 2018</a>), adds the algebraic
-coefficients to the online prover interfaces (<code>OnlineMembers</code>, <code>OnlineMultiopen</code>), feeds the
-binding-signature relations in as AGM inputs (<code>BindingSignature</code>), reifies erasable group-work
-events for adaptive programs (<code>CostedOracle</code>), and bounds the reduction's
-probability loss (<code>Probability</code>, <code>ProbabilityCoins</code>, <code>ProbabilityVesta</code>) — programming <em>every</em>
+<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer: what it adds is the restriction on the <em>prover</em>,
+namely that it emits a representation alongside every group element (Fuchsbauer–Kiltz–Loss,
+<a href="https://eprint.iacr.org/2017/620">The Algebraic Group Model and its Applications</a>). The
+relation-to-discrete-log machinery itself is model-free and lives in <code>Common/AlgebraicRelation</code>;
+<code>Adapter</code> supplies only the view of the deployed URS as an augmented basis <code>(g, U, W)</code>. This
+subtree adds the algebraic coefficients to the online prover interfaces (<code>OnlineMembers</code>,
+<code>OnlineMultiopen</code>), reifies erasable group-work events for adaptive programs (<code>CostedOracle</code>),
+and evaluates the reduction's probability loss at Vesta (<code>ProbabilityVesta</code>) — programming <em>every</em>
 basis slot from the
 DL challenge rather than guessing which slot the relation will hit, so the loss is an additive
 <code>1/|F|</code> with no multiplicative factor. The bulk of the subtree is the rewind-free deployed
@@ -576,7 +585,10 @@ structure the deployed pool's primitives are stated over.</li>
 <li><strong><code>BindingSignature/</code></strong> — the binding-signature <em>balance</em> argument (spec §4.13 Sapling /
 §4.14 Orchard). <code>Balance</code> is the shared algebraic core over an arbitrary <code>F</code>-module;
 <code>Orchard</code> and <code>Sapling</code> add the per-pool no-overflow bounds that keep the value sums below
-the scalar-field order.</li>
+the scalar-field order. <code>DiscreteLog</code> carries the computed relation the rest of the way, to
+the discrete log of <code>Vbase</code> base <code>Rbase</code>: <em>if you can unbalance, you can solve DL</em>. It is
+scoped by the sampling of the two bases, not by any restriction on the adversary, which is
+why it sits here rather than under <code>Snark/Soundness/AGM/</code>.</li>
 <li><strong><code>KeyBinding/</code></strong> — the key-binding theorem (ZIP 2005, ROM). <code>Basic</code> is the deterministic
 layer: a verifying Recovery-Statement witness pins the key components (<code>ak</code> up to y-sign,
 <code>nk</code>, and the <code>qk</code>/<code>sk</code> branch) to <code>ivk</code> unless an explicit break is computed. <code>Instance</code>

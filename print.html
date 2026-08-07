@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-a943e761.js";
+            window.path_to_searchindex_js = "searchindex-1e547a57.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-21ef045d.js"></script>
@@ -1039,7 +1039,16 @@ directory level, naming the notable modules as entry points.</p>
 <code>DiscreteLogRelation</code> carries a nontrivial <code>F</code>-linear (discrete-log) relation among a family of
 generators as <em>computed data</em> — the coefficients — so the reduction-style security arguments can
 produce a break rather than merely assert one exists (see <em>breaks as computed data</em> on the
-<a href="formal-verification/../formal-verification.html">Formal Verification</a> page). <code>Expr</code> is the gate-polynomial AST exactly
+<a href="formal-verification/../formal-verification.html">Formal Verification</a> page). <code>AlgebraicRelation</code> carries the same
+relation over an arbitrary indexed basis (<code>AlgebraicRelationWitness</code>) and turns one into a
+discrete log, either against known slot logs or against a basis programmed from the DL challenge
+(Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">Expected-Time Cryptography: Generic Techniques and Applications to Concrete
+Soundness</a>, Lemma 3); <code>RelationProbability</code>
+and <code>RelationProbabilityCoins</code> price that reduction's single miss hyperplane at <code>1/|F|</code>, and
+<code>UniformMeasure</code> holds the distribution facts they count with. None of these restrict the
+adversary — they consume relation coefficients from any source, and what scopes them is how the
+basis is sampled — so they sit here rather than under <code>Snark/Soundness/AGM/</code>. <code>Expr</code> is the
+gate-polynomial AST exactly
 as halo2 evaluates it, produced by the circuit-side VK-match projection and consumed by the
 verifier stack. <code>RelationWitness</code> supplies the combinators for sequencing a computed break branch:
 a conclusion <code>A ⊕' R</code> cannot be case-split classically, so composing such reductions — and
@@ -1237,14 +1246,14 @@ activity predicates, challenge surfaces, and pointwise semantic terminal both Ac
 consume.</p>
 <p>Six subtrees carry the heavier machinery:</p>
 <ul>
-<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer. It turns relation coefficients returned by the
-represented online and straight-line finders into a discrete-log solution over the
-augmented basis <code>(g, U, W)</code> (<code>Adapter</code>, following
-<a href="https://eprint.iacr.org/2017/620">Fuchsbauer–Kiltz–Loss 2018</a>), adds the algebraic
-coefficients to the online prover interfaces (<code>OnlineMembers</code>, <code>OnlineMultiopen</code>), feeds the
-binding-signature relations in as AGM inputs (<code>BindingSignature</code>), reifies erasable group-work
-events for adaptive programs (<code>CostedOracle</code>), and bounds the reduction's
-probability loss (<code>Probability</code>, <code>ProbabilityCoins</code>, <code>ProbabilityVesta</code>) — programming <em>every</em>
+<li><strong><code>AGM/</code></strong> — the algebraic-group-model layer: what it adds is the restriction on the <em>prover</em>,
+namely that it emits a representation alongside every group element (Fuchsbauer–Kiltz–Loss,
+<a href="https://eprint.iacr.org/2017/620">The Algebraic Group Model and its Applications</a>). The
+relation-to-discrete-log machinery itself is model-free and lives in <code>Common/AlgebraicRelation</code>;
+<code>Adapter</code> supplies only the view of the deployed URS as an augmented basis <code>(g, U, W)</code>. This
+subtree adds the algebraic coefficients to the online prover interfaces (<code>OnlineMembers</code>,
+<code>OnlineMultiopen</code>), reifies erasable group-work events for adaptive programs (<code>CostedOracle</code>),
+and evaluates the reduction's probability loss at Vesta (<code>ProbabilityVesta</code>) — programming <em>every</em>
 basis slot from the
 DL challenge rather than guessing which slot the relation will hit, so the loss is an additive
 <code>1/|F|</code> with no multiplicative factor. The bulk of the subtree is the rewind-free deployed
@@ -1413,7 +1422,10 @@ structure the deployed pool's primitives are stated over.</li>
 <li><strong><code>BindingSignature/</code></strong> — the binding-signature <em>balance</em> argument (spec §4.13 Sapling /
 §4.14 Orchard). <code>Balance</code> is the shared algebraic core over an arbitrary <code>F</code>-module;
 <code>Orchard</code> and <code>Sapling</code> add the per-pool no-overflow bounds that keep the value sums below
-the scalar-field order.</li>
+the scalar-field order. <code>DiscreteLog</code> carries the computed relation the rest of the way, to
+the discrete log of <code>Vbase</code> base <code>Rbase</code>: <em>if you can unbalance, you can solve DL</em>. It is
+scoped by the sampling of the two bases, not by any restriction on the adversary, which is
+why it sits here rather than under <code>Snark/Soundness/AGM/</code>.</li>
 <li><strong><code>KeyBinding/</code></strong> — the key-binding theorem (ZIP 2005, ROM). <code>Basic</code> is the deterministic
 layer: a verifying Recovery-Statement witness pins the key components (<code>ak</code> up to y-sign,
 <code>nk</code>, and the <code>qk</code>/<code>sk</code> branch) to <code>ivk</code> unless an explicit break is computed. <code>Instance</code>
@@ -1513,8 +1525,8 @@ flowchart TD
 
   KERR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
   KERR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/KnowledgeError.lean'&gt;challenge hash as random&lt;br/&gt;oracle; query-time labels&lt;br/&gt;pin the bad challenge (AGM)&lt;/a&gt;&quot;| ROM
-  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean'&gt;online AGM +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
   MC --&gt; SDLR
@@ -1663,7 +1675,7 @@ for further discussion.</p>
 <div class="g"><div class="g-head"><span class="term">balance</span><span class="anchor">Security.BindingSignature.Balance</span></div><div class="def">No transaction creates or destroys value (spec §4.13 Sapling / §4.14 Orchard). Value commitments are <code>cv v rcv = v • V + rcv • R</code>; a bundle's binding verification key collects to <code>bvk = A • V + B • R</code> with <code>A</code> the net value imbalance. The property is <em>not</em> "no discrete-log relation between <code>V</code> and <code>R</code> exists" — one always does in a prime-order group — but the reduction below.</div></div>
 <div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">BindingSignature.NontrivialRelation · .ofImbalance</span></div><div class="def">The break, as computed data: a nontrivial <code>F</code>-linear relation between the value base <code>Vbase</code> and randomness base <code>Rbase</code>. <code>ofImbalance</code> (and the bundle forms <code>ofBundleModImbalance</code>, <code>ofOrchardImbalance</code>, <code>ofSaplingImbalance</code>) computes one from a non-balancing verifying bundle, with no cryptographic hypothesis — equivalently the discrete log <code>dlog_Rbase Vbase</code> (<code>imbalance_yields_discrete_log</code>).</div></div>
 <div class="g"><div class="g-head"><span class="term">integer no-overflow lift</span><span class="anchor">intBalance_eq_zero_of_lt · orchard_natAbs_lt · sapling_natAbs_lt</span></div><div class="def">Lifts field balance (<code>A = 0</code> in <code>ZMod r</code>) to integer balance: with per-action 64-bit value ranges and a bounded action count, <code>|A| &lt; r</code>, so the residue being zero forces the integer to be zero. Discharged per pool from the value-type subranges.</div></div>
-<div class="g"><div class="g-head"><span class="term">reduces to DL</span><span class="anchor">Snark.Soundness.AGM.BindingSignature</span></div><div class="def">Turns the computed Orchard/Sapling relations into plain discrete-log solutions: <em>if you can unbalance, you can solve DL</em>. DLR and DL are tightly equivalent (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a>, Lemma 3), so this assumes no more than DL hardness, given the independence of the hash-to-curve bases.</div></div>
+<div class="g"><div class="g-head"><span class="term">reduces to DL</span><span class="anchor">Security.BindingSignature.DiscreteLog</span></div><div class="def">Turns the computed Orchard/Sapling relations into plain discrete-log solutions: <em>if you can unbalance, you can solve DL</em>. DLR and DL are tightly equivalent (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a>, Lemma 3), so this assumes no more than DL hardness, given the independence of the hash-to-curve bases.</div></div>
 </section>
 <section>
 <div class="grp">Key binding — ZIP 2005 theorem (ROM)</div>
@@ -1746,10 +1758,10 @@ development. Anchors point to a module + name under <code>Zcash/</code>.</p>
 <section>
 <div class="grp">Binding &amp; the AGM</div>
 <div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">Security.BindingSignature.NontrivialRelation</span></div><div class="def">A nontrivial discrete-log relation, carried as data with its coefficients explicit. One always exists at prime order, so an ∃-closed <code>Prop</code> version (or an <code>∨</code>-branch concluding it) is vacuous <em>as a statement</em>; the reductions <em>compute</em> one from a break, and the force is the computational assumption that no efficient adversary can <em>find</em> one.</div></div>
-<div class="g"><div class="g-head"><span class="term">programmed-basis</span><span class="anchor">AGM.Adapter.ProgrammedBasisEmbedding · ProgrammedRelationOutcome</span></div><div class="def">The AGM reduction: program every basis slot from the discrete-log challenge as <code>x·B + y·C</code> with fresh uniform pairs (Jaeger–Tessaro, Lemma 3). A relation with nonzero challenge component yields the discrete log of the challenge; a miss retains the exact same returned relation and proves it annihilates the programming — a single <code>1/|F|</code> hyperplane, with no slot guess and no <code>|basis|</code> factor.</div></div>
+<div class="g"><div class="g-head"><span class="term">programmed-basis</span><span class="anchor">Common.AlgebraicRelation.ProgrammedBasisEmbedding · ProgrammedRelationOutcome</span></div><div class="def">Program every basis slot from the discrete-log challenge as <code>x·B + y·C</code> with fresh uniform pairs (Jaeger–Tessaro, Lemma 3). The reduction restricts how the basis is sampled, not the adversary: it consumes relation coefficients from any source, so it carries no AGM scoping. A relation with nonzero challenge component yields the discrete log of the challenge; a miss retains the exact same returned relation and proves it annihilates the programming — a single <code>1/|F|</code> hyperplane, with no slot guess and no <code>|basis|</code> factor.</div></div>
 <div class="g"><div class="g-head"><span class="term">straight-line AGM extractor</span><span class="anchor">AGM.StraightLinePinnedRoots.StraightLineIpaOnlineTrace · Composition.StraightLineDeployed.ComputedStraightLineDeployedFSFamily.ofCovered · Composition.StraightLineConstraint</span></div><div class="def">The deployed AGM route, and since ironwood#133 the only one. Each IPA round exposes an executable pre-squeeze polynomial computation, proves that it has not queried that round's squeeze point, and connects its result to the final proof. One accepting transcript therefore yields a clean decode, explicit DLOG relation, or pinned quadratic event. The combined finder uses at most four prover invocations, so no expected-runs truncation or Markov tail appears anywhere in the bound. <code>ofCovered</code> packages the representation-carrying online prover with caller-supplied executable root, IPA, and constraint-<code>x</code> stages plus freshness proofs; the captured endpoint applies existing verifier metadata without a new proof fixture. The representations are ghost extractor data, not Halo2 proof bytes; this is an AGM-and-random-oracle result.</div></div>
 <div class="g"><div class="g-head"><span class="term">shallow cost language</span><span class="anchor">AGM.CostedOracle.CostedLabeledOracleComp · CostedLabeledOracleComp.StagedGroupWorkFaithful</span></div><div class="def">The group-work accounting language reifies as explicit syntax only the group operations a program writes as nodes. Everything else — the Lean terms building <code>pure</code> payloads, query arguments, and continuations — stays in the host language, where Lean has no operational cost semantics. That is what <em>shallow</em> means here, and the price of it is that the counter measures what was staged rather than what the host computes: group law performed inside an unreified callback would go uncharged. <code>StagedGroupWorkFaithful</code> is the judgment that no such work exists, which is why it is a named premiss carried into the endpoints rather than a theorem. A deep embedding — host computation reified as syntax too — would discharge it in Lean, at the cost of rewriting the reduction in that syntax.</div></div>
-<div class="g"><div class="g-head"><span class="term">DL reduction bound</span><span class="anchor">AGM.Probability.TextbookDLAdvantageLE · AGM.CostedOracle.CostedLabeledOracleComp · Action.AdaptiveStatementCost.CertifiedAdaptiveStatementDlogProfile</span></div><div class="def">The programmed-basis reduction turns a computed relation into either a discrete-log solution or one <code>1/|Fp|</code> miss hyperplane. The adaptive route uses a staged cost language whose erasure is the original algebraic adversary. One closed program constructs the charged basis, specializes the exact adversary path while retaining its annotation log and group nodes, builds a proof-carrying cache from that result, and feeds the same cache into charged verifier postprocessing. Lean proves that this program's counter is the adversary counter plus the reified reduction counter; no separate arithmetic join or second adversary execution remains. At <code>Q ≤ 2^123</code>, the endpoints bound failure by <code>Adv_DLOG(2^124, 2^126) + 2^-83</code> for either a <code>2^123</code> or <code>2^125</code> adversary group-work budget; the latter's adversary-plus-reduction group work is at most <code>2^126</code>. Equality/list traversal, direct-coordinate work, and random-oracle queries are separate resources. The three-decode bound follows from a required family representation-length invariant; the generic theorem does not construct a concrete deployed family. Because the language is shallow, staging fidelity remains explicit both for the external adversary and for host computations inside the complete program, such as generic key construction, hashing, and fixed-representation callbacks. These numbers are coverage parameters, not a claim that Lean computes Vesta's DLOG advantage.</div></div>
+<div class="g"><div class="g-head"><span class="term">DL reduction bound</span><span class="anchor">Common.RelationProbability.TextbookDLAdvantageLE · AGM.CostedOracle.CostedLabeledOracleComp · Action.AdaptiveStatementCost.CertifiedAdaptiveStatementDlogProfile</span></div><div class="def">The programmed-basis reduction turns a computed relation into either a discrete-log solution or one <code>1/|Fp|</code> miss hyperplane. The adaptive route uses a staged cost language whose erasure is the original algebraic adversary. One closed program constructs the charged basis, specializes the exact adversary path while retaining its annotation log and group nodes, builds a proof-carrying cache from that result, and feeds the same cache into charged verifier postprocessing. Lean proves that this program's counter is the adversary counter plus the reified reduction counter; no separate arithmetic join or second adversary execution remains. At <code>Q ≤ 2^123</code>, the endpoints bound failure by <code>Adv_DLOG(2^124, 2^126) + 2^-83</code> for either a <code>2^123</code> or <code>2^125</code> adversary group-work budget; the latter's adversary-plus-reduction group work is at most <code>2^126</code>. Equality/list traversal, direct-coordinate work, and random-oracle queries are separate resources. The three-decode bound follows from a required family representation-length invariant; the generic theorem does not construct a concrete deployed family. Because the language is shallow, staging fidelity remains explicit both for the external adversary and for host computations inside the complete program, such as generic key construction, hashing, and fixed-representation callbacks. These numbers are coverage parameters, not a claim that Lean computes Vesta's DLOG advantage.</div></div>
 </section>
 <section>
 <div class="grp">Constraints &amp; multiopen</div>

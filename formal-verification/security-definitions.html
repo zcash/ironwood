@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-a943e761.js";
+            window.path_to_searchindex_js = "../searchindex-1e547a57.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-21ef045d.js"></script>
@@ -250,8 +250,8 @@ flowchart TD
 
   KERR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
   KERR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/KnowledgeError.lean'&gt;challenge hash as random&lt;br/&gt;oracle; query-time labels&lt;br/&gt;pin the bad challenge (AGM)&lt;/a&gt;&quot;| ROM
-  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/BindingSignature.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean'&gt;online AGM +&lt;br/&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
   KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
   MC --&gt; SDLR
@@ -400,7 +400,7 @@ for further discussion.</p>
 <div class="g"><div class="g-head"><span class="term">balance</span><span class="anchor">Security.BindingSignature.Balance</span></div><div class="def">No transaction creates or destroys value (spec §4.13 Sapling / §4.14 Orchard). Value commitments are <code>cv v rcv = v • V + rcv • R</code>; a bundle's binding verification key collects to <code>bvk = A • V + B • R</code> with <code>A</code> the net value imbalance. The property is <em>not</em> "no discrete-log relation between <code>V</code> and <code>R</code> exists" — one always does in a prime-order group — but the reduction below.</div></div>
 <div class="g"><div class="g-head"><span class="term">NontrivialRelation</span><span class="anchor">BindingSignature.NontrivialRelation · .ofImbalance</span></div><div class="def">The break, as computed data: a nontrivial <code>F</code>-linear relation between the value base <code>Vbase</code> and randomness base <code>Rbase</code>. <code>ofImbalance</code> (and the bundle forms <code>ofBundleModImbalance</code>, <code>ofOrchardImbalance</code>, <code>ofSaplingImbalance</code>) computes one from a non-balancing verifying bundle, with no cryptographic hypothesis — equivalently the discrete log <code>dlog_Rbase Vbase</code> (<code>imbalance_yields_discrete_log</code>).</div></div>
 <div class="g"><div class="g-head"><span class="term">integer no-overflow lift</span><span class="anchor">intBalance_eq_zero_of_lt · orchard_natAbs_lt · sapling_natAbs_lt</span></div><div class="def">Lifts field balance (<code>A = 0</code> in <code>ZMod r</code>) to integer balance: with per-action 64-bit value ranges and a bounded action count, <code>|A| &lt; r</code>, so the residue being zero forces the integer to be zero. Discharged per pool from the value-type subranges.</div></div>
-<div class="g"><div class="g-head"><span class="term">reduces to DL</span><span class="anchor">Snark.Soundness.AGM.BindingSignature</span></div><div class="def">Turns the computed Orchard/Sapling relations into plain discrete-log solutions: <em>if you can unbalance, you can solve DL</em>. DLR and DL are tightly equivalent (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a>, Lemma 3), so this assumes no more than DL hardness, given the independence of the hash-to-curve bases.</div></div>
+<div class="g"><div class="g-head"><span class="term">reduces to DL</span><span class="anchor">Security.BindingSignature.DiscreteLog</span></div><div class="def">Turns the computed Orchard/Sapling relations into plain discrete-log solutions: <em>if you can unbalance, you can solve DL</em>. DLR and DL are tightly equivalent (Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">2020/1213</a>, Lemma 3), so this assumes no more than DL hardness, given the independence of the hash-to-curve bases.</div></div>
 </section>
 <section>
 <div class="grp">Key binding — ZIP 2005 theorem (ROM)</div>
