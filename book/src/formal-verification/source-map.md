@@ -340,15 +340,20 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `ActionEvents` carries the shape
-identification the rest of the chain is stated over, `ActionChecks` carries the captured key's
-scalars and static checks, `ActionBudgets` discharges the semantic surfaces, and `Action` states
-the endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in
-compositional error-formula form, in resource-accounted finite-security form at the `2^123` work
-factor, and in the staged-certified forms carrying their group-work accounting at `2^123` and
-`2^125` adversary work. Knowledge soundness is the only property advertised: it implies the
-plain-soundness statement, so that is not stated separately. Legacy fixed-statement
-endpoints and their events are retired.
+Where the deployed Action circuit's own statements are stated. `Action.lean` states the
+endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
+error-formula form, in resource-accounted finite-security form at the `2^123` work factor, and in
+the staged-certified forms carrying their group-work accounting at `2^123` and `2^125` adversary
+work. Knowledge soundness is the only property advertised: it implies the plain-soundness
+statement, so that is not stated separately. Legacy fixed-statement endpoints and their events are
+retired.
+
+`Action.lean` is the only endpoint file here. The `Action/` subdirectory below it holds what
+discharges those endpoints at the captured key: `Base` carries the shape identification the
+chain is stated over, `Checks` the captured key's scalars and static checks, and `Budgets` the
+semantic surfaces. Those three are instance-level — stated at the capture and reaching it through
+their imports — which is why they sit here rather than under `Soundness/`, a subtree that imports
+no fixture so that the captures stay off `lake build Zcash`'s path.
 
 Endpoints about the *verifier's algebra* rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in
@@ -356,6 +361,24 @@ proves them: the captured straight-line knowledge errors in
 `Soundness/AGM/StraightLineOrchardConsensusBounds`. Every endpoint, wherever it sits, is a
 top-level leaf that nothing else depends on, which is why each must be named directly in a
 `TrustBoundary.lean` census entry — see `scripts/check_endpoint_census.sh`.
+
+### `Contract/` — what the endpoints promise
+
+The auditor-facing layer over `Capstones/`. `Knowledge` defines `KnowledgeContract`, a record of
+the runs a knowledge claim quantifies over, their law, what acceptance means, what an extraction
+returns, what a returned witness certifies, the failure event, and the concrete error — together
+with the generic consequence that accepting a false statement is bounded by the same error.
+`Action` instantiates it at the deployed Action circuit, reusing
+`orchard_action_adaptiveStatement_knowledge_error_bound` unchanged as the claim.
+
+The record is deliberately not circuit-specific. Action is its only instance today because it is
+the only circuit carrying an advertised capstone; `CommitIvk`, `NoteCommit`, `Ecc`, `Sinsemilla`,
+and `Poseidon` are components composed into its specification rather than independent surfaces.
+
+Nothing here proves anything new, so the layer adds no trust: both declarations are pinned in
+`Fixtures/MultiAction/Honest/TrustBoundary.lean` with the same axiom footprint as the endpoint
+they re-export. The prose counterpart is
+[The knowledge-soundness contract](knowledge-contract.md).
 
 ## Circuit layer — `Zcash/Circuits/`
 

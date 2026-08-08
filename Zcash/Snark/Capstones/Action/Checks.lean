@@ -1,4 +1,4 @@
-import Zcash.Snark.Capstones.ActionEvents
+import Zcash.Snark.Capstones.Action.Base
 
 /-!
 # The captured checks, scalars, and schedule at the derived key

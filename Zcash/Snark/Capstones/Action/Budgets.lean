@@ -1,4 +1,4 @@
-import Zcash.Snark.Capstones.ActionChecks
+import Zcash.Snark.Capstones.Action.Checks
 import Zcash.Snark.Soundness.Action.AdaptiveStatementCost
 
 /-!

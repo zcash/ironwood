@@ -46,9 +46,13 @@ rev = "v4.30.0"
 # maintenance the globs on `FixtureCheck`, `MetaCheck`, and `CircuitCheck` exist to avoid.
 # Either way `scripts/check_build_coverage.sh` (CI) asserts the end-to-end property: every
 # module file in the package is reachable from some default target.
+#
+# `Snark.Contract.+` is the same backstop for the same reason. The auditor-facing contract layer
+# reaches the closure today only because `TrustBoundary` pins its declarations, which is exactly
+# the incidental coverage described above.
 [[lean_lib]]
 name = "Zcash"
-globs = ["Zcash", "Zcash.Snark.Soundness.+"]
+globs = ["Zcash", "Zcash.Snark.Soundness.+", "Zcash.Snark.Contract.+"]
 
 # Test-only adversarial declarations for `Zcash.Meta.AxiomCheck`. This is a separate library so
 # forged axioms used to exercise the rejection paths never enter the production `Zcash` import

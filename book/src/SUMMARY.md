@@ -13,6 +13,7 @@
   - [Proof Journey](formal-verification/proof-journey.md)
   - [Proof Map](formal-verification/proof-map.md)
   - [Security Models](formal-verification/security-models.md)
+  - [Knowledge-Soundness Contract](formal-verification/knowledge-contract.md)
   - [Ledger Security Games](formal-verification/ledger-security-games.md)
   - [Definitions](formal-verification/definitions.md)
   - [Source Map](formal-verification/source-map.md)

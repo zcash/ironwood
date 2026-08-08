@@ -11,9 +11,9 @@ import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
 /-!
 # The base of the Action capstone chain
 
-The imports the rest of `Capstones/` is stated over, and the shape identification that carries
-merged Action proof parameters onto the captured fixture shape.  The knowledge-failure sets the
-endpoints are about are defined with the layer that proves them, in `Soundness/Action/`.
+The imports the rest of `Capstones/Action/` is stated over, and the shape identification that
+carries merged Action proof parameters onto the captured fixture shape.  The knowledge-failure
+sets the endpoints are about are defined with the layer that proves them, in `Soundness/Action/`.
 -/
 
 namespace Zcash.Snark.Capstone
