@@ -1,0 +1,403 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Ledger Security Games - The Ironwood Book</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-ce77753d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "rust";
+            window.path_to_searchindex_js = "../searchindex-98238575.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-4ac7af14.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The Ironwood Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="ledger-security-games"><a class="header" href="#ledger-security-games">Ledger Security Games</a></h1>
+<p>The <a href="proof-map.html">proof map</a> traces <em>verifier knowledge soundness</em> — the deployed Halo 2 verifier
+under <code>Zcash/Snark/</code>. This page is its companion for the other half of the development: the
+protocol <strong>security properties</strong> under <code>Zcash/Security/</code>. It covers:</p>
+<ul>
+<li>the top-level capstones — the <em>ledger-model security games</em> of <em>Balance integrity</em>, <em>Spendability</em>, and <em>Spend authority</em>;</li>
+<li>how each capstone connects, by reduction via intermediate security properties such as
+<em>binding-signature balance</em>, <em>key binding</em>, and <em>verifier knowledge soundness</em>, to an
+exhibited break of a cryptographic primitive in a specified adversary model.</li>
+</ul>
+<p>Every argument here follows the <em>breaks as computed data</em> convention and the three-layer
+stack described in <a href="security-models.html">Security Models</a>.</p>
+<h2 id="one-connected-picture"><a class="header" href="#one-connected-picture">One connected picture</a></h2>
+<pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; } marker { overflow: visible !important; } marker path { transform-box: fill-box !important; transform-origin: center !important; transform: scale(1.25) !important; }&quot;}}%%
+flowchart TD
+  subgraph GAMES[&quot;Ledger capstones&quot;]
+    BAL[&quot;Balance integrity&lt;br/&gt;orchardBalanceIntegrity_measure_le&quot;]
+    SPEND[&quot;Spendability&lt;br/&gt;faerieGoldCore&lt;br/&gt;validLedger_append&quot;]
+    SPENDAUTH[&quot;Spend authority&lt;br/&gt;orchardSpendAuthority_measure_le&quot;]
+  end
+
+  BAL --&gt; BS[&quot;Binding-signature&lt;br/&gt;balance&quot;]
+  BAL --&gt; NCB[&quot;Note-commitment&lt;br/&gt;binding&quot;]
+  BAL --&gt; MERK[&quot;Merkle-path&lt;br/&gt;binding&quot;]
+  BAL --&gt; KB[&quot;Key binding&lt;br/&gt;ZIP 2005&quot;]
+  SPEND --&gt; BAL
+  SPEND ---&gt; NCB
+  SPEND ---&gt; MERK
+  SPEND ---&gt; KB
+  SPEND ---&gt; NFB[&quot;Nullifier binding&quot;]
+  SPEND ---&gt; SPENDAUTH
+  SPENDAUTH --&gt; KB
+
+  subgraph ASSUMPTIONS[&quot;Hardness assumptions&quot;]
+    DL[(&quot;Discrete log&quot;)]
+  end
+
+  subgraph MODELS[&quot;Heuristic adversary models&quot;]
+    ROM[(&quot;Random oracle&quot;)]
+  end
+
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| NDLR[&quot;NontrivialRelation&lt;br/&gt;(&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;V&lt;/span&gt;&lt;/span&gt;,&amp;nbsp;&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;R&lt;/span&gt;&lt;/span&gt;) discrete-log&lt;br/&gt;relation&quot;]
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionArm.lean'&gt;verifying signature&lt;br/&gt;the extractor misses&lt;/a&gt;&quot;| KERR[&quot;RedDSA&lt;br/&gt;extractability&quot;]
+  BS --&gt; STMT[&quot;Witness or replay&lt;br/&gt;evidence&lt;br/&gt;ActionSatisfied&lt;br/&gt;§4.17.4&quot;]
+  NCB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean'&gt;wrong note&lt;br/&gt;opening computes&lt;/a&gt;&quot;| NCBK[&quot;NoteCommitBreak&quot;]
+  NCB --&gt; STMT
+  MERK --&gt; STMT
+  MERK ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean'&gt;wrong Merkle&lt;br/&gt;path computes&lt;/a&gt;&quot;| MC[&quot;DefinedCollision&lt;br/&gt;one height,&lt;br/&gt;encoding domain&quot;]
+  KB --&gt; STMT
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/KeyBindingDLR.lean'&gt;Orchard-protocol&lt;br/&gt;CommitIvkCollision&lt;br/&gt;computes&lt;/a&gt;&quot;| SDLR
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&quot;]
+  NFB --&gt; STMT
+  NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
+  SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
+
+  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
+
+  KERR KERRtoNDLR@==&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
+  KERR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/KnowledgeError.lean'&gt;challenge hash as random&lt;br/&gt;oracle; query-time labels&lt;br/&gt;pin the bad challenge&lt;/a&gt;&quot;| ROM
+  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  KS KStoDL@===&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
+  KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
+  MC --&gt; SDLR
+  CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/|𝔽|,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
+  NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'&gt;distinct-note openings&lt;br/&gt;compute&lt;/a&gt;&quot;| SDLR
+  SAF ---&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
+  RDSA RDSAtoDL@==&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2019/877'&gt;straight-line AGM extraction&lt;/a&gt;&quot;| DL
+  RDSA --&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
+
+  click BAL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Balance.lean&quot; _blank
+  click SPEND &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click SPENDAUTH &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean&quot; _blank
+  click BS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean&quot; _blank
+  click NCB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click MERK &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean&quot; _blank
+  click KB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean&quot; _blank
+  click NFB &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click STMT &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click NCBK &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean&quot; _blank
+  click MC &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean&quot; _blank
+  click CUS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
+  click NFC &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
+  click SAF &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean&quot; _blank
+  click NDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click SDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click KS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean&quot; _blank
+  click DL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click ROM &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
+  click KERR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionKappaArm.lean&quot; _blank
+  click RDSA &quot;https://github.com/zcash/ironwood/issues/121&quot; _blank
+
+  classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
+  classDef checked fill:#0969da,stroke:#0550ae,color:#ffffff
+  classDef partial fill:#9a6700,stroke:#7d4e00,color:#ffffff
+  classDef hyp fill:#cf222e,stroke:#a40e26,color:#ffffff
+  classDef assumed fill:#57606a,stroke:#424a53,color:#ffffff
+  class BAL,SPEND,SPENDAUTH,KS partial
+  class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF,SDLR,KERR checked
+  class RDSA hyp
+  class DL,ROM assumed
+  classDef agmEdge stroke:#8858c8,stroke-width:4.2px
+  classDef agmBridge stroke:#8858c8,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
+  class KERRtoNDLR,KStoDL,RDSAtoDL agmEdge
+  class STMTtoKS agmBridge
+</pre>
+<p>
+<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the online-AGM — both endpoint games are <a href="security-models.html#the-algebraic-adversary-restriction">algebraic</a><br/>
+<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">⇢</span> dashed purple edge: an AGM-scoped justification crossing named side conditions — a semantic bridge rather than a proved implication<br/>
+<span style="font-size: 1.9rem">➝</span> thin edge: depends on (a reduction, assumption, or model)<br/>
+<span style="color:#1a7f37"> ■ </span> fully proven — nothing here yet<br/>
+<span style="color:#0969da"> ■ </span> stated and machine-checked in Lean, over abstract primitives<br/>
+<span style="color:#9a6700"> ■ </span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end: composing the per-arm oracle-model discharges into one experiment, RedDSA unforgeability; knowledge soundness's circuit-correctness conditions)<br/>
+<span style="color:#cf222e"> ■ </span> named hypothesis; formalization deferred<br/>
+<span style="color:#57606a"> ■ </span> assumption or heuristic model; terminal by design<br/>
+</p>
+<p>This picture is a deliberate approximation, and is likely to change as the formalization
+proceeds. The RedDSA node is a named hypothesis rather than a terminal assumption: its
+discharge edge names the reduction for security of signatures with re-randomizable keys
+(<a href="https://eprint.iacr.org/2015/395">Efficient Unlinkable Sanitizable Signatures from Signatures with Re-Randomizable Keys</a>,
+section 3), adapted to the ±-randomized variant, together with the same straight-line
+AGM+ROM extraction of Fuchsbauer–Plouviez–Seurin
+(<a href="https://eprint.iacr.org/2019/877">Blind Schnorr Signatures and Signed ElGamal Encryption in the Algebraic Group Model</a>,
+Theorem 1) that discharges the binding-signature extractability node at
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mord">/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DL</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>. The two arms differ in the signing
+oracle: the binding-signature extraction has none to simulate, because the signature
+extracted from is the adversary's own, while the RedDSA unforgeability game has one.
+The planned discharge is to simulate the signing oracle by programming the challenge
+oracle at the re-randomized key; the randomizer, carried by the forgery, enters the
+extraction as a known coefficient.</p>
+<p>Every solid arrow reads "rests on"; where an edge carries a label, the label names the
+computed break object flowing along it, or the side condition under which the reduction
+holds (base independence from hash-to-curve, the birthday count). Heavy purple arrows
+mark reductions (or intended reductions) stated for algebraic adversaries: both the
+source and the target of such an edge are interpreted as games against online-AGM
+adversaries, so the model scopes the whole reduction rather than being one more
+assumption it rests on — see
+<a href="security-models.html#the-algebraic-adversary-restriction">Security Models</a>. The
+random-oracle node remains a terminal because some error terms genuinely bottom out
+there: they are counting arguments over the oracle table, with no computational
+assumption. The games are the top-level capstones. The ledger model requires the adversary to
+supply, along with any accepting proof, a <strong>witness or replay evidence</strong> for the Action
+statement (<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the
+previously supplied witness. Each component argument consumes the statement's satisfaction
+<em>on that witness</em>. Knowledge soundness is what justifies the modelling: whenever the ledger
+layer needs a witness, the extractor computes one —or computes break data— from the accepting
+proof. The justification is AGM-scoped —the extractor consumes the adversary's
+representations— so its edge is heavy purple; the dashing marks that it crosses the
+remaining semantic bridge: the Clean/Ironwood circuit-correctness conditions
+(<code>TopLevelCircuitCorrectness</code>) — named component conditions rather than a proved
+implication. Discharging them is the subject of the circuit soundness proof.</p>
+<style>
+/* "One connected picture" links: labels keep their ordinary colour at rest
+   (blue is reserved for the status coding); hover underlines. */
+.mermaid .edgeLabel a { color: inherit; }
+.mermaid .edgeLabel a:hover,
+.mermaid a:hover .nodeLabel {
+  /* The SVG is scaled down to fit the page, so the default (~1px) underline
+     can fall below one device pixel and drop out on some line boxes; an
+     em-based thickness scales with the text instead. */
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.12em;
+}
+</style>
+<p>New to the shorthand? See the <a href="definitions.html"><strong>Definitions</strong></a>.  ·  For the methodology, <a href="security-models.html"><strong>Security Models</strong></a>.  ·  For the verifier-soundness half, the <a href="proof-map.html"><strong>Proof Map</strong></a>.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../formal-verification/security-models.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../formal-verification/definitions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../formal-verification/security-models.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../formal-verification/definitions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-9576a2db.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid-eefea253.min.js"></script>
+        <script src="../mermaid-init-d0d5e6a7.js"></script>
+        <script src="../todo-e74d2c27.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

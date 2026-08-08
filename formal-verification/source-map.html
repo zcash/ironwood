@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-1235b096.css">
+        <link rel="stylesheet" href="../custom-ce77753d.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-1e547a57.js";
+            window.path_to_searchindex_js = "../searchindex-98238575.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-21ef045d.js"></script>
+        <script src="../toc-4ac7af14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,8 +181,9 @@
 <p>A directory-by-directory index of the Lean development under <a href="https://github.com/zcash/ironwood/tree/main/Zcash"><code>Zcash/</code></a>:
 what each subtree contains and where to start reading. It is the source-tree companion
 to the <a href="proof-map.html">proof map</a> (which traces how the results connect), the
-<a href="security-definitions.html">security definitions</a> (which state the properties being proven),
-and the <a href="glossary.html">glossary</a> (which defines the coined terms).</p>
+<a href="ledger-security-games.html">ledger security games</a> (which state the properties being proven),
+the <a href="security-models.html">security models</a> page (which describes the methodology),
+and the <a href="definitions.html">definitions</a> page (which defines the coined terms).</p>
 <p>The development has four tiers. <strong><code>Zcash/Arithmetic/</code></strong> holds the objects the other three are
 stated over — the scalar field, the verifier group and its reference string, the fingerprint
 multiscalar multiplication, and the transform machinery and fast kernels behind them.
@@ -321,9 +322,10 @@ consumes. <code>ConstraintWalk</code>, <code>GroupingTable</code> (with <code>Ve
 assembly — grouping stability through a fixed reference table, the opening value, the IPA
 scalars, and the positional <code>other</code> coefficient stream — into <code>assembleCoeffFamily</code>: every
 MSM coefficient as a polynomial numerator over enumerated denominators with one degree budget.
-<code>Epsilon</code> then prices it: a competing coefficient family that differs from Lean's anywhere
-agrees at a uniform point with probability at most <code>(D + B)/p</code> — the invariant's concrete ε —
-with per-capture literals in the random families' <code>Epsilon</code> modules.</p>
+<code>Epsilon</code> then prices the match. For bounded-degree polynomial numerators over the walk's
+enumerated challenge denominators, a family that differs from Lean's agrees at a uniform point
+with probability at most <code>(D + B)/p</code>. The random fixtures state the concrete ε values;
+<code>Fingerprint/Match.lean</code> lists the premisses, including class membership and sample uniformity.</p>
 <h3 id="fixtures--captured-proofs-and-boundary-checks"><a class="header" href="#fixtures--captured-proofs-and-boundary-checks"><code>Fixtures/</code> — captured proofs and boundary checks</a></h3>
 <p>Concrete Orchard captures that exercise the assembly end-to-end and make the Rust/Lean boundary
 less silent. This subtree is the <code>FixtureCheck</code> lake target, kept out of <code>lake build Zcash</code> (the
@@ -356,7 +358,8 @@ keygen certificate along <code>PostNu63Random</code>'s point equalities, its <co
 aliveness guards in <code>Negative</code> (the model assembles at the random point, the capture is genuinely
 non-accepting, and one tamper canary), and its own <code>TrustBoundary</code> census. What the four families
 jointly check is that Lean's assembled MSM equals the deployed one coefficient-for-coefficient at
-each captured proof, priced by <code>Fingerprint/Epsilon.lean</code>.</p>
+each captured proof; the two <code>Random/</code> families additionally carry the per-capture ε modules that
+price the quantified match (<code>Fingerprint/Epsilon.lean</code>, <code>Fixtures/*/Random/Epsilon.lean</code>).</p>
 <h3 id="soundness--the-soundness-argument"><a class="header" href="#soundness--the-soundness-argument"><code>Soundness/</code> — the soundness argument</a></h3>
 <p>The core argument that an accepting proof yields a witness or a computed break. The top-level
 modules cover the argument end to end: <code>Main</code> (the deployed-acceptance predicate and explicit
@@ -396,7 +399,7 @@ and derives the conditional staged <code>2×</code> group-operation bound. Its p
 one closed program that constructs the charged basis, specializes the exact adversary path with
 its annotations and group nodes, constructs a proof-carrying cache from that result, and consumes
 that same cache in reified postprocessing. Lean proves the resulting counter equals adversary work
-plus reduction work. Since the cost language is <a href="glossary.html">shallow</a>, fidelity of the supplied
+plus reduction work. Since the cost language is <a href="definitions.html#shallow">shallow</a>, fidelity of the supplied
 adversary and of generic host callbacks inside the complete program remains external and is stated
 separately.
 The modeled three-decode inequality is derived from the family's required fixed-representation
@@ -499,7 +502,8 @@ the endpoints — knowledge-soundness bounds for every consensus-valid bundle si
 compositional error-formula form, in resource-accounted finite-security form at the <code>2^123</code> work
 factor, and in the staged-certified forms carrying their group-work accounting at <code>2^123</code> and
 <code>2^125</code> adversary work. Knowledge soundness is the only property advertised: it implies the
-plain-soundness statement, so that is not stated separately.</p>
+plain-soundness statement, so that is not stated separately. Legacy fixed-statement
+endpoints and their events are retired.</p>
 <p>Endpoints about the <em>verifier's algebra</em> rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in
 <code>Fixtures/MultiAction/Honest/StraightLineKnowledgeError</code>, and the consensus-maximum work factors in
@@ -619,13 +623,10 @@ and <code>Completeness</code> checks the other direction — that an honest wall
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../formal-verification/proof-map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../formal-verification/definitions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../formal-verification/security-definitions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -633,13 +634,10 @@ and <code>Completeness</code> checks the other direction — that an honest wall
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../formal-verification/proof-map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../formal-verification/definitions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../formal-verification/security-definitions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
         </div>

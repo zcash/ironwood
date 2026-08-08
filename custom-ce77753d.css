@@ -382,3 +382,20 @@ em {
 .content :is(h1, h2, h3, h4, h5, h6) em {
     font-weight: inherit;
 }
+
+/* Narrow the fixed previous/next chapter strips (theme default is
+   90-150px wide), so they claim less of the side gutters on wide pages
+   such as the proof map. 44px keeps a comfortable click target. */
+.nav-chapters {
+    min-width: 44px;
+    max-width: 56px;
+}
+
+/* The theme insets .next by --page-padding (clearing the scrollbar) but
+   leaves .previous flush against the viewport edge; inset both equally. */
+.previous {
+    left: var(--page-padding);
+}
+[dir=rtl] .previous {
+    left: unset;
+}

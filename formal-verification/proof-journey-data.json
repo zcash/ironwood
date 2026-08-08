@@ -150,7 +150,7 @@
       "chapter": "Verifier",
       "title": "Turn acceptance into the IPA equation",
       "claim": "An accepting assembled MSM yields halo2's explicit IPA verifier equation.",
-      "summary": "DeployedAccepts is the concrete MSM-equals-identity premise. deployedAccepts_verifierEq unfolds that compact check into the equation consumed by the soundness argument while retaining the verifier's rejection guards.",
+      "summary": "DeployedAccepts is the concrete MSM-equals-identity premiss. deployedAccepts_verifierEq unfolds that compact check into the equation consumed by the soundness argument while retaining the verifier's rejection guards.",
       "nodes": [
         "assemble",
         "accept",
@@ -258,7 +258,7 @@
         "Binding failure is retained as an explicit relation on the deployed augmented basis."
       ],
       "residuals": [
-        "The legacy propositional capstones retain z != 0 and other rung-specific structural premises.",
+        "The legacy propositional capstones retain z != 0 and other rung-specific structural premisses.",
         "The relation branch needs a computational reduction, not a propositional impossibility claim."
       ],
       "durationMs": 8500
@@ -482,7 +482,7 @@
         "Every binding mismatch yields explicit relation data, and the programmed-basis conversion loses only one 1/|F| miss hyperplane.",
         "The adaptive-statement finder and witness extractor reuse one adversary output, annotation log, and challenge vectors; the cached finder is pointwise equal to the original finder and extraction succeeds on exactly the same oracle tables.",
         "The Action knowledge extractors are executable and return the actual private witnesses for every proof in the bundle together with proofs that they satisfy the compiled Action specification; both the adaptive-statement and straight-line/sequential relation projections share their route's data-bearing outcome.",
-        "The resource model keeps random-oracle queries, Vesta group operations, and direct-coordinate work separate. The DLOG advantage term is the conclusion of the programmed-basis reduction; the theorem does not take a DLOG-hardness proposition as a premise.",
+        "The resource model keeps random-oracle queries, Vesta group operations, and direct-coordinate work separate. The DLOG advantage term is the conclusion of the programmed-basis reduction; the theorem does not take a DLOG-hardness proposition as a premiss.",
         "For every Action count at or below Orchard's consensus maximum, the conditionally staged-certified adaptive-statement endpoints bound verifier acceptance with failed executable witness extraction by <code>Adv_DLOG(2^124,2^126) + 2^-83</code>. They cover represented online-AGM adversaries with random-oracle challenge derivation. At the separate <code>Q ≤ 2^123</code> oracle parameter, both <code>2^123</code> and <code>2^125</code> adversary group-work budgets are covered; the latter's adversary-plus-reduction group work is at most <code>2^126</code>. One closed program constructs the charged basis, specializes the exact adversary path with its annotations and group nodes, builds a proof-carrying cache, and feeds that same cache through reified verifier postprocessing. Lean proves its counter decomposition. Because the embedding is shallow, staging fidelity remains explicit for both the supplied adversary and generic host callbacks in the complete program. The three-decode bound follows from a required family representation-length invariant, not a concrete deployment family constructed here; the executable read-set bound also remains separate from the DLOG group budget."
       ],
       "residuals": [
@@ -545,7 +545,7 @@
         "The x1 unbatch pins the extracted witness to the actual queried member commitments."
       ],
       "residuals": [
-        "The x4 accept-measure premise and an accepting current run remain explicit.",
+        "The x4 accept-measure premiss and an accepting current run remain explicit.",
         "Per-point claimed evaluations and x-to-x3 quotient transport remain in hquot."
       ],
       "durationMs": 10000
@@ -597,7 +597,7 @@
       "id": "compose",
       "chapter": "Capstones",
       "title": "Compose legacy opening and circuit satisfaction",
-      "claim": "Given the accepting rewind data and structural premises named by a legacy Vesta rung, Lean constructs one SnarkRelation joining the extracted IPA opening to circuit satisfaction for the same witness.",
+      "claim": "Given the accepting rewind data and structural premisses named by a legacy Vesta rung, Lean constructs one SnarkRelation joining the extracted IPA opening to circuit satisfaction for the same witness.",
       "summary": "These are conditional extraction theorems over explicit transcript trees or accepting rewinds, not finite-resource guarantees for an executable adversary. They cover the abstract, deployed, adaptive, xgood, and x4 variants without assigning a numerical query or work envelope. The live represented-adversary probability guarantees and their coverage parameters are stated separately in the AGM stage.",
       "nodes": [
         "IpaRelation",
@@ -646,7 +646,7 @@
         "Each legacy rung exposes the accepting execution data and structural conditions it requires."
       ],
       "residuals": [
-        "These rungs do not by themselves model or resource-bound an executable adversary; different variants retain different structural and probability premises.",
+        "These rungs do not by themselves model or resource-bound an executable adversary; different variants retain different structural and probability premisses.",
         "SnarkRelation is not yet the intended high-level Ironwood security statement."
       ],
       "durationMs": 9500
@@ -655,7 +655,7 @@
       "id": "boundary",
       "chapter": "Trust boundary",
       "title": "Stop at the exact formal boundary",
-      "claim": "The formal chain reaches executable Action witnesses or explicit relation data and states every remaining model boundary as a premise or documented interpretation step.",
+      "claim": "The formal chain reaches executable Action witnesses or explicit relation data and states every remaining model boundary as a premiss or documented interpretation step.",
       "summary": "The strongest adaptive capstones cover represented online algebraic adversaries in the random-oracle model at explicit query and group-work parameters. Exact reduction data flow and counter composition are derived. The shallow cost language leaves explicit fidelity obligations for the supplied adversary and for generic host callbacks in the complete program; the direct-decode derivation depends on a required family length invariant. Legacy rewind rungs remain conditional on supplied accepting trees. Neither route identifies concrete hashes, the captured verifier artifact, or the compiled circuit witness with the ledger-level Orchard relation inside Lean.",
       "nodes": [
         "capstones",
@@ -703,11 +703,11 @@
       ],
       "proves": [
         "Every mechanized bridge shown in the map has a concrete Lean anchor.",
-        "The endpoint records reduction outcomes and residual premises without hiding them."
+        "The endpoint records reduction outcomes and residual premisses without hiding them."
       ],
       "residuals": [
         "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, generator hash-to-curve-as-RO, the AGM idealization, and a concrete interpretation of the finite-resource DLOG advantage.",
-        "The adaptive group-work result remains conditional on external adversary fidelity and on no hidden Vesta work in generic host callbacks of the complete shallow program. Exact reduction composition is derived; direct-decode coverage follows once the family supplies its required representation-length invariant. The legacy rewind capstones still require their named execution and probability premises."
+        "The adaptive group-work result remains conditional on external adversary fidelity and on no hidden Vesta work in generic host callbacks of the complete shallow program. Exact reduction composition is derived; direct-decode coverage follows once the family supplies its required representation-length invariant. The legacy rewind capstones still require their named execution and probability premisses."
       ],
       "durationMs": 11000
     }

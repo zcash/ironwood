@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-1235b096.css">
+        <link rel="stylesheet" href="custom-ce77753d.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-1e547a57.js";
+            window.path_to_searchindex_js = "searchindex-98238575.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-21ef045d.js"></script>
+        <script src="toc-4ac7af14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -182,13 +182,13 @@
 verifier soundness for the deployed Halo 2 verifier under <code>Zcash/Snark/</code>, and the protocol
 security-property layers (binding-signature balance, key binding, and the ledger-model
 security games) under <code>Zcash/Security/</code>. This page documents two development-wide
-conventions: how security breaks are represented, and what the development is allowed to
-trust.</p>
+conventions — how security breaks are represented, and what the development is allowed to
+trust — and where the model idealizes the deployed verifier.</p>
 <h2 id="breaks-as-computed-data"><a class="header" href="#breaks-as-computed-data">Breaks as computed data</a></h2>
 <p>The security arguments are reduction-style: a theorem shows that a violation of a protocol
-property <em>exhibits</em> a concrete break of an underlying primitive — a discrete-log relation, a
-hash collision, a commitment-opening collision. Hardness assumptions are consumed only at
-the computational layer, against the exhibited break.</p>
+property <em>exhibits</em> a concrete break of an underlying primitive — for example a
+discrete-log relation, a hash collision, or a commitment-opening collision. Hardness
+assumptions are consumed only at the computational layer, against the exhibited break.</p>
 <p>Care is needed in how "exhibits" is stated. In a prime-order group, a nontrivial
 discrete-log relation between any two elements always <em>exists</em>; for any compressing hash,
 collisions always <em>exist</em> by pigeonhole. So a <code>Prop</code> that existentially quantifies over the
@@ -315,9 +315,34 @@ the verifier, so anything <code>noncomputable</code> on the assembled-verifier p
 <code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived</code> — with the quantified match and its
 ε in <code>Snark/Fingerprint/Epsilon.lean</code> and the per-capture headliners in
 <code>Fixtures/*/Random/Epsilon.lean</code>. Capture lineage, seeds, and the reproducibility pipeline are in
-<code>Zcash/Snark/Fixtures/PROVENANCE.md</code>.</p>
+<code>Zcash/Snark/Fixtures/PROVENANCE.md</code>. Together, the captures and ε theorems support the typed,
+post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
+domain-prefix bytes, and Blake2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
+boundary, tracked in <a href="https://github.com/zcash/ironwood/issues/66">#66</a>.</p>
+<p><strong>The circuit-side layout fixtures are pinned, not regenerated.</strong> The CS and layout dumps behind
+<code>CircuitCheck</code>'s <code>TestVk*</code> comparisons (<code>Zcash/Circuits/Fixtures/*.json</code>) were emitted by one-off
+instrumentation of halo2/orchard that was never published, so unlike the verifier-fingerprint
+captures they have no regenerate-and-diff pipeline: CI pins their bytes (<code>SHA256SUMS</code>, with a
+set-equality check so an unpinned dump cannot be added), and those pins live in the same
+repository they guard. Independent anchoring exists at verifying-key granularity —
+<code>Keygen/Certificate.lean</code> checks the key derived from the ported circuit against the
+release-regenerated capture — but the row-level layout content below the key, and the
+base-circuit dump (<code>actionBaseLayout.json</code>), which has no capture-side anchor at all, rest on the
+pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
+are recorded in <code>Zcash/Circuits/Fixtures/PROVENANCE.md</code>.</p>
+<h2 id="modelling-boundaries"><a class="header" href="#modelling-boundaries">Modelling boundaries</a></h2>
+<p>The trust discipline above bounds what the <em>proofs</em> rest on. One boundary sits outside it, in
+what the statements <em>model</em>: it is neither an axiom nor a compiler-trust question, so no census
+sees it.</p>
+<p><strong>Fiat–Shamir is idealized.</strong> The deployed verifier derives each challenge by hashing the
+transcript so far with Blake2b and reducing 64 bytes to a field element. The development models
+that as an abstract <code>squeeze</code> (<code>Verifier/FiatShamir.lean</code>) and, in the security layer, as a
+uniform random oracle — the assumption that carries interactive soundness to the deployed
+non-interactive check. Identifying the deployed hash with that oracle is external, over and
+above the byte-level boundary noted above: the fixtures check challenge schedules against typed
+captures, not against transcript bytes.</p>
 <p>Coined terms and shorthand for the development, including the two conventions above, are
-collected in the <a href="formal-verification/glossary.html">glossary</a>.</p>
+collected on the <a href="formal-verification/definitions.html">Definitions</a> page.</p>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 
                     </main>

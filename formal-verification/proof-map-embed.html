@@ -60,7 +60,7 @@
     display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 22px;
   }
   header.top h1 { font-size: 18px; font-weight: 640; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
-  header.top p { margin: 3px 0 0; color: var(--muted); font-size: 13px; max-width: 64ch; }
+  header.top p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
   .state {
     margin-left: auto; align-self: center;
     font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted);
@@ -69,6 +69,12 @@
   }
 
   .layout { display: grid; grid-template-columns: 1fr 336px; gap: 0; }
+  .legendbar { grid-column: 1 / -1; border-top: 1px solid var(--line); padding: 8px 16px 10px; }
+  .legendbar h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 7px; }
+  .legendbar .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 3px 20px; margin-bottom: 0; }
+  .legendbar .legend .row { align-items: flex-start; }
+  .legendbar .legend .row .swatch { margin-top: 8.25px; }
+  .legendbar .legend .row .sq { margin-top: 0; }
   @media (max-width: 1040px) { .layout { grid-template-columns: 1fr; } }
 
   .stage { min-width: 0; padding: 12px 12px 18px; }
@@ -88,18 +94,22 @@
   .mapwrap { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
   svg.map { display: block; width: 100%; min-width: 0; height: auto; }
 
-  .terr { fill: var(--th); opacity: .5; stroke: var(--ts); stroke-width: 1; stroke-dasharray: 3 5; rx: 16; }
+  .terr { fill: var(--th); opacity: 1; stroke: var(--ts); stroke-width: 1.4; stroke-dasharray: 3 3; rx: 16; }
   .terr-label { font-size: 15px; text-transform: uppercase; letter-spacing: .14em; font-weight: 700; fill: var(--ts); opacity: 1; }
-  .terr-tag { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--ts); opacity: .8; }
+  .terr-tag { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--ts); opacity: .9; }
   .map-title { font-size: 25px; font-weight: 650; fill: var(--ink); letter-spacing: .015em; }
 
   .edge { fill: none; stroke-width: 2; opacity: .55; transition: opacity .15s, stroke-width .15s; }
   .edge.entails { stroke: var(--ink); }
   .edge.discharges { stroke: var(--accent); stroke-dasharray: 7 5; }
-  .edge.rests { stroke: var(--c-floor); stroke-dasharray: 1.5 5; stroke-linecap: round; }
+  .edge.rests { stroke: var(--c-floor); stroke-width: 2.5; stroke-dasharray: 2.5 5; stroke-linecap: round; }
   .edge.gap { stroke: var(--c-hyp); stroke-dasharray: 7 3 1.5 3; }
   .edge.hot { opacity: 1; stroke-width: 3; }
-  .edge.dim { opacity: .05; }
+  .edge.hot.entails { marker-end: url(#ar-hot-entails); }
+  .edge.hot.discharges { marker-end: url(#ar-hot-discharges); }
+  .edge.hot.rests { marker-end: url(#ar-hot-rests); }
+  .edge.hot.gap { marker-end: url(#ar-hot-gap); }
+  .edge.dim { opacity: .5; }
 
   .node { cursor: pointer; }
   .node rect { transition: opacity .15s; }
@@ -107,7 +117,8 @@
   .node .label { font-size: 16.5px; font-weight: 650; fill: var(--ink); dominant-baseline: middle; }
   .node.goal .box { fill: var(--accent); stroke: var(--accent); }
   .node.goal .label { fill: #fff; font-weight: 640; }
-  .node.dim { opacity: .2; }
+  .node.dim { opacity: .82; }
+  .node.near { filter: drop-shadow(0 0 2.5px var(--accent)) drop-shadow(0 0 2.5px var(--accent)) drop-shadow(0 0 2.5px var(--accent)); }
   .node .anchor { font-size: 11px; fill: var(--muted); dominant-baseline: middle; }
 
   body.journey-embed header.top,
@@ -169,6 +180,10 @@
   .detail .conns .via { font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--muted); opacity: .85; overflow-wrap: anywhere; }
   .detail .empty { color: var(--muted); font-size: 13px; }
   .detail .hint { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+  .railhint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .node { cursor: pointer; }
+  .node:hover:not(.near):not(.pinned) { filter: drop-shadow(0 0 2.5px var(--accent)); }
+  .node.pinned { filter: drop-shadow(0 0 2.5px var(--accent)) drop-shadow(0 0 2.5px var(--accent)) drop-shadow(0 0 2.5px var(--accent)); }
   .tag { font-family: ui-monospace, monospace; font-size: 11px; color: var(--accent); }
 
   @media (prefers-reduced-motion: reduce) {
@@ -202,6 +217,14 @@
   </div>
 
   <aside class="rail">
+    <h2>Detail</h2>
+    <p class="railhint">Click a node to show its details here; click the background to clear.</p>
+    <div class="detail" id="detail">
+      <p class="empty">A node's card shows what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
+      <p class="hint">The spine runs down the left: <span class="mono">accepting proof &#8594; verifier equation &#8594; deployed tree &#8594; peel &#8594; IPA opening &#8594; SnarkRelation</span>. The tinted territories are the machinery that discharges its assumptions.</p>
+    </div>
+  </aside>
+  <section class="legendbar">
     <h2>Legend</h2>
     <div class="legend">
       <div class="row"><span class="swatch" style="border-top-color:var(--ink)"></span><span><b>entails</b> — B follows from its incoming input(s); converging arrows are joint unless the node describes alternate routes</span></div>
@@ -213,13 +236,7 @@
       <div class="row"><span class="sq" style="border-color:var(--c-object);background:color-mix(in srgb,var(--c-object) 10%,var(--surface))"></span><span class="muted">Definition — a claim (Prop) or construction (data)</span></div>
       <div class="row"><span class="sq" style="border-color:var(--accent);background:var(--accent)"></span><span>Top-level result (verifier soundness)</span></div>
     </div>
-
-    <h2>Detail</h2>
-    <div class="detail" id="detail">
-      <p class="empty">Hover or click a node to see what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
-      <p class="hint">The spine runs down the left: <span class="mono">accepting proof &#8594; verifier equation &#8594; deployed tree &#8594; peel &#8594; IPA opening &#8594; SnarkRelation</span>. The tinted territories are the machinery that discharges its assumptions.</p>
-    </div>
-  </aside>
+  </section>
 </div>
 
 <script>
@@ -250,7 +267,7 @@ const nodes = [
     role:'The fingerprint match (msmMatch_eval): the Lean-assembled MSM is compared coefficient-for-coefficient against the Rust verifier’s captured MSM, and a match implies equal evaluations. The deployed check is the numeric fixture match (fingerprint_matches, native_decide) — agreement on the captured single- and multi-action proofs, full stop: an empirical anchor, not a universal equivalence, and the fixtures’ group bases are opaque tags, so Vesta-point faithfulness lives in the Rust capture. Backed by a Fiat–Shamir schedule check, VK/shape faithfulness, and negative/tamper fixtures that mutate the captures to exercise the modeled rejection paths.' },
   { id:'accept', c:0,r:1, label:'accepting proof', status:'object',
     anchor:'Main.DeployedAccepts',
-    role:'The concrete accept condition: the assembled MSM evaluates to the group identity. The premise everything hangs from.' },
+    role:'The concrete accept condition: the assembled MSM evaluates to the group identity. The premiss everything hangs from.' },
   { id:'verifierEq', c:0,r:2, label:'verifier equation', status:'proven',
     anchor:'Main.deployedAccepts_verifierEq',
     role:'halo2’s explicit IPA verifier equation, recovered from the accept: deployedAccepts_verifierEq unpacks the compact MSM = 0 into the explicit equation the IPA soundness argument consumes. One direction — the accept also carries the rejection guards.' },
@@ -289,7 +306,7 @@ const nodes = [
     role:'The gate/quotient point-check. Derived on the live path (quotientCheck_of_claimed, from the member bindings); assumed only on the compatibility rungs. The x-to-x₃ transport content now lives with hfold and hgood.' },
   { id:'structural', c:5,r:7, w:235, label:'structural residuals', status:'hyp',
     anchor:'hz · hB · hquery · hchar',
-    role:'What is left of the structural residuals. On the surviving forking rungs, z ≠ 0 (hz) is still assumed. The straight-line route assumes none of the old four: the z = 0 slice is priced into the bound as its (Q+1)/|F| term (straightLineRootFailure), hg0 no longer exists anywhere in the soundness stack, and hs/hξ survive only inside witness-construction keystones, not on capstone rungs. The straight-line generator-side premises are hB : B ≠ 0 (the DLOG challenge point) and injectivity of the basis query map (hquery), on every generatorRO rung — plus the pair-count character bound hchar at the Action capstone.' },
+    role:'What is left of the structural residuals. On the surviving forking rungs, z ≠ 0 (hz) is still assumed. The straight-line route assumes none of the old four: the z = 0 slice is priced into the bound as its (Q+1)/|F| term (straightLineRootFailure), hg0 no longer exists anywhere in the soundness stack, and hs/hξ survive only inside witness-construction keystones, not on capstone rungs. The straight-line generator-side premisses are hB : B ≠ 0 (the DLOG challenge point) and injectivity of the basis query map (hquery), on every generatorRO rung — plus the pair-count character bound hchar at the Action capstone.' },
   { id:'hgood', c:5,r:6, label:'sound challenge', status:'hyp',
     anchor:'hgood',
     role:'The challenge avoids the Schwartz–Zippel bad set, so the gate point-check at x implies the full gate identity. Still assumed at the deployed x on the forking rungs, where its exclusion is priced (uniformChallenge_quotient_szBadSet) and spent by the good-challenge derivation — produced from the accept measure, not assumed. The straight-line route instead prices the x-squeeze failure into the composed error via the schedule budget ((Q+1)·ε_x, deployedConstraintBadX_prob_le; captured ε_x = 20470/|F|).' },
@@ -340,7 +357,7 @@ const nodes = [
     role:'The actual direct-coordinate source traversed by the finder is charged, rather than a free reduction-work number. The direct decode is group-free, but verifier MSM and other group postprocessing are budgeted separately. The straight-line fallback budgets its two possible decodes. For the adaptive endpoint, proof-controlled source lengths are exact and all three calls — identity, terminal, and final extraction — are derived below 2^123 after the family supplies its required fixed-representation length invariant. The generic theorem does not construct a concrete deployed family satisfying that invariant.' },
   { id:'securityBound', c:5,r:4, dx:5, w:190, label:'checked group-work bound', line1:'checked DLOG', line2:'group-work bound', status:'proven',
     anchor:'Action.AdaptiveStatementCost.costedCachedKnowledgeExtractor_two_mul_bound · Capstones.Action.orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow125_work_generatorRO_for',
-    role:'The staged cost language records Vesta group-law operations and erases to the original represented adversary. A private, single closed program constructs charged programmed-basis points, specializes the exact adversary path while retaining its group nodes and annotations, builds a proof-carrying cache, and uses that same cache while charged canonical commitments drive verifier assembly. Lean proves its counter is adversary work plus reified reduction work, then bounds the total by twice the adversary budget: 2^125 adversary work is covered by 2^126 DLOG work. Oracle queries remain at most 2^124 under Q ≤ 2^123. Equality/list and direct-decode resources are separate. Because the embedding is shallow, both adversary fidelity and no-hidden-group-work fidelity for generic host callbacks in the complete program remain explicit premises.' },
+    role:'The staged cost language records Vesta group-law operations and erases to the original represented adversary. A private, single closed program constructs charged programmed-basis points, specializes the exact adversary path while retaining its group nodes and annotations, builds a proof-carrying cache, and uses that same cache while charged canonical commitments drive verifier assembly. Lean proves its counter is adversary work plus reified reduction work, then bounds the total by twice the adversary budget: 2^125 adversary work is covered by 2^126 DLOG work. Oracle queries remain at most 2^124 under Q ≤ 2^123. Equality/list and direct-decode resources are separate. Because the embedding is shallow, both adversary fidelity and no-hidden-group-work fidelity for generic host callbacks in the complete program remain explicit premisses.' },
   { id:'recursiveExtractor', c:4,r:2, dx:35, w:190, label:'retired recursive extractor', line1:'retired recursive', line2:'extractor', status:'object',
     anchor:'Forking.Adversary.Recursive.recursiveAlgebraicFork · recursiveForkFailure_measure_le',
     role:'Historical route pinned by the proof journey: the executable rewinding algorithm recursively reprogrammed round challenges and returned an algebraic fork certificate. #142 removed this algorithm, its sampling tape, and its expected-runs analysis from the live stack; no current capstone depends on it.' },
@@ -503,7 +520,18 @@ const relPhrase = {
 const byId = {};
 nodes.forEach(n => {
   n.cx = COL(n.c) + (n.dx || 0); n.cy = ROW(n.r);
-  const ch = n.label.length;
+  // Wrap long single-line labels onto two lines at the space nearest the
+  // middle, so the box (whose width is capped below) always fits its text.
+  if (!n.line1 && !n.w && !n.tag && n.label.length > 18 && n.label.includes(' ')) {
+    const mid = n.label.length / 2;
+    let best = -1;
+    for (let i = n.label.indexOf(' '); i !== -1; i = n.label.indexOf(' ', i + 1)) {
+      if (best === -1 || Math.abs(i - mid) < Math.abs(best - mid)) { best = i; }
+    }
+    n.line1 = n.label.slice(0, best);
+    n.line2 = n.label.slice(best + 1);
+  }
+  const ch = n.line1 ? Math.max(n.line1.length, n.line2.length) : n.label.length;
   n.w = n.w || Math.max(126, Math.min(216, ch * 10.2 + 30));
   n.h = 46;
   byId[n.id] = n;
@@ -521,9 +549,14 @@ function el(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (c
 
 const defs = el('defs', {});
 [['entails','var(--ink)'],['discharges','var(--accent)'],['rests','var(--c-floor)'],['gap','var(--c-hyp)']].forEach(([k,c]) => {
-  const m = el('marker', { id:'ar-'+k, viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:'7.5', markerHeight:'7.5', orient:'auto-start-reverse' });
-  m.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:c }));
-  defs.appendChild(m);
+  // Two sizes per kind: the base head, and a slightly larger one that CSS
+  // swaps in for selected (.hot) edges — 1.2x rather than tracking the
+  // stroke-width ratio.
+  [['ar-', 15], ['ar-hot-', 18]].forEach(([prefix, size]) => {
+    const m = el('marker', { id:prefix+k, viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:String(size), markerHeight:String(size), markerUnits:'userSpaceOnUse', orient:'auto-start-reverse' });
+    m.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:c }));
+    defs.appendChild(m);
+  });
 });
 svg.appendChild(defs);
 
@@ -549,7 +582,7 @@ territories.forEach(t => {
   const headroom=t.headroom || 14;
   const g = el('g', {});
   const rect = el('rect', { x:x0-pad, y:y0-pad-headroom, width:(x1-x0)+pad+padRight, height:(y1-y0)+pad*2+headroom, class:'terr' });
-  rect.style.setProperty('--th', `color-mix(in srgb, ${t.h} 10%, var(--surface))`);
+  rect.style.setProperty('--th', `color-mix(in srgb, ${t.h} 7%, var(--surface))`);
   rect.style.setProperty('--ts', t.h);
   g.appendChild(rect);
   const labX = (t.labelSide === 'right' ? x1+padRight-14 : x0-pad+14) + (t.labelDx || 0);
@@ -652,7 +685,7 @@ function highlight(id) {
   const near = new Set([id]);
   const eidx = new Set();
   adj[id].forEach(a => { near.add(a.other); eidx.add(a.i); });
-  nodes.forEach(n => n._g.classList.toggle('dim', !near.has(n.id)));
+  nodes.forEach(n => { n._g.classList.toggle('dim', !near.has(n.id)); n._g.classList.toggle('near', near.has(n.id)); });
   edgeEls.forEach((p,i) => { p.classList.toggle('hot', eidx.has(i)); p.classList.toggle('dim', !eidx.has(i)); });
 }
 
@@ -699,34 +732,46 @@ function renderDetail(id) {
 
 nodes.forEach(n => {
   const g = n._g;
-  const enter = () => { if (journeyActive || activeFilter!=='all') return; highlight(n.id); renderDetail(n.id); };
-  const leave = () => {
+  const show = () => { if (journeyActive || activeFilter!=='all') return; highlight(n.id); renderDetail(n.id); };
+  const unshow = () => {
     if (journeyActive || activeFilter!=='all') return;
     if (pinned) { highlight(pinned); renderDetail(pinned); }
-    else { clearHi(); }
+    else { clearHi(); }  // the card persists; only the map highlight clears
   };
-  g.addEventListener('pointerenter', enter);
-  g.addEventListener('pointerleave', leave);
-  g.addEventListener('focus', enter);
-  g.addEventListener('blur', leave);
-  g.addEventListener('click', (e) => { if (journeyActive) return; e.stopPropagation(); pinned = (pinned===n.id)?null:n.id; if(pinned){highlight(pinned);renderDetail(pinned);} else {clearHi(); if(activeFilter!=='all') applyFilter();} });
+  // Deliberately no pointerenter/pointerleave handlers: the card and the map
+  // highlighting change only on click or keyboard focus, so moving the mouse
+  // around the map causes no flicker and never steals the text being read.
+  g.addEventListener('focus', show);
+  g.addEventListener('blur', unshow);
+  g.addEventListener('click', (e) => { if (journeyActive) return; e.stopPropagation(); pinned = (pinned===n.id)?null:n.id; nodes.forEach(m => m._g.classList.toggle('pinned', pinned===m.id)); if(pinned){highlight(pinned);renderDetail(pinned); if (detail.getBoundingClientRect().top > innerHeight) detail.scrollIntoView({behavior:'smooth', block:'nearest'});} else {clearHi(); resetDetail(); if(activeFilter!=='all') applyFilter();} });
   g.addEventListener('keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); g.click(); } });
 });
 
 function clearHi() {
-  nodes.forEach(n => n._g.classList.remove('dim'));
+  nodes.forEach(n => { n._g.classList.remove('dim'); n._g.classList.remove('near'); });
   edgeEls.forEach(p => { p.classList.remove('hot'); p.classList.remove('dim'); });
-  detail.innerHTML = `<p class="empty">Hover or click a node to see what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
+}
+
+function resetDetail() {
+  detail.innerHTML = `<p class="empty">A node's card shows what it is, its Lean anchor, and every theorem it connects to — with the lemma that justifies each link.</p>
     <p class="hint">The spine runs down the left: <span class="mono">accepting proof → verifier equation → deployed tree → peel → IPA opening → SnarkRelation</span>. The tinted territories are the machinery that discharges its assumptions.</p>`;
 }
 
-svg.addEventListener('click', () => { if (journeyActive) return; pinned = null; clearHi(); if(activeFilter!=='all') applyFilter(); });
+svg.addEventListener('click', () => { if (journeyActive) return; pinned = null; nodes.forEach(m => m._g.classList.remove('pinned')); clearHi(); resetDetail(); if(activeFilter!=='all') applyFilter(); });
+
+// Report the document height so the host page can size the iframe to fit,
+// leaving all scrolling to the page itself.
+function postHeight() {
+  try { parent.postMessage({ iwmapHeight: document.documentElement.scrollHeight }, '*'); } catch (e) {}
+}
+window.addEventListener('load', postHeight);
+new ResizeObserver(postHeight).observe(document.body);
 
 document.getElementById('filters').addEventListener('click', (e) => {
   const b = e.target.closest('.chip'); if (!b) return;
   activeFilter = b.dataset.f; pinned = null;
   document.querySelectorAll('#filters .chip').forEach(c => c.setAttribute('aria-pressed', c===b ? 'true':'false'));
-  if (activeFilter === 'all') clearHi(); else applyFilter();
+  if (activeFilter === 'all') { clearHi(); resetDetail(); } else applyFilter();
 });
 
 // Theme sync: the embedding book page posts its active theme (mdBook toggle).
