@@ -835,7 +835,10 @@ assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_certified_2p
 
 -- The auditor-facing contract records what the endpoint above promises and reuses its proof, so
 -- its trust base is that endpoint's.  Pinned directly because it is a leaf: nothing depends on
--- it, so coverage reaching it through some other pin does not exist.
+-- it, so coverage reaching it through some other pin does not exist.  The record's derived
+-- lemmas (`acceptFalseStatement_le` and friends) are deliberately not pinned: they are generic
+-- consequences, not deliverable endpoints, and pinning the soundness restatement in particular
+-- would re-advertise the property the Action surface deliberately stopped advertising.
 assert_axioms Zcash.Snark.Contract.actionKnowledgeContract +native(
   Zcash.Snark.actionConstantCellAddressFailures_eq_nil, Zcash.Snark.actionConstantSites_fit,
   Zcash.Snark.actionCopyActiveRowFailures_eq_nil,

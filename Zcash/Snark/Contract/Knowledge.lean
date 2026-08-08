@@ -15,9 +15,11 @@ ledger statement is a separate development.
 
 Nothing in this file proves knowledge soundness. `knowledgeError` and `knowledge_sound` are
 supplied by the endpoint that does, and the surrounding fields record what that endpoint's
-statement means. The one obligation the record adds is `witness_statement`, without which a
-contract would be satisfiable by an extractor that returns junk: a bound on "accepted but returned
-nothing" says nothing at all unless returning *something* is known to certify the statement.
+statement means. The record adds two obligations of its own. `failure_eq` is bookkeeping: it
+identifies the instance's named event with the fields' event. `witness_statement` is substantive,
+and without it a contract would be satisfiable by an extractor that returns junk: a bound on
+"accepted but returned nothing" says nothing at all unless returning *something* is known to
+certify the statement.
 
 The contract deliberately says nothing about completeness. That some run accepts, or that an
 honest prover's run extracts, is a separate property; a contract whose `Accepts` holds nowhere

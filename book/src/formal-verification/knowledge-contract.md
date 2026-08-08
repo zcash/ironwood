@@ -29,6 +29,12 @@ rather than being handed a statement to attack. The canonical verifying key and 
 instance commitment are absorbed into the transcript before the first challenge, so the adversary
 cannot choose its statement after seeing that challenge.
 
+The adversary is also
+[*algebraic*](security-models.md#the-algebraic-adversary-restriction): its output type,
+`AlgebraicWfProof`, requires every group element it emits to carry a representation over the
+basis. This is a restriction on the adversaries the bound covers, not an assumption that can be
+discharged — non-algebraic adversaries are outside the claim entirely.
+
 ### 2. When does the verifier accept?
 
 `ComputedAdaptiveActionStatementFSFamily.accepts` — halo2's checked acceptance, at the adversary's
@@ -40,10 +46,12 @@ condition, not a reformulation chosen to be convenient.
 
 `ActionTerminal.ActionBundleWitness`: for every Action in the bundle, the circuit's private
 witnesses together with proofs that they satisfy `ActionSpec` at the adversary's public inputs.
-It is `Type`-valued and executable — real data, not an existential.
+It is `Type`-valued — real data, not an existential.
 
 The extractor is a total function returning `Option`. `none` is extraction failure, and it is the
-only thing the bound is about.
+only thing the bound is about. Executability is a property of the proving layer's extractor and
+is checked where that extractor is defined; the contract record itself is `noncomputable` (its
+law is a `PMF`) and re-checks nothing.
 
 ### 4. What does a returned witness certify?
 
@@ -87,8 +95,10 @@ bridge to the ledger statement forgets the extracted witness into a proposition.
 **The assumptions.** They are the arguments of `actionKnowledgeContract`, not fields of the
 record: a nonzero generator `B`, an injective oracle-parameter query, the family-construction
 obligations, and the costed discrete-log profile. They stay in that signature deliberately, so
-that reading the contract cannot give the impression the claim is unconditional. What trusting
-each of them means is the subject of [Security Models](security-models.md).
+that reading the contract cannot give the impression the claim is unconditional. Two more are
+structural rather than arguments, carried by the adversary's *type*: the algebraic restriction
+above, and the random-oracle modelling of the challenge schedule. What trusting each of these
+means is the subject of [Security Models](security-models.md).
 
 ## Why the record is not Action-specific
 
