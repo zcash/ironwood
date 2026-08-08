@@ -6,11 +6,9 @@ idea from cryptography: that a proof system lets someone convince you of a claim
 showing you the data behind it. It assumes nothing else — not Lean, not Halo 2, and no
 background in proof systems.
 
-**What it gives you.** The claim in plain words, and — the point of the page — **what the
-result rests on that no theorem establishes, and that somebody therefore has to judge by
-other means.** Names from the development are kept out of the prose, so the page reads as
-English; the pages below carry them for a specialist who wants to check the prose against
-the source.
+**What it gives you.** The claim in plain words, and — the point of the page — **what it
+rests on that no theorem establishes, and that somebody therefore has to judge by other
+means.** Names from the development are kept out of the prose; the pages below carry them.
 
 **What it is not.** This page is not a file-by-file walkthrough of the proofs. The
 [proof map](proof-map.md) traces how the results connect, the
@@ -106,11 +104,10 @@ relation.
 The argument runs in three steps, and reading them in order shows what each one adds.
 
 **Step 1 — the acceptance test the deployed verifier runs.** Lean assembles the weighted sum
-of curve points in the same order Halo 2's Rust verifier does, and acceptance means two
-things together: the assembly succeeds, every structural check the verifier makes along the
-way passing, and the resulting sum is the identity. A first proof step rewrites that compact
-test into a longer, explicit equation, which is the same condition in the form the rest of
-the argument consumes.
+of curve points in the same order Halo 2's Rust verifier does. Acceptance means the assembly
+succeeds, every structural check made along the way passes, and the resulting sum is the
+identity. A first proof step rewrites that compact test into a longer, explicit equation —
+the same condition, in the form the rest of the argument consumes.
 
 **Step 2 — classifying one accepting proof.** Step 1 establishes that an
 equation holds. It says nothing about who knew what, so on its own it is not yet a soundness
@@ -131,15 +128,14 @@ of three things must then be true.
   challenge the verifier could have drawn, and step 3 bounds how often that happens.
 
 Nothing is re-run with different answers, and no tree of alternative conversations is built.
-The classification costs a fixed, small number of runs — the combined finder invokes the
-prover at most four times, inside the eight-fold envelope the endpoint this page quotes
-accounts for — which matters because an extractor's cost is a count of prover runs, and a
-count that grew with the size of the field would be worth nothing in practice.
+The classification invokes the prover at most four times, inside the eight-fold envelope the
+endpoint this page quotes. That matters because an extractor's cost is a count of prover
+runs, and a count that grew with the size of the field would be worth nothing in practice.
 
-The adversary is also allowed to pick its target. These are *adaptive-statement* results: it
-outputs the public inputs and the proof together, rather than being handed a statement to
-attack. The verifying key and every selected instance commitment enter the transcript before
-the first challenge, so it cannot choose the statement after seeing one.
+The adversary also picks its own target. These are *adaptive-statement* results: it outputs
+the public inputs and the proof together, rather than being handed a statement to attack. The
+verifying key and every selected instance commitment enter the transcript before the first
+challenge, so it cannot choose the statement after seeing one.
 
 Two features of what comes out are worth pausing on.
 
@@ -193,20 +189,19 @@ they fail in different ways.
 multipliers, not all zero, that cancel the fixed points to the identity, which is what
 discharges every branch where the argument computes a relation instead of a witness.
 
-There is a nuance here that is easy to read past. Lean proves the *resource arithmetic* — how
-many hash queries and how much group work the reduction costs, each against an explicit
-ceiling — but the final step, that an adversary with those resources has only a small chance
-of solving discrete log on Vesta, is supplied to the theorems as a premise rather than
-derived. That premise is where a concrete security estimate for Vesta enters, and it enters
-from outside.
+One nuance is easy to read past. Lean proves the *resource arithmetic* — how many hash
+queries and how much group work the reduction costs, each against an explicit ceiling — but
+the final step, that an adversary with those resources has only a small chance of solving
+discrete log on Vesta, is supplied as a premise rather than derived. That premise is where a
+concrete security estimate for Vesta enters, and it enters from outside.
 
 ### Two restricted-adversary heuristics
 
 The next two are **not** hardness assumptions, and reading them as though they were
-overstates the result. They do not claim that any problem is difficult, but instead replace
-the real world with a more convenient one: an idealized hash in place of a real one, or a
-handicapped attacker in place of a real one. Nothing deployed satisfies them literally; they
-are modelling choices, believed sound for protocols that were not built to exploit the gap.
+overstates the result. Rather than claiming a problem is difficult, they replace the real
+world with a more convenient one: an idealized hash in place of a real one, a handicapped
+attacker in place of a real one. Nothing deployed satisfies them literally; they are
+modelling choices, believed sound for protocols not built to exploit the gap.
 
 * **The hash behaves like a truly random function.** Challenges are derived by hashing, and
   the proof treats that hash as a source of fresh randomness with no structure an attacker
@@ -235,11 +230,11 @@ security is proved for the family of protocols that sample the list, and the dep
 protocol is argued to inherit it — no Lean theorem instantiates the endpoints at the deployed
 points.
 
-That gap carries a caveat worth stating plainly, because it is not the usual asymptotic
-hand-wave. An adversary has the protocol's *entire lifetime* to attack one specific list, and
-the cost of finding a relation is amortized over every transaction ever made against it. A
-single such computation breaks binding and knowledge soundness for the whole protocol at
-once, rather than for one transaction or one user. [Security
+The caveat that comes with that gap is not the usual asymptotic hand-wave. An adversary has
+the protocol's *entire lifetime* to attack one specific list, and the cost of finding a
+relation is amortized over every transaction ever made against it. One such computation
+breaks binding and knowledge soundness for the whole protocol at once, rather than for one
+transaction or one user. [Security
 Models](security-models.md#fixed-bases-hash-to-curve-and-the-reference-string) develops this
 at length.
 
@@ -263,23 +258,20 @@ closing it, since the hash itself would remain outside the proof
 
 ### Facts established by computation rather than by the kernel
 
-A handful of closed numeric facts — the fingerprint match described next, and CompElliptic's
-facts about the Vesta curve, including its group order — are established by compiling a
-program and running it rather than by checking the fact inside Lean's small trusted kernel.
-Each records an axiom noting that the compiler was trusted, and the
+A handful of closed numeric facts are established by compiling a program and running it,
+rather than by checking the fact inside Lean's small trusted kernel. Each records an axiom
+noting that the compiler was trusted, and the
 [trust discipline](../formal-verification.md#trust-discipline) pins every one at build time.
 
+The **fingerprint match** is the one that ties the model to the shipped code: it confirms
+that the weighted sum Lean assembles is identical to the one the Rust verifier assembles —
+for the captured proofs and circuits checked into the repository, not for the verifier in
+general. CompElliptic's facts about the Vesta curve, including its group order, are the
+others.
+
 These facts *are* rigorously established; what is not established is that they hold on the
-kernel alone. The Vesta group order, for instance, was
+kernel alone. Being closed and re-checkable, they fail loudly rather than silently: the Vesta
+group order was
 [computed in Sage](https://github.com/zcash/pasta/blob/f0f7068552a3565786cb338448cb58bc36a8314a/amicable.sage#L184)
 by an entirely different method when the Pasta curves were designed, so a Lean compiler bug
 would have to arrive at exactly the same wrong answer to slip through unnoticed.
-
-### The tie to the Rust verifier
-
-One numeric check per captured fixture connects the Lean model to the shipped code. The
-**fingerprint match** confirms that the weighted sum Lean assembles is identical to the one
-the Rust verifier assembles, for the specific captured proofs and circuits checked into the
-repository rather than for the verifier in general. Being re-checkable, it fails loudly: a
-wrong answer shows up as a disagreement with an independent recomputation rather than
-passing on faith.
