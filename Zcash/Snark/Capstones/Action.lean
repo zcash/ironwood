@@ -9,6 +9,16 @@ size. Five endpoints state them: the consensus-generic compositional error formu
 staged-certified counterpart, the instantiation at the `2^123` work-factor target, and the
 conditionally staged-certified forms at `2^123` and `2^125` adversary work.
 
+All five are stated in the generator random-oracle model, over the URS that
+`orchard_uniformURSIdentification_of_generatorRO` identifies with the uniform one.  That model is
+shared by every endpoint here rather than distinguishing between them, so it is recorded once in
+this docstring instead of in each name.
+
+Endpoint names read `orchard_action_<setting>_<qualifiers>_<property>_<form>`, where the form is
+`error_bound` for a compositional error formula and `finite_security` for its evaluation at a
+fixed work factor.  The failure event is not part of the name: it is
+`adaptiveStatementKnowledgeFailureEvent`, defined with the layer that proves the bound.
+
 Knowledge soundness is the only property advertised here.  Ordinary soundness is not stated
 separately because it is the weaker consequence at the same error:
 `ComputedAdaptiveActionStatementFSFamily.acceptFalseStatement_subset_knowledgeFailure` proves the
@@ -60,7 +70,7 @@ theorem adaptiveStatement_pairCount_lt (numProofs : ℕ)
 the public inputs and proof together; the canonical VK and every selected instance commitment are
 part of the transcript prefix before `theta`.  The knowledge-failure event uses the currently
 executable witness projection defined by `AdaptiveStatementKnowledge`. -/
-theorem orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for
+theorem orchard_action_adaptiveStatement_knowledge_error_bound
     (numProofs : ℕ) {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
     (query : AugmentedIndex actionCircuit.n → T)
@@ -129,7 +139,7 @@ Staging the computation through those nodes is manual, and nothing in Lean measu
 host term.  `CostedLabeledOracleComp.StagedGroupWorkFaithful` carries that half, as a premiss and
 a conclusion conjunct.  “Certified” names checked accounting over a hand-staged program, not an
 assumption-free theorem. -/
-theorem orchard_action_knowledgeFailure_prob_le_adaptiveStatement_certified_for
+theorem orchard_action_adaptiveStatement_certified_knowledge_error_bound
     (numProofs workLimit : ℕ) {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
     (query : AugmentedIndex actionCircuit.n → T)
@@ -198,7 +208,7 @@ random-oracle/group-work envelope and `2^-83` statistical remainder; the finder 
 extractor consult the table only inside the certified read set.  Complete adversary and reduction
 group work are explicit profile premises; the separately costed assembly/basis component fits its
 derived formula at every table. -/
-theorem orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for
+theorem orchard_action_adaptiveStatement_2pow123_knowledge_finite_security
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
@@ -272,7 +282,7 @@ theorem orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_gen
             family.adaptiveStatementKnowledgeFailureEvent (adaptiveStatement_pairCount_lt numProofs family)) ≤
         profile.advantage (2 ^ 126) (2 ^ 126) + 1 / (2 ^ 83 : ENNReal) := by
     refine le_trans
-      (orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for
+      (orchard_action_adaptiveStatement_knowledge_error_bound
         numProofs B hB query hquery family profile.toAdaptiveStatementDlogProfile) ?_
     have hsum :
         (∑ i : Fin 5,
@@ -463,7 +473,7 @@ private theorem adaptiveStatementCertifiedEndpoint
               (adaptiveStatement_pairCount_lt numProofs family)) ≤
         profile.advantage (2 ^ 124) (2 ^ 126) + 1 / (2 ^ 83 : ENNReal) := by
     refine le_trans
-      (orchard_action_knowledgeFailure_prob_le_adaptiveStatement_certified_for
+      (orchard_action_adaptiveStatement_certified_knowledge_error_bound
         numProofs workLimit B hB query hquery family certificate profile) ?_
     have hsum :
         (∑ i : Fin 5,
@@ -508,7 +518,7 @@ erases to the original algebraic adversary, and staging fidelity for both that a
 complete shallowly embedded execution remains explicit. Programmed reductions are mechanically
 composed with the exact selected path, the three direct-decode executions are derived from the
 required family cap, and the cached extractor costs at most `2^124` group operations. -/
-theorem orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow123_work_generatorRO_for
+theorem orchard_action_adaptiveStatement_certified_2pow123_knowledge_finite_security
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
@@ -559,7 +569,7 @@ adversary and complete execution programs, with mechanically composed data flow 
 a `2^126` DLOG group-work envelope when adversary work is bounded by `2^125`. The random-oracle
 budget remains independently bounded by `Q ≤ 2^123`, and direct-decode coverage is derived from
 the required family cap. -/
-theorem orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow125_work_generatorRO_for
+theorem orchard_action_adaptiveStatement_certified_2pow125_knowledge_finite_security
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
