@@ -15,7 +15,6 @@
   - [Proof Map](formal-verification/proof-map.md)
   - [Security Models](formal-verification/security-models.md)
   - [Knowledge-Soundness Contract](formal-verification/knowledge-contract.md)
-  - [Assumption Register](formal-verification/assumptions.md)
   - [Ledger Security Games](formal-verification/ledger-security-games.md)
   - [Definitions](formal-verification/definitions.md)
   - [Source Map](formal-verification/source-map.md)

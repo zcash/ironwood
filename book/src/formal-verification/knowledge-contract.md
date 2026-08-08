@@ -100,7 +100,7 @@ structural rather than arguments, carried by the adversary's *type*: the algebra
 above, and the random-oracle modelling of the challenge schedule. What trusting each of these
 means is the subject of [Security Models](security-models.md); the complete inventory, sorted by
 whether an assumption can ever be discharged, is the
-[Assumption Register](assumptions.md).
+[assumption register](theorem-guide.md#the-assumption-register).
 
 ## Why the record is not Action-specific
 
