@@ -6,11 +6,11 @@ idea from cryptography: that a proof system lets someone convince you of a claim
 showing you the data behind it. It assumes nothing else — not Lean, not Halo 2, and no
 background in proof systems.
 
-**What it gives you.** The claim in plain words, the assumptions it rests on, and — the point
-of the page — **the list of things Lean does not prove, which somebody has to check by other
-means.** Names from the development are kept out of the prose and collected in
-[one table at the end](#where-this-lives-in-lean), so the page reads as English while still
-telling a specialist where to look.
+**What it gives you.** The claim in plain words, and — the point of the page — **what the
+result rests on that no theorem establishes, and that somebody therefore has to judge by
+other means.** Names from the development are kept out of the prose, so the page reads as
+English; the pages below carry them for a specialist who wants to check the prose against
+the source.
 
 **What it is not.** This page is not a file-by-file walkthrough of the proofs. The
 [proof map](proof-map.md) traces how the results connect, the
@@ -219,7 +219,10 @@ are modelling choices, believed sound for protocols that were not built to explo
   declare, for every curve point it outputs, a recipe building that point out of points it
   was given. Real attackers owe no such explanation. This assumption is what lets the
   reduction read a relation off the adversary's own output, and it is what makes extraction
-  possible from a single accepting proof.
+  possible from a single accepting proof. Note where it sits: the restriction is part of the
+  adversary's *type* rather than a named hypothesis on any theorem, so it does not appear in
+  the statements the way the discrete-log premise does. An adversary that is not algebraic is
+  outside the claim entirely — not covered with a weaker bound.
 
 ### The fixed list of curve points
 
@@ -280,87 +283,3 @@ the Rust verifier assembles, for the specific captured proofs and circuits check
 repository rather than for the verifier in general. Being re-checkable, it fails loudly: a
 wrong answer shows up as a disagreement with an independent recomputation rather than
 passing on faith.
-
-## The assumption register
-
-This is the part of the page worth printing out: everything the result rests on, in one
-place, so a reader can count the items rather than gather them. Some are restated from
-[above](#what-you-are-trusting), so that the list is complete on its own.
-
-They are sorted into three tiers, because the tiers fail differently and only one of them can
-ever shrink. **Terminal model assumptions** are intentional and permanent — they are what a
-result of this kind is built on, not work left undone, and no future formalization discharges
-them. **Deployment bindings** identify a Lean object with a shipped artifact; each could in
-principle be closed by further work, but none is a cryptographic assumption. **Residuals** are
-genuinely incomplete work, and each carries a tracker.
-
-Compiler trust is deliberately absent from all three. It is not an assumption in this sense
-but a property of *how* certain closed facts are checked, it is enforced at build time rather
-than accepted by the reader, and it is covered
-[above](#facts-established-by-computation-rather-than-by-the-kernel).
-
-### Tier 1 — terminal model assumptions
-
-| Assumption | What fails if it is false |
-| --- | --- |
-| **Discrete-log hardness on Vesta.** No adversary within the covered resource envelope can find multipliers, not all zero, that cancel the fixed points to the identity. Note where this enters: it is not a premiss of any theorem. The theorems are generic in an advantage function and exhibit an explicit relation finder, and you supply the judgement about what that finder can achieve. | Everything. Every branch where the argument computes a relation instead of a witness stops discharging, and binding goes with it. |
-| **The adversary is algebraic.** Every curve point it outputs carries a recipe over the points it received. This is part of the adversary's *type* rather than a named hypothesis, which makes it easy to miss when reading a theorem statement. | Non-algebraic adversaries are outside the claim entirely — not covered with a worse bound. The extractor reads its witness off the recipes; with no recipe there is nothing to read. |
-| **The hash behaves like a random oracle.** Challenges, and the derivation of the public point list, are treated as fresh randomness with no exploitable structure. Blake2b is not formalized anywhere in the development. | The Fiat–Shamir step. Interactive soundness would no longer carry to the deployed non-interactive check, and the challenge budgets below would lose their meaning. |
-| **The fixed point list inherits the sampled one.** Security is proved for the family of protocols that *sample* the list; the deployed protocol *fixes* it by hashing public strings to the curve. | The transfer of every bound to the deployed system. The lifetime caveat above is the sharp form: one relation, found at leisure against one fixed list, breaks the protocol as a whole. |
-
-### Tier 2 — deployment bindings
-
-| Binding | What fails if it is false | Status |
-| --- | --- | --- |
-| **The byte layer under Fiat–Shamir.** The typed transcript schedule is modelled and checked against the captures; the encoding of those elements into bytes, the domain-separator bytes, and Blake2b itself are not. | The identification of the Lean verifier with the shipped one. The argument would still hold of the model, but would no longer be about the deployed verifier. | Tracked — [#66](https://github.com/zcash/ironwood/issues/66) |
-| **The right circuit went in.** Lean derives the verifying key itself and certifies it against the captured artifact, so the derivation is no longer assumed. What remains is identifying that capture with Orchard's deployed key, down to its byte serialization. | The result would be about a circuit that is not the deployed one. This is the input-side boundary named at the top of the page. | Key-granularity anchoring in place; serialization external |
-| **The challenge conversion.** Halo 2 draws a challenge by reducing hash output to a field element; the theorems draw one exactly uniform. The two are not definitionally equal, and the gap is carried as an explicit one-sided statistical-distance premiss rather than assumed away. | Every challenge budget shifts by the bias. The endpoints expose the transport, so a quantified bias can be substituted rather than invalidating the statement. | Explicit in the endpoint conclusion |
-| **The circuit-side layout fixtures.** The layout dumps behind the circuit comparisons came from one-off instrumentation that was never published, so unlike the verifier captures they have no regenerate-and-diff pipeline. CI pins their bytes, and the pins live in the repository they guard. | Row-level layout content below the verifying key — and the base-circuit dump, which has no capture-side anchor at all — could be wrong with no check to catch it. | Pinned plus review; regeneration from released sources is follow-up |
-
-### Tier 3 — residuals
-
-| Residual | What fails if it is false | Tracker |
-| --- | --- | --- |
-| **The circuit means what we think it means.** Lean proves that a satisfied Action circuit yields either an explicit break or a genuine ledger action, so the correspondence itself is established. What is missing is that it is established without handing back the ledger witness as reusable data, so knowledge soundness for the circuit does not yet compose into knowledge soundness for the ledger. | The output-side boundary named at the top of the page, and the largest remaining gap. | [#147](https://github.com/zcash/ironwood/issues/147) |
-| **Hash-to-curve is not adversary-queryable.** A realistic adversary can evaluate the group hash on inputs of its choice, obtaining points it holds with no recipe — so it is not algebraic over any fixed list. Each game instead fixes an enumerated list. | Games whose honest parties themselves derive points — spendability and spend authority — cannot express strategies a real adversary performs routinely. | [#188](https://github.com/zcash/ironwood/issues/188) |
-| **Hidden group work is not measurable.** The cost language charges only the operations a program writes as explicit nodes; work performed inside an unreified callback would go uncharged. That no such work exists is a named premiss carried into the endpoints, and re-exported as a conclusion conjunct. | The resource accounting, and with it the meaning of the coverage numbers. The bound would still hold, but at counts the theorem no longer certifies. | A deep embedding would discharge it, at the cost of rewriting the reduction in that syntax |
-| **Some hypotheses are still assumed inside Lean.** The direct-decode bound follows from a representation-length cap the generic development does not instantiate at a concrete deployed family. Smaller structural side conditions sit alongside it; the [definitions](definitions.md) page itemizes each with its Lean anchor. | The corresponding term of the bound, for a family exceeding the cap. | Open |
-| **The reductions are efficient.** Lean counts the concrete costs — prover runs, hash queries, group operations, and the field operations of decoding what comes back — against explicit ceilings. What it does not formalize is efficiency in the complexity-theoretic sense: "runs in polynomial time" never appears, so the step from counted costs to an efficient adversary is read off the code rather than proved. | Nothing collapses; the counts are proved. What you supply is that a straight-line count is what efficiency means here. | By inspection. The extractor used to be the worrying case, since a rewinding extractor's proven bound grew with the field size; the straight-line construction removes that |
-
-Tier 1 and tier 2 are the intended trusted base — the assumptions and identifications a
-mechanized proof is *meant* to rest on. Tier 3 is the currently open surface: the distance
-between "the extracted witness satisfies the deployed circuit's constraints over Vesta" and
-"the deployed Orchard verifier is sound for real transactions." Being able to read that
-distance off in full is the reason this page exists.
-
-## Where this lives in Lean
-
-For readers who want to check the prose against the source: everything above is described in
-English precisely so this table can carry the names. Paths are relative to `Zcash/`.
-
-| Described above as | In Lean | File |
-| --- | --- | --- |
-| The acceptance test | `DeployedAccepts` | `Snark/Soundness/Main.lean` |
-| Rewriting it into the explicit equation | `deployedAccepts_verifierEq` | `Snark/Soundness/Main.lean` |
-| The tie to the Rust verifier | `nonInteractiveFingerprint_matches_derived`, one per capture | `Snark/Fixtures/*/Boundary.lean` |
-| One witness, opening *and* satisfying | `SnarkRelation` | `Snark/Soundness/Relation/KnowledgeSoundness.lean` |
-| Gates, copy constraints, and lookups together | `circuitSatViaConstraints` | `Snark/Soundness/Relation/KnowledgeSoundness.lean` |
-| Extraction from one accepting proof | `straightLineBindingAttackZIndexedRootOrRelation` | `Snark/Soundness/AGM/StraightLineIpa.lean` |
-| Reading a relation off an algebraic adversary | `ProgrammedBasisEmbedding` | `Common/AlgebraicRelation.lean` |
-| The challenges that would hide a false identity | `szBadSet` | `Snark/Soundness/Constraint/Constraints.lean` |
-| Bounding how often such a challenge is drawn | `uniformChallenge_szBadSet` | `Snark/Soundness/Pricing/ChallengePricing.lean` |
-| The adaptive-statement game | `AdaptiveStatementModel` | `Snark/Soundness/Action/AdaptiveStatementModel.lean` |
-| The four row-level promotion budgets | `semanticEvent` | `Snark/Soundness/Action/AdaptiveStatementEvent.lean` |
-| Accepting while extraction fails | `adaptiveStatementKnowledgeFailureEvent` | `Snark/Soundness/Action/AdaptiveStatementKnowledge.lean` |
-| What extraction returns | `ActionTerminal.ActionBundleWitness` | `Snark/Soundness/Action/StraightLineTerminal.lean` |
-| The probability bound quoted above | `orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for` | `Snark/Capstones/Action.lean` |
-| Its resource accounting | `adaptiveStatementKnowledgeExtractorGroupWork`, `…RandomOracleQueries` | `Snark/Soundness/Action/AdaptiveStatementProfile.lean` |
-| Soundness as the weaker consequence | `acceptFalseStatement_subset_knowledgeFailure` | `Snark/Soundness/Action/AdaptiveStatementKnowledge.lean` |
-| The auditor-facing reading of all of it | `actionKnowledgeContract` | `Snark/Contract/Action.lean` |
-| Hidden group work, as a named premiss | `CostedLabeledOracleComp.StagedGroupWorkFaithful` | `Snark/Soundness/AGM/CostedOracle.lean` |
-| The sampled point list, and its oracle | `orchardGeneratorROBasis`, `orchardGeneratorROSetup` | `Snark/Soundness/AGM/ProbabilityVesta.lean` |
-| The challenge-conversion gap | `PMFEventBiasLE` | `Snark/Soundness/Oracle/Model.lean` |
-| The verifying key, derived and certified | `Keygen.certificate`; `vk_eq_toVerifierKey` against the capture | `Snark/Keygen/Certificate.lean`, `Snark/Fixtures/MultiAction/Honest/VkCertificate.lean` |
-| The transcript absorb order | `deriveChallenges` | `Snark/Verifier/FiatShamir.lean` |
-| The hash, as an opaque black box | the `squeeze` field of `FiatShamir` | `Snark/Verifier/FiatShamir.lean` |
-| Build-time pins on all of the above | `assert_axioms`, `assert_computable` | `TrustBoundary.lean`, `Snark/Fixtures/*/TrustBoundary.lean` |
