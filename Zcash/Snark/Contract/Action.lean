@@ -85,23 +85,4 @@ noncomputable def actionKnowledgeContract (numProofs : ℕ) {T : Type*} [Decidab
     orchard_action_adaptiveStatement_knowledge_error_bound numProofs B hB query hquery family
       profile
 
-/-- Accepting a false bundle statement is bounded by the same error the knowledge endpoint proves.
-
-The generic consequence of every contract, read back at the Action circuit: this is the ordinary
-soundness statement, and it needs no separate endpoint because it is `acceptFalseStatement_le` of
-the contract above. -/
-theorem actionKnowledgeContract_acceptFalseBundleStatement_le (numProofs : ℕ) {T : Type*}
-    [DecidableEq T] (B : VestaG) (hB : B ≠ 0)
-    (query : AugmentedIndex actionCircuit.n → T)
-    (hquery : Function.Injective query)
-    (family : ComputedAdaptiveActionStatementFSFamily (actionProofParamsFor numProofs))
-    (profile : ComputedAdaptiveActionStatementFSFamily.AdaptiveStatementDlogProfile
-      family (adaptiveStatement_pairCount_lt numProofs family) B) :
-    (independentProductPMF (orchardGeneratorROSetup query)
-        (PMF.uniformOfFintype family.Coins)).toOuterMeasure
-        {r | family.accepts (orchardGeneratorROBasis query r.1) r.2 ∧
-          ¬ BundleStatement (family.runOutput (orchardGeneratorROBasis query r.1) r.2).inputs} ≤
-      (actionKnowledgeContract numProofs B hB query hquery family profile).knowledgeError :=
-  (actionKnowledgeContract numProofs B hB query hquery family profile).acceptFalseStatement_le
-
 end Zcash.Snark.Contract
