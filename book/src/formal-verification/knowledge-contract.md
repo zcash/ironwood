@@ -98,7 +98,9 @@ obligations, and the costed discrete-log profile. They stay in that signature de
 that reading the contract cannot give the impression the claim is unconditional. Two more are
 structural rather than arguments, carried by the adversary's *type*: the algebraic restriction
 above, and the random-oracle modelling of the challenge schedule. What trusting each of these
-means is the subject of [Security Models](security-models.md).
+means is the subject of [Security Models](security-models.md); the complete inventory, sorted by
+whether an assumption can ever be discharged, is the
+[Assumption Register](assumptions.md).
 
 ## Why the record is not Action-specific
 
