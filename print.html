@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-d7ad6336.js";
+            window.path_to_searchindex_js = "searchindex-509bef4a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-4ac7af14.js"></script>
@@ -1521,6 +1521,7 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 <div class="g"><div class="g-head"><span class="term">querying adversary</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/FiatShamir/Adversary/OracleComp.lean">FiatShamir.Adversary.OracleComp</a></span></div><div class="def">An adaptive oracle-query computation with eager whole-table semantics, an explicit query bound, and a log of the points read on each execution. The straight-line reduction uses this model to price fresh-query and pinned-root events without constructing a transcript tree.</div></div>
 <div class="g"><div class="g-head"><span class="term">IPA splice</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/FiatShamir/Execution.lean">FiatShamir.Execution.spliceIpa</a></span></div><div class="def">Replacing only a proof's IPA fields while preserving the pre-IPA proof data. The adaptive AGM hand-off uses this data operation when assembling the proof returned by its algebraic adversary; it is not a rewind extractor.</div></div>
 <div class="g"><div class="g-head"><span class="term">round-by-round soundness</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/FiatShamir/Ordering.lean">FiatShamir.Ordering</a></span></div><div class="def">The transcript-ordering guarantee: each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges.</div></div>
+<div class="g"><div class="g-head"><span class="term">challenge-conversion bias</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Oracle/Challenge255.lean">Oracle.Challenge255.challenge255Bias</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Oracle/Model.lean">PMFEventBiasLE</a></span></div><div class="def">The security layer prices squeezes as exactly uniform; the deployed <code>Challenge255</code> conversion instead reduces a 64-byte digest modulo <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>. With the digest idealized as uniform, an event's probability exceeds its uniform value by at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mord">/</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">260</span></span></span></span></span></span></span></span></span></span></span></span>, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">qp</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> — the exact constant, attained by the heavy residues, stated as the <code>PMFEventBiasLE</code> premise the transport theorem and the work-factor capstone's bias conjunct consume. Idealizing Blake2b as the uniform digest stays external.</div></div>
 </section>
 <section>
 <div class="grp">Straight-line IPA extraction</div>
@@ -1641,7 +1642,11 @@ commuting a family of them past <code>∀</code> — needs explicit searches rat
 of Mathlib's <code>assert_no_sorry</code> that asserts an <em>upper bound</em> on a declaration's trusted
 base without hard-coding the pretty-printed axiom list, so the trust pins stay green across
 toolchain bumps that rename the <code>native_decide</code> axiom, and <code>assert_computable</code>, which additionally
-requires the declaration to be a plain <code>def</code>.</li>
+requires the declaration to be a plain <code>def</code>. <code>EndpointCensus</code> enforces the endpoint census a
+second time from the elaborated environment: both census commands record every pin they
+elaborate, and <code>assert_endpoint_census</code> — run by <code>Zcash/CensusCheck.lean</code>, the <code>CensusCheck</code>
+target, whose imports span every census file — fails the build on an endpoint-named declaration
+with no recorded pin, closing the surface-syntax evasions a source-text scan cannot see.</li>
 <li><strong><code>Arithmetic.lean</code></strong> — the tier's root module, and the only place in the repository that earns
 root vocabulary: <code>Fp</code> and <code>URS</code> are re-exported at <code>Zcash</code> so every module finds them by the
 enclosing-namespace walk.</li>
@@ -1778,7 +1783,11 @@ aliveness guards in <code>Negative</code> (the model assembles at the random poi
 non-accepting, and one tamper canary), and its own <code>TrustBoundary</code> census. What the four families
 jointly check is that Lean's assembled MSM equals the deployed one coefficient-for-coefficient at
 each captured proof; the two <code>Random/</code> families additionally carry the per-capture ε modules that
-price the quantified match (<code>Fingerprint/Epsilon.lean</code>, <code>Fixtures/*/Random/Epsilon.lean</code>).</p>
+price the quantified match (<code>Fingerprint/Epsilon.lean</code>, <code>Fixtures/*/Random/Epsilon.lean</code>).
+Capture lineage and seeds live in <code>Fixtures/PROVENANCE.md</code>, and <code>Fixtures/MANIFEST.tsv</code> binds
+each committed capture to its digest, generator, and invocation —
+<code>scripts/check_fixture_manifest.sh</code> verifies the binding on every CI run and rejects any
+generated-looking artifact without an entry.</p>
 <h3 id="soundness--the-soundness-argument"><a class="header" href="#soundness--the-soundness-argument"><code>Soundness/</code> — the soundness argument</a></h3>
 <p>The core argument that an accepting proof yields a witness or a computed break. The top-level
 modules cover the argument end to end: <code>Main</code> (the deployed-acceptance predicate and explicit
@@ -1804,7 +1813,10 @@ arbitrary top-level circuit using that circuit's derived verifier key and public
 inputs. <code>Action/StraightLineTerminal</code> and <code>Action/StraightLineEvent</code> connect the one-run computed
 decode to the concrete Action statement and carry a failure as explicit relation data.
 <code>Action/AdaptiveStatement*</code> is the adaptive-statement stack, the strongest Action notion: one
-online-AGM adversary returns the public inputs and proof together. <code>AdaptiveStatementModel</code>
+online-AGM adversary returns the public inputs and proof together. <code>DeploymentRecord</code> states the
+machine-readable deployment-instantiation record — one identification field per model floor
+(challenge law, basis law, key digest, typed acceptance, discrete-log advantage) — that a
+deployed interpretation of the capstones supplies. <code>AdaptiveStatementModel</code>
 defines the game and binds the verifying key and selected instance commitments before <code>theta</code>;
 <code>Accounting</code>, <code>Terminal</code>, and <code>Surfaces</code> decode arbitrary statement prefixes and price the
 root, IPA, and semantic surfaces under the single <code>(Q + 1)</code> query factor; <code>Provenance</code>,
@@ -1884,6 +1896,11 @@ shape up to that maximum. The straight-line route is
 <code>StraightLineDeployed</code> (the primary deployed path), <code>StraightLineConstraint</code>,
 <code>StraightLineDecodeSupply</code>, and the two inhabitants of its interface — <code>StraightLineWitness</code> at
 the degenerate shape and <code>ZeroStraightLine</code> with eleven live IPA rounds.
+<code>ZeroBasisAcceptance</code> proves the computation-free steps toward an accepting run of the adaptive
+knowledge machinery: representations and algebraic points vanish at the all-zero basis, MSM
+evaluation reduces to its base terms, and assembly success plus vanishing bases give
+<code>DeployedAccepts</code>; assembly success at a guard-passing oracle and the base-provenance walk
+remain open.
 <code>SemanticChallengeRemainder</code> bounds the probability loss from the bundle-wide <code>y</code>/<code>β</code>/<code>γ</code>/<code>θ</code>
 exclusions the Action-level statement needs, and <code>DirectPathCost</code> bounds the direct-coordinate
 postprocessing's field
@@ -1903,6 +1920,12 @@ adaptive adversary model (<code>OracleComp</code>), the Fiat–Shamir-to-AGM han
 oracle-domain reduction to finite support (<code>DomainReduction</code>), and the adaptive interface and
 pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). These components use the bounded
 querying-adversary model to price straight-line pinned-root events.</li>
+<li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>Model</code> models squeezes as a
+reprogrammable random function with the exactly uniform challenge law and the <code>PMFEventBiasLE</code>
+transport interface; <code>Challenge255</code> prices the deployed conversion against that ideal — a
+uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
+<code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premise the work-factor capstone's
+bias conjunct consumes, with Blake2b's idealization as the uniform digest remaining external.</li>
 <li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> supplies the coefficient and
 Vandermonde primitives; <code>Opened</code> defines the augmented opened-batch and member-decode interfaces
 populated by explicit AGM representations; and <code>Deployed</code> proves that halo2's <code>x₄</code> fold has the
@@ -1928,7 +1951,8 @@ proves them: the captured straight-line knowledge errors in
 <code>Fixtures/MultiAction/Honest/StraightLineKnowledgeError</code>, and the consensus-maximum work factors in
 <code>Soundness/AGM/StraightLineOrchardConsensusBounds</code>. Every endpoint, wherever it sits, is a
 top-level leaf that nothing else depends on, which is why each must be named directly in a
-<code>TrustBoundary.lean</code> census entry — see <code>scripts/check_endpoint_census.sh</code>.</p>
+<code>TrustBoundary.lean</code> census entry — see <code>scripts/check_endpoint_census.sh</code>, enforced a second
+time from the elaborated environment by the <code>CensusCheck</code> target (<code>Zcash/Meta/EndpointCensus.lean</code>).</p>
 <h2 id="circuit-layer--zcashcircuits"><a class="header" href="#circuit-layer--zcashcircuits">Circuit layer — <code>Zcash/Circuits/</code></a></h2>
 <p>A port of the Orchard Action circuit onto <a href="https://github.com/Verified-zkEVM/clean">Clean</a>'s
 Halo 2 formalization, with elliptic-curve arithmetic from
