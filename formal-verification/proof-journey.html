@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-509bef4a.js";
+            window.path_to_searchindex_js = "../searchindex-cdaef831.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-4ac7af14.js"></script>
+        <script src="../toc-1303814c.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,20 +178,21 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
-<p>Follow the verifier-soundness argument in logical order, with the stacked and parallel PR provenance
-attached to the stage where each mechanized layer enters.</p>
+<p>Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
+layer attached to the stage where it enters. Every anchor below is pinned at the current <code>main</code>, so
+the stages describe the tree as it stands rather than the stack that built it.</p>
 <style>
 .proofjourney-shell {
   position: relative;
   left: 50%;
-  width: min(1360px, calc(100vw - var(--sidebar-width, 300px) - 5rem));
+  width: min(1160px, calc(100vw - var(--sidebar-width, 300px) - 5rem));
   transform: translateX(-50%);
   margin: 0.6rem 0;
 }
 .proofjourney-shell iframe {
   display: block;
   width: 100%;
-  height: 1080px;
+  height: 920px;
   border: 1px solid rgba(128,140,170,.35);
   border-radius: 8px;
 }
@@ -215,7 +216,7 @@ attached to the stage where each mechanized layer enters.</p>
   new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   window.addEventListener('message', function (event) {
     if (event.source !== f.contentWindow || !event.data || !event.data.iwjourneyHeight) return;
-    f.style.height = Math.max(820, event.data.iwjourneyHeight + 2) + 'px';
+    f.style.height = Math.max(700, event.data.iwjourneyHeight + 2) + 'px';
   });
 })();
 </script>

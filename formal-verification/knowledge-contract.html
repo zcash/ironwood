@@ -1,0 +1,330 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Knowledge-Soundness Contract - The Ironwood Book</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-ce77753d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "rust";
+            window.path_to_searchindex_js = "../searchindex-cdaef831.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-1303814c.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The Ironwood Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="the-knowledge-soundness-contract"><a class="header" href="#the-knowledge-soundness-contract">The Knowledge-Soundness Contract</a></h1>
+<p>The Action circuit's knowledge-soundness result is one theorem,
+<code>orchard_action_adaptiveStatement_knowledge_error_bound</code>. Reading it tells you a probability is
+bounded — not <em>what</em> is bounded, what a successful extraction hands back, or what that thing
+certifies. Those live in the layers that prove it.</p>
+<p><code>Zcash/Snark/Contract/</code> gathers them: <code>KnowledgeContract</code> is a record with one field per question
+an auditor must answer, and <code>actionKnowledgeContract</code> is its instance for the deployed circuit.
+The layer proves nothing new — it re-exports the definitions the theorem is stated in and applies
+the theorem itself unchanged, which is why its census pin carries exactly the endpoint's axiom
+footprint. The one substantive demand the record makes of an instance is the <code>witness_statement</code>
+field, discussed below. This page reads the instance in order.</p>
+<h2 id="the-six-questions"><a class="header" href="#the-six-questions">The six questions</a></h2>
+<h3 id="1-what-is-a-run"><a class="header" href="#1-what-is-a-run">1. What is a run?</a></h3>
+<p>A generator random-oracle table and one Fiat–Shamir transcript, drawn independently. The URS
+basis is <em>read from</em> the table by <code>orchardGeneratorROBasis</code>, modelling halo2's parameter
+derivation (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">0∥</span><span class="mord mathnormal">i</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">2</span><span class="mclose">)</span></span></span></span>) — a
+<a href="security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">modelling assumption</a>,
+not a theorem.</p>
+<p>The adversary is <em>adaptive in the statement</em>: it outputs the public inputs and the proof
+together, and both the canonical verifying key and every selected instance commitment enter the
+transcript before the first challenge, so the statement cannot be chosen after seeing it. The
+adversary is also <a href="security-models.html#the-algebraic-adversary-restriction"><em>algebraic</em></a>: its
+output type requires every emitted group element to carry a representation over the basis. That
+is a restriction on which adversaries the bound covers at all, not an assumption that can be
+discharged.</p>
+<h3 id="2-when-does-the-verifier-accept"><a class="header" href="#2-when-does-the-verifier-accept">2. When does the verifier accept?</a></h3>
+<p><code>ComputedAdaptiveActionStatementFSFamily.accepts</code>: halo2's checked acceptance at the adversary's
+own selected inputs and proof, over the URS read from the oracle table. This is
+<code>DeployedAccepts</code>, the verifier's entire check collapsed into one multiscalar multiplication —
+acceptance means the assembly succeeds and that MSM evaluates to zero. It is the deployed
+verifier's own condition, not a reformulation chosen to be convenient.</p>
+<h3 id="3-what-does-extraction-return"><a class="header" href="#3-what-does-extraction-return">3. What does extraction return?</a></h3>
+<p>An <code>ActionTerminal.ActionBundleWitness</code>: the private witnesses of every Action in the bundle,
+packaged with proofs that they satisfy <code>ActionSpec</code> at the public inputs the adversary selected.
+It lives in <code>Type</code> — data a program can hold and inspect, not a proposition that a witness exists
+somewhere. The extractor is a total function; returning <code>none</code> is what extraction failure means,
+and that failure is the only event the bound is about.</p>
+<p>("Executable" describes the extractor where the proving layer defines and checks it. The
+contract record is <code>noncomputable</code> — its law is a <code>PMF</code>, which Lean cannot run — and neither
+adds nor needs a computability check of its own.)</p>
+<h3 id="4-what-does-a-returned-witness-certify"><a class="header" href="#4-what-does-a-returned-witness-certify">4. What does a returned witness certify?</a></h3>
+<p><code>BundleStatement</code>: every Action in the bundle satisfies the circuit's statement at the public
+inputs the adversary selected. This field carries the weight — a bound on "accepted but
+extraction returned nothing" is worthless if extraction may return junk. <code>witness_statement</code>
+forecloses that: a returned witness <em>entails</em> the statement, and stating it as a field means no
+instance can quietly omit it.</p>
+<h3 id="5-what-is-the-failure-event"><a class="header" href="#5-what-is-the-failure-event">5. What is the failure event?</a></h3>
+<p>Accepted, yet extraction returned nothing. Both conjuncts matter: a rejected run is not a
+failure, and neither is an accepted run that yielded a witness.</p>
+<h3 id="6-what-is-the-error"><a class="header" href="#6-what-is-the-error">6. What is the error?</a></h3>
+<p>The endpoint's compositional formula: the adversary's
+<a href="definitions.html#adv-dlog">discrete-log advantage</a> at its query and group-work counts, plus
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span></span></span></span>, plus a per-query term collecting the Schwartz–Zippel budgets of each challenge
+surface. At the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> work-factor target it lands on
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span>, whose two arguments are the
+random-oracle query count and the group-operation count.</p>
+<h2 id="what-the-contract-does-not-say"><a class="header" href="#what-the-contract-does-not-say">What the contract does not say</a></h2>
+<p><strong>Completeness is not implied.</strong> That some run accepts, or that an honest prover's proof
+extracts, is a separate property. Nothing here rules out the vacuous case: a contract whose
+acceptance predicate holds nowhere satisfies every field. Read the contract as a bound on the
+adversary, never as evidence that the circuit works.</p>
+<p><strong>Ordinary soundness is not advertised separately — because it is free.</strong> On a false statement
+the extractor must have returned <code>none</code>, since a returned witness would have entailed it. So
+<code>acceptFalseStatement_le</code> gives the soundness bound at the same error for every contract, and no
+separate endpoint is advertised for it.</p>
+<p><strong>The ledger security capstones do not follow from it.</strong> The contract ends at
+<code>ActionBundleWitness</code>. The formal continuation begins, per Action, at
+<code>Zcash.Security.Ledger.Bridge.actionSpec_to_ledger</code>, which consumes the public input, private
+witness, and <code>ActionSpec</code> proof — and returns an <code>ActionBreak</code> or an existentially witnessed
+ledger statement in <code>Prop</code>, not an executable ledger witness. The
+<a href="ledger-security-games.html">ledger security capstones</a> build on that handoff, and they <em>depend on</em>
+knowledge soundness rather than settle for less: they are stated in the witness-level model, over
+ledger actions that already carry witnesses, and extraction is what supplies those for a merely
+proof-carrying bundle. What this contract does not do is discharge that step for the deployed
+circuit — the witness-level model abstracts Halo 2 knowledge soundness away, and relating the two
+is a separate reduction on the different Halo 2 bases.</p>
+<p><strong>The assumptions are not fields of the record.</strong> They are the arguments of
+<code>actionKnowledgeContract</code>: a nonzero generator, an injective oracle-parameter query, the
+family-construction obligations, and the generic <code>AdaptiveStatementDlogProfile</code>, whose
+<code>proverGroupWork</code> and <code>reductionGroupWork</code> are caller-supplied labels with <code>finderAdvantageLE</code>
+the corresponding DLOG advantage bound. (The operationally accounted route is separate:
+<code>AdaptiveStatementAdversaryCostCertificate</code> and <code>CertifiedAdaptiveStatementDlogProfile</code> feed
+<code>orchard_action_adaptiveStatement_certified_knowledge_error_bound</code>.) Two more conditions are
+structural, carried by the adversary's <em>type</em>: the algebraic restriction above and the
+random-oracle modelling of the challenge schedule. What trusting each of these means is the
+subject of <a href="security-models.html">Security Models</a>.</p>
+<h2 id="why-the-record-is-not-action-specific"><a class="header" href="#why-the-record-is-not-action-specific">Why the record is not Action-specific</a></h2>
+<p><code>KnowledgeContract</code> is stated for any circuit. Action is its only instance because it is the
+only circuit carrying an advertised capstone — the other circuits are components composed into
+its specification. And the shape already recurs: the
+<a href="ledger-security-games.html">ledger security games</a> pair a break event, a containment showing the
+event covers the property, and a bound — the same three moves as <code>failure</code>, <code>witness_statement</code>,
+and <code>knowledge_sound</code>. Keeping the record generic is what stops the second circuit's contract
+from becoming a second bespoke tree.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../formal-verification/security-models.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../formal-verification/ledger-security-games.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../formal-verification/security-models.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../formal-verification/ledger-security-games.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-9576a2db.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid-eefea253.min.js"></script>
+        <script src="../mermaid-init-d0d5e6a7.js"></script>
+        <script src="../todo-e74d2c27.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

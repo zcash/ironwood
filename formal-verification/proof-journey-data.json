@@ -1,122 +1,164 @@
 {
-  "version": 1,
-  "defaultSource": "proofStack",
+  "version": 2,
+  "defaultSource": "main",
   "sources": {
-    "proofStack": {
-      "label": "PR #31 stack head",
-      "ref": "91735cd092a8b09956cd31878d71c5b0d056aa94",
-      "fetch": "pull/31/head"
-    },
-    "agmStack": {
-      "label": "PR #28 code head",
-      "ref": "c78e4f2704a14408149b5bdf52d71aab95cf2fc4",
-      "fetch": "pull/28/head"
-    },
-    "fsStack": {
-      "label": "PR #56 FS-to-AGM handoff",
-      "ref": "e628e19d59ffc4fceca3ff83130c7a9fbf142326",
-      "fetch": "pull/56/head"
-    },
-    "decodeStack": {
-      "label": "PR #30 decode head",
-      "ref": "d2a01b30c4475827e8a2620dea6cfb876561c716",
-      "fetch": "pull/30/head"
-    },
-    "runtimeAgmStack": {
-      "label": "PR #114 runtime AGM head",
-      "ref": "9675704b8a953cb7e8a0c33b420fd1818342fe0c",
-      "fetch": "pull/114/head"
-    },
-    "adaptiveStatementStack": {
-      "label": "PR #167 executable adaptive-statement head",
-      "ref": "9170e8c8b781adfdff94711a1509d1f063bbe712",
-      "fetch": "pull/167/head"
+    "main": {
+      "label": "main",
+      "ref": "c4b597698fe1e778d3f94fe3e529013903a1fa72",
+      "fetch": "main"
     }
   },
+  "endpoints": [
+    "orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for",
+    "orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow123_work_generatorRO_for",
+    "orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow125_work_generatorRO_for",
+    "orchard_action_knowledgeFailure_prob_le_adaptiveStatement_certified_for",
+    "orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for",
+    "orchard_deployed_straightline_captured_direct_generatorRO_knowledge_error_bound",
+    "orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound",
+    "orchard_deployed_straightline_captured_knowledge_error_bound",
+    "orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_security"
+  ],
   "prs": {
-    "21": {
-      "label": "PR #21",
-      "title": "Permutation and lookup structural soundness",
-      "url": "https://github.com/zcash/ironwood/pull/21",
-      "sha": "aecfc1c",
-      "lane": "merged"
-    },
     "20": {
       "label": "PR #20",
       "title": "Binding reduction",
       "url": "https://github.com/zcash/ironwood/pull/20",
-      "sha": "c76ff1b",
-      "lane": "stack"
+      "sha": "e5778ad",
+      "lane": "merged"
+    },
+    "21": {
+      "label": "PR #21",
+      "title": "Permutation and lookup structural soundness",
+      "url": "https://github.com/zcash/ironwood/pull/21",
+      "sha": "91ffae1",
+      "lane": "merged"
     },
     "24": {
       "label": "PR #24",
-      "title": "Fiat-Shamir forking and round soundness",
+      "title": "Fiat-Shamir under a random oracle and round-by-round soundness",
       "url": "https://github.com/zcash/ironwood/pull/24",
-      "sha": "f7dfb8b",
-      "lane": "stack"
+      "sha": "79fb62d",
+      "lane": "merged"
+    },
+    "27": {
+      "label": "PR #27",
+      "title": "Multi-action fixture support",
+      "url": "https://github.com/zcash/ironwood/pull/27",
+      "sha": "3196f49",
+      "lane": "merged"
     },
     "28": {
       "label": "PR #28",
       "title": "AGM binding reduction",
       "url": "https://github.com/zcash/ironwood/pull/28",
       "sha": "c78e4f2",
-      "lane": "stack"
+      "lane": "merged"
     },
     "30": {
       "label": "PR #30",
       "title": "Bind the IPA witness to verifier columns",
       "url": "https://github.com/zcash/ironwood/pull/30",
-      "sha": "d2a01b3",
-      "lane": "stack"
-    },
-    "31": {
-      "label": "PR #31",
-      "title": "Schwartz-Zippel good challenges",
-      "url": "https://github.com/zcash/ironwood/pull/31",
-      "sha": "91735cd",
-      "lane": "stack"
+      "sha": "b74c022",
+      "lane": "merged"
     },
     "56": {
       "label": "PR #56",
       "title": "Fully adaptive Fiat-Shamir adversary",
       "url": "https://github.com/zcash/ironwood/pull/56",
-      "sha": "456c386",
-      "lane": "stack"
+      "sha": "e628e19",
+      "lane": "merged"
+    },
+    "96": {
+      "label": "PR #96",
+      "title": "Wire the top-level deployed constraint-soundness capstone",
+      "url": "https://github.com/zcash/ironwood/pull/96",
+      "sha": "a4822c4",
+      "lane": "merged"
+    },
+    "99": {
+      "label": "PR #99",
+      "title": "Integrate circuit soundness with the verifier soundness stack",
+      "url": "https://github.com/zcash/ironwood/pull/99",
+      "sha": "2d292ef",
+      "lane": "merged"
     },
     "114": {
       "label": "PR #114",
       "title": "Primary straight-line AGM and runtime bounds",
       "url": "https://github.com/zcash/ironwood/pull/114",
-      "sha": "cbbcb0d",
-      "lane": "stack"
+      "sha": "6a8c2fb",
+      "lane": "merged"
+    },
+    "139": {
+      "label": "PR #139",
+      "title": "All-prefixes probabilistic capstones and Orchard bounds",
+      "url": "https://github.com/zcash/ironwood/pull/139",
+      "sha": "1b499e5",
+      "lane": "merged"
+    },
+    "142": {
+      "label": "PR #142",
+      "title": "Retire the recursive extractor and special soundness",
+      "url": "https://github.com/zcash/ironwood/pull/142",
+      "sha": "28f3ac4",
+      "lane": "merged"
+    },
+    "151": {
+      "label": "PR #151",
+      "title": "Remove the legacy soundness paths",
+      "url": "https://github.com/zcash/ironwood/pull/151",
+      "sha": "6107088",
+      "lane": "merged"
+    },
+    "162": {
+      "label": "PR #162",
+      "title": "Strengthen evidence of deployed and model verifier equivalence",
+      "url": "https://github.com/zcash/ironwood/pull/162",
+      "sha": "7b2356c",
+      "lane": "merged"
+    },
+    "165": {
+      "label": "PR #165",
+      "title": "Reorganize the SNARK modules",
+      "url": "https://github.com/zcash/ironwood/pull/165",
+      "sha": "899a9fd",
+      "lane": "merged"
     },
     "167": {
       "label": "PR #167",
-      "title": "chore(fv): stronger adaptive notion",
+      "title": "Strengthen the adaptive soundness notion",
       "url": "https://github.com/zcash/ironwood/pull/167",
-      "sha": "26a1e02",
-      "lane": "stack"
+      "sha": "4191bb7",
+      "lane": "merged"
     },
-    "27": {
-      "label": "PR #27",
-      "title": "Multi-action fixture support",
-      "url": "https://github.com/zcash/ironwood/pull/27",
-      "sha": "2575fe0",
-      "lane": "parallel"
+    "173": {
+      "label": "PR #173",
+      "title": "Make the Action circuit opaque",
+      "url": "https://github.com/zcash/ironwood/pull/173",
+      "sha": "6b7ef38",
+      "lane": "merged"
+    },
+    "185": {
+      "label": "PR #185",
+      "title": "Review fixes and the staged-certified endpoints",
+      "url": "https://github.com/zcash/ironwood/pull/185",
+      "sha": "263d64d",
+      "lane": "merged"
     }
   },
-  "description": "The logical route from the deployed verifier to the formal soundness endpoint.",
+  "description": "The logical route from the deployed verifier to the formal soundness endpoint, as it stands on main.",
   "stages": [
     {
       "id": "faithfulness",
       "chapter": "Faithfulness",
       "title": "Pin Lean to the deployed verifier",
-      "claim": "The Lean assembler and a captured Rust verifier MSM agree coefficient-for-coefficient on the checked fixture.",
-      "summary": "The proof starts by fixing the object under study: the verifier's final multi-scalar multiplication. MsmMatch transfers a checked coefficient match to equality of group evaluations, but the deployed evidence remains fixture-based rather than a universal Rust-to-Lean equivalence.",
+      "claim": "The Lean assembler and a captured Rust verifier MSM agree coefficient-for-coefficient, at a verifying key Lean derives rather than assumes.",
+      "summary": "The proof starts by fixing the object under study: the verifier's final multi-scalar multiplication. msmMatch_eval transfers a checked coefficient match to equality of group evaluations, and the statements of record now spell the verifying key as its end-to-end derivation from the ported configure/keygen rather than as the dumped record. The deployed evidence is still per-capture rather than a universal Rust-to-Lean equivalence, but the quantified random-evaluation match prices what a competing coefficient family would cost.",
       "nodes": [
         "assemble",
         "fingerprint",
-        "vkfaith"
+        "vkderiv"
       ],
       "theorems": [
         {
@@ -128,20 +170,38 @@
           "path": "Zcash/Snark/Fingerprint/Match.lean"
         },
         {
-          "symbol": "fingerprint_matches",
-          "path": "Zcash/Snark/Fingerprint/Fixture.lean"
+          "symbol": "nonInteractiveFingerprint_matches_derived",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/Boundary.lean"
+        },
+        {
+          "symbol": "certificate",
+          "path": "Zcash/Snark/Keygen/Certificate.lean"
+        },
+        {
+          "symbol": "vk_eq_toVerifierKey",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/VkCertificate.lean"
+        },
+        {
+          "symbol": "instance_commitments_derived",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/Fixture.lean"
+        },
+        {
+          "symbol": "competing_coefficient_family_agreement_le",
+          "path": "Zcash/Snark/Fingerprint/Epsilon.lean"
         }
       ],
       "prs": [
-        "27"
+        "27",
+        "162"
       ],
       "proves": [
-        "The checked Lean and captured Rust MSM coefficients match.",
-        "A matching MSM has the same group evaluation under any supplied URS."
+        "The checked Lean and captured Rust MSM coefficients match, at the Lean-derived verifying key and the Lean-derived challenge schedule.",
+        "A matching MSM has the same group evaluation under any supplied URS.",
+        "A competing coefficient family that differs from Lean's anywhere agrees at a uniform point with probability at most (D + B)/p, D bounding the competing family's degree and B the summed degrees of the verifying key's denominator factors."
       ],
       "residuals": [
-        "Rust capture provenance and opaque-tag to Vesta-point faithfulness.",
-        "Deriving the deployed verifying key and circuit description inside Lean."
+        "Rust capture provenance: the captured MSM, proof bytes, and oracle transcript are taken as faithful records of a deployed run.",
+        "Identifying the ported configure/synthesize with the deployed Rust circuit — the derivation is now in Lean, but its agreement with the shipped circuit is not."
       ],
       "durationMs": 9000
     },
@@ -149,12 +209,12 @@
       "id": "accept-equation",
       "chapter": "Verifier",
       "title": "Turn acceptance into the IPA equation",
-      "claim": "An accepting assembled MSM yields halo2's explicit IPA verifier equation.",
-      "summary": "DeployedAccepts is the concrete MSM-equals-identity premiss. deployedAccepts_verifierEq unfolds that compact check into the equation consumed by the soundness argument while retaining the verifier's rejection guards.",
+      "claim": "An accepting assembled MSM yields halo2's explicit IPA verifier equation, with the generator term in closed fold form.",
+      "summary": "DeployedAccepts is the concrete MSM-equals-identity premiss on the rejecting assemble?. deployedAccepts_verifierEq unfolds that compact check into the explicit equation, and deployed_gterm_foldAll rewrites its g-term as the closed-form generator fold the straight-line extractor reads. No forked-transcript compatibility lane is exported any more.",
       "nodes": [
-        "assemble",
         "accept",
-        "verifierEq"
+        "verifierEq",
+        "gfold"
       ],
       "theorems": [
         {
@@ -164,329 +224,167 @@
         {
           "symbol": "deployedAccepts_verifierEq",
           "path": "Zcash/Snark/Soundness/Main.lean"
-        }
-      ],
-      "prs": [
-        "20"
-      ],
-      "proves": [
-        "The compact deployed accept implies the explicit verifier equation.",
-        "The soundness development now reasons about the equation actually assembled by the verifier."
-      ],
-      "residuals": [
-        "The empirical verifier-fingerprint boundary from the preceding stage.",
-        "Fiat-Shamir challenges still need an oracle/rewinding interpretation."
-      ],
-      "durationMs": 8000
-    },
-    {
-      "id": "forking",
-      "chapter": "Fiat-Shamir",
-      "title": "Rewind the oracle and assemble a tree",
-      "claim": "Enough accepting reprogrammed runs produce three distinct nonzero accepting continuations at every IPA round.",
-      "summary": "Transcript-ordering lemmas seal each round prefix before its challenge. The verifier equation becomes a concrete prover-strategy predicate, the counting forking lemma produces the branching executions, and deployed_forking_tree assembles them into the transcript tree used by special soundness.",
-      "nodes": [
-        "verifierEq",
-        "proverStrategy",
-        "ordering",
-        "rewind",
-        "hprob",
-        "forking",
-        "treeAssembly",
-        "blake2b"
-      ],
-      "theorems": [
-        {
-          "symbol": "deployedVerifierEq_iff_flatAccept",
-          "path": "Zcash/Snark/Soundness/Forking/Rewind.lean"
         },
         {
-          "symbol": "roundPoint_mem_roundTranscript",
-          "path": "Zcash/Snark/Soundness/Forking/Ordering.lean"
+          "symbol": "deployed_verification_eq",
+          "path": "Zcash/Snark/Soundness/Deployed/Verification.lean"
         },
         {
-          "symbol": "extractable_of_prob",
-          "path": "Zcash/Snark/Soundness/Forking/Probability.lean"
-        },
-        {
-          "symbol": "deployed_forking_tree",
-          "path": "Zcash/Snark/Soundness/Forking/Extractor.lean"
-        }
-      ],
-      "prs": [
-        "24"
-      ],
-      "proves": [
-        "Round messages precede the challenges they must not influence.",
-        "The probability threshold yields the full accepting tree required by extraction."
-      ],
-      "residuals": [
-        "Blake2b and challenge decoding are idealized as a uniform random oracle.",
-        "This #24 tree theorem is a consumer; the computed adversary, query-loss, and certificate producer are composed in the AGM stage."
-      ],
-      "durationMs": 10000
-    },
-    {
-      "id": "peel",
-      "chapter": "Binding reduction",
-      "title": "Peel the auxiliary generators",
-      "claim": "The deployed tree reduces to either a clean g-only IPA tree or a nontrivial relation over (g, U, W).",
-      "summary": "The deployed equation carries the U and W terms used for values and blinding. deployed_to_acceptV removes them when z is nonzero. Failure to separate them is exposed explicitly as the relation branch rather than hidden behind a binding axiom.",
-      "nodes": [
-        "treeAssembly",
-        "deployedTree",
-        "peel",
-        "clean",
-        "relation",
-        "structural"
-      ],
-      "theorems": [
-        {
-          "symbol": "deployed_to_acceptV",
-          "path": "Zcash/Snark/Soundness/Deployed/IpaPeel.lean"
-        },
-        {
-          "symbol": "relation_of_foldGens",
-          "path": "Zcash/Snark/Soundness/Deployed/IpaPeel.lean"
-        }
-      ],
-      "prs": [
-        "20"
-      ],
-      "proves": [
-        "The auxiliary-generator terms are removed on the clean branch.",
-        "Binding failure is retained as an explicit relation on the deployed augmented basis."
-      ],
-      "residuals": [
-        "The legacy propositional capstones retain z != 0 and other rung-specific structural premisses.",
-        "The relation branch needs a computational reduction, not a propositional impossibility claim."
-      ],
-      "durationMs": 8500
-    },
-    {
-      "id": "ipa-opening",
-      "chapter": "Special soundness",
-      "title": "Extract the IPA opening",
-      "claim": "A clean ternary transcript tree determines one witness that opens the commitment at the claimed inner product.",
-      "summary": "ipa_soundV applies three-special-soundness recursively. Distinct nonzero challenges make the Vandermonde reconstruction invertible, producing one coefficient vector shared by the commitment and value equations.",
-      "nodes": [
-        "clean",
-        "ipa_soundV",
-        "IpaRelation"
-      ],
-      "theorems": [
-        {
-          "symbol": "IpaAcceptV",
-          "path": "Zcash/Snark/Soundness/Ipa/Soundness.lean"
-        },
-        {
-          "symbol": "ipa_soundV",
-          "path": "Zcash/Snark/Soundness/Ipa/Soundness.lean"
+          "symbol": "deployed_gterm_foldAll",
+          "path": "Zcash/Snark/Soundness/Deployed/Fold.lean"
         }
       ],
       "prs": [
         "20",
-        "24"
+        "151"
       ],
       "proves": [
-        "The extracted vector commits to the verifier's pinned commitment.",
-        "The same vector has the extracted inner product value."
+        "The compact deployed accept implies the explicit verifier equation, with the verifier's rejection guards retained.",
+        "The deployed g-scalars fold exactly as the extractor's generator fold, so the equation is read at the extractor's own basis."
       ],
       "residuals": [
-        "ipa_soundV consumes a completed tree; the deployed FS path constructs that tree in the AGM stage.",
-        "The alternative relation branch remains computationally meaningful."
+        "The empirical verifier-fingerprint boundary from the preceding stage.",
+        "Fiat-Shamir challenges still need a random-oracle interpretation before any probability is spent."
       ],
       "durationMs": 8000
     },
     {
-      "id": "agm",
-      "chapter": "AGM to discrete log",
-      "title": "Price the relation branch",
-      "claim": "For represented online algebraic adversaries, with Fiat–Shamir challenges modelled as a random oracle, every explicit relation is reduced to discrete log with separately accounted oracle-query, Vesta group-work, and statistical terms.",
-      "summary": "The programmed-basis reduction plants the challenge in every basis slot and loses only one 1/|F| hyperplane. The adaptive-statement route erases its cost instrumentation back to the original game and reuses one cached execution for relation finding and witness extraction. Its quoted powers are resource coverage for a probability bound, not a universal security ceiling. The earlier recursive finder remains visible only in the pinned historical stages; #142 removed it from the live reduction stack.",
+      "id": "oracle",
+      "chapter": "Fiat-Shamir",
+      "title": "Model the transcript and bound the adversary",
+      "claim": "The deployed squeeze schedule seals each challenge behind its own prefix, and a Q-query adversary's losses are an additive union of pinned root events.",
+      "summary": "Transcript-ordering lemmas seal each round prefix before its challenge, so every root set the argument prices is fixed before its squeeze. The adversary is a bounded-query adaptive query tree with eager whole-table semantics, and assembly provenance shows every point the multiopen MSM appends comes from the proof or the verifying key. Nothing here rewinds: the pinned-squeeze bounds replace the forking lemma the earlier development used.",
       "nodes": [
-        "relation",
-        "fsAdversary",
-        "straightAdapter",
-        "directCost",
-        "securityBound",
-        "recursiveExtractor",
-        "algCert",
-        "algInstance",
-        "algRel",
-        "adapter",
-        "dlrep",
-        "missesSlot",
-        "dlbound",
-        "agm_dl",
-        "DLhard",
-        "h2cRO",
-        "actionTerminal"
+        "roModel",
+        "qAdversary",
+        "ordering",
+        "pinnedSqueeze",
+        "provenance",
+        "blake2b"
       ],
       "theorems": [
         {
-          "symbol": "recursiveAlgebraicFork",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Recursive.lean",
-          "source": "fsStack"
+          "symbol": "uniformChallenge",
+          "path": "Zcash/Snark/Soundness/Oracle/Model.lean"
         },
         {
-          "symbol": "recursiveForkFailure_measure_le",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Recursive.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "toDForkCert",
-          "path": "Zcash/Snark/Soundness/AGM/Prover.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "DeployedAlgebraicForkingInstance",
-          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "deployedAlgebraicRelationFinder",
-          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "deployedAlgebraicForkingRelation",
-          "path": "Zcash/Snark/Soundness/AGM/Capstone.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "programmedExtractOrMiss",
-          "path": "Zcash/Snark/Soundness/AGM/Adapter.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "orchard_deployed_relation_set_eq_relSet",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "orchard_deployed_relation_prob_eq_of_uniformURS",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "orchard_uniformURSIdentification_of_generatorRO",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "orchard_deployed_relation_prob_le_of_generatorRO_textbookDL",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
-          "source": "agmStack"
-        },
-        {
-          "symbol": "AlgebraicWfProof",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "algebraicForkCertAttempt_valid",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "computedDeployedAlgebraicInstance",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "binding_prob_le_of_textbookDL",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "binding_prob_le_of_generatorRO_textbookDL",
-          "path": "Zcash/Snark/Soundness/Forking/Adversary/Algebraic.lean",
-          "source": "fsStack"
-        },
-        {
-          "symbol": "relationWithCoins_prob_le_of_truncated_textbookDL",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityCoins.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "def ofCovered",
-          "path": "Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "orchard_deployed_knowledge_error_captured_straightLine_direct_generatorRO",
-          "path": "Zcash/Snark/Fixtures/MultiAction/StraightLineKnowledgeError.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "straightLine_consensus_2pow123_workFactor_generatorRO",
-          "path": "Zcash/Snark/Fixtures/StraightLineMaxShapeBounds.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "StraightLineDirectDlogProfile.solverCost_le",
-          "path": "Zcash/Snark/Soundness/AGM/StraightLineFiniteSecurity.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for",
-          "path": "Zcash/Snark/Capstones/Action.lean",
-          "source": "adaptiveStatementStack"
-        },
-        {
-          "symbol": "adaptiveStatementKnowledgeExtractor",
-          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean",
-          "source": "adaptiveStatementStack"
-        },
-        {
-          "symbol": "actionKnowledgeExtractor",
-          "path": "Zcash/Circuits/Integration/StraightLineActionTerminal.lean",
-          "source": "runtimeAgmStack"
-        },
-        {
-          "symbol": "actionKnowledgeFailure_prob_le_of_base_union_bound",
-          "path": "Zcash/Circuits/Integration/StraightLineActionEvent.lean",
-          "source": "runtimeAgmStack"
+          "symbol": "PMFEventBiasLE",
+          "path": "Zcash/Snark/Soundness/Oracle/Model.lean"
         },
         {
           "symbol": "event_measure_le_of_bias",
-          "path": "Zcash/Snark/Soundness/Forking/Oracle.lean",
-          "source": "runtimeAgmStack"
+          "path": "Zcash/Snark/Soundness/Oracle/Model.lean"
         },
         {
-          "symbol": "cachedExecution_log_length_le",
-          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProvenance.lean",
-          "source": "adaptiveStatementStack"
+          "symbol": "roundPoint_mem_roundTranscript",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Ordering.lean"
         },
         {
-          "symbol": "adaptiveStatementDlogRandomOracleQueries_le_knowledgeExtractor",
-          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProfile.lean",
-          "source": "adaptiveStatementStack"
+          "symbol": "deriveChallenges_x_eq",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Ordering.lean"
         },
         {
-          "symbol": "AdaptiveStatementDirectDlogProfile.knowledgeExtractorCost_le",
-          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProfile.lean",
-          "source": "adaptiveStatementStack"
+          "symbol": "xEscAtPoint_measure_le",
+          "path": "Zcash/Snark/Soundness/FiatShamir/PinnedSqueeze.lean"
+        },
+        {
+          "symbol": "OracleComp",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Adversary/OracleComp.lean"
+        },
+        {
+          "symbol": "AssemblyPoint",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Adversary/Provenance.lean"
         }
       ],
       "prs": [
-        "28",
+        "24",
         "56",
-        "114",
-        "167"
+        "142"
       ],
       "proves": [
-        "Every group point in the adaptive Fiat-Shamir adversary's proof output carries its representation over (g,U,W).",
-        "The pinned historical stack records how the retired recursive extractor computed an AlgebraicDForkCert; the live reduction no longer imports that route.",
-        "Every binding mismatch yields explicit relation data, and the programmed-basis conversion loses only one 1/|F| miss hyperplane.",
-        "The adaptive-statement finder and witness extractor reuse one adversary output, annotation log, and challenge vectors; the cached finder is pointwise equal to the original finder and extraction succeeds on exactly the same oracle tables.",
-        "The Action knowledge extractors are executable and return the actual private witnesses for every proof in the bundle together with proofs that they satisfy the compiled Action specification; both the adaptive-statement and straight-line/sequential relation projections share their route's data-bearing outcome.",
-        "The resource model keeps random-oracle queries, Vesta group operations, and direct-coordinate work separate. The DLOG advantage term is the conclusion of the programmed-basis reduction; the theorem does not take a DLOG-hardness proposition as a premiss.",
-        "For every Action count at or below Orchard's consensus maximum, the conditionally staged-certified adaptive-statement endpoints bound verifier acceptance with failed executable witness extraction by <code>Adv_DLOG(2^124,2^126) + 2^-83</code>. They cover represented online-AGM adversaries with random-oracle challenge derivation. At the separate <code>Q ≤ 2^123</code> oracle parameter, both <code>2^123</code> and <code>2^125</code> adversary group-work budgets are covered; the latter's adversary-plus-reduction group work is at most <code>2^126</code>. One closed program constructs the charged basis, specializes the exact adversary path with its annotations and group nodes, builds a proof-carrying cache, and feeds that same cache through reified verifier postprocessing. Lean proves its counter decomposition. Because the embedding is shallow, staging fidelity remains explicit for both the supplied adversary and generic host callbacks in the complete program. The three-decode bound follows from a required family representation-length invariant, not a concrete deployment family constructed here; the executable read-set bound also remains separate from the DLOG group budget."
+        "Round messages precede the challenges they must not influence, so each priced root set is pinned before its own squeeze.",
+        "A Q-query adversary's escape probability at one squeeze is bounded per point, and the events compose as an additive union rather than a joint coupling.",
+        "Ideal-oracle bounds transport to the deployed challenge conversion through an explicit statistical-distance premiss (PMFEventBiasLE)."
       ],
       "residuals": [
-        "Identify Blake2b and halo2's concrete hash-to-curve with their modeled random oracles, relate a concrete implementation to the costed algebraic program, choose a concrete interpretation of the resulting finite-resource Vesta DLOG advantage, and identify the extracted circuit witnesses with the ledger-level Orchard witness relation. The theorem covers represented online-AGM adversaries, not arbitrary non-algebraic random-oracle adversaries."
+        "Blake2b and challenge decoding are idealized as a uniform random oracle; transcript injectivity is assumed.",
+        "The bound is over the modeled oracle table, not over the deployed hash's actual outputs."
+      ],
+      "durationMs": 9500
+    },
+    {
+      "id": "straight-line",
+      "chapter": "Straight-line extraction",
+      "title": "Classify one accepting execution",
+      "claim": "One accepting algebraic transcript is a clean IPA opening, an explicit relation over (g, U, W), or a squeeze-pinned bad-challenge event — with no rewinding.",
+      "summary": "The represented execution carries a coefficient vector for every group point the prover emits. straightLineIpaZeroOrRelation returns zero symbolic IPA coordinates or concrete relation data; on a false accepted opening, straightLineBindingAttackZRootOrRelation refines the zero case to a pinned round-root event or a relation. Away from the priced roots, deployedAlgebraicDecode_of_good_roots retains the run's exact AGM batches and value equations. separateOrRelationWitness is the coordinate-comparison kernel. PR #142 removed the recursive extractor, transcript tree, and three-special-soundness: nothing here re-runs the adversary.",
+      "nodes": [
+        "fsAdversary",
+        "peel",
+        "clean",
+        "relation",
+        "slRoots",
+        "IpaRelation"
+      ],
+      "theorems": [
+        {
+          "symbol": "AlgebraicWfProof",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Adversary/Algebraic.lean"
+        },
+        {
+          "symbol": "ComputedAlgebraicFSFamily",
+          "path": "Zcash/Snark/Soundness/FiatShamir/Adversary/Algebraic.lean"
+        },
+        {
+          "symbol": "straightLineIpaZeroOrRelation",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineIpa.lean"
+        },
+        {
+          "symbol": "straightLineBindingAttackZRootOrRelation",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineIpa.lean"
+        },
+        {
+          "symbol": "StraightLineIpaOnlineTrace",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLinePinnedRoots.lean"
+        },
+        {
+          "symbol": "StraightLineIpaSqueezeInvariance",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLinePinnedRoots.lean"
+        },
+        {
+          "symbol": "separateOrRelationWitness",
+          "path": "Zcash/Snark/Soundness/AGM/Peel.lean"
+        },
+        {
+          "symbol": "IpaRelation",
+          "path": "Zcash/Snark/Soundness/Ipa/InnerProduct.lean"
+        },
+        {
+          "symbol": "commit_aMulti_eq_multiopen",
+          "path": "Zcash/Snark/Soundness/Composition/Bridge.lean"
+        },
+        {
+          "symbol": "deployedAlgebraicDecode_of_good_roots",
+          "path": "Zcash/Snark/Soundness/AGM/DeployedRootDecode.lean"
+        },
+        {
+          "symbol": "DeployedAlgebraicDecode.ipaRelation",
+          "path": "Zcash/Snark/Soundness/AGM/DeployedConstraintSupply.lean"
+        }
+      ],
+      "prs": [
+        "20",
+        "114",
+        "142"
+      ],
+      "proves": [
+        "Every group point in the adversary's proof output carries its representation over the sampled augmented basis (g, U, W).",
+        "One accepting execution yields either the opening of the de-blinded commitment or explicit relation coefficients — never a merely existential claim.",
+        "The bad-challenge branch is a root event pinned before its squeeze, derived from the run's own query chronology rather than from the final proof value."
+      ],
+      "residuals": [
+        "The representations are ghost extractor data: the result covers represented online-AGM adversaries, not arbitrary non-algebraic ones.",
+        "The relation branch is only a break under a computational assumption; the reduction to plain DL is priced two stages on."
       ],
       "durationMs": 10000
     },
@@ -494,16 +392,13 @@
       "id": "multiopen",
       "chapter": "Multiopen",
       "title": "Recover the verifier's opened columns",
-      "claim": "Rewinding x4 recovers the point-set aggregates; rewinding x1 binds those aggregates to the queried member commitments.",
-      "summary": "The x4 rewind floor produces a transfer from the pinned IPA opening to the power-batched openings consumed by the Vandermonde decode. The x1 layer then exposes the individual advice, instance, fixed, permutation, lookup, and vanishing commitments inside each aggregate.",
+      "claim": "The x4 collapse is a flat power batch, and Vandermonde inversion decodes it componentwise down to the individual queried member commitments.",
+      "summary": "deployedCommitment_x4_batch and multiopenValue_x4_batch show that the deployed grouping has the flat power shape used by the retained AGM decode. DeployedAlgebraicDecode.toOpenedBatch presents that one-run data at injective extractor-side pinnedPoints, openedColumnDecode recovers the retained x4 columns, and toMemberDecode unbatches each point-set aggregate at x1. The added interpolation points are arithmetic, not oracle answers or rewinds.",
       "nodes": [
-        "ordering",
-        "IpaRelation",
         "x4batch",
-        "x4floor",
+        "openedBatch",
         "decode",
-        "member_binding",
-        "hprob"
+        "member_binding"
       ],
       "theorems": [
         {
@@ -511,53 +406,68 @@
           "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
         },
         {
-          "symbol": "deployedMultiopenRewind_of_x4Prob",
+          "symbol": "multiopenValue_x4_batch",
           "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
         },
         {
-          "symbol": "MultiopenRewindForRelation",
-          "path": "Zcash/Snark/Soundness/Multiopen/Decode.lean"
+          "symbol": "DeployedAlgebraicDecode",
+          "path": "Zcash/Snark/Soundness/AGM/DeployedRootDecode.lean"
         },
         {
-          "symbol": "decodedColumnFamily_of_batch_openings",
-          "path": "Zcash/Snark/Soundness/Multiopen/Decode.lean"
+          "symbol": "DeployedAlgebraicDecode.toOpenedBatch",
+          "path": "Zcash/Snark/Soundness/AGM/DecodeToOpened.lean"
         },
         {
-          "symbol": "deployed_witness_member_binding",
-          "path": "Zcash/Snark/Soundness/Multiopen/Deployed.lean"
+          "symbol": "OpenedBatchOpenings",
+          "path": "Zcash/Snark/Soundness/Multiopen/Opened.lean"
         },
         {
-          "symbol": "deployed_member_node_binding",
-          "path": "Zcash/Snark/Soundness/Multiopen/NodeBinding.lean",
-          "source": "decodeStack"
+          "symbol": "openedColumnDecode",
+          "path": "Zcash/Snark/Soundness/Multiopen/Opened.lean"
         },
         {
-          "symbol": "deployed_member_budget",
-          "path": "Zcash/Snark/Soundness/Multiopen/BudgetedExtraction.lean",
-          "source": "decodeStack"
+          "symbol": "vandermonde_decode_map",
+          "path": "Zcash/Snark/Soundness/Multiopen/Opened.lean"
+        },
+        {
+          "symbol": "OpenedMemberDecode",
+          "path": "Zcash/Snark/Soundness/Multiopen/Opened.lean"
+        },
+        {
+          "symbol": "DeployedAlgebraicDecode.toMemberDecode",
+          "path": "Zcash/Snark/Soundness/AGM/DecodeToOpened.lean"
+        },
+        {
+          "symbol": "DeployedAlgebraicDecode.memberBinding",
+          "path": "Zcash/Snark/Soundness/AGM/DecodeToOpened.lean"
+        },
+        {
+          "symbol": "DeployedRootDecodeWitness",
+          "path": "Zcash/Snark/Soundness/Composition/DeployedRootContainment.lean"
         }
       ],
       "prs": [
-        "30"
+        "30",
+        "114"
       ],
       "proves": [
-        "The x4 decode yields the deployed point-set aggregates, not modeled stand-ins.",
-        "The x1 unbatch pins the extracted witness to the actual queried member commitments."
+        "The x4 decode consumes the deployed grouping's own aggregates, not modeled stand-ins.",
+        "The x1 unbatch pins the extracted witness to the actual queried member commitments, as an explicit two-level power combination.",
+        "The constraint layer reuses the run's own retained coordinates rather than choosing a fresh existential decode."
       ],
       "residuals": [
-        "The x4 accept-measure premiss and an accepting current run remain explicit.",
-        "Per-point claimed evaluations and x-to-x3 quotient transport remain in hquot."
+        "The decode avoids explicit root sets; those exclusions are priced with the challenge surfaces rather than assumed away.",
+        "Per-point claimed evaluations and the x-to-x3 quotient transport stay with the fingerprint half."
       ],
-      "durationMs": 10000
+      "durationMs": 9500
     },
     {
       "id": "constraints",
       "chapter": "Constraints",
       "title": "Lift the point check to circuit satisfaction",
-      "claim": "Outside the Schwartz-Zippel bad set, the quotient point check implies the full combined gate identity.",
-      "summary": "The bad-set theorem bounds roots of the constraint-difference polynomial. The xgood capstones spend an accept-measure budget to select a good accepting challenge, removing hgood while keeping the actual quotient-check content in hquot.",
+      "claim": "Outside the Schwartz-Zippel bad set, the quotient point check implies the full combined gate, permutation, and lookup identity.",
+      "summary": "quotientCheck_sound bounds the roots of the constraint-difference polynomial, and the good challenge is derived from challenge uniformity rather than assumed: an accept event whose measure beats the budget contains an accepting challenge outside the bad set. The deployed fold includes gate, permutation, and lookup values. The resulting circuitSatViaConstraints is the compressed identity; ConstraintRelations recovers copy equalities and lookup inclusion only with the separately priced y, beta, gamma, and theta exclusions and the structural routing hypotheses.",
       "nodes": [
-        "decode",
         "szBadSet",
         "goodChallenge",
         "hgood",
@@ -568,146 +478,375 @@
       "theorems": [
         {
           "symbol": "szBadSet_card_le",
-          "path": "Zcash/Snark/Soundness/Constraints/Vanishing.lean"
+          "path": "Zcash/Snark/Soundness/Constraint/Constraints.lean"
         },
         {
-          "symbol": "exists_accepting_good_challenge_quotient",
-          "path": "Zcash/Snark/Soundness/GoodChallenge.lean"
+          "symbol": "quotientCheck_sound",
+          "path": "Zcash/Snark/Soundness/Constraint/Constraints.lean"
         },
         {
-          "symbol": "circuitSatViaGates_of_check",
-          "path": "Zcash/Snark/Soundness/KnowledgeSoundness.lean"
+          "symbol": "circuitSatViaConstraints",
+          "path": "Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean"
+        },
+        {
+          "symbol": "uniformChallenge_szBadSet",
+          "path": "Zcash/Snark/Soundness/Pricing/GoodChallenge.lean"
+        },
+        {
+          "symbol": "exists_accepting_good_challenge",
+          "path": "Zcash/Snark/Soundness/Pricing/GoodChallenge.lean"
+        },
+        {
+          "symbol": "uniformChallenge_szBadSet_iUnion_le",
+          "path": "Zcash/Snark/Soundness/Pricing/ChallengePricing.lean"
+        },
+        {
+          "symbol": "DeployedConstraintXSqueezeSchedule",
+          "path": "Zcash/Snark/Soundness/Composition/DeployedConstraintContainment.lean"
+        },
+        {
+          "symbol": "acceptedModel_circuitSat_or_relation",
+          "path": "Zcash/Snark/Soundness/Canonical/Terminal.lean"
+        },
+        {
+          "symbol": "declared_equalities_of_circuitSat",
+          "path": "Zcash/Snark/Soundness/Relation/ConstraintRelations.lean"
+        },
+        {
+          "symbol": "lookup_relation_of_circuitSat",
+          "path": "Zcash/Snark/Soundness/Relation/ConstraintRelations.lean"
         }
       ],
       "prs": [
-        "31",
-        "21"
+        "21",
+        "96",
+        "139"
       ],
       "proves": [
-        "A good challenge turns the verifier's point identity into the full gate polynomial identity.",
-        "The xgood family derives bad-set avoidance from an explicit probability budget."
+        "A good challenge turns the verifier's point identity into the full constraint polynomial identity.",
+        "Bad-set avoidance comes from an explicit probability budget, and the x-squeeze exclusion's pinning half is derived from the run's own query log.",
+        "With the separately priced challenge exclusions and structural routing hypotheses, the compressed deployed identity yields gate satisfaction, the permutation argument's copy constraints, and the lookup argument's inclusion."
       ],
       "residuals": [
-        "hquot still carries the fingerprint-to-gate-check and x-to-x3 transport content.",
-        "Permutation/lookup grand-product telescoping and final lookup assembly are not wired into this relation."
+        "hquot's fingerprint-to-gate-check and x-to-x3 transport content lives with the hfold discharge lemmas and hgood; the legacy rungs that assumed the quotient check outright were removed.",
+        "The grand-product telescoping and final lookup assembly are proven as structural results but their Schwartz-Zippel bridge is priced, not free."
       ],
       "durationMs": 9500
     },
     {
+      "id": "agm",
+      "chapter": "AGM to discrete log",
+      "title": "Price the relation branch",
+      "claim": "Every computed relation over (g, U, W) becomes either a plain discrete-log solution or one 1/|F| miss hyperplane.",
+      "summary": "The programmed-basis adapter plants the DL challenge in every basis slot as x·B + y·C with fresh pairs (Jaeger-Tessaro Lemma 3), rather than guessing which slot the relation will hit, so the loss is additive with no multiplicative factor. A nonzero challenge component yields the discrete log; a miss retains the exact relation with a proof that it annihilates the programming. The sampled-basis distribution equality is proven inside a uniform generator random-oracle model.",
+      "nodes": [
+        "algRel",
+        "adapter",
+        "dlrep",
+        "missesSlot",
+        "dlbound",
+        "DLhard",
+        "h2cRO"
+      ],
+      "theorems": [
+        {
+          "symbol": "NontrivialRelation.ofCombinationCollision",
+          "path": "Zcash/Common/DiscreteLogRelation.lean"
+        },
+        {
+          "symbol": "AlgebraicRelationWitness",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "AugmentedRelationWitness.toAlgebraicRelationWitness",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "ProgrammedBasisEmbedding",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "programmedExtractOrMiss",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "discreteLogOfChallenge_of_relation",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "DiscreteLogWitness",
+          "path": "Zcash/Common/AlgebraicRelation.lean"
+        },
+        {
+          "symbol": "TextbookDLAdvantageLE",
+          "path": "Zcash/Common/RelationProbability.lean"
+        },
+        {
+          "symbol": "relationWithCoins_prob_le_of_textbookDL",
+          "path": "Zcash/Common/RelationProbabilityCoins.lean"
+        },
+        {
+          "symbol": "orchardGeneratorROSetup",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean"
+        },
+        {
+          "symbol": "orchard_uniformURSIdentification_of_generatorRO",
+          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean"
+        }
+      ],
+      "prs": [
+        "28",
+        "114"
+      ],
+      "proves": [
+        "A combined (g, U, W) equation whose coordinates disagree computes relation coefficients as data, not as an existential.",
+        "The programmed-basis conversion loses exactly one 1/|F| miss hyperplane per relation, with no augmented-basis cardinality factor.",
+        "Inside the generator random-oracle model, the reduction's sampled basis has the same distribution as the deployed setup.",
+        "The resource model keeps random-oracle queries, Vesta group operations, and direct-coordinate work separate. The DLOG advantage term is the conclusion of the programmed-basis reduction; the theorem does not take a DLOG-hardness proposition as a premiss."
+      ],
+      "residuals": [
+        "Choosing a concrete interpretation of the resulting finite-resource Vesta DLOG advantage is an out-of-Lean modelling step; Lean constructs the reduction and proves its resource coverage, but computes no numerical advantage.",
+        "Identifying halo2's concrete hash-to-curve generator derivation with the uniform generator oracle is an out-of-Lean idealization, separate from the transcript random oracle."
+      ],
+      "durationMs": 10000
+    },
+    {
+      "id": "adaptive",
+      "chapter": "Adaptive statement",
+      "title": "Let the adversary choose the statement",
+      "claim": "One online-AGM adversary returns the public inputs and proof together, and an executable extractor returns the private witnesses for every proof in the bundle or explicit relation coefficients.",
+      "summary": "The adaptive-statement game reconstructs the verifier transcript from the basis-dependent VK representation and the instance commitments derived from the adversary's own output, binding the selected instance prefix before theta. Its instance, pre-IPA, IPA, semantic, and source comparisons all consume one retained execution. The deployed AGM family is the fixed-statement sibling: both terminate in a data-bearing outcome, so neither existential relation availability nor a merely propositional statement branch counts as extracted knowledge.",
+      "nodes": [
+        "adaptive",
+        "retained",
+        "knowExtract",
+        "actionTerminal",
+        "straightAdapter",
+        "directCost"
+      ],
+      "theorems": [
+        {
+          "symbol": "ComputedStraightLineDeployedFSFamily",
+          "path": "Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean"
+        },
+        {
+          "symbol": "ofCovered",
+          "path": "Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean"
+        },
+        {
+          "symbol": "straightLineDeployedRelationFinder",
+          "path": "Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean"
+        },
+        {
+          "symbol": "straightLineRootFailure",
+          "path": "Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean"
+        },
+        {
+          "symbol": "AdaptiveActionStatementOutput",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementModel.lean"
+        },
+        {
+          "symbol": "cachedExecution_log_length_le",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProvenance.lean"
+        },
+        {
+          "symbol": "adaptiveStatementKnowledgeExtractor",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean"
+        },
+        {
+          "symbol": "adaptiveStatementKnowledgeFailure_prob_le",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean"
+        },
+        {
+          "symbol": "actionKnowledgeExtractor",
+          "path": "Zcash/Snark/Soundness/Action/StraightLineTerminal.lean"
+        },
+        {
+          "symbol": "ActionBundleWitness",
+          "path": "Zcash/Snark/Soundness/Action/StraightLineTerminal.lean"
+        },
+        {
+          "symbol": "topLevelWitnesses_or_relation_of_circuitSat",
+          "path": "Zcash/Snark/Soundness/Circuit/Terminal.lean"
+        },
+        {
+          "symbol": "straightLineDirectDecodeOps_le",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineFiniteSecurity.lean"
+        },
+        {
+          "symbol": "StraightLineDirectDlogProfile.solverCost_le",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineFiniteSecurity.lean"
+        },
+        {
+          "symbol": "AdaptiveStatementDirectDlogProfile.knowledgeExtractorCost_le",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProfile.lean"
+        },
+        {
+          "symbol": "adaptiveStatementDlogRandomOracleQueries_le_knowledgeExtractor",
+          "path": "Zcash/Snark/Soundness/Action/AdaptiveStatementProfile.lean"
+        }
+      ],
+      "prs": [
+        "99",
+        "114",
+        "167",
+        "173"
+      ],
+      "proves": [
+        "The adversary selects the public statement and the proof together, with the canonical verifying key and every selected instance commitment in the transcript prefix before theta.",
+        "The knowledge extractors are executable and return the actual private witnesses for every proof in the bundle, together with proofs that they satisfy the compiled Action specification.",
+        "The direct profiles separately account for random-oracle, group, and direct-coordinate work; the straight-line finder has a pointwise four-invocation bound, so no expectation or Markov tail enters the accounting."
+      ],
+      "residuals": [
+        "The transcript representation of the verifying key is opaque: the game does not claim cross-key binding, which would need collision resistance of the concrete key hash.",
+        "Adversary PPT time and the concrete DLOG hardness bound remain external."
+      ],
+      "durationMs": 10500
+    },
+    {
       "id": "compose",
       "chapter": "Capstones",
-      "title": "Compose legacy opening and circuit satisfaction",
-      "claim": "Given the accepting rewind data and structural premisses named by a legacy Vesta rung, Lean constructs one SnarkRelation joining the extracted IPA opening to circuit satisfaction for the same witness.",
-      "summary": "These are conditional extraction theorems over explicit transcript trees or accepting rewinds, not finite-resource guarantees for an executable adversary. They cover the abstract, deployed, adaptive, xgood, and x4 variants without assigning a numerical query or work envelope. The live represented-adversary probability guarantees and their coverage parameters are stated separately in the AGM stage.",
+      "title": "Package the relation and close the endpoint budgets",
+      "claim": "The retained decode packages an IPA opening and constraint identity as SnarkRelation, while the nine advertised endpoints separately bound executable witness-extraction failure at explicit resource ceilings.",
+      "summary": "SnarkRelation is retained inside DeployedConstraintWitness as the opening and compressed constraint identity for one aggregate, but the current Action endpoints do not consume that structure. Their terminal projects the same retained decode, proves the stronger Action semantics, and returns ActionBundleWitness data; their probability theorems bound failure of that executable projection through the computed relation finder. The advertised leaves are five adaptive-statement Action bounds, three captured straight-line knowledge errors, and one consensus-maximum finite-security package. At Q <= 2^123, the staged-certified endpoints cover both 2^123 and 2^125 adversary group-work budgets by Adv_DLOG(2^124, 2^126) + 2^-83.",
       "nodes": [
-        "IpaRelation",
-        "circuitSat",
         "SnarkRelation",
         "capstones",
-        "structural",
-        "hprob",
-        "hquot",
-        "hgood"
+        "securityBound",
+        "slCapstone",
+        "structural"
       ],
       "theorems": [
         {
           "symbol": "SnarkRelation",
-          "path": "Zcash/Snark/Soundness/KnowledgeSoundness.lean"
+          "path": "Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean"
         },
         {
-          "symbol": "orchard_verifier_vesta_forking_constraint_adaptive_rewind_xgood",
-          "path": "Zcash/Snark/Soundness/Vesta.lean"
+          "symbol": "snarkRelation_constraints",
+          "path": "Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean"
         },
         {
-          "symbol": "snarkExtraction_prob_le_of_generatorRO_textbookDL_decomposed",
-          "path": "Zcash/Snark/Soundness/Composition/Decomposition.lean",
-          "source": "decodeStack"
+          "symbol": "DeployedConstraintWitness",
+          "path": "Zcash/Snark/Soundness/AGM/DeployedConstraintSupply.lean"
         },
         {
-          "symbol": "honestCompletenessSupply_or_relation",
-          "path": "Zcash/Snark/Soundness/Composition/Completeness.lean",
-          "source": "decodeStack"
+          "symbol": "orchard_action_knowledgeFailure_prob_le_adaptiveStatement_for",
+          "path": "Zcash/Snark/Capstones/Action.lean"
         },
         {
-          "symbol": "AdaptiveWeight.measure_le",
-          "path": "Zcash/Snark/Soundness/Forking/AdaptiveCoupling.lean",
-          "source": "decodeStack"
+          "symbol": "orchard_action_knowledgeFailure_adaptiveStatement_2pow123_workFactor_generatorRO_for",
+          "path": "Zcash/Snark/Capstones/Action.lean"
+        },
+        {
+          "symbol": "orchard_action_knowledgeFailure_prob_le_adaptiveStatement_certified_for",
+          "path": "Zcash/Snark/Capstones/Action.lean"
+        },
+        {
+          "symbol": "orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow123_work_generatorRO_for",
+          "path": "Zcash/Snark/Capstones/Action.lean"
+        },
+        {
+          "symbol": "orchard_action_knowledgeFailure_adaptiveStatement_certified_2pow125_work_generatorRO_for",
+          "path": "Zcash/Snark/Capstones/Action.lean"
+        },
+        {
+          "symbol": "orchard_deployed_straightline_captured_knowledge_error_bound",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/StraightLineKnowledgeError.lean"
+        },
+        {
+          "symbol": "orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/StraightLineKnowledgeError.lean"
+        },
+        {
+          "symbol": "orchard_deployed_straightline_captured_direct_generatorRO_knowledge_error_bound",
+          "path": "Zcash/Snark/Fixtures/MultiAction/Honest/StraightLineKnowledgeError.lean"
+        },
+        {
+          "symbol": "orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_security",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineOrchardConsensusBounds.lean"
+        },
+        {
+          "symbol": "straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineFiniteSecurity.lean"
         }
       ],
       "prs": [
-        "20",
-        "24",
-        "28",
-        "30",
-        "31"
+        "139",
+        "151",
+        "165",
+        "167",
+        "185"
       ],
       "proves": [
-        "The legacy opening and constraint branches refer to the same pinned verifier statement.",
-        "Each legacy rung exposes the accepting execution data and structural conditions it requires."
+        "The retained constraint witness packages its opening and compressed identity as SnarkRelation for the same aggregate; this is a side payload, not the Action capstones' consumer boundary.",
+        "The Action endpoints instead consume the executable ActionBundleWitness projection and the computed relation finder over that same retained run.",
+        "Every advertised endpoint is a top-level leaf named directly in a TrustBoundary census entry, so its own trusted base is checked rather than inherited.",
+        "The 2^-83 term is an independent statistical soundness error, and the endpoint requires no externally supplied traces, cuts, or views."
       ],
       "residuals": [
-        "These rungs do not by themselves model or resource-bound an executable adversary; different variants retain different structural and probability premisses.",
-        "SnarkRelation is not yet the intended high-level Ironwood security statement."
+        "The endpoints keep named structural premisses: B != 0 for the DLOG challenge point and injectivity of the basis query map, plus the static-check and x-squeeze-schedule interfaces on the straight-line rungs.",
+        "The recorded work factors are accounting scales the reduction was evaluated at, not proven end-to-end security levels."
       ],
-      "durationMs": 9500
+      "durationMs": 10000
     },
     {
       "id": "boundary",
       "chapter": "Trust boundary",
       "title": "Stop at the exact formal boundary",
-      "claim": "The formal chain reaches executable Action witnesses or explicit relation data and states every remaining model boundary as a premiss or documented interpretation step.",
-      "summary": "The strongest adaptive capstones cover represented online algebraic adversaries in the random-oracle model at explicit query and group-work parameters. Exact reduction data flow and counter composition are derived. The shallow cost language leaves explicit fidelity obligations for the supplied adversary and for generic host callbacks in the complete program; the direct-decode derivation depends on a required family length invariant. Legacy rewind rungs remain conditional on supplied accepting trees. Neither route identifies concrete hashes, the captured verifier artifact, or the compiled circuit witness with the ledger-level Orchard relation inside Lean.",
+      "claim": "The chain reaches executable witness extraction with explicit reduction disjunctions; it does not erase the remaining modeling and composition gaps.",
+      "summary": "The final view keeps hypotheses and out-of-Lean assumptions visible. The output-side floor has moved one step: Security.Ledger.Bridge.actionSpec_to_ledger now refines the Action circuit's postcondition to the games-facing ledger statement, so what is missing is the composition of the extracted bundle witness with that bridge, not the bridge itself. This is the honest endpoint: a large mechanized core with named inputs, probability budgets, and computational assumptions rather than an all-green claim.",
       "nodes": [
         "capstones",
         "structural",
-        "hprob",
         "hquot",
         "hgood",
-        "algRel",
-        "dlbound",
         "DLhard",
         "blake2b",
         "h2cRO",
-        "hlrel",
-        "vkfaith"
+        "ledgerComposition",
+        "deploymentProvenance"
       ],
       "theorems": [
         {
-          "symbol": "orchard_deployed_relation_prob_le_of_generatorRO_textbookDL",
-          "path": "Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean",
-          "source": "agmStack"
+          "symbol": "actionSpec_to_ledger",
+          "path": "Zcash/Security/Ledger/Bridge.lean"
         },
         {
-          "symbol": "blinder_value_recovery_badSet",
-          "path": "Zcash/Snark/Soundness/Vesta.lean"
+          "symbol": "ActionSatisfied",
+          "path": "Zcash/Security/Ledger/Statement.lean"
         },
         {
-          "symbol": "orchard_verifier_vesta_member_constraint_budgeted_hfold_derived",
-          "path": "Zcash/Snark/Soundness/VestaBudget.lean",
-          "source": "decodeStack"
+          "symbol": "actionCircuit_spec_iff",
+          "path": "Zcash/Circuits/Action/TopLevel.lean"
         },
         {
-          "symbol": "snarkExtractionFailureEventDeployed_measure_le",
-          "path": "Zcash/Snark/Soundness/Composition/Completeness.lean",
-          "source": "decodeStack"
+          "symbol": "BundleStatement",
+          "path": "Zcash/Circuits/Action/TopLevel.lean"
+        },
+        {
+          "symbol": "PMFEventBiasLE",
+          "path": "Zcash/Snark/Soundness/Oracle/Model.lean"
+        },
+        {
+          "symbol": "StraightLineDirectDlogProfile",
+          "path": "Zcash/Snark/Soundness/AGM/StraightLineFiniteSecurity.lean"
         }
       ],
       "prs": [
-        "20",
-        "24",
-        "28",
-        "30",
-        "31",
-        "27",
-        "21"
+        "142",
+        "151",
+        "165",
+        "167",
+        "173"
       ],
       "proves": [
-        "Every mechanized bridge shown in the map has a concrete Lean anchor.",
+        "Every mechanized bridge shown in the map has a concrete Lean anchor on main.",
         "The endpoint records reduction outcomes and residual premisses without hiding them."
       ],
       "residuals": [
-        "High-level relation, VK derivation, Rust-capture trust, Blake2b-as-RO, generator hash-to-curve-as-RO, the AGM idealization, and a concrete interpretation of the finite-resource DLOG advantage.",
-        "The adaptive group-work result remains conditional on external adversary fidelity and on no hidden Vesta work in generic host callbacks of the complete shallow program. Exact reduction composition is derived; direct-decode coverage follows once the family supplies its required representation-length invariant. The legacy rewind capstones still require their named execution and probability premisses."
+        "Composing the extracted ActionBundleWitness with the ledger bridge; Blake2b-as-RO, generator hash-to-curve-as-RO, the online-AGM idealization, a concrete interpretation of the finite-resource DLOG advantage, and Rust-capture provenance.",
+        "Adversary running time, implementation work bounds, and the combined error budget across the whole protocol stack.",
+        "Because the cost language is a shallow embedding, the staged-certified group-work results keep explicit fidelity obligations for the supplied adversary and for generic host callbacks in the complete program; the three-decode bound follows only once the family supplies its required representation-length invariant."
       ],
       "durationMs": 11000
     }

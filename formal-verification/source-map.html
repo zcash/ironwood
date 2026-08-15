@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-509bef4a.js";
+            window.path_to_searchindex_js = "../searchindex-cdaef831.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-4ac7af14.js"></script>
+        <script src="../toc-1303814c.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -517,15 +517,20 @@ AGM unbatching chain; and <code>ConstraintResolver</code>, <code>CanonicalSelect
 semantic handoff to the formal circuit.</li>
 </ul>
 <h3 id="capstones--the-advertised-endpoints"><a class="header" href="#capstones--the-advertised-endpoints"><code>Capstones/</code> — the advertised endpoints</a></h3>
-<p>Where the deployed Action circuit's own statements are stated. <code>ActionEvents</code> carries the shape
-identification the rest of the chain is stated over, <code>ActionChecks</code> carries the captured key's
-scalars and static checks, <code>ActionBudgets</code> discharges the semantic surfaces, and <code>Action</code> states
-the endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in
-compositional error-formula form, in resource-accounted finite-security form at the <code>2^123</code> work
-factor, and in the staged-certified forms carrying their group-work accounting at <code>2^123</code> and
-<code>2^125</code> adversary work. Knowledge soundness is the only property advertised: it implies the
-plain-soundness statement, so that is not stated separately. Legacy fixed-statement
-endpoints and their events are retired.</p>
+<p>Where the deployed Action circuit's own statements are stated. <code>Action.lean</code> states the
+endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
+error-formula form, in resource-accounted finite-security form at the <code>2^123</code> work factor, in
+the staged-certified forms carrying their group-work accounting at <code>2^123</code> and <code>2^125</code> adversary
+work, and in the deployed form that consumes an <code>ActionDeploymentInstantiation</code> and charges the
+joint Challenge255 bias explicitly. Knowledge soundness is the only property advertised: it implies
+the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
+and their events are retired.</p>
+<p><code>Action.lean</code> is the only endpoint file here. The <code>Action/</code> subdirectory below it holds what
+discharges those endpoints at the captured key: <code>Base</code> carries the shape identification the
+chain is stated over, <code>Checks</code> the captured key's scalars and static checks, and <code>Budgets</code> the
+semantic surfaces. Those three are instance-level — stated at the capture and reaching it through
+their imports — which is why they sit here rather than under <code>Soundness/</code>, a subtree that imports
+no fixture so that the captures stay off <code>lake build Zcash</code>'s path.</p>
 <p>Endpoints about the <em>verifier's algebra</em> rather than the circuit statement live with the layer that
 proves them: the captured straight-line knowledge errors in
 <code>Fixtures/MultiAction/Honest/StraightLineKnowledgeError</code>, and the consensus-maximum work factors in
@@ -533,6 +538,20 @@ proves them: the captured straight-line knowledge errors in
 top-level leaf that nothing else depends on, which is why each must be named directly in a
 <code>TrustBoundary.lean</code> census entry — see <code>scripts/check_endpoint_census.sh</code>, enforced a second
 time from the elaborated environment by the <code>CensusCheck</code> target (<code>Zcash/Meta/EndpointCensus.lean</code>).</p>
+<h3 id="contract--what-the-endpoints-promise"><a class="header" href="#contract--what-the-endpoints-promise"><code>Contract/</code> — what the endpoints promise</a></h3>
+<p>The auditor-facing layer over <code>Capstones/</code>. <code>Knowledge</code> defines <code>KnowledgeContract</code>, a record of
+the runs a knowledge claim quantifies over, their law, what acceptance means, what an extraction
+returns, what a returned witness certifies, the failure event, and the concrete error — together
+with the generic consequence that accepting a false statement is bounded by the same error.
+<code>Action</code> instantiates it at the deployed Action circuit, reusing
+<code>orchard_action_adaptiveStatement_knowledge_error_bound</code> unchanged as the claim.</p>
+<p>The record is deliberately not circuit-specific. Action is its only instance today because it is
+the only circuit carrying an advertised capstone; <code>CommitIvk</code>, <code>NoteCommit</code>, <code>Ecc</code>, <code>Sinsemilla</code>,
+and <code>Poseidon</code> are components composed into its specification rather than independent surfaces.</p>
+<p>Nothing here proves anything new, so the layer adds no trust: both declarations are pinned in
+<code>Fixtures/MultiAction/Honest/TrustBoundary.lean</code> with the same axiom footprint as the endpoint
+they re-export. The prose counterpart is
+<a href="knowledge-contract.html">The knowledge-soundness contract</a>.</p>
 <h2 id="circuit-layer--zcashcircuits"><a class="header" href="#circuit-layer--zcashcircuits">Circuit layer — <code>Zcash/Circuits/</code></a></h2>
 <p>A port of the Orchard Action circuit onto <a href="https://github.com/Verified-zkEVM/clean">Clean</a>'s
 Halo 2 formalization, with elliptic-curve arithmetic from
@@ -583,10 +602,10 @@ the commitment provenance of the fixed, σ and instance columns (<code>FixedColu
 <code>ResolverQueryEnvironment</code>, <code>PolynomialEnvironment</code>, <code>ExprRich</code>), and the reassembly of full
 circuit satisfaction (<code>CircuitSatisfaction</code>, <code>CircuitIntegration</code>). The <code>Action*</code> modules
 specialize all of that to the deployed Action circuit and land at <code>ActionTerminal</code>; the
-<code>TopLevel*</code> modules are the circuit-generic versions. <code>StraightLineActionTerminal</code> reaches that
-same terminal from one accepting execution instead of a rewinding one, and
-<code>StraightLineActionEvent</code> bounds the probability loss from the challenge exclusions it leaves
-open — the probability that an accepting run carries neither the bundle statement nor a
+<code>TopLevel*</code> modules are the circuit-generic versions. <code>Soundness/Action/StraightLineTerminal</code>
+reaches that same terminal from one accepting execution, and
+<code>Soundness/Action/StraightLineEvent</code> bounds the probability loss from the challenge exclusions it
+leaves open — the probability that an accepting run carries neither the bundle statement nor a
 nontrivial relation.</li>
 <li><strong><code>Fixtures/</code></strong> and <strong><code>Tests/</code></strong> — the VK cross-check against Rust. <code>Fixtures/</code> reconstructs,
 purely and computably, the layout products a keygen-view dump pins (the ordered copy list, the

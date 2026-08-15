@@ -80,7 +80,9 @@
 
   .workspace { display: block; }
   .map-pane { min-width: 0; background: var(--surface-2); border-bottom: 1px solid var(--line); }
-  .map-pane iframe { display: block; width: 100%; height: clamp(620px, 56.8vw, 900px); border: 0; }
+  /* 56.8vw tracks the map SVG's 1920x1090 aspect; the 660px cap matches the shell's 1160px
+     max width so the map fills the pane without letterboxing. */
+  .map-pane iframe { display: block; width: 100%; height: clamp(520px, 56.8vw, 660px); border: 0; }
   .story {
     min-width: 0; background: var(--surface); padding: 20px 22px 24px;
     display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .9fr) minmax(260px, 1fr);
@@ -148,7 +150,7 @@
   :root:fullscreen .map-pane,
   :root:fullscreen .map-pane iframe { height: 100%; }
   @media (max-width: 1080px) {
-    .map-pane iframe { height: 640px; }
+    .map-pane iframe { height: 560px; }
     .story { grid-template-columns: minmax(0, 1fr) minmax(280px, .85fr); }
     .story-copy { grid-row: span 2; }
   }
@@ -158,7 +160,7 @@
     .transport-buttons { grid-column: 1; }
     .progress-wrap { grid-column: 1 / -1; grid-row: 2; }
     .speed { grid-column: 2; grid-row: 1; }
-    .map-pane iframe { height: 560px; }
+    .map-pane iframe { height: 500px; }
     .story { display: block; padding: 18px 16px 22px; }
     .story-evidence, .story-outcomes { margin-top: 20px; }
     .story h2 { font-size: 20px; }
