@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-cdaef831.js";
+            window.path_to_searchindex_js = "../searchindex-9f22d28c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1303814c.js"></script>
@@ -217,7 +217,16 @@ as halo2 evaluates it, produced by the circuit-side VK-match projection and cons
 verifier stack. <code>RelationWitness</code> supplies the combinators for sequencing a computed break branch:
 a conclusion <code>A ⊕' R</code> cannot be case-split classically, so composing such reductions — and
 commuting a family of them past <code>∀</code> — needs explicit searches rather than <code>by_cases</code>. <code>ParMap</code> is
-<code>List.map</code> on the task runtime, proven equal to <code>List.map</code> definitionally.</li>
+<code>List.map</code> on the task runtime, proven equal to <code>List.map</code> definitionally. The <code>Oracle/</code> subtree
+holds the generic oracle-computation machinery shared by the Fiat–Shamir soundness reductions and
+the group-hash indifferentiability argument, so neither tier owns it: <code>OracleComp</code> is the
+bounded querying-adversary model — an adaptive oracle-query computation with eager whole-table
+semantics, an explicit query bound, and a per-run read log, plus dedup, domain restriction,
+query-charge accounting, and escape bounds; <code>Model</code> holds the one-sided
+<code>PMFEventBiasLE</code>/<code>PMFWeightedBiasLE</code> bias-transport interfaces; <code>Hybrid</code> is the adaptive
+fresh-answer hybrid that turns a single-query bias into the <code>Q·ε</code> bound; <code>LabeledOracleComp</code> adds
+labeled query trees and the first-label bad-set bounds; and <code>WithReads</code> returns a run's own reads
+with its output, growing the query bound only by the re-queried family's size.</li>
 <li><strong><code>Meta/</code></strong> — build-time metaprogramming. <code>AxiomCheck</code> provides <code>assert_axioms</code>, a sibling
 of Mathlib's <code>assert_no_sorry</code> that asserts an <em>upper bound</em> on a declaration's trusted
 base without hard-coding the pretty-printed axiom list, so the trust pins stay green across
@@ -500,12 +509,13 @@ adaptive adversary model (<code>OracleComp</code>), the Fiat–Shamir-to-AGM han
 oracle-domain reduction to finite support (<code>DomainReduction</code>), and the adaptive interface and
 pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). These components use the bounded
 querying-adversary model to price straight-line pinned-root events.</li>
-<li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>Model</code> models squeezes as a
-reprogrammable random function with the exactly uniform challenge law and the <code>PMFEventBiasLE</code>
-transport interface; <code>Challenge255</code> prices the deployed conversion against that ideal — a
-uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
+<li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>ChallengeUniform</code> gives the
+exactly-uniform challenge law over <code>Fp</code>; <code>Challenge255</code> prices the deployed conversion against
+that ideal — a uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
 <code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premise the work-factor capstone's
-bias conjunct consumes, with Blake2b's idealization as the uniform digest remaining external.</li>
+bias conjunct consumes, with Blake2b's idealization as the uniform digest remaining external.
+(The generic oracle-computation machinery — <code>OracleComp</code>, the adaptive hybrid, and the
+<code>PMFEventBiasLE</code> transport interface — are in <code>Common/Oracle/</code>.)</li>
 <li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> supplies the coefficient and
 Vandermonde primitives; <code>Opened</code> defines the augmented opened-batch and member-decode interfaces
 populated by explicit AGM representations; and <code>Deployed</code> proves that halo2's <code>x₄</code> fold has the
