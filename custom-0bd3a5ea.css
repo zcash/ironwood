@@ -367,13 +367,18 @@ em {
     font-size: 0.83em !important;
 }
 
-/* Headings and the book title in upright Raleway (body text stays the theme font). */
-.content :is(h1, h2, h3, h4, h5, h6),
-.menu-title {
+/* Headings and the book title in upright Raleway (body text stays the theme font).
+   The menu title shares the font but must not share the headings' top margin:
+   a margin inside the fixed-height menu bar makes the bar taller than
+   --menu-bar-height, so anchor scroll offsets no longer clear it and its
+   contents sit at uneven heights. */
+.content :is(h1, h2, h3, h4, h5, h6) {
     font-family: 'raleway', 'Open Sans', sans-serif;
+    margin-top: 3.5rem;
 }
 
 .menu-title {
+    font-family: 'raleway', 'Open Sans', sans-serif;
     font-weight: 400;
 }
 
