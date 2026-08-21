@@ -1,0 +1,386 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>The Clean Boundary - The Ironwood Book</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-3865ffda.css">
+        <link rel="stylesheet" href="../css/general-4c35105a.css">
+        <link rel="stylesheet" href="../css/chrome-c0e702bf.css">
+        <link rel="stylesheet" href="../css/print-ad67d350.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome-799aeb25.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-0bd3a5ea.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "rust";
+            window.path_to_searchindex_js = "../searchindex-4c58d9a9.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-e83e08d0.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The Ironwood Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="the-clean-boundary-architecture-rule"><a class="header" href="#the-clean-boundary-architecture-rule">The Clean boundary: architecture rule</a></h1>
+<p>This note is normative for how Clean-originated concepts appear in the ironwood
+codebase. It exists so that the work converges on one structure, instead of each
+workstream growing local bridge plumbing.</p>
+<h2 id="the-principle"><a class="header" href="#the-principle">The principle</a></h2>
+<p>Ironwood is the host, Clean is a guest. Ironwood has its own first-class vocabulary —
+<code>VerifyingKey</code>, <code>Expr</code>, <code>Shape</code>, its satisfaction notions, its polynomial environments —
+and the guest must not scatter <em>its</em> vocabulary (<code>Halo2.ConstraintSystem</code>, <code>Operations</code>,
+<code>Gate</code>, <code>Expression F Query</code>, <code>RichExpression</code>, …) through the host's rooms.</p>
+<p>Everything Clean produces is funneled through <strong>one concept: <code>TopLevelCircuit</code></strong>, which
+carries everything downstream needs and is instantiated once per concrete circuit
+(<code>actionCircuit</code>).</p>
+<p><code>TopLevelCircuit</code> is deliberately two-sided:</p>
+<ul>
+<li>It is a <strong>Clean-native core concept</strong> (it may well migrate into Clean itself —
+<code>TopLevelKeygen</code> already consumes only Clean and could follow). Its Clean-typed
+methods (<code>constraintSystem</code>, <code>operations</code>, <code>config</code>, …) are legitimate and public —
+<em>for the boundary implementation</em>.</li>
+<li>Ironwood defines an <strong>ironwood-native interface on top of it</strong>, and that interface is
+the only thing non-boundary ironwood code may consume. Its outputs are ironwood-typed;
+a reader never needs to know Clean exists to use it.</li>
+</ul>
+<p>The canonical example of the pattern is</p>
+<pre><code>TopLevelCircuit.toVerifierKey : TopLevelCircuit → ProofParams → URS G → VerifyingKey …
+</code></pre>
+<p>— <em>the</em> core Clean concept bridged to a core ironwood concept in one method, with every
+Clean internal invisible in the signature.</p>
+<h2 id="the-ironwood-native-interface-target-surface"><a class="header" href="#the-ironwood-native-interface-target-surface">The ironwood-native interface (target surface)</a></h2>
+<p>On <code>TopLevelCircuit</code>, defined ironwood-side in the designated boundary modules:</p>
+<ul>
+<li><code>toVerifierKey (pp : ProofParams) (urs : URS G) : VerifyingKey (pp.mergeDerived top) …</code>
+— keygen, with the derived <code>Shape</code> in the return type (no lawfulness side condition).</li>
+<li>Shape/domain data as needed by consumers (<code>ProofParams.mergeDerived</code>, domain scalars).</li>
+<li>An <code>Expr</code>-typed pinned-constraint-system view (the boundary applies
+<code>RichExpression.toExpr</code> internally, exactly as <code>toVerifierKey</code> already does for the
+VK's <code>gates</code>).</li>
+<li><strong>A satisfaction contract in ironwood terms</strong>: an ironwood-decoded assignment
+satisfying the circuit's derived key implies the circuit's public statement. The
+internal generic proof may pass through <code>top.Statement</code> over a reconstructed Clean
+environment, but that environment and the whole satisfaction-integration cluster
+are implementation details rather than a public seam.</li>
+</ul>
+<h2 id="the-rule-enforceable-greppable"><a class="header" href="#the-rule-enforceable-greppable">The rule (enforceable, greppable)</a></h2>
+<blockquote>
+<p>Clean identifiers may appear only under <code>Zcash/Circuits/</code> and inside the designated
+boundary modules. Every other <code>Zcash/Snark/</code> (and <code>Common/</code>, <code>Security/</code>) signature
+mentions only <code>TopLevelCircuit</code> and ironwood types.</p>
+</blockquote>
+<p>Review test: <em>would a reader of this file need to know Clean exists to understand it?
+If yes and it is not a boundary module, it is misplaced.</em></p>
+<h2 id="worked-example-of-the-anti-pattern"><a class="header" href="#worked-example-of-the-anti-pattern">Worked example of the anti-pattern</a></h2>
+<p><code>Zcash/Common/ExprRich.lean</code>. <code>RichExpression</code> exists precisely because ripping
+ironwood's <code>Expr</code> out of ironwood for Clean's use would have been rude in the other
+direction — the type was deliberately duplicated so the clone stays on the guest's side
+of the wall. Installing its conversion (<code>ofExpr</code>/<code>toExpr</code>/<code>eval_ofExpr</code>) in the host's
+<code>Common/</code> un-quarantines it: it presents a Clean-side clone as a core ironwood concept.
+(Contrast <code>Common/Expr.lean</code> in the same folder — ironwood's own shared AST — which is
+exactly what <code>Common</code> is for.) The conversion belongs inside the boundary as private
+plumbing; with an <code>Expr</code>-typed pinned view on the interface, nothing outside the
+boundary mentions <code>RichExpression</code> at all.</p>
+<h2 id="current-state-of-the-boundary"><a class="header" href="#current-state-of-the-boundary">Current state of the boundary</a></h2>
+<p>Checked against the tree as of <a href="https://github.com/zcash/ironwood/commit/dc421aa04592bf37ebb404e3e562793d029581a5"><code>dc421aa0</code></a> (2026-08-21):</p>
+<ul>
+<li><code>Zcash/Bridge/</code> is dissolved; <code>Snark/VkCommit/</code> became the designated boundary
+family <code>Snark/Keygen/</code>; and the <code>RichExpression</code> conversion lives inside the
+boundary (<code>Circuits/Integration/ExprRich.lean</code>).</li>
+<li>The cross-language satisfaction seam lives under <code>Zcash/Circuits/Integration/</code>.</li>
+<li>Clean imports are otherwise confined to <code>Zcash/Circuits/</code> and <code>Snark/Keygen/</code>.
+One violation of the greppable rule remains:
+<code>Snark/Fixtures/SingleAction/Honest/VkMatch.lean</code> imports Clean, declares
+definitions with <code>Halo2.SelCompressMap</code> and <code>Halo2.AnyColumn</code> in their types, and
+applies <code>RichExpression.ofExpr</code>. It should be restated over the interface, in the style
+that <code>Snark/Keygen/Certificate.lean</code> demonstrates.</li>
+<li>The cross-repo migrations — <code>Circuits/Fixtures/Layout.lean</code>'s keygen semantics
+into Clean's <code>Halo2/Keygen</code>, and eventually <code>Circuits/TopLevel{,Keygen}.lean</code>
+themselves into Clean core — ride Clean pin cycles and have not happened.</li>
+</ul>
+<h2 id="drawing-the-boundary-precisely"><a class="header" href="#drawing-the-boundary-precisely">Drawing the boundary precisely</a></h2>
+<p>The directory boundary is a dependency boundary, not merely a collection of files
+created during the circuit-integration work.</p>
+<h3 id="what-stays-verifier-native"><a class="header" href="#what-stays-verifier-native">What stays verifier-native</a></h3>
+<p>The following concepts speak only the ironwood verifier's language and remain under
+<code>Zcash/Snark/Soundness/</code>:</p>
+<ul>
+<li><code>ConstraintSatisfaction</code> and <code>ConstraintPolyModel</code>;</li>
+<li><code>CanonicalConstraintModel</code> and the canonical domain-selector mathematics;</li>
+<li>permutation and lookup instantiation and semantics;</li>
+<li>the decoded multiopen constraint resolver.</li>
+</ul>
+<p>In particular, <code>CanonicalConstraintModel</code> takes a <code>VerifyingKey</code>, challenges, and an
+ironwood <code>CommitmentId → Polynomial</code> resolver and produces an ironwood
+<code>ConstraintPolyModel</code>. It does not know about a Clean circuit and is an input to the
+boundary, not part of its implementation.</p>
+<p>Some existing files need splitting rather than moving wholesale. For example,
+<code>PolynomialEnvironment</code> currently contains both the verifier-native interpolation
+construction (<code>rowPolynomial</code> and its algebraic facts) and the Clean-facing constructor
+of a <code>Halo2.Environment</code>. The former stays in <code>Snark/Soundness</code>; only the latter moves
+into <code>Circuits/Integration</code>.</p>
+<h3 id="what-lives-in-zcashcircuitsintegration"><a class="header" href="#what-lives-in-zcashcircuitsintegration">What lives in <code>Zcash/Circuits/Integration</code></a></h3>
+<p>This directory contains the implementation that is forced to understand both sides:</p>
+<ul>
+<li>extracting the gate, copy, lookup, and fixed-data obligations of Clean operations;</li>
+<li>interpreting ironwood resolver polynomials as a placed Clean environment;</li>
+<li>connecting selector compression and query layouts to Clean gate evaluation;</li>
+<li>reassembling those families as Clean's authoritative <code>Halo2.Constraints</code>;</li>
+<li>applying <code>TopLevelCircuit.soundness</code>;</li>
+<li>specializing the generic result to a concrete circuit statement such as Orchard
+Action.</li>
+</ul>
+<p>Pure Clean compiler semantics should instead live in <code>Zcash/Circuits/</code> or, preferably
+when reusable, upstream in Clean itself. Pure ironwood soundness stays in
+<code>Zcash/Snark/Soundness/</code>.</p>
+<h3 id="deployed-specializations-stay-with-soundness"><a class="header" href="#deployed-specializations-stay-with-soundness">Deployed specializations stay with soundness</a></h3>
+<p>A theorem that relies on the large captured VK artifacts—<code>Fixture.shape</code>,
+<code>Fixture.vk</code>, <code>capturedURS</code>, or the certificate equating those values with
+circuit-derived keygen output—belongs under <code>Zcash/Snark/Soundness/Deployed/</code>, not in
+this directory. Such a theorem may import the boundary's public circuit-derived
+terminal, but it should not re-establish Clean semantics itself. Conversely,
+<code>Circuits/Integration</code> should not import the fixture dumps merely to advertise the
+final deployed capstone.</p>
+<h3 id="the-public-satisfaction-contract-has-two-levels"><a class="header" href="#the-public-satisfaction-contract-has-two-levels">The public satisfaction contract has two levels</a></h3>
+<p><code>TopLevelCircuit</code> declares a <code>PublicInput</code> type and an injective layout of its encoded
+elements in instance cells. That one layout derives both extraction from a Clean
+environment and the cell/value assignments consumed by verifier integration. The
+top-level circuit separately extracts a private witness, recombines public and private
+data into its formal-circuit witness, and proves that this factorization agrees with
+the formal circuit's native extractor. Its <code>Spec</code> receives public and private data
+explicitly; only <code>Statement public</code> existentially hides the private witness.</p>
+<p>The boundary therefore exposes two theorem levels:</p>
+<ol>
+<li>a boundary-internal generic theorem taking satisfaction of the circuit-derived key
+to <code>top.Statement</code> at the public input extracted through the declared layout;</li>
+<li>a public theorem phrased only in ironwood-decoded data and the concrete circuit's
+public statement, for example the structured Orchard Action public inputs.</li>
+</ol>
+<p>No caller of the public theorem should construct a Clean environment or mention
+<code>Operations</code>, <code>ConstraintSystem</code>, selector compression, placement, or
+<code>RichExpression</code>.</p>
+<h3 id="consequence-of-circuit-derived-key-generation"><a class="header" href="#consequence-of-circuit-derived-key-generation">Consequence of circuit-derived key generation</a></h3>
+<p>For <code>vk := top.toVerifierKey pp urs</code>, the gate and lookup expressions, query layouts,
+shape counts, domain parameters, permutation chunks, and commitment families are
+outputs of the same circuit-owned keygen pipeline. Their correspondence must not be
+reintroduced as an arbitrary caller-supplied coherence record.</p>
+<p>The current <code>TopLevelGateCoherence</code> is useful scaffolding while the adapter is being
+built, but it should not survive as part of the public interface. Its definitional
+fields should be discharged directly from <code>toVerifierKey</code>; genuine semantic facts
+such as selector allocation, supported domain size, and degree bounds remain internal
+circuit/compiler obligations. Gate well-formedness is already intrinsic to <code>Gate</code>.
+The remaining facts should be derived or packaged once inside the boundary rather
+than supplied beside every soundness call.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../formal-verification/working-notes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../formal-verification/lawfulness-and-certificate-elimination.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../formal-verification/working-notes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../formal-verification/lawfulness-and-certificate-elimination.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-9aeb6ddf.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-9576a2db.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid-eefea253.min.js"></script>
+        <script src="../mermaid-init-d0d5e6a7.js"></script>
+        <script src="../todo-e74d2c27.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

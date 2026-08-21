@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-f5e1089e.js";
+            window.path_to_searchindex_js = "searchindex-4c58d9a9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-aadf71e3.js"></script>
+        <script src="toc-e83e08d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -927,7 +927,7 @@ the verifier, so anything <code>noncomputable</code> on the assembled-verifier p
 <code>Fixtures/*/Random/Epsilon.lean</code>. Capture lineage, seeds, and the reproducibility pipeline are in
 <code>Zcash/Snark/Fixtures/PROVENANCE.md</code>. Together, the captures and ε theorems support the typed,
 post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
-domain-prefix bytes, and Blake2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
+domain-prefix bytes, and BLAKE2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
 boundary, tracked in <a href="https://github.com/zcash/ironwood/issues/66">#66</a>.</p>
 <p><strong>The circuit-side layout fixtures are pinned, not regenerated.</strong> The CS and layout dumps behind
 <code>CircuitCheck</code>'s <code>TestVk*</code> comparisons (<code>Zcash/Circuits/Fixtures/*.json</code>) were emitted by one-off
@@ -945,7 +945,7 @@ are recorded in <code>Zcash/Circuits/Fixtures/PROVENANCE.md</code>.</p>
 what the statements <em>model</em>: it is neither an axiom nor a compiler-trust question, so no census
 sees it.</p>
 <p><strong>Fiat–Shamir is idealized.</strong> The deployed verifier derives each challenge by hashing the
-transcript so far with Blake2b and reducing 64 bytes to a field element. The development models
+transcript so far with BLAKE2b and reducing 64 bytes to a field element. The development models
 that as an abstract <code>squeeze</code> (<code>Verifier/FiatShamir.lean</code>) and, in the security layer, as a
 uniform random oracle — the assumption that carries interactive soundness to the deployed
 non-interactive check. Identifying the deployed hash with that oracle is external, over and
@@ -953,6 +953,318 @@ above the byte-level boundary noted above: the fixtures check challenge schedule
 captures, not against transcript bytes.</p>
 <p>Coined terms and shorthand for the development are
 collected on the <a href="formal-verification/definitions.html">Definitions</a> page.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="guide-to-the-ironwood-formalization"><a class="header" href="#guide-to-the-ironwood-formalization">Guide to the Ironwood Formalization</a></h1>
+<p>This page is for anyone deciding what to conclude, and what not to conclude, from this
+formalization. This section is general; later sections of the page focus on the verifier
+knowledge-soundness proof.</p>
+<h2 id="the-place-of-formalization-in-security-assurance"><a class="header" href="#the-place-of-formalization-in-security-assurance">The place of formalization in security assurance</a></h2>
+<p>A protocol formalization such as this one is not a "proof of security". It is a set of
+claims that constrain the difficulty of various classes of attacks, relative to breaking
+the cryptographic problems on which the protocol's security was intended to rest.
+The classes of attacks it rules out are not exhaustive; they are relative to a particular
+model of what adversaries are able to do.</p>
+<p>Sometimes a formalization is presented as something that <em>has</em> to be complete in order
+to be valuable. This idea might come from the fact that the formal logic in which it is
+grounded has a "<a href="https://en.wikipedia.org/wiki/Principle_of_explosion">principle of explosion</a>",
+such that if we make a mistake then it is possible to prove "false". In that case, it would
+be possible to prove that a protocol is secure when it is not. But this does not take into
+account how protocol formalization actually works. How it works is that we progressively
+extend the model to cover ways in which the protocol could be vulnerable. If a flaw lies
+in a particular piece, and we try to formalize that piece within the framework we've set,
+then we won't be able to do it, and then we are very likely to find the flaw. This can only
+really give confidence once the framework is mostly complete —which it is— because we need
+to know that we are proving the right kinds of thing, that will eventually be composable.</p>
+<p>Formalization cannot replace other forms of security assurance: informal security arguments;
+conservative cryptographic design; detailed and complete specification; incident response
+processes; careful software engineering practices; unoptimized reference implementations;
+thorough code reviews; internal and third party audits; automated and manual testing;
+supply chain integrity checks, etc. On the contrary, it should be interwoven with them, for
+instance by checking that the formalized objects are consistent with the specification and
+(where possible) that they match the same test vectors as the production implementation and
+the unoptimized reference.</p>
+<p>So, modelling gaps and the long-term task of closing them, gaining more and more confidence
+as we go —and then maintaining the formalization in sync with the spec as the protocol
+evolves— are not a side-issue; that process is the entire point. It is a process that finds bugs
+just like any other assurance technique, but it is deeply more thorough than conventional
+auditing or testing. If, as a protocol designer, you're having sleepless nights about a class of
+potential security problems in a specific part of the protocol, then competently formalizing
+that part gives you a very meaningful improvement in assurance. And it <em>is</em> feasible to be
+thorough enough in coverage to <em>approach</em> what we might naively expect from "proven security"
+more closely than by other methods.</p>
+<p>On the flip side, there have been cases where formalization was used as an excuse to skip
+other forms of assurance, which is positively harmful. See for example Nadim Kobeissi's paper
+<a href="https://eprint.iacr.org/2026/192">Verification Theatre: False Assurance in Formally Verified Cryptographic Libraries</a>.
+Even when we don't make the kind of mistakes described in Kobeissi's paper, it's easy to be
+speaking in good faith and still end up overclaiming — as we have seen a number of times
+during this formalization effort. It takes substantial labour to educate readers about what
+they should <em>not</em> conclude from a formalization, and that is as much a matter of good
+technical writing and teaching as of proof.</p>
+<p>In particular, it turns out that AIs are very good at writing a lot of Lean code (and
+comments) quickly. That is what made this development possible, but it also presents a
+huge challenge to reining in complexity, verbosity, and overclaims. The path of least
+resistance is to let the AI produce more output than is humanly reviewable. Using a
+proof-oriented language like Lean makes this less terrible than it could be, but it is still
+terrible: not only does it hide the wood for the trees; it introduces some biases in the
+direction of "it's complicated, but trust us" that we need to actively resist. If this
+formalization oversimplifies or fails to properly explain something, that's a deficiency
+and needs to be fixed. We are still in the process of removing a lot of redundancy and
+rewriting excessively jargon-laden documentation. This page aims to help by focussing
+attention on the things most important for a human reader to assess.</p>
+<h1 id="scope"><a class="header" href="#scope">Scope</a></h1>
+<p>There are three foci for this formalization effort: the Action circuit, the Halo 2 SNARK,
+and the ledger layer (the high-level protocol security properties). Ideally they should
+fit together. They don't quite do so yet.</p>
+<h2 id="scope-at-the-ledger-layer"><a class="header" href="#scope-at-the-ledger-layer">Scope at the ledger layer</a></h2>
+<p>The formalization of <em>Spendability</em> and <em>Spend authority</em> properties is not yet
+finished. It needs significant attention to the way honest parties are modelled: the
+properties need to be strengthened by giving the adversary oracles that allow it to
+control how the honest parties create transactions, generate keys (without telling the
+adversary those keys), etc. That is how these properties were originally defined at
+Zcon3 in <a href="https://raw.githubusercontent.com/daira/zcash-security/main/zcash-security.pdf">Understanding the Security of Zcash</a>.</p>
+<p>The formalization of <em>Balance integrity</em> is in better shape (modelling honest parties
+is not an issue for Balance properties; the adversary merely has to exhibit an
+unbalanced consensus-valid ledger). All the important pieces have been completed, but
+they have not yet been connected up. The remaining <strong>significant gap</strong> is that ledger
+security arguments are not yet tied into the Action circuit knowledge soundness proof
+at all: the games state their circuit premiss over their own abstract types, and no
+definition is currently shared between the two developments
+(<a href="https://github.com/zcash/ironwood/issues/147">#147</a> and
+<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Additional caveats are stated
+on the <a href="formal-verification/ledger-security-games.html">Ledger Security Games</a> page.</p>
+<p>For tractability, the modelled ledger also abstracts away from the real protocol in
+several directions:</p>
+<ul>
+<li>The real protocol has, at the time of writing, six chain value pools: the transparent pool;
+the lockbox (also transparent), and four shielded pools for Sprout, Sapling, Orchard, and
+Ironwood. The modelled ledger has one transparent pool, and one Orchard-protocol shielded
+pool (similar to either Orchard or Ironwood). We argue that this simplification is enough
+to capture realistic attacks, because the interaction of all other pools with a given
+shielded pool is as though the other pools are transparent. (It is a bit of an
+oversimplification for Orchard and Ironwood because they share addresses and key material;
+we may decide to either model this explicitly or justify more rigorously why that isn't
+needed.)</li>
+<li>Modelling of the hash-to-curve in the ledger games is not complete. This also particularly
+affects the formalization of the Spendability and Spend authority properties, because they
+depend on diversified address generation using <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathsf">DiversifyHash</span></span></span></span></span>, and so a realistic
+adversary has to be able to invoke the hash-to-curve. The first step is delivered: the
+deployed hash-to-curve is proven indifferentiable from a random oracle onto the group,
+with a concrete advantage bound, modelling the underlying field-element hash as a random
+oracle — see <a href="formal-verification/group-hash-indifferentiability.html">Group-Hash Indifferentiability</a>. What
+remains is to give the games' adversaries oracle access to it
+(<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</li>
+</ul>
+<h1 id="circuit-and-snark-layers"><a class="header" href="#circuit-and-snark-layers">Circuit and SNARK layers</a></h1>
+<h2 id="guide-to-the-circuit-and-snark-theorems"><a class="header" href="#guide-to-the-circuit-and-snark-theorems">Guide to the Circuit and SNARK Theorems</a></h2>
+<p>The verifier knowledge-soundness proof for the Orchard protocol (and therefore the
+Ironwood pool) can be followed with one idea from cryptography — that a proof system lets
+someone convince you of a claim without showing you the data behind it. Understanding that
+idea needs no Lean, no Halo 2, and no background in formal or succinct proof systems. The
+rest of this page tries to explain the modelling assumptions and heuristics the verifier
+soundness claim rests on that are not established by a formal theorem, and therefore have
+to be assessed by other means.</p>
+<p>It is not a walkthrough of the proofs. The <a href="formal-verification/proof-map.html">proof map</a> shows how the results
+connect, the <a href="formal-verification/source-map.html">source map</a> indexes the tree, <a href="formal-verification/definitions.html">definitions</a>
+covers the coined terms, <a href="formal-verification/security-models.html">Security Models</a> states the models in full, and
+the <a href="formal-verification/knowledge-contract.html">Knowledge-Soundness Contract</a> reads the theorem field by field.
+From here on, the subject is the Action circuit; for the protocol properties built on top
+of it, see <a href="formal-verification/ledger-security-games.html">Ledger Security Games</a>.</p>
+<h2 id="the-claim"><a class="header" href="#the-claim">The claim</a></h2>
+<blockquote>
+<p>If the deployed verifier accepts a proof, then whoever produced that proof could have
+handed you the secret data it is a proof <em>about</em> — unless they solved a problem that
+most cryptographers believe has been infeasibly difficult (although quantum computers
+could change this in a few years), or hit an event the theorem shows is vanishingly unlikely.</p>
+</blockquote>
+<p>Two phrases are worth pinning down.</p>
+<p><em>The secret data</em> means numbers satisfying the circuit's equations. That satisfying them
+amounts to a legitimate Orchard action — well-formed note, balanced value, correctly derived
+nullifier, authorized spend — is itself proven.</p>
+<p><em>The deployed verifier</em> means the verifier as Lean models it: checked against a circuit
+description Lean derives itself and compares against a captured copy, reading a proof already
+decoded from bytes into points and numbers. That the captured copy is what Zcash ships, and
+that the bytes on the wire decode to what the model is handed, are checked outside Lean.</p>
+<h2 id="what-you-need-to-know-first"><a class="header" href="#what-you-need-to-know-first">What you need to know first</a></h2>
+<p><strong>Circuit and witness.</strong> The Action circuit is a large system of equations. The secret data —
+which note is spent, its value, the key authorizing the spend — assigns numbers to its
+variables. An assignment making every equation true is a <strong>witness</strong>.</p>
+<p><strong>Commitments.</strong> A commitment is a short value pinning down a much longer one: publishing it
+fixes your choice without revealing it, and <strong>opening</strong> it means producing the long value and
+convincing everyone it is what you committed to. Ironwood's commitments are weighted sums of
+curve points from a fixed public list agreed in advance.</p>
+<p><strong>Accepting.</strong> Halo 2 lets a witness-holder produce a short proof the verifier checks without
+seeing the witness. Ironwood runs it over the Vesta curve, and the verifier's work collapses
+into one arithmetic test: combine the proof, the public inputs, and the circuit description
+into a single weighted sum of curve points, and check it comes out to zero.</p>
+<p><strong>Challenges.</strong> Underneath, the protocol is a conversation — the prover sends something, the
+verifier picks a random number and sends it back, for several rounds. Those numbers are
+<strong>challenges</strong>, and they stop a cheating prover preparing everything in advance. The deployed
+verifier is not interactive, so the conversation is simulated: each challenge is computed by
+hashing everything sent so far, the <strong>Fiat–Shamir transform</strong>. The prover can compute them
+too, but only after fixing the earlier messages they derive from.</p>
+<p><strong>Knowing, not merely existing.</strong> A weaker claim would say a witness <em>exists</em>. Not enough for
+a payment system: the statement behind an Orchard action can be true while the person proving
+it is not entitled to spend — the note is real and somebody holds the key, just not them. So
+the claim is that <em>this</em> prover holds a witness, made precise by demanding an <strong>extractor</strong>, a
+procedure that produces the witness given access to the prover.</p>
+<p>It is vanishingly unlikely that the hardness of the problems on which Orchard's security
+depends could be proven outright. What can be proven is a
+trade: any prover that cheats can be turned, cheaply and mechanically, into a solver for a
+problem believed (for now) infeasible. That trade is a <strong>reduction</strong>, and every theorem here has that
+shape. Within the algebraic-adversary model that we consider, the assumed-infeasible
+problem is always the same — given the fixed list of curve points, find multipliers,
+not all zero, that cancel them to zero: a <strong>nontrivial discrete-log relation</strong>.</p>
+<h2 id="what-lean-actually-proves"><a class="header" href="#what-lean-actually-proves">What Lean actually proves</a></h2>
+<h3 id="the-acceptance-test"><a class="header" href="#the-acceptance-test">The acceptance test</a></h3>
+<p>Lean assembles the weighted sum in the same order Halo 2's Rust verifier does. Acceptance
+means the assembly succeeds, the structural checks pass, and the sum is zero. A first proof
+step rewrites that compact test into the explicit equation the rest of the argument consumes.</p>
+<h3 id="classifying-one-accepting-proof"><a class="header" href="#classifying-one-accepting-proof">Classifying one accepting proof</a></h3>
+<p>An equation holding says nothing about who knew what. What closes the gap in this
+formalization is the algebraic-adversary assumption below: the prover must show its work.
+For every curve point it sends, it must declare a recipe of how to build it from points that
+it was given. Read against those recipes, the equation forces one of three things.</p>
+<ul>
+<li>The recipes describe a genuine opening — the prover holds data satisfying the circuit, and
+the argument writes it down.</li>
+<li>The recipes cancel for the wrong reason: the prover found a relation among the fixed points.
+The argument writes the relation down instead.</li>
+<li>Neither, meaning the challenge fell in the small set of values that can mask a false
+equation. The bound below covers how often that happens.</li>
+</ul>
+<p>Nothing is re-run with different answers: the prover runs once, and the classification
+reads what that single run declared. That matters, because an extractor's cost is a count of
+prover runs, and a count growing with the size of the field would be worth nothing in
+practice. The adversary
+also picks its own target, producing the public inputs and the proof together; everything
+identifying that statement is hashed in before the first challenge, so it cannot be chosen
+after the fact.</p>
+<p>What comes out is <strong>computed data</strong>, not an assertion that something exists — load-bearing,
+because on this curve a relation always exists, so a theorem merely claiming one existed would
+say nothing at all (the
+<a href="formal-verification/../formal-verification.html#breaks-as-computed-data">breaks as computed data</a> convention rules
+that out). And the witness satisfies the <strong>whole</strong> constraint system: not just the equations,
+but the constraints forcing the same value into cells the circuit declares equal, and the
+table lookups. Equations alone would be close to meaningless, since they do not force the
+circuit's wiring to be respected.</p>
+<h3 id="the-probability-bound"><a class="header" href="#the-probability-bound">The probability bound</a></h3>
+<p>The two parts above are deterministic. The third branch is not, and it exists because the
+verifier compresses its work: rather than checking far too many equations one at a time, it
+checks a single weighted combination, the weights drawn from the challenges. If one equation
+fails, the combination fails too — unless the weights land in the set that makes the failure
+cancel. Lean bounds the size of that set, tiny against the field it is drawn from, and charges
+the adversary for it once per hash query it is allowed.</p>
+<p>A second, similar cost pays for reading the combination backwards, since knowing it holds is
+not knowing that a particular equation holds in a particular row. Recovering those row-level
+facts draws further challenges, each with its own priced chance of hiding a failure. None is
+waved through as an assumption.</p>
+<p>Together they bound the probability that the verifier accepts while extraction fails, for
+every bundle size consensus allows. The bound splits in two: a discrete-log term, whose size
+is the reader's premiss rather than the theorem's, and a statistical leftover the theorem
+establishes outright. A reviewer judges the first term and simply reads the second.</p>
+<h2 id="what-you-are-trusting"><a class="header" href="#what-you-are-trusting">What you are trusting</a></h2>
+<h3 id="a-hardness-assumption-on-each-curve"><a class="header" href="#a-hardness-assumption-on-each-curve">A hardness assumption on each curve</a></h3>
+<p><strong>Finding a discrete-log relation on each of Pallas and Vesta is infeasible</strong> — for each
+curve, no efficient adversary finds multipliers, not all zero, cancelling the points
+output by the group hash to zero. This discharges every branch where the argument computes
+a relation instead of a witness.</p>
+<p>Pallas is relied on for security of the application protocol, both inside and outside the
+Action circuit. Vesta is relied on for knowledge soundness of the SNARK, via the binding
+property of the verifier's commitments.</p>
+<p>In all cases, Lean proves the arithmetic of the cost — how many hash queries and how much
+group work the reduction spends, each against an explicit ceiling. It falls on readers of
+these proofs, outside the formalization, to interpret consequences for Zcash's security
+properties according to their assessment of discrete-log hardness of Pallas and Vesta.
+The latter is not a binary property; a reader might reasonably come to different conclusions
+for different timescales based on their assessment of the timeline for quantum computer
+development, for example.</p>
+<h3 id="three-idealizations"><a class="header" href="#three-idealizations">Three idealizations</a></h3>
+<p>These are not hardness assumptions; instead, they swap the real world for a more convenient
+one. They are choices we took to make this formalization more tractable, with the trade-off
+that attacks depending on the differences between the real world and the idealized one could
+be missed.</p>
+<ul>
+<li><strong>The hash behaves like a truly random function</strong> — the <strong>random-oracle model</strong>. This covers
+BLAKE2b, the conversion of hash output into numbers, and the derivation of the public point
+list. BLAKE2b is not formalized anywhere: the model treats it as an opaque box and assumes
+the box is random.</li>
+<li><strong>The attacker is algebraic</strong> — assumed to declare, for every curve point it outputs, a
+recipe building it from points it was given. Real attackers owe no such explanation. This is
+what lets the reduction read a relation off the adversary's own output. Note where it sits:
+built into what counts as an adversary at all, rather than appearing as a hypothesis you can
+read off a theorem. An attacker that does not play along is outside the claim entirely — not
+covered with a weaker bound.</li>
+<li><strong>Attacks do not depend on specific encodings</strong>. The formalization does not cover the
+concrete, byte-level encodings used to represent curve points, field elements, etc., either
+in transmitted protocol messages or in the Fiat–Shamir transcript. Instead, the formalization
+is expressed in terms of the abstract types used in the specification. This is a potentially
+significant category of gap, because (despite substantial attention to this area in audits
+and code review) Zcash implementations have had quite a few significant security bugs due to
+unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
+It is a longer-term goal to extend the formalization to cover the byte-level encodings.</li>
+</ul>
+<h3 id="the-fixed-list-of-curve-points"><a class="header" href="#the-fixed-list-of-curve-points">The fixed list of curve points</a></h3>
+<p>The reduction treats the public list as <em>independent</em>, which is what turns "find a relation
+among these points" into the discrete-log problem. The deployed protocol does not sample them:
+it produces the list once by hashing public strings onto the curve and bakes the result in. So
+security is proved for the family of protocols that sample the list, and the deployed protocol
+is argued to inherit it — no theorem is ever instantiated at the real points.</p>
+<p>The caveat is not the usual asymptotic hand-wave. An adversary has the protocol's <em>entire
+lifetime</em> to attack one specific list, and the cost is amortized over every transaction ever
+made against it. One such computation breaks the whole protocol at once, rather than one
+transaction or one user. <a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">Security
+Models</a> develops this at
+length.</p>
+<h3 id="how-fiatshamir-is-modelled"><a class="header" href="#how-fiatshamir-is-modelled">How Fiat–Shamir is modelled</a></h3>
+<p>Lean models the hashing schedule exactly — what gets hashed, in what order, matching Halo 2's
+verifier. The order is load-bearing and it is checked: each round's message is hashed in
+<em>before</em> the challenge derived from it is drawn, so a later message cannot bend an earlier
+challenge, which is what makes it harmless that the prover can compute challenges too. Lean
+proves this of its own model, and captured fixtures check that model against real transcripts.</p>
+<p>The byte layer beneath is not modelled. The sequence of things hashed is verified; how they
+become bytes, and BLAKE2b itself, are not. Modelling the encoding would narrow the gap without
+closing it, since the hash would remain outside the proof.</p>
+<h3 id="facts-checked-by-running-code-not-by-the-kernel"><a class="header" href="#facts-checked-by-running-code-not-by-the-kernel">Facts checked by running code, not by the kernel</a></h3>
+<p>A few closed numeric facts are established by compiling a program and running it rather than
+by checking them inside Lean's kernel. Each records an axiom noting the compiler was trusted,
+and the <a href="formal-verification/../formal-verification.html#trust-discipline">trust discipline</a> pins every one at build
+time. Alongside facts about the Vesta curve, the <strong>fingerprint match</strong> is the one tying the
+model to the shipped code: it confirms Lean's assembled sum is identical to the Rust
+verifier's — for the captured proofs in the repository, not for the verifier in general.</p>
+<p>The programs those evaluations run are not small. They include the whole fast native
+arithmetic: field operations, curve group operations, and the multi-scalar multiplication
+the fingerprint match assembles. The algorithms themselves are proven correct against the
+group law, inside the kernel, and every proof-carrying replacement of a slow definition by
+a fast one is checked and censused. What the axiom records as trusted is the compiler's
+translation of that proven code into the code that actually ran.</p>
+<p>These facts <em>are</em> rigorously established; what is not established is that they hold on the
+kernel alone. Being closed and re-checkable, they fail loudly rather than silently — the curve
+facts were computed by an entirely different method when the Pasta curves were designed, so a
+compiler bug would have to arrive at exactly the same wrong answer to slip through.</p>
+<h3 id="the-whole-set-in-one-place"><a class="header" href="#the-whole-set-in-one-place">The whole set, in one place</a></h3>
+<p>Everything above, collected.</p>
+<ol>
+<li><strong>Discrete log is hard for considered adversaries on both Pasta curves</strong> — Vesta carries
+the verifier's knowledge soundness; Pallas carries the Action circuit and the ledger
+properties built on it. Discrete log hardness is not a binary property; the feasibility
+of attacks may vary over time and according to the capabilities of an adversary.</li>
+<li><strong>The hash behaves like a random oracle.</strong> BLAKE2b is treated as fresh randomness with no
+exploitable structure, and is not formalized anywhere.</li>
+<li><strong>The attacker is algebraic</strong> — it shows its work for every curve point it outputs. One
+that does not is outside the claim rather than covered by it.</li>
+<li><strong>Attacks do not depend on specific encodings.</strong> The formalization speaks the
+specification's abstract types; how curve points and field elements become bytes, in
+protocol messages or in the transcript, is not covered.</li>
+<li><strong>The deployed list of curve points is as good as a sampled one.</strong> Security is proved for
+protocols that sample it; the real one is hashed into existence and baked in.</li>
+<li><strong>The byte layer under the hashing schedule.</strong> What gets hashed, and in what order, is
+checked; how those things become bytes is not.</li>
+<li><strong>Facts established by running code trust the compiler.</strong> Each is pinned to its
+owning declaration at build time, and each is independently re-checkable — but the
+compiled code they run is the whole fast native arithmetic, proven correct in the
+kernel and executed as the compiler translated it.</li>
+</ol>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
@@ -1393,7 +1705,8 @@ the corresponding DLOG advantage bound. (The operationally accounted route is se
 <code>orchard_action_adaptiveStatement_certified_knowledge_error_bound</code>.) Two more conditions are
 structural, carried by the adversary's <em>type</em>: the algebraic restriction above and the
 random-oracle modelling of the challenge schedule. What trusting each of these means is the
-subject of <a href="formal-verification/security-models.html">Security Models</a>.</p>
+subject of <a href="formal-verification/security-models.html">Security Models</a>, and the
+<a href="formal-verification/guide.html#what-you-are-trusting">Guide to the Ironwood Formalization</a> states them in plain language.</p>
 <h2 id="why-the-record-is-not-action-specific"><a class="header" href="#why-the-record-is-not-action-specific">Why the record is not Action-specific</a></h2>
 <p><code>KnowledgeContract</code> is stated for any circuit. Action is its only instance because it is the
 only circuit carrying an advertised capstone — the other circuits are components composed into
@@ -1411,12 +1724,13 @@ protocol <strong>security properties</strong> under <code>Zcash/Security/</code>
 <ul>
 <li>the top-level capstones — the <em>ledger-model security games</em> of <em>Balance integrity</em>, <em>Spendability</em>, and <em>Spend authority</em>;</li>
 <li>how each capstone connects, by reduction via intermediate security properties such as
-<em>binding-signature balance</em>, <em>key binding</em>, and <em>verifier knowledge soundness</em>, to an
-exhibited break of a cryptographic primitive in a specified adversary model.</li>
+<em>binding-signature balance</em> and <em>key binding</em>, to an exhibited break of a cryptographic
+primitive in a specified adversary model — and where the intended hand-off to <em>verifier
+knowledge soundness</em> remains open.</li>
 </ul>
 <p>Every argument here follows the <em>breaks as computed data</em> convention and the three-layer
 stack described in <a href="formal-verification/security-models.html">Security Models</a>.</p>
-<h2 id="one-connected-picture"><a class="header" href="#one-connected-picture">One connected picture</a></h2>
+<h2 id="one-picture-not-yet-connected"><a class="header" href="#one-picture-not-yet-connected">One picture, not yet connected</a></h2>
 <pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; } marker { overflow: visible !important; } marker path { transform-box: fill-box !important; transform-origin: center !important; transform: scale(1.25) !important; }&quot;}}%%
 flowchart TD
   subgraph GAMES[&quot;Ledger capstones&quot;]
@@ -1459,7 +1773,7 @@ flowchart TD
   NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
   SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
 
-  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/issues/147'&gt;intended hand-off:&lt;br/&gt;not yet formalized&lt;br/&gt;(#147, #155)&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&lt;br/&gt;(separate development)&quot;]
   NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
 
   KERR KERRtoNDLR@==&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
@@ -1507,13 +1821,13 @@ flowchart TD
   class RDSA hyp
   class DL,ROM assumed
   classDef agmEdge stroke:#8858c8,stroke-width:4.2px
-  classDef agmBridge stroke:#8858c8,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
+  classDef gapEdge stroke:#cf222e,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
   class KERRtoNDLR,KStoDL,RDSAtoDL agmEdge
-  class STMTtoKS agmBridge
+  class STMTtoKS gapEdge
 </pre>
 <p>
 <span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the online-AGM — both endpoint games are <a href="formal-verification/security-models.html#the-algebraic-adversary-restriction">algebraic</a><br/>
-<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">⇢</span> dashed purple edge: an AGM-scoped justification crossing named side conditions — a semantic bridge rather than a proved implication<br/>
+<span style="color:#cf222e; font-weight: 700; font-size: 1.9rem">⇢</span> dashed red edge: an intended hand-off that is not yet formalized — the endpoints share no definition (<a href="https://github.com/zcash/ironwood/issues/147">#147</a>, <a href="https://github.com/zcash/ironwood/issues/155">#155</a>)<br/>
 <span style="font-size: 1.9rem">➝</span> thin edge: depends on (a reduction, assumption, or model)<br/>
 <span style="color:#1a7f37"> ■ </span> fully proven — nothing here yet<br/>
 <span style="color:#0969da"> ■ </span> stated and machine-checked in Lean, over abstract primitives<br/>
@@ -1549,15 +1863,17 @@ assumption. The games are the top-level capstones. The ledger model requires the
 supply, along with any accepting proof, a <strong>witness or replay evidence</strong> for the Action
 statement (<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the
 previously supplied witness. Each component argument consumes the statement's satisfaction
-<em>on that witness</em>. Knowledge soundness is what justifies the modelling: whenever the ledger
-layer needs a witness, the extractor computes one —or computes break data— from the accepting
-proof. The justification is AGM-scoped —the extractor consumes the adversary's
-representations— so its edge is heavy purple; the dashing marks that it crosses the
-remaining semantic bridge: the Clean/Ironwood circuit-correctness conditions
-(<code>TopLevelCircuitCorrectness</code>) — named component conditions rather than a proved
-implication. Discharging them is the subject of the circuit soundness proof.</p>
+<em>on that witness</em>. Knowledge soundness is what is <em>intended</em> to justify that modelling:
+whenever the ledger layer needs a witness, the extractor would compute one —or compute
+break data— from the accepting proof. That hand-off is not yet formalized in any form:
+the games state <code>ActionSatisfied</code> over their own abstract types, and no definition is
+shared with the SNARK development. The dashed red edge marks exactly this gap
+(<a href="https://github.com/zcash/ironwood/issues/147">#147</a>,
+<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Until it lands, the
+witness-supply requirement is a modelling assumption of the ledger games, not a
+consequence of verifier knowledge soundness.</p>
 <style>
-/* "One connected picture" links: labels keep their ordinary colour at rest
+/* "One picture, not yet connected" links: labels keep their ordinary colour at rest
    (blue is reserved for the status coding); hover underlines. */
 .mermaid .edgeLabel a { color: inherit; }
 .mermaid .edgeLabel a:hover,
@@ -2250,7 +2566,7 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 <div class="g"><div class="g-head"><span class="term">querying adversary</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/Oracle/OracleComp.lean">Common.Oracle.OracleComp</a></span></div><div class="def">An adaptive oracle-query computation with eager whole-table semantics, an explicit query bound, and a log of the points read on each execution. The straight-line reduction uses this model to price fresh-query and pinned-root events without constructing a transcript tree.</div></div>
 <div class="g"><div class="g-head"><span class="term">IPA splice</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/FiatShamir/Execution.lean">FiatShamir.Execution.spliceIpa</a></span></div><div class="def">Replacing only a proof's IPA fields while preserving the pre-IPA proof data. The adaptive AGM hand-off uses this data operation when assembling the proof returned by its algebraic adversary; it is not a rewind extractor.</div></div>
 <div class="g"><div class="g-head"><span class="term">round-by-round soundness</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/FiatShamir/Ordering.lean">FiatShamir.Ordering</a></span></div><div class="def">The transcript-ordering guarantee: each IPA round point sits in the transcript prefix before its challenge is drawn, so later messages cannot bend earlier challenges.</div></div>
-<div class="g"><div class="g-head"><span class="term">challenge-conversion bias</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Oracle/Challenge255.lean">Oracle.Challenge255.challenge255Bias</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/Oracle/Model.lean">PMFEventBiasLE</a></span></div><div class="def">The security layer prices squeezes as exactly uniform; the deployed <code>Challenge255</code> conversion instead reduces a 64-byte digest modulo <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>. With the digest idealized as uniform, an event's probability exceeds its uniform value by at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mord">/</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">260</span></span></span></span></span></span></span></span></span></span></span></span>, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">qp</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> — the exact constant, attained by the heavy residues, stated as the <code>PMFEventBiasLE</code> premise the transport theorem and the work-factor capstone's bias conjunct consume. Idealizing Blake2b as the uniform digest stays external.</div></div>
+<div class="g"><div class="g-head"><span class="term">challenge-conversion bias</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Oracle/Challenge255.lean">Oracle.Challenge255.challenge255Bias</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/Oracle/Model.lean">PMFEventBiasLE</a></span></div><div class="def">The security layer prices squeezes as exactly uniform; the deployed <code>Challenge255</code> conversion instead reduces a 64-byte digest modulo <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>. With the digest idealized as uniform, an event's probability exceeds its uniform value by at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mord">/</span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">260</span></span></span></span></span></span></span></span></span></span></span></span>, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">512</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">qp</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> — the exact constant, attained by the heavy residues, stated as the <code>PMFEventBiasLE</code> premiss the transport theorem and the work-factor capstone's bias conjunct consume. Idealizing BLAKE2b as the uniform digest stays external.</div></div>
 </section>
 <section>
 <div class="grp">Straight-line IPA extraction</div>
@@ -2280,7 +2596,7 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 </section>
 <section>
 <div class="grp">Capstones</div>
-<div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Capstones/Action.lean">Capstones/Action.lean</a></span></div><div class="def">The adaptive-statement capstones prove a knowledge-failure bound for the deployed Action verifier against represented online algebraic adversaries, with Fiat–Shamir challenge derivation modelled as a random oracle. The adversary chooses the public statement and proof together, and the selected instance prefix is bound before <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>. For every consensus-valid Action count, a faithfully staged adversary bounded by either <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> or <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations has failure probability at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> (<a href="formal-verification/definitions.html#adv-dlog">arguments</a>), provided <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>. Erasure preserves the original game; one composed program value-threads the exact adversary path and cache through the reduction; and Lean checks the counter decomposition and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mord">×</span></span></span></span> arithmetic. The result remains conditional on two explicit shallow-language fidelity obligations: the supplied adversary program and the complete program's host callbacks must perform no hidden Vesta group work. Its three-decode bound is conditional on the family's required representation-length invariant, which is not a concrete deployment instance constructed here. The quoted powers are resource coverage —not a universal failure ceiling— and the result does not cover arbitrary non-algebraic adversaries or concrete Blake2b. The random oracle ranges over bounded transcripts of the deployed schedule; AGM representations accompany every query but are erased before the oracle answers. The family fixes its key digest and verifier representations per basis before oracle access, and bundle size is public, universally quantified up to the consensus maximum.</div></div>
+<div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Capstones/Action.lean">Capstones/Action.lean</a></span></div><div class="def">The adaptive-statement capstones prove a knowledge-failure bound for the deployed Action verifier against represented online algebraic adversaries, with Fiat–Shamir challenge derivation modelled as a random oracle. The adversary chooses the public statement and proof together, and the selected instance prefix is bound before <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>. For every consensus-valid Action count, a faithfully staged adversary bounded by either <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> or <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations has failure probability at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> (<a href="formal-verification/definitions.html#adv-dlog">arguments</a>), provided <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>. Erasure preserves the original game; one composed program value-threads the exact adversary path and cache through the reduction; and Lean checks the counter decomposition and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mord">×</span></span></span></span> arithmetic. The result remains conditional on two explicit shallow-language fidelity obligations: the supplied adversary program and the complete program's host callbacks must perform no hidden Vesta group work. Its three-decode bound is conditional on the family's required representation-length invariant, which is not a concrete deployment instance constructed here. The quoted powers are resource coverage —not a universal failure ceiling— and the result does not cover arbitrary non-algebraic adversaries or concrete BLAKE2b. The random oracle ranges over bounded transcripts of the deployed schedule; AGM representations accompany every query but are erased before the oracle answers. The family fixes its key digest and verifier representations per basis before oracle access, and bundle size is public, universally quantified up to the consensus maximum.</div></div>
 <div class="g"><div class="g-head"><span class="term">knowledge-failure event</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean">ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailureEvent</a></span></div><div class="def">The event that the deployed Action verifier accepts but the executable extractor does not return private witnesses for the entire bundle. The capstone bounds this event directly.</div></div>
 <div class="g"><div class="g-head"><span class="term">semantic residuals</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementEvent.lean">ComputedAdaptiveActionStatementFSFamily.semanticEvent</a></span></div><div class="def">The explicitly priced <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> challenge surfaces needed to promote the compressed constraint identity to row-level gate, permutation, and lookup semantics.</div></div>
 <div class="g"><div class="g-head"><span class="term">ledger composition · deployment provenance</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/StraightLineTerminal.lean">ActionBundleWitness</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Bridge.lean">actionSpec_to_ledger</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Keygen/Certificate.lean">Keygen.Certificate</a></span></div><div class="def">The capstone returns the deployed Action circuit's private witnesses and satisfaction proofs, and actionSpec_to_ledger already refines one such Action witness to the games-facing ledger statement or an exhibited break. The remaining output-side floor is composing every extracted bundle entry through that bridge. On the input side, Lean derives the verifying key and checks it against the capture; proving the ported circuit equal to the shipped Rust circuit and refining captured bytes and transcripts to the deployed run remain external.</div></div>
@@ -2434,7 +2750,7 @@ against live in <code>Zcash/Arithmetic/</code>; <code>Core.lean</code> is a one-
 query back to the canonical group element it references.</li>
 <li><code>Expressions</code> recomputes the vanishing argument's <code>expected_h_eval</code>.</li>
 <li><code>Ipa</code> is the inner-product-argument opening (<code>compute_s</code> / <code>compute_b</code>).</li>
-<li><code>FiatShamir</code> models halo2's Blake2b challenge schedule as an abstract <code>squeeze</code>.</li>
+<li><code>FiatShamir</code> models halo2's BLAKE2b challenge schedule as an abstract <code>squeeze</code>.</li>
 <li><code>AssembleSpec</code> says what the rejecting <code>assemble?</code> returns when it does not reject — exactly
 the total assembly's value — the operational interface both the fingerprint walk and the
 deployed soundness layer consume.</li>
@@ -2661,8 +2977,8 @@ querying-adversary model to price straight-line pinned-root events.</li>
 <li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>ChallengeUniform</code> gives the
 exactly-uniform challenge law over <code>Fp</code>; <code>Challenge255</code> prices the deployed conversion against
 that ideal — a uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
-<code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premise the work-factor capstone's
-bias conjunct consumes, with Blake2b's idealization as the uniform digest remaining external.
+<code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premiss the work-factor capstone's
+bias conjunct consumes, with BLAKE2b's idealization as the uniform digest remaining external.
 (The generic oracle-computation machinery — <code>OracleComp</code>, the adaptive hybrid, and the
 <code>PMFEventBiasLE</code> transport interface — are in <code>Common/Oracle/</code>.)</li>
 <li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> supplies the coefficient and
@@ -2817,6 +3133,456 @@ against the binding-signature layer, <code>KeyBindingArm</code> discharges the k
 model, <code>Capstone</code> lifts the deterministic layer to a distribution over valid annotated ledgers,
 and <code>Completeness</code> checks the other direction — that an honest wallet's spend actually verifies.</li>
 </ul>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="working-notes"><a class="header" href="#working-notes">Working Notes</a></h1>
+<p>The pages in this section are development-facing notes: normative rules for how the
+codebase is organized, and specifications of refactoring arcs. They are kept with the book
+so that they render and stay discoverable, but their register differs from the rest of
+this chapter: they describe the development as it stands, and they are refreshed as
+refactoring arcs complete rather than kept continuously current.</p>
+<ul>
+<li><a href="formal-verification/clean-boundary.html">The Clean Boundary</a> is the normative rule for how Clean-originated
+concepts appear in ironwood.</li>
+<li><a href="formal-verification/lawfulness-and-certificate-elimination.html">Halo 2 Lawfulness and Certificate Elimination</a>
+specifies the arc that replaces whole-circuit computational certificates with
+compositional lawfulness.</li>
+</ul>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="the-clean-boundary-architecture-rule"><a class="header" href="#the-clean-boundary-architecture-rule">The Clean boundary: architecture rule</a></h1>
+<p>This note is normative for how Clean-originated concepts appear in the ironwood
+codebase. It exists so that the work converges on one structure, instead of each
+workstream growing local bridge plumbing.</p>
+<h2 id="the-principle"><a class="header" href="#the-principle">The principle</a></h2>
+<p>Ironwood is the host, Clean is a guest. Ironwood has its own first-class vocabulary —
+<code>VerifyingKey</code>, <code>Expr</code>, <code>Shape</code>, its satisfaction notions, its polynomial environments —
+and the guest must not scatter <em>its</em> vocabulary (<code>Halo2.ConstraintSystem</code>, <code>Operations</code>,
+<code>Gate</code>, <code>Expression F Query</code>, <code>RichExpression</code>, …) through the host's rooms.</p>
+<p>Everything Clean produces is funneled through <strong>one concept: <code>TopLevelCircuit</code></strong>, which
+carries everything downstream needs and is instantiated once per concrete circuit
+(<code>actionCircuit</code>).</p>
+<p><code>TopLevelCircuit</code> is deliberately two-sided:</p>
+<ul>
+<li>It is a <strong>Clean-native core concept</strong> (it may well migrate into Clean itself —
+<code>TopLevelKeygen</code> already consumes only Clean and could follow). Its Clean-typed
+methods (<code>constraintSystem</code>, <code>operations</code>, <code>config</code>, …) are legitimate and public —
+<em>for the boundary implementation</em>.</li>
+<li>Ironwood defines an <strong>ironwood-native interface on top of it</strong>, and that interface is
+the only thing non-boundary ironwood code may consume. Its outputs are ironwood-typed;
+a reader never needs to know Clean exists to use it.</li>
+</ul>
+<p>The canonical example of the pattern is</p>
+<pre><code>TopLevelCircuit.toVerifierKey : TopLevelCircuit → ProofParams → URS G → VerifyingKey …
+</code></pre>
+<p>— <em>the</em> core Clean concept bridged to a core ironwood concept in one method, with every
+Clean internal invisible in the signature.</p>
+<h2 id="the-ironwood-native-interface-target-surface"><a class="header" href="#the-ironwood-native-interface-target-surface">The ironwood-native interface (target surface)</a></h2>
+<p>On <code>TopLevelCircuit</code>, defined ironwood-side in the designated boundary modules:</p>
+<ul>
+<li><code>toVerifierKey (pp : ProofParams) (urs : URS G) : VerifyingKey (pp.mergeDerived top) …</code>
+— keygen, with the derived <code>Shape</code> in the return type (no lawfulness side condition).</li>
+<li>Shape/domain data as needed by consumers (<code>ProofParams.mergeDerived</code>, domain scalars).</li>
+<li>An <code>Expr</code>-typed pinned-constraint-system view (the boundary applies
+<code>RichExpression.toExpr</code> internally, exactly as <code>toVerifierKey</code> already does for the
+VK's <code>gates</code>).</li>
+<li><strong>A satisfaction contract in ironwood terms</strong>: an ironwood-decoded assignment
+satisfying the circuit's derived key implies the circuit's public statement. The
+internal generic proof may pass through <code>top.Statement</code> over a reconstructed Clean
+environment, but that environment and the whole satisfaction-integration cluster
+are implementation details rather than a public seam.</li>
+</ul>
+<h2 id="the-rule-enforceable-greppable"><a class="header" href="#the-rule-enforceable-greppable">The rule (enforceable, greppable)</a></h2>
+<blockquote>
+<p>Clean identifiers may appear only under <code>Zcash/Circuits/</code> and inside the designated
+boundary modules. Every other <code>Zcash/Snark/</code> (and <code>Common/</code>, <code>Security/</code>) signature
+mentions only <code>TopLevelCircuit</code> and ironwood types.</p>
+</blockquote>
+<p>Review test: <em>would a reader of this file need to know Clean exists to understand it?
+If yes and it is not a boundary module, it is misplaced.</em></p>
+<h2 id="worked-example-of-the-anti-pattern"><a class="header" href="#worked-example-of-the-anti-pattern">Worked example of the anti-pattern</a></h2>
+<p><code>Zcash/Common/ExprRich.lean</code>. <code>RichExpression</code> exists precisely because ripping
+ironwood's <code>Expr</code> out of ironwood for Clean's use would have been rude in the other
+direction — the type was deliberately duplicated so the clone stays on the guest's side
+of the wall. Installing its conversion (<code>ofExpr</code>/<code>toExpr</code>/<code>eval_ofExpr</code>) in the host's
+<code>Common/</code> un-quarantines it: it presents a Clean-side clone as a core ironwood concept.
+(Contrast <code>Common/Expr.lean</code> in the same folder — ironwood's own shared AST — which is
+exactly what <code>Common</code> is for.) The conversion belongs inside the boundary as private
+plumbing; with an <code>Expr</code>-typed pinned view on the interface, nothing outside the
+boundary mentions <code>RichExpression</code> at all.</p>
+<h2 id="current-state-of-the-boundary"><a class="header" href="#current-state-of-the-boundary">Current state of the boundary</a></h2>
+<p>Checked against the tree as of <a href="https://github.com/zcash/ironwood/commit/dc421aa04592bf37ebb404e3e562793d029581a5"><code>dc421aa0</code></a> (2026-08-21):</p>
+<ul>
+<li><code>Zcash/Bridge/</code> is dissolved; <code>Snark/VkCommit/</code> became the designated boundary
+family <code>Snark/Keygen/</code>; and the <code>RichExpression</code> conversion lives inside the
+boundary (<code>Circuits/Integration/ExprRich.lean</code>).</li>
+<li>The cross-language satisfaction seam lives under <code>Zcash/Circuits/Integration/</code>.</li>
+<li>Clean imports are otherwise confined to <code>Zcash/Circuits/</code> and <code>Snark/Keygen/</code>.
+One violation of the greppable rule remains:
+<code>Snark/Fixtures/SingleAction/Honest/VkMatch.lean</code> imports Clean, declares
+definitions with <code>Halo2.SelCompressMap</code> and <code>Halo2.AnyColumn</code> in their types, and
+applies <code>RichExpression.ofExpr</code>. It should be restated over the interface, in the style
+that <code>Snark/Keygen/Certificate.lean</code> demonstrates.</li>
+<li>The cross-repo migrations — <code>Circuits/Fixtures/Layout.lean</code>'s keygen semantics
+into Clean's <code>Halo2/Keygen</code>, and eventually <code>Circuits/TopLevel{,Keygen}.lean</code>
+themselves into Clean core — ride Clean pin cycles and have not happened.</li>
+</ul>
+<h2 id="drawing-the-boundary-precisely"><a class="header" href="#drawing-the-boundary-precisely">Drawing the boundary precisely</a></h2>
+<p>The directory boundary is a dependency boundary, not merely a collection of files
+created during the circuit-integration work.</p>
+<h3 id="what-stays-verifier-native"><a class="header" href="#what-stays-verifier-native">What stays verifier-native</a></h3>
+<p>The following concepts speak only the ironwood verifier's language and remain under
+<code>Zcash/Snark/Soundness/</code>:</p>
+<ul>
+<li><code>ConstraintSatisfaction</code> and <code>ConstraintPolyModel</code>;</li>
+<li><code>CanonicalConstraintModel</code> and the canonical domain-selector mathematics;</li>
+<li>permutation and lookup instantiation and semantics;</li>
+<li>the decoded multiopen constraint resolver.</li>
+</ul>
+<p>In particular, <code>CanonicalConstraintModel</code> takes a <code>VerifyingKey</code>, challenges, and an
+ironwood <code>CommitmentId → Polynomial</code> resolver and produces an ironwood
+<code>ConstraintPolyModel</code>. It does not know about a Clean circuit and is an input to the
+boundary, not part of its implementation.</p>
+<p>Some existing files need splitting rather than moving wholesale. For example,
+<code>PolynomialEnvironment</code> currently contains both the verifier-native interpolation
+construction (<code>rowPolynomial</code> and its algebraic facts) and the Clean-facing constructor
+of a <code>Halo2.Environment</code>. The former stays in <code>Snark/Soundness</code>; only the latter moves
+into <code>Circuits/Integration</code>.</p>
+<h3 id="what-lives-in-zcashcircuitsintegration"><a class="header" href="#what-lives-in-zcashcircuitsintegration">What lives in <code>Zcash/Circuits/Integration</code></a></h3>
+<p>This directory contains the implementation that is forced to understand both sides:</p>
+<ul>
+<li>extracting the gate, copy, lookup, and fixed-data obligations of Clean operations;</li>
+<li>interpreting ironwood resolver polynomials as a placed Clean environment;</li>
+<li>connecting selector compression and query layouts to Clean gate evaluation;</li>
+<li>reassembling those families as Clean's authoritative <code>Halo2.Constraints</code>;</li>
+<li>applying <code>TopLevelCircuit.soundness</code>;</li>
+<li>specializing the generic result to a concrete circuit statement such as Orchard
+Action.</li>
+</ul>
+<p>Pure Clean compiler semantics should instead live in <code>Zcash/Circuits/</code> or, preferably
+when reusable, upstream in Clean itself. Pure ironwood soundness stays in
+<code>Zcash/Snark/Soundness/</code>.</p>
+<h3 id="deployed-specializations-stay-with-soundness"><a class="header" href="#deployed-specializations-stay-with-soundness">Deployed specializations stay with soundness</a></h3>
+<p>A theorem that relies on the large captured VK artifacts—<code>Fixture.shape</code>,
+<code>Fixture.vk</code>, <code>capturedURS</code>, or the certificate equating those values with
+circuit-derived keygen output—belongs under <code>Zcash/Snark/Soundness/Deployed/</code>, not in
+this directory. Such a theorem may import the boundary's public circuit-derived
+terminal, but it should not re-establish Clean semantics itself. Conversely,
+<code>Circuits/Integration</code> should not import the fixture dumps merely to advertise the
+final deployed capstone.</p>
+<h3 id="the-public-satisfaction-contract-has-two-levels"><a class="header" href="#the-public-satisfaction-contract-has-two-levels">The public satisfaction contract has two levels</a></h3>
+<p><code>TopLevelCircuit</code> declares a <code>PublicInput</code> type and an injective layout of its encoded
+elements in instance cells. That one layout derives both extraction from a Clean
+environment and the cell/value assignments consumed by verifier integration. The
+top-level circuit separately extracts a private witness, recombines public and private
+data into its formal-circuit witness, and proves that this factorization agrees with
+the formal circuit's native extractor. Its <code>Spec</code> receives public and private data
+explicitly; only <code>Statement public</code> existentially hides the private witness.</p>
+<p>The boundary therefore exposes two theorem levels:</p>
+<ol>
+<li>a boundary-internal generic theorem taking satisfaction of the circuit-derived key
+to <code>top.Statement</code> at the public input extracted through the declared layout;</li>
+<li>a public theorem phrased only in ironwood-decoded data and the concrete circuit's
+public statement, for example the structured Orchard Action public inputs.</li>
+</ol>
+<p>No caller of the public theorem should construct a Clean environment or mention
+<code>Operations</code>, <code>ConstraintSystem</code>, selector compression, placement, or
+<code>RichExpression</code>.</p>
+<h3 id="consequence-of-circuit-derived-key-generation"><a class="header" href="#consequence-of-circuit-derived-key-generation">Consequence of circuit-derived key generation</a></h3>
+<p>For <code>vk := top.toVerifierKey pp urs</code>, the gate and lookup expressions, query layouts,
+shape counts, domain parameters, permutation chunks, and commitment families are
+outputs of the same circuit-owned keygen pipeline. Their correspondence must not be
+reintroduced as an arbitrary caller-supplied coherence record.</p>
+<p>The current <code>TopLevelGateCoherence</code> is useful scaffolding while the adapter is being
+built, but it should not survive as part of the public interface. Its definitional
+fields should be discharged directly from <code>toVerifierKey</code>; genuine semantic facts
+such as selector allocation, supported domain size, and degree bounds remain internal
+circuit/compiler obligations. Gate well-formedness is already intrinsic to <code>Gate</code>.
+The remaining facts should be derived or packaged once inside the boundary rather
+than supplied beside every soundness call.</p>
+<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="halo2-lawfulness-and-certificate-elimination"><a class="header" href="#halo2-lawfulness-and-certificate-elimination">Halo2 lawfulness and certificate elimination</a></h1>
+<h2 id="status-and-scope"><a class="header" href="#status-and-scope">Status and scope</a></h2>
+<p>This note specifies the refactoring arc that replaces concrete, whole-Action
+computational certificates with reusable Halo2-Clean lawfulness and compiler theorems.
+The certificates that could be eliminated by generalizing their consumers are gone
+(<a href="https://github.com/zcash/ironwood/pull/145">#145</a>); the compositional-lawfulness side
+is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
+<p>The deployed verifying-key equality is intentionally <strong>not</strong> part of this cleanup.
+Checking that the circuit-derived key equals the deployed Orchard key is a legitimate
+concrete trust-boundary check. It must not, however, double as evidence that the Clean
+formal circuit is internally lawful.</p>
+<p>The visible certificate list understates the architectural debt, for example:</p>
+<ul>
+<li>some certificates bundle independent facts;</li>
+<li>further wellformedness checks hide inside the VK-match bundle;</li>
+<li><code>ConstraintSystem.closeWithOperations</code> silently repairs a missing configure/synthesis
+fact without proving that the repair is inactive (the verifier MSM match is against
+the repaired circuit that is actually proven, as it should be, but the repair impedes
+comparing the Lean code against the Rust implementation and should be unnecessary).</li>
+</ul>
+<p>The guiding rule is:</p>
+<blockquote>
+<p>A concrete VK comparison may establish deployment identity. It must not establish
+that a formal circuit is well formed.</p>
+</blockquote>
+<h2 id="why-closewithoperations-belongs-in-this-inventory"><a class="header" href="#why-closewithoperations-belongs-in-this-inventory">Why <code>closeWithOperations</code> belongs in this inventory</a></h2>
+<p>Clean currently defines <code>FormalCircuit.toConstraintSystem</code> by taking the raw result of
+<code>configure</code> and applying <code>ConstraintSystem.closeWithOperations</code> to the circuit's
+synthesis stream. Closure:</p>
+<ol>
+<li>appends gates enabled by synthesis but absent from <code>configure</code>;</li>
+<li>appends lookups enabled by synthesis but absent from <code>configure</code>;</li>
+<li>registers queries for those appended arguments; and</li>
+<li>increases <code>numSelectors</code> when lookup expressions use selectors beyond the bound
+allocated by <code>configure</code>.</li>
+</ol>
+<p>This produces a self-consistent internal object, but it is not the algorithm Halo2
+uses. In Halo2, synthesis can enable only a gate or lookup already established by
+configuration. If closure changes the raw constraint system, the model has repaired
+an invalid formal circuit instead of rejecting it.</p>
+<p>The problem is not cured by comparing the resulting pinned CS with a captured VK.
+Such a comparison says that the <em>repaired derivation</em> matches the deployed data; it
+does not say that the repair was inactive. In particular, semantically redundant or
+projection-equivalent repairs need not be observable in every downstream pinned
+field.</p>
+<p>The desired endpoint is:</p>
+<pre><code class="language-text">rawCS := (c.configure ci {}).2
+ops   := c.toOperations ci input
+
+FormalCircuit lawfulness proves:
+  every enabled gate is in rawCS.gates
+  every enabled lookup is in rawCS.lookups
+  every lookup selector is below rawCS.numSelectors
+
+c.toConstraintSystem ci input = rawCS
+c.toPinnedCS ci input = PinnedConstraintSystem.ofClosedOperations rawCS ops
+</code></pre>
+<p><code>closeWithOperations</code> can remain as a diagnostic or migration helper, but it should
+not define the canonical keygen semantics. A useful transition theorem is that lawful
+circuits satisfy</p>
+<pre><code class="language-text">rawCS.closeWithOperations ops = rawCS.
+</code></pre>
+<p>That theorem makes the current and intended pipelines coincide while callers migrate.
+After migration, the raw configure result should be used directly.</p>
+<p>The query-registration folds in closure are not a separate atomic obligation. Once
+both missing-argument lists are empty, those folds are inactive. The selector maximum
+is separate: it can change even with no missing lookup when a configured lookup
+mentions an unallocated selector.</p>
+<h2 id="the-concrete-computations-that-remain"><a class="header" href="#the-concrete-computations-that-remain">The concrete computations that remain</a></h2>
+<p>The computations that were generically provable, and those that existed only because
+downstream code demanded Action constants, are gone
+(<a href="https://github.com/zcash/ironwood/pull/145">#145</a>). Where their names survive, they
+are corollaries derived from the facts below, or they live inside the
+deployment-identity certificate (<code>Zcash/Snark/Keygen/Certificate.lean</code>) — the
+intended end state, since deployment identity is the one legitimate concrete check.</p>
+<p>Two kinds of concrete computation remain, and the axiom census pins both:</p>
+<ul>
+<li>the law-dependent obligations, discharged for the concrete Action circuit by the
+compute modules under <code>Zcash/Circuits/Integration/</code>: gate coherence and constraint
+degree, fixed-column coverage and realization, copy addressing, constant
+allocation, and permutation routing over the derived domain; and</li>
+<li>one exact permutation fact, the circuit's permutation-column count. The current
+circuit interfaces do not bound it — columns carry unbounded <code>Nat</code> indices and
+<code>Configure</code> is an arbitrary state function — so eliminating it needs either a
+configure law ensuring a duplicate-free in-range column list or an explicit
+supported-column-count law on the top-level keygen interface. That is a design
+decision for the lawfulness side of the arc, not another consumer generalization.</li>
+</ul>
+<p>Replacing the first kind with compositional lawfulness is the substance of this
+note, and <a href="https://github.com/zcash/ironwood/pull/202">#202</a> is that work in
+progress.</p>
+<h2 id="withdrawn-synthesis-laws-and-the-residual-fidelity-gap"><a class="header" href="#withdrawn-synthesis-laws-and-the-residual-fidelity-gap">Withdrawn synthesis laws and the residual fidelity gap</a></h2>
+<p><code>TopLevelCircuit</code> once carried two static synthesis obligations: that a lookup
+operation's recorded enabled selectors exactly match the relevant selectors activated
+in its complete region at that row, and that lookup input expressions contain no
+simple selectors. They were proved at the wrong abstraction layer — as fields of
+<code>TopLevelCircuit</code> rather than of <code>FormalCircuit</code>, backed by sidecars that retraced
+the entire Action and NoteCommit synthesis call graphs — and nothing consumed them,
+so they were withdrawn rather than relocated.</p>
+<p>That withdrawal leaves a known fidelity gap. Halo 2 rejects simple selectors supplied
+to a lookup argument — lookup registration panics on one — and Clean no longer models
+that rejection anywhere. Nothing in the present chain becomes unsound as a result,
+because nothing claims it; but a keygen-fidelity theorem relating Clean's
+<code>configure</code>/<code>synthesize</code> output to halo2's own key generation cannot be stated
+faithfully without it. Such a theorem will need a no-simple-selectors premiss
+reintroduced explicitly.</p>
+<p>When that happens, the premiss should not be reinstated in the withdrawn shape. These
+are laws of <code>FormalCircuit.synthesize</code>: the obligation belongs locally on
+lookup-emitting bundles, preserved compositionally by the circuit combinators, rather
+than reproved across a whole synthesis call graph and reattached at the top-level
+wrapper.</p>
+<h2 id="proposed-lawfulness-interfaces"><a class="header" href="#proposed-lawfulness-interfaces">Proposed lawfulness interfaces</a></h2>
+<h3 id="1-exact-gate-query-support"><a class="header" href="#1-exact-gate-query-support">1. Exact gate query support</a></h3>
+<p>For a gate, the list supplied as <code>queriedCells</code> records Rust closure-call order, while
+expression traversal records syntactic use order and may repeat atoms differently.
+The right law is therefore support equality, not list equality:</p>
+<pre><code class="language-text">Gate.QueryExact gate :=
+  every entry of gate.queriedCells is an advice/fixed/instance query
+  ∧ constraintQuerySupport gate.constraints
+      = gate.queriedCells.toFinset
+  ∧ constraintSelectorSupport gate.constraints
+      = {gate.selector}
+</code></pre>
+<p>This captures the intent: the cells in the constraints are exactly the declared
+queries, plus the gate selector. If future Halo2 APIs deliberately permit valid but
+unused closure queries, equality can be relaxed to the required subset direction.
+Start with equality because it detects both missing and stale declarations.</p>
+<p>The existing <code>Gate.WellFormed</code> selector discipline and <code>QueryExact</code> should become
+parts of a single gate lawfulness interface. Construction should retain current call
+syntax through default proof arguments and tactics.</p>
+<p>Consequences should include:</p>
+<ul>
+<li>no invalid <code>queriedCells</code>;</li>
+<li>every expression query receives the intended registered query index;</li>
+<li>query coverage for every semantically consumed gate fixed column;</li>
+<li>expression projection is independent of an unrelated concrete VK check.</li>
+</ul>
+<h3 id="2-lookup-query-support"><a class="header" href="#2-lookup-query-support">2. Lookup query support</a></h3>
+<p>Lookups need the analogous law:</p>
+<pre><code class="language-text">LookupArgument.QueryExact argument declaredQueries :=
+  querySupport (argument.inputs ++ argument.tables)
+    = declaredQueries.toFinset
+</code></pre>
+<p>It composes with the existing lookup properties: table expressions are selector-free,
+input selectors are disciplined, tuple arities match, and activation rows are exact.
+The declaration must reflect the actual configure closure-call order when that order
+affects query indices.</p>
+<h3 id="3-configuresynthesis-registration"><a class="header" href="#3-configuresynthesis-registration">3. Configure/synthesis registration</a></h3>
+<p>The raw configure result and synthesis stream need a packaged law such as:</p>
+<pre><code class="language-text">FormalCircuit.RegisteredIn :=
+  let rawCS := (configure configInput {}).2
+  let ops := toOperations configInput input
+  OperationsKeygenCoherent rawCS ops
+  ∧ LookupSelectorsAllocated rawCS
+</code></pre>
+<p>The name and exact factorization can change, but the property must live on
+<code>FormalCircuit</code> (or a construction it contains), not beside each Action subcircuit.
+As with Clean's other lawfulness fields, primitives should prove it once and
+combinators should preserve it. A default tactic should solve ordinary bundles from
+those compositional lemmas.</p>
+<p>This law gives:</p>
+<ul>
+<li><code>missingEnabledGates rawCS ops = []</code>;</li>
+<li><code>missingEnabledLookups rawCS ops = []</code>;</li>
+<li>the closure selector maximum equals <code>rawCS.numSelectors</code>;</li>
+<li><code>rawCS.closeWithOperations ops = rawCS</code>; and</li>
+<li>canonical <code>toConstraintSystem</code> and <code>toPinnedCS</code> can use <code>rawCS</code> directly.</li>
+</ul>
+<p>This is stricter and more faithful than merely baking synthesis-enabled arguments into
+the derived CS.</p>
+<h3 id="4-configure-permutation-and-constant-laws"><a class="header" href="#4-configure-permutation-and-constant-laws">4. Configure permutation and constant laws</a></h3>
+<p>Configure should also expose:</p>
+<ul>
+<li>every equality-enabled column has the zero-rotation query required by permutation
+routing;</li>
+<li>every constant column is equality-enabled;</li>
+<li>every instance column targeted by synthesis is equality-enabled; and</li>
+<li>allocated column/selector counters are monotone and references are in range.</li>
+</ul>
+<p>These are good candidates for proof-by-construction in a restricted append-only
+configure monad. Until then, they should be fields preserved by configure primitives
+and discharged compositionally.</p>
+<h3 id="5-region-operation-lawfulness"><a class="header" href="#5-region-operation-lawfulness">5. Region-operation lawfulness</a></h3>
+<p>Each region should certify locally:</p>
+<ul>
+<li>every referenced cell was allocated in that region;</li>
+<li>referenced offsets are below the measured region extent;</li>
+<li>repeated writes to the same local fixed cell agree; and</li>
+<li>copy endpoints use equality-enabled columns.</li>
+</ul>
+<p>The V1 planner already proves that regions sharing a measured column receive
+non-overlapping column-and-row intervals. That generic theorem turns local fixed-write
+consistency into cross-region consistency. Regions may share row numbers; what cannot
+overlap is a cell in a shared column.</p>
+<p>Tables, constant allocation, and selector packing are separate compiler stages, not
+exceptions. Each stage needs a small consistency theorem and a composition theorem
+showing that its writes do not conflict with region writes or with the other stages.</p>
+<h3 id="6-operation-stream-lawfulness"><a class="header" href="#6-operation-stream-lawfulness">6. Operation-stream lawfulness</a></h3>
+<p>Reintroduce the two lookup synthesis laws on <code>FormalCircuit</code>, with compositional
+support in circuit and subcircuit constructors. The same formal-circuit lawfulness
+package should grow to cover:</p>
+<ul>
+<li>table loads for the same destination are consistent;</li>
+<li>constants are allocatable;</li>
+<li>instance constraints target enabled columns; and</li>
+<li>region-local laws hold for every synthesized region.</li>
+</ul>
+<p>These should compose through operation-list append and circuit calls, so a top-level
+circuit inherits them without enumerating every Action subcircuit in one theorem.</p>
+<h3 id="7-supported-domain"><a class="header" href="#7-supported-domain">7. Supported domain</a></h3>
+<p><code>TopLevelCircuit</code> should expose a supported-domain fact:</p>
+<pre><code class="language-text">∃ k ≤ fieldTwoAdicity, top.FitsAt k
+</code></pre>
+<p>Ideally this follows from per-region or per-bundle footprint bounds and generic
+planner bounds. If the complete structural proof is too large initially, a concrete
+domain check may remain only as a prominently marked interim certificate with this
+replacement named.</p>
+<h2 id="generic-compiler-proofs-still-required"><a class="header" href="#generic-compiler-proofs-still-required">Generic compiler proofs still required</a></h2>
+<p>Even a fully lawful circuit does not eliminate all work. The compiler needs reusable
+proofs that:</p>
+<ol>
+<li>permutation column lookup, chunking, and address encoding round-trip;</li>
+<li>V1 placement transports region-local bounds and consistency to placed cells; and</li>
+<li>selector compression covers every selector of a lawful gate or lookup.</li>
+</ol>
+<p>These are generic algorithms over small abstract inputs. They should be proved with
+behavioral simp lemmas and induction, not <code>rfl</code>/<code>whnf</code> through a concrete Action
+definition.</p>
+<h2 id="recommended-implementation-sequence"><a class="header" href="#recommended-implementation-sequence">Recommended implementation sequence</a></h2>
+<h3 id="phase-a--make-raw-configure-authoritative"><a class="header" href="#phase-a--make-raw-configure-authoritative">Phase A — make raw configure authoritative</a></h3>
+<ol>
+<li>Define the configure/synthesis registration and selector-allocation laws.</li>
+<li>Prove closure is inactive for lawful circuits.</li>
+<li>Put the law on <code>FormalCircuit</code> with compositional primitive/bundle support.</li>
+<li>Change canonical <code>toConstraintSystem</code>/<code>toPinnedCS</code> to use raw configure output.</li>
+<li>Retain <code>closeWithOperations</code> only as a migration/diagnostic helper.</li>
+</ol>
+<p>This phase replaces gate closure, lookup closure, and selector-bound closure and
+prevents the VK capture from hiding a modeling error.</p>
+<h3 id="phase-b--remove-concrete-downstream-demands-done"><a class="header" href="#phase-b--remove-concrete-downstream-demands-done">Phase B — remove concrete downstream demands (done)</a></h3>
+<p>Generalize permutation replay and domain consumers, leaving exact deployed constants
+visible only in the VK identity check. This landed in
+<a href="https://github.com/zcash/ironwood/pull/145">#145</a>; what survives of it is the
+law-dependent permutation-column count described above.</p>
+<h3 id="phase-c--gate-lookup-and-configure-lawfulness"><a class="header" href="#phase-c--gate-lookup-and-configure-lawfulness">Phase C — gate, lookup, and configure lawfulness</a></h3>
+<p>Add exact query support, degree bounds, permutation-column registration, constant
+column laws, and instance registration. This addresses query coverage, constant-cell
+routing, degree safety, permutation routing, primary-instance registration, invalid
+query declarations, and the local premiss of selector-compression coverage.</p>
+<h3 id="phase-d--generic-projection-and-algebra-largely-done"><a class="header" href="#phase-d--generic-projection-and-algebra-largely-done">Phase D — generic projection and algebra (largely done)</a></h3>
+<p>Prove query-layout projection, constant-stream value preservation,
+selector-compression coverage, and delta-power injectivity. The first, second, and
+fourth landed in <a href="https://github.com/zcash/ironwood/pull/145">#145</a>;
+selector-compression coverage remains.</p>
+<h3 id="phase-e--region-copy-constants-and-fixed-realization"><a class="header" href="#phase-e--region-copy-constants-and-fixed-realization">Phase E — region, copy, constants, and fixed realization</a></h3>
+<p>Build region-local allocation/write laws and generic placement transfer, then compose
+the fixed-producing stages. This addresses the region, copy, constant, and
+fixed-realization obligations.</p>
+<h3 id="phase-f--supported-domain"><a class="header" href="#phase-f--supported-domain">Phase F — supported domain</a></h3>
+<p>Derive the top-level domain bound compositionally. This can proceed in parallel with
+much of Phase E once the footprint interface is settled.</p>
+<h2 id="completion-criteria"><a class="header" href="#completion-criteria">Completion criteria</a></h2>
+<p>This arc is complete when:</p>
+<ul>
+<li>the canonical Clean keygen pipeline does not repair configure/synthesis mismatch;</li>
+<li>the lawfulness obligations are discharged generically or compositionally;</li>
+<li>lookup synthesis laws are carried by every <code>FormalCircuit</code> and preserved by its
+combinators;</li>
+<li>the Action integration capstone imports no concrete certificate theorems;</li>
+<li>no whole-Action <code>native_decide</code> remains for circuit correctness, layout
+consistency, query registration, routing, or domain safety;</li>
+<li>any retained concrete computation checks only deployment identity or fixture data;
+and</li>
+<li>adding another lawful top-level Halo2 circuit requires no analogous hand-written
+certificate module.</li>
+</ul>
+<h2 id="non-goals"><a class="header" href="#non-goals">Non-goals</a></h2>
+<p>This work does not remove the deployed Action VK capture, prove fixture provenance,
+or change verifier/soundness semantics to speak in Clean-native terms. It strengthens
+the Clean-to-Ironwood boundary so that the circuit interface arrives with the
+Ironwood-facing properties that soundness needs.</p>
 <script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 
                     </main>

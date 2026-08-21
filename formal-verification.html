@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-f5e1089e.js";
+            window.path_to_searchindex_js = "searchindex-4c58d9a9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-aadf71e3.js"></script>
+        <script src="toc-e83e08d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -317,7 +317,7 @@ the verifier, so anything <code>noncomputable</code> on the assembled-verifier p
 <code>Fixtures/*/Random/Epsilon.lean</code>. Capture lineage, seeds, and the reproducibility pipeline are in
 <code>Zcash/Snark/Fixtures/PROVENANCE.md</code>. Together, the captures and ε theorems support the typed,
 post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
-domain-prefix bytes, and Blake2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
+domain-prefix bytes, and BLAKE2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
 boundary, tracked in <a href="https://github.com/zcash/ironwood/issues/66">#66</a>.</p>
 <p><strong>The circuit-side layout fixtures are pinned, not regenerated.</strong> The CS and layout dumps behind
 <code>CircuitCheck</code>'s <code>TestVk*</code> comparisons (<code>Zcash/Circuits/Fixtures/*.json</code>) were emitted by one-off
@@ -335,7 +335,7 @@ are recorded in <code>Zcash/Circuits/Fixtures/PROVENANCE.md</code>.</p>
 what the statements <em>model</em>: it is neither an axiom nor a compiler-trust question, so no census
 sees it.</p>
 <p><strong>Fiat–Shamir is idealized.</strong> The deployed verifier derives each challenge by hashing the
-transcript so far with Blake2b and reducing 64 bytes to a field element. The development models
+transcript so far with BLAKE2b and reducing 64 bytes to a field element. The development models
 that as an abstract <code>squeeze</code> (<code>Verifier/FiatShamir.lean</code>) and, in the security layer, as a
 uniform random oracle — the assumption that carries interactive soundness to the deployed
 non-interactive check. Identifying the deployed hash with that oracle is external, over and
@@ -353,7 +353,7 @@ collected on the <a href="formal-verification/definitions.html">Definitions</a> 
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="formal-verification/proof-journey.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="formal-verification/guide.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -367,7 +367,7 @@ collected on the <a href="formal-verification/definitions.html">Definitions</a> 
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="formal-verification/proof-journey.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="formal-verification/guide.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

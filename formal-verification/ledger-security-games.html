@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-f5e1089e.js";
+            window.path_to_searchindex_js = "../searchindex-4c58d9a9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-aadf71e3.js"></script>
+        <script src="../toc-e83e08d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -184,12 +184,13 @@ protocol <strong>security properties</strong> under <code>Zcash/Security/</code>
 <ul>
 <li>the top-level capstones — the <em>ledger-model security games</em> of <em>Balance integrity</em>, <em>Spendability</em>, and <em>Spend authority</em>;</li>
 <li>how each capstone connects, by reduction via intermediate security properties such as
-<em>binding-signature balance</em>, <em>key binding</em>, and <em>verifier knowledge soundness</em>, to an
-exhibited break of a cryptographic primitive in a specified adversary model.</li>
+<em>binding-signature balance</em> and <em>key binding</em>, to an exhibited break of a cryptographic
+primitive in a specified adversary model — and where the intended hand-off to <em>verifier
+knowledge soundness</em> remains open.</li>
 </ul>
 <p>Every argument here follows the <em>breaks as computed data</em> convention and the three-layer
 stack described in <a href="security-models.html">Security Models</a>.</p>
-<h2 id="one-connected-picture"><a class="header" href="#one-connected-picture">One connected picture</a></h2>
+<h2 id="one-picture-not-yet-connected"><a class="header" href="#one-picture-not-yet-connected">One picture, not yet connected</a></h2>
 <pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; } marker { overflow: visible !important; } marker path { transform-box: fill-box !important; transform-origin: center !important; transform: scale(1.25) !important; }&quot;}}%%
 flowchart TD
   subgraph GAMES[&quot;Ledger capstones&quot;]
@@ -232,7 +233,7 @@ flowchart TD
   NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
   SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
 
-  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/Bridge.lean'&gt;justified by&lt;br/&gt;the extractor&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/issues/147'&gt;intended hand-off:&lt;br/&gt;not yet formalized&lt;br/&gt;(#147, #155)&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&lt;br/&gt;(separate development)&quot;]
   NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
 
   KERR KERRtoNDLR@==&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
@@ -280,13 +281,13 @@ flowchart TD
   class RDSA hyp
   class DL,ROM assumed
   classDef agmEdge stroke:#8858c8,stroke-width:4.2px
-  classDef agmBridge stroke:#8858c8,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
+  classDef gapEdge stroke:#cf222e,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
   class KERRtoNDLR,KStoDL,RDSAtoDL agmEdge
-  class STMTtoKS agmBridge
+  class STMTtoKS gapEdge
 </pre>
 <p>
 <span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the online-AGM — both endpoint games are <a href="security-models.html#the-algebraic-adversary-restriction">algebraic</a><br/>
-<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">⇢</span> dashed purple edge: an AGM-scoped justification crossing named side conditions — a semantic bridge rather than a proved implication<br/>
+<span style="color:#cf222e; font-weight: 700; font-size: 1.9rem">⇢</span> dashed red edge: an intended hand-off that is not yet formalized — the endpoints share no definition (<a href="https://github.com/zcash/ironwood/issues/147">#147</a>, <a href="https://github.com/zcash/ironwood/issues/155">#155</a>)<br/>
 <span style="font-size: 1.9rem">➝</span> thin edge: depends on (a reduction, assumption, or model)<br/>
 <span style="color:#1a7f37"> ■ </span> fully proven — nothing here yet<br/>
 <span style="color:#0969da"> ■ </span> stated and machine-checked in Lean, over abstract primitives<br/>
@@ -322,15 +323,17 @@ assumption. The games are the top-level capstones. The ledger model requires the
 supply, along with any accepting proof, a <strong>witness or replay evidence</strong> for the Action
 statement (<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the
 previously supplied witness. Each component argument consumes the statement's satisfaction
-<em>on that witness</em>. Knowledge soundness is what justifies the modelling: whenever the ledger
-layer needs a witness, the extractor computes one —or computes break data— from the accepting
-proof. The justification is AGM-scoped —the extractor consumes the adversary's
-representations— so its edge is heavy purple; the dashing marks that it crosses the
-remaining semantic bridge: the Clean/Ironwood circuit-correctness conditions
-(<code>TopLevelCircuitCorrectness</code>) — named component conditions rather than a proved
-implication. Discharging them is the subject of the circuit soundness proof.</p>
+<em>on that witness</em>. Knowledge soundness is what is <em>intended</em> to justify that modelling:
+whenever the ledger layer needs a witness, the extractor would compute one —or compute
+break data— from the accepting proof. That hand-off is not yet formalized in any form:
+the games state <code>ActionSatisfied</code> over their own abstract types, and no definition is
+shared with the SNARK development. The dashed red edge marks exactly this gap
+(<a href="https://github.com/zcash/ironwood/issues/147">#147</a>,
+<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Until it lands, the
+witness-supply requirement is a modelling assumption of the ledger games, not a
+consequence of verifier knowledge soundness.</p>
 <style>
-/* "One connected picture" links: labels keep their ordinary colour at rest
+/* "One picture, not yet connected" links: labels keep their ordinary colour at rest
    (blue is reserved for the status coding); hover underlines. */
 .mermaid .edgeLabel a { color: inherit; }
 .mermaid .edgeLabel a:hover,

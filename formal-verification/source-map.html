@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-f5e1089e.js";
+            window.path_to_searchindex_js = "../searchindex-4c58d9a9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-aadf71e3.js"></script>
+        <script src="../toc-e83e08d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -285,7 +285,7 @@ against live in <code>Zcash/Arithmetic/</code>; <code>Core.lean</code> is a one-
 query back to the canonical group element it references.</li>
 <li><code>Expressions</code> recomputes the vanishing argument's <code>expected_h_eval</code>.</li>
 <li><code>Ipa</code> is the inner-product-argument opening (<code>compute_s</code> / <code>compute_b</code>).</li>
-<li><code>FiatShamir</code> models halo2's Blake2b challenge schedule as an abstract <code>squeeze</code>.</li>
+<li><code>FiatShamir</code> models halo2's BLAKE2b challenge schedule as an abstract <code>squeeze</code>.</li>
 <li><code>AssembleSpec</code> says what the rejecting <code>assemble?</code> returns when it does not reject — exactly
 the total assembly's value — the operational interface both the fingerprint walk and the
 deployed soundness layer consume.</li>
@@ -512,8 +512,8 @@ querying-adversary model to price straight-line pinned-root events.</li>
 <li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>ChallengeUniform</code> gives the
 exactly-uniform challenge law over <code>Fp</code>; <code>Challenge255</code> prices the deployed conversion against
 that ideal — a uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
-<code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premise the work-factor capstone's
-bias conjunct consumes, with Blake2b's idealization as the uniform digest remaining external.
+<code>r(p−r)/(p·2^512) &lt; 2^-260</code>, stated as the <code>PMFEventBiasLE</code> premiss the work-factor capstone's
+bias conjunct consumes, with BLAKE2b's idealization as the uniform digest remaining external.
 (The generic oracle-computation machinery — <code>OracleComp</code>, the adaptive hybrid, and the
 <code>PMFEventBiasLE</code> transport interface — are in <code>Common/Oracle/</code>.)</li>
 <li><strong><code>Multiopen/</code></strong> — the multiopen argument's value binding. <code>Decode</code> supplies the coefficient and
@@ -678,6 +678,9 @@ and <code>Completeness</code> checks the other direction — that an honest wall
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../formal-verification/working-notes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -689,6 +692,9 @@ and <code>Completeness</code> checks the other direction — that an honest wall
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../formal-verification/working-notes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
