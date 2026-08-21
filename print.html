@@ -30,7 +30,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-0bd3a5ea.css">
+        <link rel="stylesheet" href="custom-b3340150.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-4c58d9a9.js";
+            window.path_to_searchindex_js = "searchindex-df7c90e4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-e83e08d0.js"></script>
+        <script src="toc-e251c89b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -213,7 +213,6 @@ lake build           # verify everything (exactly what CI runs)
 submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
 <p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span> is the project to deploy a new shielded value pool for Zcash: the
@@ -282,10 +281,6 @@ and authorization hashes.</p>
 the pools that version supports (<em>Sapling</em>, <em>Orchard</em>, and <em>Ironwood</em>), that allows a
 transaction to be signed and then have its anchor updated later. This can improve
 privacy by leaking less information about when the transaction was signed.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="preliminaries"><a class="header" href="#preliminaries">Preliminaries</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="quantum-recoverability"><a class="header" href="#quantum-recoverability">Quantum Recoverability</a></h1>
 <p>Quantum recoverability is the note-level change that defines <em>Ironwood-pool</em>
@@ -370,10 +365,6 @@ transition has the information it needs to recover those funds.</p>
 <ul>
 <li><a href="https://zips.z.cash/zip-2005">ZIP 2005: Ironwood Quantum Recoverability</a></li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="design"><a class="header" href="#design">Design</a></h1>
 <p>This page summarizes the main design decisions behind <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span></span>.</p>
@@ -619,7 +610,6 @@ production protocol specification:</p>
 version —the Orchard-protocol Action circuit plus one new constraint, the
 cross-address restriction— is used for both the <em>Orchard</em> and <em>Ironwood pools</em>,
 with its own proving and verifying keys.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="transaction-format"><a class="header" href="#transaction-format">Transaction Format</a></h1>
 <p>Version 6 follows the version 5 transaction format, with an <em>Ironwood-pool</em> bundle
@@ -678,7 +668,6 @@ shown above, and is instead committed in the <strong>authorization digest</stron
 keeps both the txid and the signature sighash independent of the anchor, so
 that a spend can be signed before the anchor it is finalized against —the
 note-commitment-tree root— exists.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="action-circuit"><a class="header" href="#action-circuit">Action Circuit</a></h1>
 <p>From NU6.3, both the <em>Orchard</em> and <em>Ironwood pools</em> use a single Action circuit
@@ -774,18 +763,6 @@ with an instance that includes the <span class="katex"><span class="katex-html" 
 restricted statement with a cross-address output. The builder, PCZT,
 and signer layers add a same-receiver structural check so that honest
 participants do not construct a restricted bundle that would fail to prove.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="orchard--to-ironwood-pool-migration"><a class="header" href="#orchard--to-ironwood-pool-migration"><em>Orchard-</em> to <em>Ironwood-pool</em> Migration</a></h1>
-<p>Moving existing <em>Orchard-pool</em> funds into the <em>Ironwood pool</em> is an ordinary
-version 6 transaction rather than a special protocol operation: it spends
-<em>Orchard-pool</em> notes and creates <em>Ironwood-pool</em> outputs. It is the case where
-the post-NU6.3 rules compose. The <em>Orchard-pool</em> side has a positive value
-balance (value leaves the <em>Orchard pool</em>, which the value rule permits), and the
-<em>Ironwood-pool</em> side has a negative value balance (value enters the <em>Ironwood
-pool</em>); the two net to the fee.</p>
-<p><em>Exact wallet migration mechanics to be described.</em></p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="formal-verification"><a class="header" href="#formal-verification">Formal Verification</a></h1>
 <p>Ironwood's formal verification is a Lean 4 development (over Mathlib) in this repository:
@@ -953,7 +930,6 @@ above the byte-level boundary noted above: the fixtures check challenge schedule
 captures, not against transcript bytes.</p>
 <p>Coined terms and shorthand for the development are
 collected on the <a href="formal-verification/definitions.html">Definitions</a> page.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="guide-to-the-ironwood-formalization"><a class="header" href="#guide-to-the-ironwood-formalization">Guide to the Ironwood Formalization</a></h1>
 <p>This page is for anyone deciding what to conclude, and what not to conclude, from this
@@ -1265,7 +1241,6 @@ owning declaration at build time, and each is independently re-checkable — but
 compiled code they run is the whole fast native arithmetic, proven correct in the
 kernel and executed as the compiler translated it.</li>
 </ol>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
 <p>Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
@@ -1310,7 +1285,6 @@ the stages describe the tree as it stands rather than the stack that built it.</
   });
 })();
 </script>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="proof-map"><a class="header" href="#proof-map">Proof Map</a></h1>
 <p>One connected picture of the verifier-soundness proof.</p>
@@ -1358,7 +1332,6 @@ html.sidebar-visible .proofmap-shell {
   });
 })();
 </script>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="security-models"><a class="header" href="#security-models">Security Models</a></h1>
 <p>The <a href="formal-verification/ledger-security-games.html">ledger security games</a> under <code>Zcash/Security/</code> and the
@@ -1618,7 +1591,127 @@ capstone's bound is no stronger than the adversary class it quantifies over. For
 property statements the models scope, see the
 <a href="formal-verification/ledger-security-games.html"><strong>Ledger Security Games</strong></a>; for the verifier-soundness half,
 the <a href="formal-verification/proof-map.html"><strong>Proof Map</strong></a>; for the coined terms, the <a href="formal-verification/definitions.html"><strong>Definitions</strong></a>.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="interpreting-security"><a class="header" href="#interpreting-security">Interpreting Security</a></h1>
+<blockquote>
+<p><strong>Bottom line:</strong> within the formal model, breaking the knowledge soundness of the
+deployed Action verifier is —up to a small statistical error— at least as hard as
+solving Vesta discrete log: the reduction turns every covered attack into a DLOG
+solver with comparable resources. The benchmark therefore remains Vesta DLOG, whose
+best known classical attacks have an expected-work scale of about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group
+operations. This is conventionally summarized as a 126-bit headline security level
+for Vesta DLOG. At the certified profile, the constructed solver uses less than
+twice the attacker's group-work budget, giving this claim a conservative 125-bit
+computational-work headline; the advantage function below is the precise statement.</p>
+</blockquote>
+<p>Here “knowledge soundness” means that whoever produced an accepted proof must know a
+valid <em>witness</em>: the private data that justifies the proved statement. The extractor
+computes the witness from the prover's declared group-element representations, not
+from the proof alone. “Covered” means inside
+the theorem's scope: an adversary that stays within the resource budgets below, supplies
+a representation for every group element it outputs, and faces Fiat–Shamir challenges
+modelled as a random oracle. The game also samples the verifier's fixed bases; the
+deployed, baked-in list inherits the result through the fixed-bases argument in
+<a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">Security Models</a>.</p>
+<h2 id="for-experts"><a class="header" href="#for-experts">For experts</a></h2>
+<p>For a bundle containing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> Actions and an adversary <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal">A</span></span></span></span> making at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span>
+random-oracle queries and performing at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span> Vesta group operations, the reduction
+gives</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord text"><span class="mord">verifier accepts but extraction fails</span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mop"><span class="mop"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen"><span class="delimsizing size1">(</span></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">22</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span><span class="mclose"><span class="delimsizing size1">)</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">stat</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span><span class="mord">.</span></span></span></span></span></p>
+<p><strong><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop"><span class="mop"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mclose">)</span></span></span></span> is the advantage function</strong>: for query budget
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> and group-operation budget <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span>, the externally supplied upper bound on the success probability
+of a Vesta DLOG solver.</p>
+<p><strong><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">stat</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> is the statistical soundness error</strong>: it collects
+the non-DLOG statistical terms, including exceptional random challenges that prevent
+extraction and the random-URS binding term, for an adversary making at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> oracle
+queries against a bundle containing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> Actions.</p>
+<p><strong>Direction of the reduction:</strong></p>
+<blockquote>
+<p>Action attacker <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal">A</span></span></span></span> using <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> queries and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span> group operations
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mrel">⟶</span></span></span></span> reduction adds 22 queries and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> group operations
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mrel">⟶</span></span></span></span> Vesta DLOG solver using <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">22</span></span></span></span> queries and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> group operations.</p>
+</blockquote>
+<p>The reduction constructs the DLOG solver by running the Action attacker and processing
+its output. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> is the extra Vesta group work it performs for a bundle containing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>
+Actions — reduction overhead, not attacker work or a probability loss. For the deployed
+Action specialization, the reduction also makes 22 oracle queries beyond those made by
+the attacker.</p>
+<p>For the certified consensus profile, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8304em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8304em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span>,
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">stat</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span>. The exact bound is</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord text"><span class="mord">failure</span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2141em;vertical-align:-0.35em;"></span><span class="mop"><span class="mop"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen"><span class="delimsizing size1">(</span></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0585em;vertical-align:-0.1944em;"></span><span class="mord">22</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.2141em;vertical-align:-0.35em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span><span class="mclose"><span class="delimsizing size1">)</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span><span class="mord">.</span></span></span></span></span></p>
+<p>Rounding the solver budgets up to powers of two gives the simpler endpoint</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord text"><span class="mord">failure</span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2141em;vertical-align:-0.35em;"></span><span class="mop"><span class="mop"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen"><span class="delimsizing size1">(</span></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose"><span class="delimsizing size1">)</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span><span class="mord">.</span></span></span></span></span></p>
+<p>Here <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> is the covered Action-attacker work budget. The reduction turns it into at
+most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125.32</span></span></span></span></span></span></span></span></span></span></span></span> solver work, giving Action a conservative 125-bit
+computational-work headline. The <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> in the endpoint is only its rounded ceiling.
+Separately, Vesta itself has a <a href="https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/">headline 126-bit DLOG security level</a>;
+the matching number has a different origin. <a href="formal-verification/security-models.html">Security Models</a> gives
+the full coverage-parameter interpretation.</p>
+<h2 id="in-plain-language"><a class="header" href="#in-plain-language">In plain language</a></h2>
+<p>Outside the statistical soundness error, a covered knowledge-soundness attack would
+imply a DLOG break with the resources shown above. No easier protocol-specific computational term
+remains in the bound.</p>
+<p>The advantage function says more than any single “security-bit target” could: for any
+query and work budgets, it tells experts exactly where to evaluate their preferred Vesta
+DLOG estimate.</p>
+<h2 id="reading-the-work-curve"><a class="header" href="#reading-the-work-curve">Reading the work curve</a></h2>
+<p>Choose an amount of Action-attacker group work on the horizontal axis, trace upward to the
+orange curve, and then read the corresponding computational-success scale on the vertical
+axis. The curve shifts the idealized Vesta DLOG reference by the reduction's conservative
+one-bit work loss. Its marked scale is therefore the headline for this claim: about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span>
+group operations, derived from Vesta's 126-bit DLOG headline.</p>
+<p>The graph shows only group work. The oracle-query budget <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> remains a separate input in
+the equation above, and the statistical term is not plotted. The exact advantage function,
+not this illustration, is the security claim.</p>
+<figure class="advantage-figure">
+<svg class="advantage-chart" viewBox="0 0 840 500" role="img" aria-labelledby="advantage-chart-title advantage-chart-desc">
+  <title id="advantage-chart-title">Reduction-adjusted computational work scale for Action</title>
+  <desc id="advantage-chart-desc">A log-log illustration obtained by shifting the idealized Vesta discrete-log work curve by the reduction's conservative one-bit work loss. The marked Action computational-work headline is near two to the 125 group operations. This illustration is not a proved upper bound on the advantage function.</desc>
+  <g class="advantage-grid">
+    <line x1="92" y1="42" x2="780" y2="42" />
+    <line x1="92" y1="123" x2="780" y2="123" />
+    <line x1="92" y1="204" x2="780" y2="204" />
+    <line x1="92" y1="285" x2="780" y2="285" />
+    <line x1="92" y1="366" x2="780" y2="366" />
+    <line x1="92" y1="432" x2="780" y2="432" />
+    <line x1="92" y1="42" x2="92" y2="432" />
+    <line x1="242" y1="42" x2="242" y2="432" />
+    <line x1="391" y1="42" x2="391" y2="432" />
+    <line x1="541" y1="42" x2="541" y2="432" />
+    <line x1="690" y1="42" x2="690" y2="432" />
+    <line x1="780" y1="42" x2="780" y2="432" />
+  </g>
+  <g class="advantage-axes">
+    <line x1="92" y1="42" x2="92" y2="432" />
+    <line x1="92" y1="432" x2="780" y2="432" />
+  </g>
+  <g class="advantage-labels">
+    <text x="80" y="46" text-anchor="end">1</text>
+    <text x="80" y="127" text-anchor="end">2⁻²⁰</text>
+    <text x="80" y="208" text-anchor="end">2⁻⁴⁰</text>
+    <text x="80" y="289" text-anchor="end">2⁻⁶⁰</text>
+    <text x="80" y="370" text-anchor="end">2⁻⁸⁰</text>
+    <text x="80" y="436" text-anchor="end">2⁻⁹⁶</text>
+    <text x="92" y="454" text-anchor="middle">2⁸⁰</text>
+    <text x="242" y="454" text-anchor="middle">2⁹⁰</text>
+    <text x="391" y="454" text-anchor="middle">2¹⁰⁰</text>
+    <text x="541" y="454" text-anchor="middle">2¹¹⁰</text>
+    <text x="690" y="454" text-anchor="middle">2¹²⁰</text>
+    <text x="780" y="454" text-anchor="middle">2¹²⁶</text>
+    <text x="436" y="486" text-anchor="middle">Action attacker group operations</text>
+    <text transform="translate(20 237) rotate(-90)" text-anchor="middle">computational success scale</text>
+  </g>
+  <polyline class="advantage-rho" points="92,409 242,328 391,247 481,198 541,166 690,84 735,60 765,46 780,43" />
+  <circle class="advantage-break-point" cx="765" cy="46" r="6" />
+  <line class="advantage-break-callout" x1="759" y1="55" x2="706" y2="238" />
+  <text class="advantage-break-label" x="700" y="256" text-anchor="end">Action knowledge-soundness security</text>
+  <text class="advantage-break-label" x="700" y="275" text-anchor="end">≈ 2¹²⁵ work</text>
+</svg>
+<figcaption>The orange line is the idealized Vesta DLOG work curve shifted by the reduction's conservative one-bit work loss. It illustrates the claim's 125-bit computational-work headline; it is not a proved upper bound on <code>Adv_DLOG</code>. The equations above are the precise claim.</figcaption>
+</figure>
+<p>Lean proves the adversary-to-DLOG reduction, its resource transformation, and the
+statistical soundness error. The numerical DLOG estimate comes from external
+cryptanalysis.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="the-knowledge-soundness-contract"><a class="header" href="#the-knowledge-soundness-contract">The Knowledge-Soundness Contract</a></h1>
 <p>The Action circuit's knowledge-soundness result is one theorem,
@@ -1715,7 +1808,6 @@ its specification. And the shape already recurs: the
 event covers the property, and a bound — the same three moves as <code>failure</code>, <code>witness_statement</code>,
 and <code>knowledge_sound</code>. Keeping the record generic is what stops the second circuit's contract
 from becoming a second bespoke tree.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="ledger-security-games"><a class="header" href="#ledger-security-games">Ledger Security Games</a></h1>
 <p>The <a href="formal-verification/proof-map.html">proof map</a> traces <em>verifier knowledge soundness</em> — the deployed Halo 2 verifier
@@ -1887,7 +1979,6 @@ consequence of verifier knowledge soundness.</p>
 }
 </style>
 <p>New to the shorthand? See the <a href="formal-verification/definitions.html"><strong>Definitions</strong></a>.  ·  For the methodology, <a href="formal-verification/security-models.html"><strong>Security Models</strong></a>.  ·  For the verifier-soundness half, the <a href="formal-verification/proof-map.html"><strong>Proof Map</strong></a>.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="group-hash-indifferentiability"><a class="header" href="#group-hash-indifferentiability">Group-Hash Indifferentiability</a></h1>
 <p>The Zcash security arguments model the Pasta group hashes as random oracles into
@@ -2514,7 +2605,6 @@ added to their adversary's interface first
 requirement for multi-stage games (the <a href="formal-verification/group-hash-indifferentiability.html#dagger-note">† note above</a>)
 applies at each consumption site.</li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="definitions"><a class="header" href="#definitions">Definitions</a></h1>
 <p>Coined terms and shorthand used across the <a href="formal-verification/proof-map.html">proof map</a>, the
@@ -2640,7 +2730,6 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 <div class="g"><div class="g-head"><span class="term">checked trust boundary</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/TrustBoundary.lean">Zcash.TrustBoundary</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Fixtures">Zcash.Snark.Fixtures.*.TrustBoundary</a></span></div><div class="def">Build-time pins on what a theorem may rest on: <code>assert_axioms</code> asserts a bound on the axioms used by a definition, so that a stray <code>sorry</code> or a new axiom fails the build instead of silently widening the trusted base. <code>assert_computable</code> additionally asserts that the definition is a plain <code>def</code>, ensuring constructivity of security reductions. Some of the <code>TrustBoundary</code> modules also use <code>#guard_msgs</code>-pinned <code>#print axioms</code> checks, e.g. to pin specific native axioms. See <a href="formal-verification/../formal-verification.html#trust-discipline">Trust discipline</a>; what the fixture boundaries <em>check</em> is each family's <code>Boundary.lean</code> statement of record.</div></div>
 </section>
 </div>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="source-map"><a class="header" href="#source-map">Source Map</a></h1>
 <p>A directory-by-directory index of the Lean development under <a href="https://github.com/zcash/ironwood/tree/main/Zcash"><code>Zcash/</code></a>:
@@ -3133,7 +3222,6 @@ against the binding-signature layer, <code>KeyBindingArm</code> discharges the k
 model, <code>Capstone</code> lifts the deterministic layer to a distribution over valid annotated ledgers,
 and <code>Completeness</code> checks the other direction — that an honest wallet's spend actually verifies.</li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="working-notes"><a class="header" href="#working-notes">Working Notes</a></h1>
 <p>The pages in this section are development-facing notes: normative rules for how the
@@ -3148,7 +3236,6 @@ concepts appear in ironwood.</li>
 specifies the arc that replaces whole-circuit computational certificates with
 compositional lawfulness.</li>
 </ul>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="the-clean-boundary-architecture-rule"><a class="header" href="#the-clean-boundary-architecture-rule">The Clean boundary: architecture rule</a></h1>
 <p>This note is normative for how Clean-originated concepts appear in the ironwood
@@ -3300,7 +3387,6 @@ such as selector allocation, supported domain size, and degree bounds remain int
 circuit/compiler obligations. Gate well-formedness is already intrinsic to <code>Gate</code>.
 The remaining facts should be derived or packaged once inside the boundary rather
 than supplied beside every soundness call.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="halo2-lawfulness-and-certificate-elimination"><a class="header" href="#halo2-lawfulness-and-certificate-elimination">Halo2 lawfulness and certificate elimination</a></h1>
 <h2 id="status-and-scope"><a class="header" href="#status-and-scope">Status and scope</a></h2>
@@ -3583,7 +3669,6 @@ certificate module.</li>
 or change verifier/soundness semantics to speak in Clean-native terms. It strengthens
 the Clean-to-Ironwood boundary so that the circuit interface arrives with the
 Ironwood-facing properties that soundness needs.</p>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 
                     </main>
 

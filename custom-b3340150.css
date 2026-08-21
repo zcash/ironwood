@@ -43,6 +43,71 @@
 /* mdbook-admonish base styling */
 /* ==================== */
 
+/* DLOG reference chart */
+.advantage-figure {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 0.35rem;
+  overflow-x: auto;
+}
+
+.advantage-chart {
+  display: block;
+  min-width: 680px;
+  width: 100%;
+  height: auto;
+  color: var(--fg);
+}
+
+.advantage-grid {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.12;
+}
+
+.advantage-axes {
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.advantage-labels {
+  fill: currentColor;
+  font-size: 15px;
+}
+
+.advantage-rho {
+  fill: none;
+  stroke: #d97706;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.advantage-break-label {
+  fill: #b45309;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.advantage-break-point {
+  fill: #d97706;
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.advantage-break-callout {
+  stroke: #b45309;
+  stroke-width: 1.5;
+}
+
+.advantage-figure figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.9em;
+  color: var(--fg);
+  opacity: 0.85;
+}
+
 :is(.admonition) {
   display: flow-root;
   margin: 1.5625em 0;

@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-0bd3a5ea.css">
+        <link rel="stylesheet" href="../custom-b3340150.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-4c58d9a9.js";
+            window.path_to_searchindex_js = "../searchindex-df7c90e4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e83e08d0.js"></script>
+        <script src="../toc-e251c89b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -301,7 +301,6 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 <div class="g"><div class="g-head"><span class="term">checked trust boundary</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/TrustBoundary.lean">Zcash.TrustBoundary</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Fixtures">Zcash.Snark.Fixtures.*.TrustBoundary</a></span></div><div class="def">Build-time pins on what a theorem may rest on: <code>assert_axioms</code> asserts a bound on the axioms used by a definition, so that a stray <code>sorry</code> or a new axiom fails the build instead of silently widening the trusted base. <code>assert_computable</code> additionally asserts that the definition is a plain <code>def</code>, ensuring constructivity of security reductions. Some of the <code>TrustBoundary</code> modules also use <code>#guard_msgs</code>-pinned <code>#print axioms</code> checks, e.g. to pin specific native axioms. See <a href="../formal-verification.html#trust-discipline">Trust discipline</a>; what the fixture boundaries <em>check</em> is each family's <code>Boundary.lean</code> statement of record.</div></div>
 </section>
 </div>
-<script class="todo-data" type="application/json">["concepts/preliminaries.html", "design/migration.html", "user.html"]</script>
 
                     </main>
 
