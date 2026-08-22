@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-df7c90e4.js";
+            window.path_to_searchindex_js = "searchindex-c53bc987.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-e251c89b.js"></script>
+        <script src="toc-bb80af0a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -768,9 +768,12 @@ participants do not construct a restricted bundle that would fail to prove.</p>
 <p>Ironwood's formal verification is a Lean 4 development (over Mathlib) in this repository:
 verifier soundness for the deployed Halo 2 verifier under <code>Zcash/Snark/</code>, and the protocol
 security-property layers (binding-signature balance, key binding, and the ledger-model
-security games) under <code>Zcash/Security/</code>. This page documents two development-wide
-conventions — how security breaks are represented, and what the development is allowed to
-trust — and where the model idealizes the deployed verifier.</p>
+security games) under <code>Zcash/Security/</code>.</p>
+<p>The <a href="formal-verification/guide.html">Guide to the Ironwood Formalization</a> is the reader-facing
+overview of what is proved and what a reader of the theorems is trusting;
+<a href="formal-verification/security-models.html">Security Models</a> develops the adversary models and
+where hardness judgements live. This page documents two development-wide conventions — how
+security breaks are represented, and how what the development trusts is checked at build time.</p>
 <h2 id="breaks-as-computed-data"><a class="header" href="#breaks-as-computed-data">Breaks as computed data</a></h2>
 <p>The security arguments are reduction-style: a theorem shows that a violation of a protocol
 property <em>exhibits</em> a concrete break of an underlying primitive — for example a
@@ -787,8 +790,9 @@ when a proof constructs the break honestly, a consumer of the statement cannot e
 <ul>
 <li><strong>Break events are structures carrying the breaking data</strong> (the colliding queries, the
 relation coefficients), with <code>Prop</code> certificates attached. Examples:
-<code>RandomOracle.Collision</code> and <code>RandomOracle.CollisionUpToSign</code> (the ±-collision shape produced by
-coordinate-extractor arguments — and the Merkle tree-hash collision computed by <code>Merkle.collisionOfWrongLeaf</code> is a <code>Collision</code> directly), <code>Ledger.NoteCommitBreak</code>, and
+<code>RandomOracle.Collision</code> and <code>RandomOracle.CollisionUpToSign</code> (the ±-collision shape
+produced by coordinate-extractor arguments — and the Merkle tree-hash collision computed
+by <code>Merkle.collisionOfWrongLeaf</code> is a <code>Collision</code> directly), <code>Ledger.NoteCommitBreak</code>, and
 <code>BindingSignature.NontrivialRelation</code> (the discrete-log relation computed from a
 non-balancing verifying bundle).</li>
 <li><strong>Reductions are plain computable <code>def</code>s</strong> producing them, such as
@@ -824,11 +828,11 @@ different trust standards.</p>
 <p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) rest, in
 their abstract form over an arbitrary <code>Fp</code>-module, only on the standard classical axioms
 <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
-trust. Instantiated at a concrete Pasta curve they additionally inherit one compiler-trust
-axiom: CompElliptic's curve point-count, a closed computational fact discharged by <code>native_decide</code>
-(below). This applies to both the SNARK soundness endpoints (Vesta) and the Action circuit
-soundness (Pallas). The <code>+native</code> flag on the corresponding build-time checks records
-exactly which endpoints carry it.</p>
+trust. Instantiated at a concrete Pasta curve they additionally inherit the compiler-trust
+axioms of the closed computational facts they rest on, discharged by <code>native_decide</code> (below).
+The <code>+native</code> annotations on the corresponding build-time checks record exactly which
+endpoints carry them, and the resulting trusted set is stated in reader-facing form in the
+Guide's <a href="formal-verification/guide.html#what-you-are-trusting">What you are trusting</a>.</p>
 <p><strong><code>@[csimp]</code> replacement lemmas</strong> get their own <code>assert_axioms</code> entries in
 <code>Zcash/TrustBoundary.lean</code>, enforced by <code>scripts/check_csimp_census.sh</code> in CI: the compiler
 applies a csimp substitution in all downstream compiled code, but the axioms of the lemma's
@@ -855,10 +859,11 @@ the kernel's GMP-backed bignum arithmetic. The principal such facts in this repo
 four derived-form fingerprint boundary theorems <code>nonInteractiveFingerprint_matches_derived</code>
 (the generated per-capture <code>fingerprint_matches</code> are their raw forms): numeric checks that the
 Lean verifier's assembled multi-scalar multiplication equals the Rust verifier's on each
-captured proof — two honest, two at random inputs. The CompElliptic dependency applies the same discipline to its concrete
-curve-arithmetic facts (cardinalities, primality certificates). Such facts are independently
-re-checkable (another implementation, or hand computation, would compute the same result),
-so a miscompiled or buggy oracle could in principle be caught by disagreement.</p>
+captured proof — two honest, two at random inputs. The CompElliptic dependency applies the
+same discipline to its concrete curve-arithmetic facts (cardinalities, primality
+certificates). Such facts are independently re-checkable (another implementation, or hand
+computation, would compute the same result), so a miscompiled or buggy oracle could in
+principle be caught by disagreement.</p>
 <p>These boundaries are <em>checked at build time</em>, not merely documented. <code>Zcash.TrustBoundary</code> is the
 top-level census for reusable library claims — the key-binding, birthday, ledger, and
 binding-signature break reductions together with the fixture-free SNARK
@@ -870,12 +875,12 @@ modules and are enforced by <code>FixtureCheck</code>. The obligations use two c
 <ul>
 <li><code>assert_axioms d</code> fails the build unless <code>d</code> rests only on the standard classical axioms
 (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>) — in particular no <code>sorry</code> and no <code>native_decide</code>;
-<code>assert_axioms d +native</code> additionally permits the toolchain-dependent <code>native_decide</code>
-compiler-trust axiom that the curve-instantiated endpoints carry. Unlike a <code>#guard_msgs</code>-pinned
-<code>#print axioms</code>, it states the expected tier in one line and stays green across toolchain bumps
-that rename the <code>native_decide</code> axiom, while still failing the moment a declaration reaches beyond
-its tier. It covers the general soundness theorems, probability bounds, and run-time/query-charge
-lemmas.</li>
+<code>assert_axioms d +native(…)</code> additionally permits the toolchain-dependent <code>native_decide</code>
+compiler-trust axioms of the named owning declarations, which the curve-instantiated
+endpoints carry. Unlike a <code>#guard_msgs</code>-pinned <code>#print axioms</code>, it states the expected tier
+in one line and stays green across toolchain bumps that rename the <code>native_decide</code> axiom,
+while still failing the moment a declaration reaches beyond its tier. It covers the
+general soundness theorems, probability bounds, and run-time/query-charge lemmas.</li>
 <li><code>assert_computable d</code> additionally requires <code>d</code> to be a plain <code>def</code> — not <code>noncomputable</code> — so it
 guards the <em>breaks-as-computed-data</em> discipline: the data-producing reductions (a collision, fold,
 peel, or fork turned into a discrete-log relation) stay genuinely computable, closing the gap
@@ -894,10 +899,11 @@ boundary theorems, documenting precisely <em>which</em>
 compiler-trust axiom <code>native_decide</code> adds — on this toolchain a per-declaration axiom
 (<code>…_native.native_decide.ax_1_1</code>), where older Lean versions used the global <code>Lean.ofReduceBool</code> —
 because for a captured fingerprint match the exact axiom set <em>is</em> the claim, the case
-<code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds all five default targets —
-<code>Zcash</code>, <code>FixtureCheck</code>, <code>CircuitCheck</code>, <code>MetaCheck</code>, and <code>SecurityCheck</code> — and each
-<code>fingerprint_matches</code>'s <code>native_decide</code> compiles and runs
-the verifier, so anything <code>noncomputable</code> on the assembled-verifier path fails the build.</p>
+<code>Zcash.Meta.AxiomCheck</code> reserves the pinned form for. CI builds all the default lake targets
+(<code>scripts/check_build_coverage.sh</code> checks that CI and the lakefile agree on that list, and
+that every Lean module is reachable from it), and each <code>fingerprint_matches</code>'s
+<code>native_decide</code> compiles and runs the verifier, so anything <code>noncomputable</code> on the
+assembled-verifier path fails the build.</p>
 <p>What the fixture captures actually <em>check</em> is the statement of record in each family's
 <code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived</code> — with the quantified match and its
 ε in <code>Snark/Fingerprint/Epsilon.lean</code> and the per-capture headliners in
@@ -918,16 +924,15 @@ base-circuit dump (<code>actionBaseLayout.json</code>), which has no capture-sid
 pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
 are recorded in <code>Zcash/Circuits/Fixtures/PROVENANCE.md</code>.</p>
 <h2 id="modelling-boundaries"><a class="header" href="#modelling-boundaries">Modelling boundaries</a></h2>
-<p>The trust discipline above bounds what the <em>proofs</em> rest on. One boundary sits outside it, in
-what the statements <em>model</em>: it is neither an axiom nor a compiler-trust question, so no census
-sees it.</p>
-<p><strong>Fiat–Shamir is idealized.</strong> The deployed verifier derives each challenge by hashing the
-transcript so far with BLAKE2b and reducing 64 bytes to a field element. The development models
-that as an abstract <code>squeeze</code> (<code>Verifier/FiatShamir.lean</code>) and, in the security layer, as a
-uniform random oracle — the assumption that carries interactive soundness to the deployed
-non-interactive check. Identifying the deployed hash with that oracle is external, over and
-above the byte-level boundary noted above: the fixtures check challenge schedules against typed
-captures, not against transcript bytes.</p>
+<p>The trust discipline above bounds what the <em>proofs</em> rest on. The boundaries in what the
+statements <em>model</em> —the random-oracle treatment of the challenge hash, the
+algebraic-adversary restriction, the abstract types standing in for byte-level encodings, and
+the sampled bases standing in for the deployed fixed ones— are neither axioms nor
+compiler-trust questions, so no census sees them. The Guide's
+<a href="formal-verification/guide.html#what-you-are-trusting">What you are trusting</a> states each of
+these boundaries and collects the whole set;
+<a href="formal-verification/security-models.html">Security Models</a> develops the adversary models they
+define and where the hardness judgements live.</p>
 <p>Coined terms and shorthand for the development are
 collected on the <a href="formal-verification/definitions.html">Definitions</a> page.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
@@ -1189,7 +1194,7 @@ is argued to inherit it — no theorem is ever instantiated at the real points.<
 <p>The caveat is not the usual asymptotic hand-wave. An adversary has the protocol's <em>entire
 lifetime</em> to attack one specific list, and the cost is amortized over every transaction ever
 made against it. One such computation breaks the whole protocol at once, rather than one
-transaction or one user. <a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">Security
+transaction or one user. <a href="formal-verification/security-models.html#fixed-bases-the-group-hash-and-the-reference-string">Security
 Models</a> develops this at
 length.</p>
 <h3 id="how-fiatshamir-is-modelled"><a class="header" href="#how-fiatshamir-is-modelled">How Fiat–Shamir is modelled</a></h3>
@@ -1241,97 +1246,6 @@ owning declaration at build time, and each is independently re-checkable — but
 compiled code they run is the whole fast native arithmetic, proven correct in the
 kernel and executed as the compiler translated it.</li>
 </ol>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
-<p>Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
-layer attached to the stage where it enters. Every anchor below is pinned at the current <code>main</code>, so
-the stages describe the tree as it stands rather than the stack that built it.</p>
-<style>
-.proofjourney-shell {
-  position: relative;
-  left: 50%;
-  width: min(1160px, calc(100vw - var(--sidebar-width, 300px) - 5rem));
-  transform: translateX(-50%);
-  margin: 0.6rem 0;
-}
-.proofjourney-shell iframe {
-  display: block;
-  width: 100%;
-  height: 920px;
-  border: 1px solid rgba(128,140,170,.35);
-  border-radius: 8px;
-}
-@media (max-width: 1080px) {
-  .proofjourney-shell { width: calc(100vw - 1.5rem); }
-}
-</style>
-<div class="proofjourney-shell">
-  <iframe id="proofjourney-frame" src="proof-journey-embed.html" title="Animated Ironwood verifier soundness journey"
-    loading="eager" allowfullscreen>
-  </iframe>
-</div>
-<p><a href="formal-verification/proof-map.html">Explore the complete map</a></p>
-<script>
-(function () {
-  var f = document.getElementById('proofjourney-frame');
-  if (!f) return;
-  function theme() { return /coal|navy|ayu/.test(document.documentElement.className) ? 'dark' : 'light'; }
-  function send() { try { f.contentWindow.postMessage({ iwtheme: theme() }, '*'); } catch (e) {} }
-  f.addEventListener('load', send);
-  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  window.addEventListener('message', function (event) {
-    if (event.source !== f.contentWindow || !event.data || !event.data.iwjourneyHeight) return;
-    f.style.height = Math.max(700, event.data.iwjourneyHeight + 2) + 'px';
-  });
-})();
-</script>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="proof-map"><a class="header" href="#proof-map">Proof Map</a></h1>
-<p>One connected picture of the verifier-soundness proof.</p>
-<style>
-.proofmap-shell {
-  position: relative;
-  left: 50%;
-  width: min(1680px, calc(100vw - 12rem));
-  transform: translateX(-50%);
-  margin: 0.6rem 0;
-}
-html.sidebar-visible .proofmap-shell {
-  width: min(1680px, calc(100vw - var(--sidebar-width, 300px) - 12rem));
-}
-.proofmap-shell iframe {
-  display: block;
-  width: 100%;
-  height: min(1250px, calc(100vh - 6rem));
-  min-height: 700px;
-  border: 1px solid rgba(128,140,170,.35);
-  border-radius: 8px;
-}
-@media (max-width: 1080px) {
-  .proofmap-shell { width: calc(100vw - 1.5rem); }
-}
-</style>
-<div class="proofmap-shell">
-  <iframe id="proofmap-frame" src="proof-map-embed.html" title="Interactive proof structure map"
-    loading="lazy">
-  </iframe>
-</div>
-<p>Watch the <a href="formal-verification/proof-journey.html"><strong>Proof Journey</strong></a>.  ·  New to the terms? See the <a href="formal-verification/definitions.html"><strong>Definitions</strong></a>.</p>
-<script>
-// Theme sync: forward the book's active theme (mdBook toggle) to the embedded map iframe.
-(function () {
-  var f = document.getElementById('proofmap-frame');
-  if (!f) return;
-  function theme() { return /coal|navy|ayu/.test(document.documentElement.className) ? 'dark' : 'light'; }
-  function send() { try { f.contentWindow.postMessage({ iwtheme: theme() }, '*'); } catch (e) {} }
-  f.addEventListener('load', send);
-  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  window.addEventListener('message', function (event) {
-    if (event.source !== f.contentWindow || !event.data || !event.data.iwmapHeight) return;
-    f.style.height = (event.data.iwmapHeight + 2) + 'px';
-  });
-})();
-</script>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="security-models"><a class="header" href="#security-models">Security Models</a></h1>
 <p>The <a href="formal-verification/ledger-security-games.html">ledger security games</a> under <code>Zcash/Security/</code> and the
@@ -1430,23 +1344,25 @@ and the challenge is hidden perfectly rather than computationally. What the redu
 gains is private knowledge of the pairs. A returned relation among the bases then becomes
 a linear equation in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span></span></span></span>, solvable unless the relation's coefficients land on the single
 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span></span></span></span> hyperplane where the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span> component cancels — the form of reduction the
-definitions page calls <a href="formal-verification/definitions.html#programmed-basis">programmed-basis</a>. The argument is
-Jaeger–Tessaro's proof of their Lemma 3, presented there as a careful use of
+definitions page calls <a href="formal-verification/definitions.html#programmed-basis">programmed-basis</a>. The argument
+is Jaeger–Tessaro's proof of their Lemma 3, presented there as a careful use of
 self-reducibility techniques.</p>
 <p>The judgement that the exhibited solver is beyond reach is a statement about the current
 state of cryptanalytic knowledge, supplied by the reader rather than by the mathematics —
 Rogaway's "human ignorance" approach
 (<a href="https://eprint.iacr.org/2006/281">Formalizing Human Ignorance</a>, Vietcrypt 2006). Even
 outside formalization, time-bounded universal hardness claims for a fixed primitive are
-subtle: free precomputation converts memory into online speed at a quantified exchange
-rate (Corrigan-Gibbs–Kogan,
-<a href="https://eprint.iacr.org/2017/1113">The Discrete-Logarithm Problem with Preprocessing</a>,
-Eurocrypt 2018: generic preprocessing attacks with advice <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> and online time <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>
-achieve success <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span> on the order of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathnormal">ε</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>, and this is
-tight); non-uniform definitions admit unrealistic counterexample algorithms, as
-discussed above
-(Bernstein–Lange); and whether the non-uniform model is the right one at all is itself
-debated (Koblitz–Menezes, <a href="https://eprint.iacr.org/2012/359">Another look at non-uniformity</a>).</p>
+subtle, for several reasons:</p>
+<ul>
+<li>Free precomputation converts memory into online speed, at a quantified exchange rate
+(Corrigan-Gibbs–Kogan, <a href="https://eprint.iacr.org/2017/1113">The Discrete-Logarithm Problem with Preprocessing</a>,
+Eurocrypt 2018): generic preprocessing attacks with advice <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> and online time <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>
+achieve success <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span> on the order of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathnormal">ε</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>. This result is tight.</li>
+<li>Non-uniform definitions admit unrealistic counterexample algorithms, as discussed above
+(Bernstein–Lange).</li>
+<li>Whether the non-uniform model is the right one at all is itself debated
+(Koblitz–Menezes, <a href="https://eprint.iacr.org/2012/359">Another look at non-uniformity</a>).</li>
+</ul>
 <p>The Lean interface encodes this division of labour — the mathematics exhibits the
 reduction, and the reader supplies the hardness judgement. <code>TextbookDLAdvantageLE</code> and
 its coin-carrying variant bound the winning-coins measure of one named algorithm —the
@@ -1457,90 +1373,103 @@ in it: nothing about the difficulty of discrete log is assumed anywhere in the
 development. A capstone converts a belief about achievable discrete-log advantage at a
 given cost into a bound on the protocol game; it does not certify the belief.</p>
 <h3 id="the-resource-numbers-are-coverage-parameters"><a class="header" href="#the-resource-numbers-are-coverage-parameters">The resource numbers are coverage parameters</a></h3>
-<p>The Snark-side capstones quote concrete numbers: the covered adversary's random-oracle
-queries are bounded by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> and its group work by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> —or <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> in a
-staged-certified variant— with a statistical remainder (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> for the
-consensus-generic Action capstone) proved for every workload up to the full covered
-budget. The instantiated formula endpoint quotes an eight-fold finder envelope —a
-three-bit overhead, since the finder replays a bounded number of traversals— evaluating
-the advantage at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> oracle queries and group operations. The staged-certified
-endpoints instead count the reduction's work additively, by a proved counter
-composition, and evaluate it at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span></span></span></span> queries and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations — the
-group work including the adversary's own at the larger budget. It is easy to misread
-the envelope as an estimate of Vesta's discrete-log cost; it is in fact a coverage
-parameter. The target is as large as
-is useful —past roughly <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations an adversary can compute Vesta discrete
-logs directly, voiding every binding property here (see the lifetime caveat below)— and
-no smaller, so that no adversary with a meaningful guarantee is excluded.</p>
+<p>The Snark-side capstones quote concrete numbers: the covered adversary makes at most
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> random-oracle queries and performs at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations, the
+latter certified by a staged cost program. The statistical remainder (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> for
+the consensus-generic Action capstone) is proved for every workload up to the full
+covered budget. The endpoints count the reduction's work additively, by a proved
+counter composition: the reduction adds at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> group operations and 22 oracle
+queries to the adversary's own, and the advantage is evaluated at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span></span></span></span> queries and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations after rounding up to powers of two. The accounting overhead
+is a fraction of a bit of group work: before rounding, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> becomes at most
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125.32</span></span></span></span></span></span></span></span></span></span></span></span>.</p>
+<p>It is easy to misread the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> target as an estimate of Vesta's discrete-log cost;
+it is in fact a coverage parameter. The target is as large as is useful —past roughly
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations an adversary can compute Vesta discrete logs directly,
+voiding every binding property here (see the lifetime caveat below)— and no smaller,
+so that no adversary with a meaningful guarantee is excluded.</p>
 <p>The near-coincidence with Pollard rho's estimated cost on Vesta (about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span>, using
-the curve's automorphisms) is therefore a stopping rationale, not a dependence: a revised
-attack estimate would change the interpretation, not the theorem. And the quoted bound is
-the worst covered point: the theorems evaluate the advantage function at the finder's
-exact accounted counts, and substituting the larger envelope numbers can only increase
-it. Since generic-attack success falls off steeply below its threshold, an adversary far
-below the target gets a far stronger interpreted bound.
-Reading resource-parameterized claims this way —as attack-cost curves rather than
-single thresholds— follows Bernstein,
+the curve's automorphisms) is therefore a stopping rationale, not a dependence: a
+revised attack estimate would change the interpretation, not the theorem. And the
+quoted bound is the worst covered point: the theorems evaluate the advantage function
+at the finder's exact accounted counts, and substituting the larger rounded budgets can
+only increase it. Since generic-attack success falls off steeply below its threshold,
+an adversary far below the target gets a far stronger interpreted bound. Reading
+resource-parameterized claims this way —as attack-cost curves rather than single
+thresholds— follows Bernstein,
 <a href="https://cr.yp.to/snuffle/bruteforce-20050425.pdf">Understanding brute force</a>, 2005.</p>
 <h2 id="the-algebraic-adversary-restriction"><a class="header" href="#the-algebraic-adversary-restriction">The algebraic-adversary restriction</a></h2>
-<p>An algebraic adversary is one that, whenever it outputs a group element, also supplies a
-representation: coefficients expressing that element over the elements it has received
-(Fuchsbauer–Kiltz–Loss,
+<p>An algebraic adversary is one that, whenever it outputs a group element, also supplies
+a representation: coefficients expressing that element over the elements it has
+received (Fuchsbauer–Kiltz–Loss,
 <a href="https://eprint.iacr.org/2017/620">The Algebraic Group Model and its Applications</a>,
-Crypto 2018). Only
-the provenance of output group elements is restricted. The computation deciding the
-coefficients is unrestricted — the adversary may inspect encodings, branch on bits, and
-use any structure it can see. In this development the restriction is part of the
-adversary's <em>type</em> in the online-AGM layer, not a named hypothesis on any capstone —
-which is why this page states it: conditions carried by the quantifier domain are as
-load-bearing as named hypotheses, and less visible in theorem statements.</p>
+Crypto 2018). Only the provenance of output group elements is restricted. The
+computation deciding the coefficients is unrestricted — the adversary may inspect
+encodings, branch on bits, and use any structure it can see. In this development the
+restriction is part of the adversary's <em>type</em> in the online-AGM layer, not a named
+hypothesis on any capstone — which is why this page states it: conditions carried by
+the quantifier domain are as load-bearing as named hypotheses, and less visible in
+theorem statements.</p>
 <p>Like the random-oracle model, this is a heuristic restriction of the adversary's
 strategy class, not an assumption that could be true or false of Pallas or Vesta.
 Random-oracle non-instantiability (Canetti–Goldreich–Halevi,
 <a href="https://eprint.iacr.org/1998/011">The Random Oracle Methodology, Revisited</a>) is the
-standing warning against reading
-in-model theorems as instantiated guarantees. The heuristic earns its keep only if two
-supporting claims hold. First, re-expression: an adversary that is only <em>incidentally</em>
-non-algebraic must be re-expressible as an algebraic one at similar cost. Every generic
-adversary is algebraic —it only ever combines the elements it received— so the
-algebraic-adversary restriction is strictly weaker than the generic-group one; the
-substance is the claim that the concrete curves offer no useful operations that are
-neither generic nor algebraic. Second, the <em>known</em> deviations of the curves from generic
-must not obstruct the re-expression. Pasta's efficient endomorphism is the sharp
-example: it acts as scalar multiplication by a known cube root of unity, so an adversary
-using it remains algebraic — its outputs still carry representations. The same
-structure genuinely cheapens the best generic attacks (the automorphism-class rho walk
-behind the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> figure above), which the coverage parameters absorb. Deviating from
-generic and obstructing algebraicity are different failures, and the endomorphism is the
-first (since it can reduce the number of group operations required) without being the
-second.</p>
-<p>The remaining supporting claim is that the modelled basis covers everything a realistic
-adversary can obtain. That is a claim about hash-to-curve, and it belongs with the
-reference-string discussion below.</p>
-<h2 id="fixed-bases-hash-to-curve-and-the-reference-string"><a class="header" href="#fixed-bases-hash-to-curve-and-the-reference-string">Fixed bases, hash-to-curve, and the reference string</a></h2>
+standing warning against reading in-model theorems as instantiated guarantees. The
+heuristic earns its keep only if three supporting claims hold:</p>
+<ol>
+<li><strong>Re-expression:</strong> an adversary that is only <em>incidentally</em> non-algebraic must
+be re-expressible as an algebraic one at similar cost.</li>
+<li><strong>Structural compatibility:</strong> an adversary must not be able to make essential
+use of known structure of a curve that is unavailable within the algebraic model
+we are using.</li>
+<li><strong>Basis sufficiency:</strong> the basis of group elements provided to the adversary
+is sufficient to model realistic attacks.</li>
+</ol>
+<p>The first claim says that our formalization of the algebraic model faithfully
+captures only the intended semantic restrictions; that is, if we write down some
+algorithm for a semantically algebraic attack, we will always be able to meet
+the syntactic requirements of the formalization.</p>
+<p>The second claim is about the reasonableness of applying the AGM (in our variant)
+to the particular curves used by our protocol, Pallas and Vesta. That is, do they
+have known structure (or structure that an adversary might know) allowing for
+attacks outside the model that we need to be worried about in practice?</p>
+<p>Every generic adversary is algebraic —it only ever combines the elements it received—
+so the algebraic-adversary restriction is strictly weaker than the generic-group one.
+An example of structure that separates them is Pasta's efficient endomorphism: it
+acts as scalar multiplication by a known cube root of unity, so an adversary using
+it remains algebraic — its outputs still carry representations. The same structure
+genuinely cheapens the best <em>generic</em> attacks (the automorphism-class rho walk
+behind the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> figure above), which the coverage parameters absorb.
+Deviating from generic and obstructing algebraicity are different failures, and
+the endomorphism is the first (since it can reduce the number of group operations
+required) without being the second.</p>
+<p>The third supporting claim is that the modelled basis covers all group elements that
+may be useful to an adversary in realistic attacks. The next section covers that
+issue.</p>
+<h2 id="fixed-bases-the-group-hash-and-the-reference-string"><a class="header" href="#fixed-bases-the-group-hash-and-the-reference-string">Fixed bases, the group hash, and the reference string</a></h2>
 <p>Several reductions bottom out at discrete log by treating a set of group elements as
-<em>independent</em> — for example the value-commitment bases <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08222em;">V</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>, the
-Sinsemilla generators, and the proof system's inner-product reference string. Independence
-is what turns "find a nontrivial relation among these elements" into the discrete-log game:
-the reduction models each base as a random multiple of one generator and embeds its
-discrete-log challenge into that randomness.</p>
+<em>independent</em> — for example the value-commitment bases <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08222em;">V</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>,
+the Sinsemilla generators, and the proof system's inner-product reference string.
+Independence is what turns "find a nontrivial relation among these elements" into the
+discrete-log game: the reduction models each base as a random multiple of one generator
+and embeds its discrete-log challenge into that randomness.</p>
 <p>In the deployed protocol, though, these bases are <em>fixed</em>. Each is produced once, by
 hashing public strings to the curve with <code>GroupHash</code> (spec
 <a href="https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta">§5.4.9.8</a>),
-and the resulting outputs are baked into the protocol as a Uniform Reference String. The
-gap between the two is the standard gap for protocols with a URS. We prove security for
-the family of protocols that sample the bases at random, over the distribution of that
-randomness. Then we argue heuristically that the deployed protocol, which fixes them via
-hash-to-curve, inherits it — provided that the hash-to-curve scheme admits no attack
-more efficient than the algebraic ones bounded by the proven reductions. The
+and the resulting outputs are baked into the protocol as a Uniform Reference String.
+The gap between the two is the standard gap for protocols with a URS. We prove security
+for the family of protocols that sample the bases at random, over the distribution of
+that randomness. Then we argue heuristically that the deployed protocol, which fixes
+them via the group hash, inherits it — provided that the group hash scheme admits no
+attack more efficient than the algebraic ones bounded by the proven reductions. The
 <a href="formal-verification/group-hash-indifferentiability.html">group-hash indifferentiability development</a>
-supplies the formal half of that judgement: the deployed group hash is
-indifferentiable from a random oracle into the group, under a named Weil-bound
-hypothesis, with the simulator exhibited as an algorithm. No Lean
-theorem instantiates the soundness endpoints at the deployed bases; identifying Halo2's
-hash-to-curve outputs with the sampled basis is the heuristic step
+supplies the formal half of that judgement: the deployed group hash is indifferentiable
+from a random oracle into the group, under a named Weil-bound hypothesis, with the
+simulator exhibited as an algorithm.</p>
+<p>No Lean theorem instantiates the soundness endpoints at the deployed bases;
+identifying Halo2's group hash outputs with the sampled basis is a heuristic step
 (<code>Zcash/TrustBoundary.lean</code> records this scope). The same heuristic underlies every
-fixed-base use of hash-to-curve here, including the value and note commitments, the
+fixed-base use of the group hash here, including the value and note commitments, the
 Merkle hash, and the proof system's reference string. The same primitive also produces
 bases on demand: <code>DiversifyHash</code> derives each diversified address base from <code>GroupHash</code>
 at key generation.</p>
@@ -1565,34 +1494,39 @@ from reliance on discrete-log binding/knowledge-soundness is therefore a whole-p
 concern, not a per-transaction one. See
 <a href="https://zips.z.cash/zip-2005#effectsofdiscrete-logarithm-breakingattacksbeforetheswitchtotherecoveryprotocol">ZIP 2005</a>
 for further discussion.</p>
-<p>What makes a hash-to-curve output a good base is that it comes with no known
+<p>What makes a group-hash output a good base is that it comes with no known
 representation over previously received elements. The same property cuts the other way
 for the adversary model. A realistic adversary can evaluate <code>GroupHash</code> directly on
 inputs of its choice, and every output it obtains is a group element held with no
 representation over a fixed basis — so an adversary with that access is not algebraic
-over any fixed finite basis. The faithful modelling makes hash-to-curve itself an oracle
-of the game: the adversary may query it, each fresh output joins the AGM basis as a new
-independent element, and the reduction may embed its challenge in programmed outputs.
-The development does not currently model that access. Each game fixes an enumerated
-basis of the generators its honest algorithms use, and its theorems quantify over
-adversaries algebraic over that basis. Two consequences should be stated plainly. For
-games whose honest parties themselves call <code>DiversifyHash</code> —Spendability and Spend
-Authority, where key generation derives the diversified base— the modelled adversary
-cannot express strategies a realistic adversary performs routinely, so those games need
-the oracle in the adversary's interface before their capstones carry their intended
-weight; the indifferentiability result is what licenses giving them that oracle as a
-random oracle. And enumerating, per game, the generators judged relevant leaves out fixed bases
-from other protocol components that a deployed adversary can obtain; nothing known
-suggests they help, but "nothing known suggests" is itself a heuristic judgement, and it
-should be visible rather than implicit. Both are known limitations of the current
-modelling (<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</p>
+over any fixed finite basis.</p>
+<p>The faithful modelling makes the group hash itself an oracle of the game: the adversary
+may query it, each fresh output joins the AGM basis as a new independent element, and
+the reduction may embed its challenge in programmed outputs. The development does not
+currently model that access. Each game fixes an enumerated basis of the generators its
+honest algorithms use, and its theorems quantify over adversaries algebraic over that
+basis. Two consequences should be stated plainly:</p>
+<ul>
+<li>For games whose honest parties themselves call <code>DiversifyHash</code> —Spendability and
+Spend Authority, where key generation derives the diversified base— the modelled
+adversary cannot express strategies a realistic adversary performs routinely, so
+those games need the oracle in the adversary's interface before their capstones
+carry their intended weight. The indifferentiability result is what licenses giving
+them that oracle as a random oracle.</li>
+<li>Enumerating, per game, the generators judged relevant leaves out fixed bases from
+other protocol components that a deployed adversary can obtain. Nothing known
+suggests they help, but "nothing known suggests" is itself a heuristic judgement,
+and it should be visible rather than implicit.</li>
+</ul>
+<p>Both are known limitations of the current modelling
+(<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</p>
 <p>These models and their limitations are part of every statement in the development: a
 capstone's bound is no stronger than the adversary class it quantifies over. For the
 property statements the models scope, see the
 <a href="formal-verification/ledger-security-games.html"><strong>Ledger Security Games</strong></a>; for the verifier-soundness half,
 the <a href="formal-verification/proof-map.html"><strong>Proof Map</strong></a>; for the coined terms, the <a href="formal-verification/definitions.html"><strong>Definitions</strong></a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="interpreting-security"><a class="header" href="#interpreting-security">Interpreting Security</a></h1>
+<h1 id="reading-the-security-bound"><a class="header" href="#reading-the-security-bound">Reading the Security Bound</a></h1>
 <blockquote>
 <p><strong>Bottom line:</strong> within the formal model, breaking the knowledge soundness of the
 deployed Action verifier is —up to a small statistical error— at least as hard as
@@ -1612,7 +1546,7 @@ the theorem's scope: an adversary that stays within the resource budgets below, 
 a representation for every group element it outputs, and faces Fiat–Shamir challenges
 modelled as a random oracle. The game also samples the verifier's fixed bases; the
 deployed, baked-in list inherits the result through the fixed-bases argument in
-<a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">Security Models</a>.</p>
+<a href="formal-verification/security-models.html#fixed-bases-the-group-hash-and-the-reference-string">Security Models</a>.</p>
 <h2 id="for-experts"><a class="header" href="#for-experts">For experts</a></h2>
 <p>For a bundle containing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> Actions and an adversary <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal">A</span></span></span></span> making at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span>
 random-oracle queries and performing at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span> Vesta group operations, the reduction
@@ -1713,6 +1647,97 @@ not this illustration, is the security claim.</p>
 statistical soundness error. The numerical DLOG estimate comes from external
 cryptanalysis.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
+<p>Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
+layer attached to the stage where it enters. Every anchor below is pinned at the current <code>main</code>, so
+the stages describe the tree as it stands rather than the stack that built it.</p>
+<style>
+.proofjourney-shell {
+  position: relative;
+  left: 50%;
+  width: min(1160px, calc(100vw - var(--sidebar-width, 300px) - 5rem));
+  transform: translateX(-50%);
+  margin: 0.6rem 0;
+}
+.proofjourney-shell iframe {
+  display: block;
+  width: 100%;
+  height: 920px;
+  border: 1px solid rgba(128,140,170,.35);
+  border-radius: 8px;
+}
+@media (max-width: 1080px) {
+  .proofjourney-shell { width: calc(100vw - 1.5rem); }
+}
+</style>
+<div class="proofjourney-shell">
+  <iframe id="proofjourney-frame" src="proof-journey-embed.html" title="Animated Ironwood verifier soundness journey"
+    loading="eager" allowfullscreen>
+  </iframe>
+</div>
+<p><a href="formal-verification/proof-map.html">Explore the complete map</a></p>
+<script>
+(function () {
+  var f = document.getElementById('proofjourney-frame');
+  if (!f) return;
+  function theme() { return /coal|navy|ayu/.test(document.documentElement.className) ? 'dark' : 'light'; }
+  function send() { try { f.contentWindow.postMessage({ iwtheme: theme() }, '*'); } catch (e) {} }
+  f.addEventListener('load', send);
+  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  window.addEventListener('message', function (event) {
+    if (event.source !== f.contentWindow || !event.data || !event.data.iwjourneyHeight) return;
+    f.style.height = Math.max(700, event.data.iwjourneyHeight + 2) + 'px';
+  });
+})();
+</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="proof-map"><a class="header" href="#proof-map">Proof Map</a></h1>
+<p>One connected picture of the verifier-soundness proof.</p>
+<style>
+.proofmap-shell {
+  position: relative;
+  left: 50%;
+  width: min(1680px, calc(100vw - 12rem));
+  transform: translateX(-50%);
+  margin: 0.6rem 0;
+}
+html.sidebar-visible .proofmap-shell {
+  width: min(1680px, calc(100vw - var(--sidebar-width, 300px) - 12rem));
+}
+.proofmap-shell iframe {
+  display: block;
+  width: 100%;
+  height: min(1250px, calc(100vh - 6rem));
+  min-height: 700px;
+  border: 1px solid rgba(128,140,170,.35);
+  border-radius: 8px;
+}
+@media (max-width: 1080px) {
+  .proofmap-shell { width: calc(100vw - 1.5rem); }
+}
+</style>
+<div class="proofmap-shell">
+  <iframe id="proofmap-frame" src="proof-map-embed.html" title="Interactive proof structure map"
+    loading="lazy">
+  </iframe>
+</div>
+<p>Watch the <a href="formal-verification/proof-journey.html"><strong>Proof Journey</strong></a>.  ·  New to the terms? See the <a href="formal-verification/definitions.html"><strong>Definitions</strong></a>.</p>
+<script>
+// Theme sync: forward the book's active theme (mdBook toggle) to the embedded map iframe.
+(function () {
+  var f = document.getElementById('proofmap-frame');
+  if (!f) return;
+  function theme() { return /coal|navy|ayu/.test(document.documentElement.className) ? 'dark' : 'light'; }
+  function send() { try { f.contentWindow.postMessage({ iwtheme: theme() }, '*'); } catch (e) {} }
+  f.addEventListener('load', send);
+  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  window.addEventListener('message', function (event) {
+    if (event.source !== f.contentWindow || !event.data || !event.data.iwmapHeight) return;
+    f.style.height = (event.data.iwmapHeight + 2) + 'px';
+  });
+})();
+</script>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="the-knowledge-soundness-contract"><a class="header" href="#the-knowledge-soundness-contract">The Knowledge-Soundness Contract</a></h1>
 <p>The Action circuit's knowledge-soundness result is one theorem,
 <code>orchard_action_adaptiveStatement_knowledge_error_bound</code>. Reading it tells you a probability is
@@ -1729,7 +1754,7 @@ field, discussed below. This page reads the instance in order.</p>
 <p>A generator random-oracle table and one Fiat–Shamir transcript, drawn independently. The URS
 basis is <em>read from</em> the table by <code>orchardGeneratorROBasis</code>, modelling halo2's parameter
 derivation (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">0∥</span><span class="mord mathnormal">i</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">(</span><span class="mord">2</span><span class="mclose">)</span></span></span></span>) — a
-<a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">modelling assumption</a>,
+<a href="formal-verification/security-models.html#fixed-bases-the-group-hash-and-the-reference-string">modelling assumption</a>,
 not a theorem.</p>
 <p>The adversary is <em>adaptive in the statement</em>: it outputs the public inputs and the proof
 together, and both the canonical verifying key and every selected instance commitment enter the
@@ -2669,7 +2694,7 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 <div class="g" id="algebraic"><div class="g-head"><span class="term">algebraic</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/AlgebraicRelation.lean">Common.AlgebraicRelation.AlgebraicPoint</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/OnlineMembers.lean">AGM.OnlineMembers.OnlineMemberProofData</a></span></div><div class="def">An adversary that supplies, with every group element it outputs, a representation: coefficients expressing that element over the elements it has received. Only the provenance of outputs is restricted — the computation choosing the coefficients may use any structure it can see. The restriction is part of the adversary's <em>type</em>, and every generic adversary is algebraic. See <a href="formal-verification/security-models.html#the-algebraic-adversary-restriction">the algebraic-adversary restriction</a> for what supports the heuristic.</div></div>
 <div class="g" id="programmed-basis"><div class="g-head"><span class="term">programmed-basis</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/AlgebraicRelation.lean">Common.AlgebraicRelation.ProgrammedBasisEmbedding</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/AlgebraicRelation.lean">ProgrammedRelationOutcome</a></span></div><div class="def">Program every basis slot from the discrete-log challenge as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">•</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">•</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span></span> with fresh uniform pairs (Jaeger–Tessaro, Lemma 3). The reduction restricts how the basis is sampled, not the adversary: it consumes relation coefficients from any source, so it carries no AGM scoping. A relation with nonzero challenge component yields the discrete log of the challenge; a miss retains the exact same returned relation and proves it annihilates the programming — a single <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span></span></span></span> hyperplane, with no slot guess and no <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathrm">basis</span></span><span class="mord">∣</span></span></span></span> factor.</div></div>
 <div class="g" id="generator-ro"><div class="g-head"><span class="term">generator-RO</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean">orchardGeneratorROSetup</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/ProbabilityVesta.lean">orchardGeneratorROBasis</a> ·&nbsp;*_generatorRO*</span></div><div class="def">A modelling ingredient of the discrete-log endpoints: the reference-string generators are drawn from a programmable random oracle, so the programmed-basis reduction can embed its discrete-log challenge into the basis. Named with <code>generatorRO</code> wherever it applies, from the oracle setup and basis constructions to the capstones stated in this modelling.</div></div>
-<div class="g" id="urs"><div class="g-head"><span class="term">Uniform Reference String (URS)</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Arithmetic/Group.lean">Arithmetic.Group.URS</a></span></div><div class="def">A reference string of uniformly distributed group elements, with no hidden structure or trapdoor. The deployed protocol produces its URS once, by hashing public strings to the curve (<code>GroupHash</code>, spec <a href="https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta">§5.4.9.8</a>), and the security statements sample it instead via the <a href="formal-verification/definitions.html#generator-ro">generator-RO</a>. The gap between the two —including the protocol-lifetime caveat— is discussed under <a href="formal-verification/security-models.html#fixed-bases-hash-to-curve-and-the-reference-string">fixed bases, hash-to-curve, and the reference string</a>.</div></div>
+<div class="g" id="urs"><div class="g-head"><span class="term">Uniform Reference String (URS)</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Arithmetic/Group.lean">Arithmetic.Group.URS</a></span></div><div class="def">A reference string of uniformly distributed group elements, with no hidden structure or trapdoor. The deployed protocol produces its URS once, by hashing public strings to the curve (<code>GroupHash</code>, spec <a href="https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta">§5.4.9.8</a>), and the security statements sample it instead via the <a href="formal-verification/definitions.html#generator-ro">generator-RO</a>. The gap between the two —including the protocol-lifetime caveat— is discussed under <a href="formal-verification/security-models.html#fixed-bases-the-group-hash-and-the-reference-string">fixed bases, the group hash, and the reference string</a>.</div></div>
 <div class="g"><div class="g-head"><span class="term">straight-line AGM extractor</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/StraightLinePinnedRoots.lean">AGM.StraightLinePinnedRoots.StraightLineIpaOnlineTrace</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/StraightLineDeployed.lean">Composition.StraightLineDeployed.ComputedStraightLineDeployedFSFamily.ofCovered</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Composition/StraightLineConstraint.lean">Composition.StraightLineConstraint</a></span></div><div class="def">The deployed AGM route. Each IPA round exposes an executable pre-squeeze polynomial computation, proves that it has not queried that round's squeeze point, and connects its result to the final proof. One accepting transcript therefore yields a clean decode, explicit DLOG relation, or pinned quadratic event. The combined finder uses at most four prover invocations, so no expected-runs truncation or Markov tail appears anywhere in the bound. <code>ofCovered</code> packages the representation-carrying online prover with caller-supplied executable root, IPA, and constraint-<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> stages plus freshness proofs; the captured endpoint applies existing verifier metadata without a new proof fixture. The representations exist only in the model —the algebraic adversary supplies them alongside its proof, and the extractor reads them— and are never Halo2 proof bytes; this is an AGM-and-random-oracle result. The verifying key, instance commitments, and initial transcript prefix are fixed per basis before oracle access. Only the adaptive-statement capstone permits online statement choice.</div></div>
 <div class="g" id="shallow"><div class="g-head"><span class="term">shallow cost language</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/CostedOracle.lean">AGM.CostedOracle.CostedLabeledOracleComp</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/CostedOracle.lean">CostedLabeledOracleComp.StagedGroupWorkFaithful</a></span></div><div class="def">The group-work accounting language reifies as explicit syntax only the group operations a program writes as nodes. Everything else — the Lean terms building <code>pure</code> payloads, query arguments, and continuations — stays in the host language, where Lean has no operational cost semantics. That is what <em>shallow</em> means here, and the price of it is that the counter measures what was staged rather than what the host computes: group law performed inside an unreified callback would go uncharged. <code>StagedGroupWorkFaithful</code> is the judgement that no such work exists, which is why it is a named premiss carried into the endpoints rather than a theorem. A deep embedding — host computation reified as syntax too — would discharge it in Lean, at the cost of rewriting the reduction in that syntax.</div></div>
 <div class="g" id="adv-dlog"><div class="g-head"><span class="term">DL reduction bound</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Common/RelationProbability.lean">Common.RelationProbability.TextbookDLAdvantageLE</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/AGM/CostedOracle.lean">AGM.CostedOracle.CostedLabeledOracleComp</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementCost.lean">Action.AdaptiveStatementCost.CertifiedAdaptiveStatementDlogProfile</a></span></div><div class="def">The programmed-basis reduction turns a computed relation into either a discrete-log solution or one <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord">1/∣</span><span class="mord"><span class="mord mathbb">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">p</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span></span> miss hyperplane. The adaptive route uses a staged cost language whose erasure is the original algebraic adversary. One closed program constructs the charged basis, specializes the exact adversary path while retaining its annotation log and group nodes, builds a proof-carrying cache from that result, and feeds the same cache into charged verifier postprocessing. Lean proves that this program's counter is the adversary counter plus the reified reduction counter; no separate arithmetic join or second adversary execution remains. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is written throughout with two resource arguments, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mclose">)</span></span></span></span>: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> is the adversary's random-oracle query count and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span> its group-operation count, the latter charging the adversary and the reduction together (<code>AdaptiveStatementDlogProfile.advantage</code>, applied at <code>adaptiveStatementDlogRandomOracleQueries</code> and <code>adaptiveStatementDlogGroupWork proverGroupWork reductionGroupWork</code>). At <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>, the endpoints bound failure by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> for either a <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> or <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> adversary group-work budget; the latter's adversary-plus-reduction group work is at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span>. Equality/list traversal, direct-coordinate work, and random-oracle queries are separate resources. The three-decode bound follows from a required family representation-length invariant; the generic theorem does not construct a concrete deployed family. Because the language is <a href="formal-verification/definitions.html#shallow">shallow</a>, staging fidelity remains explicit both for the external adversary and for host computations inside the complete program, such as generic key construction, hashing, and fixed-representation callbacks. These numbers are coverage parameters, not a claim that Lean computes Vesta's DLOG advantage.</div></div>
@@ -3232,7 +3257,7 @@ refactoring arcs complete rather than kept continuously current.</p>
 <ul>
 <li><a href="formal-verification/clean-boundary.html">The Clean Boundary</a> is the normative rule for how Clean-originated
 concepts appear in ironwood.</li>
-<li><a href="formal-verification/lawfulness-and-certificate-elimination.html">Halo 2 Lawfulness and Certificate Elimination</a>
+<li><a href="formal-verification/clean-improvements.html">Clean Circuit Framework Improvements</a>
 specifies the arc that replaces whole-circuit computational certificates with
 compositional lawfulness.</li>
 </ul>
@@ -3388,31 +3413,45 @@ circuit/compiler obligations. Gate well-formedness is already intrinsic to <code
 The remaining facts should be derived or packaged once inside the boundary rather
 than supplied beside every soundness call.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="halo2-lawfulness-and-certificate-elimination"><a class="header" href="#halo2-lawfulness-and-certificate-elimination">Halo2 lawfulness and certificate elimination</a></h1>
+<h1 id="clean-circuit-framework-improvements"><a class="header" href="#clean-circuit-framework-improvements">Clean circuit framework improvements</a></h1>
+<p>This note describes potential improvements to the generality and ergonomics of the
+Clean framework used in this development. Clean had not previously been applied to
+circuits for Halo 2 (or for any other proving system using Plonkish arithmetization);
+nor had it been applied to any circuit as large or complicated as the Orchard protocol's
+Action circuit. The accelerated timeline of the Ironwood deployment required us to focus
+on that circuit (in its pre- and post-NU6.3 versions), at the expense of generality.</p>
 <h2 id="status-and-scope"><a class="header" href="#status-and-scope">Status and scope</a></h2>
-<p>This note specifies the refactoring arc that replaces concrete, whole-Action
+<p>The refactoring arc described in this note would replace concrete, whole-Action
 computational certificates with reusable Halo2-Clean lawfulness and compiler theorems.
-The certificates that could be eliminated by generalizing their consumers are gone
-(<a href="https://github.com/zcash/ironwood/pull/145">#145</a>); the compositional-lawfulness side
-is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
+The certificates that could be eliminated by generalizing their consumers are already
+gone (<a href="https://github.com/zcash/ironwood/pull/145">#145</a>). The compositional-lawfulness
+side is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
+<p>The arc serves three purposes:</p>
+<ul>
+<li><strong>Generality.</strong> Lawfulness is proved once for Clean's primitives and preserved by its
+circuit combinators, so that the framework can handle further top-level circuits
+without comparable rework — at present, each new circuit would need its own
+hand-written whole-circuit certificate modules.</li>
+<li><strong>Error reporting.</strong> An incorrectly expressed circuit should fail the local proof
+obligation that names its mistake, rather than be silently repaired by the keygen
+model or surface only as an unexplained mismatch against a captured verifying key.</li>
+<li><strong>Claim hygiene.</strong> Concrete computation should be confined to checking deployment
+identity, so that a concrete check cannot silently stand in for a well-formedness
+property it does not establish.</li>
+</ul>
 <p>The deployed verifying-key equality is intentionally <strong>not</strong> part of this cleanup.
-Checking that the circuit-derived key equals the deployed Orchard key is a legitimate
-concrete trust-boundary check. It must not, however, double as evidence that the Clean
-formal circuit is internally lawful.</p>
+Checking that the circuit-derived key equals the deployed key is a required concrete
+trust-boundary check for any circuit. It is not the same thing as proving that a
+formal circuit expressed in Clean is internally lawful.</p>
 <p>The visible certificate list understates the architectural debt, for example:</p>
 <ul>
 <li>some certificates bundle independent facts;</li>
-<li>further wellformedness checks hide inside the VK-match bundle;</li>
+<li>further well-formedness checks hide inside the VK-match bundle;</li>
 <li><code>ConstraintSystem.closeWithOperations</code> silently repairs a missing configure/synthesis
 fact without proving that the repair is inactive (the verifier MSM match is against
 the repaired circuit that is actually proven, as it should be, but the repair impedes
 comparing the Lean code against the Rust implementation and should be unnecessary).</li>
 </ul>
-<p>The guiding rule is:</p>
-<blockquote>
-<p>A concrete VK comparison may establish deployment identity. It must not establish
-that a formal circuit is well formed.</p>
-</blockquote>
 <h2 id="why-closewithoperations-belongs-in-this-inventory"><a class="header" href="#why-closewithoperations-belongs-in-this-inventory">Why <code>closeWithOperations</code> belongs in this inventory</a></h2>
 <p>Clean currently defines <code>FormalCircuit.toConstraintSystem</code> by taking the raw result of
 <code>configure</code> and applying <code>ConstraintSystem.closeWithOperations</code> to the circuit's
@@ -3479,7 +3518,7 @@ decision for the lawfulness side of the arc, not another consumer generalization
 <p>Replacing the first kind with compositional lawfulness is the substance of this
 note, and <a href="https://github.com/zcash/ironwood/pull/202">#202</a> is that work in
 progress.</p>
-<h2 id="withdrawn-synthesis-laws-and-the-residual-fidelity-gap"><a class="header" href="#withdrawn-synthesis-laws-and-the-residual-fidelity-gap">Withdrawn synthesis laws and the residual fidelity gap</a></h2>
+<h2 id="withdrawn-synthesis-laws"><a class="header" href="#withdrawn-synthesis-laws">Withdrawn synthesis laws</a></h2>
 <p><code>TopLevelCircuit</code> once carried two static synthesis obligations: that a lookup
 operation's recorded enabled selectors exactly match the relevant selectors activated
 in its complete region at that row, and that lookup input expressions contain no
@@ -3487,18 +3526,19 @@ simple selectors. They were proved at the wrong abstraction layer — as fields 
 <code>TopLevelCircuit</code> rather than of <code>FormalCircuit</code>, backed by sidecars that retraced
 the entire Action and NoteCommit synthesis call graphs — and nothing consumed them,
 so they were withdrawn rather than relocated.</p>
-<p>That withdrawal leaves a known fidelity gap. Halo 2 rejects simple selectors supplied
-to a lookup argument — lookup registration panics on one — and Clean no longer models
-that rejection anywhere. Nothing in the present chain becomes unsound as a result,
-because nothing claims it; but a keygen-fidelity theorem relating Clean's
-<code>configure</code>/<code>synthesize</code> output to halo2's own key generation cannot be stated
-faithfully without it. Such a theorem will need a no-simple-selectors premiss
-reintroduced explicitly.</p>
-<p>When that happens, the premiss should not be reinstated in the withdrawn shape. These
-are laws of <code>FormalCircuit.synthesize</code>: the obligation belongs locally on
-lookup-emitting bundles, preserved compositionally by the circuit combinators, rather
-than reproved across a whole synthesis call graph and reattached at the top-level
-wrapper.</p>
+<p>The withdrawal removed the development's only statement of the second property. That
+loses nothing now: Halo 2 rejects simple selectors supplied to a lookup argument
+—lookup registration panics on one— so the property holds of any circuit that halo2
+accepted, in particular the deployed one, and no current claim consumes it.</p>
+<p>These synthesis checks would return as premisses of a future keygen-fidelity theorem
+relating Clean's <code>configure</code>/<code>synthesize</code> output to halo2's own key generation.
+Halo2's key generation is partial where Clean's model is total —Clean does not model
+the rejection— so the preferred design is for such a theorem to carry a
+no-simple-selectors premiss, discharged for a concrete circuit by computation.</p>
+<p>When the premiss is reintroduced, it should be as a local obligation on lookup-emitting
+bundles, preserved compositionally by the circuit combinators. This would be a law of
+<code>FormalCircuit.synthesize</code>, rather than a statement reproved across a whole synthesis
+call graph and reattached at the top-level wrapper.</p>
 <h2 id="proposed-lawfulness-interfaces"><a class="header" href="#proposed-lawfulness-interfaces">Proposed lawfulness interfaces</a></h2>
 <h3 id="1-exact-gate-query-support"><a class="header" href="#1-exact-gate-query-support">1. Exact gate query support</a></h3>
 <p>For a gate, the list supplied as <code>queriedCells</code> records Rust closure-call order, while

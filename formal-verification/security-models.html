@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-df7c90e4.js";
+            window.path_to_searchindex_js = "../searchindex-c53bc987.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e251c89b.js"></script>
+        <script src="../toc-bb80af0a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -274,23 +274,25 @@ and the challenge is hidden perfectly rather than computationally. What the redu
 gains is private knowledge of the pairs. A returned relation among the bases then becomes
 a linear equation in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span></span></span></span>, solvable unless the relation's coefficients land on the single
 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span></span></span></span> hyperplane where the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span> component cancels — the form of reduction the
-definitions page calls <a href="definitions.html#programmed-basis">programmed-basis</a>. The argument is
-Jaeger–Tessaro's proof of their Lemma 3, presented there as a careful use of
+definitions page calls <a href="definitions.html#programmed-basis">programmed-basis</a>. The argument
+is Jaeger–Tessaro's proof of their Lemma 3, presented there as a careful use of
 self-reducibility techniques.</p>
 <p>The judgement that the exhibited solver is beyond reach is a statement about the current
 state of cryptanalytic knowledge, supplied by the reader rather than by the mathematics —
 Rogaway's "human ignorance" approach
 (<a href="https://eprint.iacr.org/2006/281">Formalizing Human Ignorance</a>, Vietcrypt 2006). Even
 outside formalization, time-bounded universal hardness claims for a fixed primitive are
-subtle: free precomputation converts memory into online speed at a quantified exchange
-rate (Corrigan-Gibbs–Kogan,
-<a href="https://eprint.iacr.org/2017/1113">The Discrete-Logarithm Problem with Preprocessing</a>,
-Eurocrypt 2018: generic preprocessing attacks with advice <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> and online time <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>
-achieve success <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span> on the order of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathnormal">ε</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>, and this is
-tight); non-uniform definitions admit unrealistic counterexample algorithms, as
-discussed above
-(Bernstein–Lange); and whether the non-uniform model is the right one at all is itself
-debated (Koblitz–Menezes, <a href="https://eprint.iacr.org/2012/359">Another look at non-uniformity</a>).</p>
+subtle, for several reasons:</p>
+<ul>
+<li>Free precomputation converts memory into online speed, at a quantified exchange rate
+(Corrigan-Gibbs–Kogan, <a href="https://eprint.iacr.org/2017/1113">The Discrete-Logarithm Problem with Preprocessing</a>,
+Eurocrypt 2018): generic preprocessing attacks with advice <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> and online time <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>
+achieve success <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span> on the order of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathnormal">ε</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>. This result is tight.</li>
+<li>Non-uniform definitions admit unrealistic counterexample algorithms, as discussed above
+(Bernstein–Lange).</li>
+<li>Whether the non-uniform model is the right one at all is itself debated
+(Koblitz–Menezes, <a href="https://eprint.iacr.org/2012/359">Another look at non-uniformity</a>).</li>
+</ul>
 <p>The Lean interface encodes this division of labour — the mathematics exhibits the
 reduction, and the reader supplies the hardness judgement. <code>TextbookDLAdvantageLE</code> and
 its coin-carrying variant bound the winning-coins measure of one named algorithm —the
@@ -301,90 +303,103 @@ in it: nothing about the difficulty of discrete log is assumed anywhere in the
 development. A capstone converts a belief about achievable discrete-log advantage at a
 given cost into a bound on the protocol game; it does not certify the belief.</p>
 <h3 id="the-resource-numbers-are-coverage-parameters"><a class="header" href="#the-resource-numbers-are-coverage-parameters">The resource numbers are coverage parameters</a></h3>
-<p>The Snark-side capstones quote concrete numbers: the covered adversary's random-oracle
-queries are bounded by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> and its group work by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> —or <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> in a
-staged-certified variant— with a statistical remainder (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> for the
-consensus-generic Action capstone) proved for every workload up to the full covered
-budget. The instantiated formula endpoint quotes an eight-fold finder envelope —a
-three-bit overhead, since the finder replays a bounded number of traversals— evaluating
-the advantage at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> oracle queries and group operations. The staged-certified
-endpoints instead count the reduction's work additively, by a proved counter
-composition, and evaluate it at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span></span></span></span> queries and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations — the
-group work including the adversary's own at the larger budget. It is easy to misread
-the envelope as an estimate of Vesta's discrete-log cost; it is in fact a coverage
-parameter. The target is as large as
-is useful —past roughly <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations an adversary can compute Vesta discrete
-logs directly, voiding every binding property here (see the lifetime caveat below)— and
-no smaller, so that no adversary with a meaningful guarantee is excluded.</p>
+<p>The Snark-side capstones quote concrete numbers: the covered adversary makes at most
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> random-oracle queries and performs at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations, the
+latter certified by a staged cost program. The statistical remainder (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> for
+the consensus-generic Action capstone) is proved for every workload up to the full
+covered budget. The endpoints count the reduction's work additively, by a proved
+counter composition: the reduction adds at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span> group operations and 22 oracle
+queries to the adversary's own, and the advantage is evaluated at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span></span></span></span> queries and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations after rounding up to powers of two. The accounting overhead
+is a fraction of a bit of group work: before rounding, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> becomes at most
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125.32</span></span></span></span></span></span></span></span></span></span></span></span>.</p>
+<p>It is easy to misread the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> target as an estimate of Vesta's discrete-log cost;
+it is in fact a coverage parameter. The target is as large as is useful —past roughly
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group operations an adversary can compute Vesta discrete logs directly,
+voiding every binding property here (see the lifetime caveat below)— and no smaller,
+so that no adversary with a meaningful guarantee is excluded.</p>
 <p>The near-coincidence with Pollard rho's estimated cost on Vesta (about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span>, using
-the curve's automorphisms) is therefore a stopping rationale, not a dependence: a revised
-attack estimate would change the interpretation, not the theorem. And the quoted bound is
-the worst covered point: the theorems evaluate the advantage function at the finder's
-exact accounted counts, and substituting the larger envelope numbers can only increase
-it. Since generic-attack success falls off steeply below its threshold, an adversary far
-below the target gets a far stronger interpreted bound.
-Reading resource-parameterized claims this way —as attack-cost curves rather than
-single thresholds— follows Bernstein,
+the curve's automorphisms) is therefore a stopping rationale, not a dependence: a
+revised attack estimate would change the interpretation, not the theorem. And the
+quoted bound is the worst covered point: the theorems evaluate the advantage function
+at the finder's exact accounted counts, and substituting the larger rounded budgets can
+only increase it. Since generic-attack success falls off steeply below its threshold,
+an adversary far below the target gets a far stronger interpreted bound. Reading
+resource-parameterized claims this way —as attack-cost curves rather than single
+thresholds— follows Bernstein,
 <a href="https://cr.yp.to/snuffle/bruteforce-20050425.pdf">Understanding brute force</a>, 2005.</p>
 <h2 id="the-algebraic-adversary-restriction"><a class="header" href="#the-algebraic-adversary-restriction">The algebraic-adversary restriction</a></h2>
-<p>An algebraic adversary is one that, whenever it outputs a group element, also supplies a
-representation: coefficients expressing that element over the elements it has received
-(Fuchsbauer–Kiltz–Loss,
+<p>An algebraic adversary is one that, whenever it outputs a group element, also supplies
+a representation: coefficients expressing that element over the elements it has
+received (Fuchsbauer–Kiltz–Loss,
 <a href="https://eprint.iacr.org/2017/620">The Algebraic Group Model and its Applications</a>,
-Crypto 2018). Only
-the provenance of output group elements is restricted. The computation deciding the
-coefficients is unrestricted — the adversary may inspect encodings, branch on bits, and
-use any structure it can see. In this development the restriction is part of the
-adversary's <em>type</em> in the online-AGM layer, not a named hypothesis on any capstone —
-which is why this page states it: conditions carried by the quantifier domain are as
-load-bearing as named hypotheses, and less visible in theorem statements.</p>
+Crypto 2018). Only the provenance of output group elements is restricted. The
+computation deciding the coefficients is unrestricted — the adversary may inspect
+encodings, branch on bits, and use any structure it can see. In this development the
+restriction is part of the adversary's <em>type</em> in the online-AGM layer, not a named
+hypothesis on any capstone — which is why this page states it: conditions carried by
+the quantifier domain are as load-bearing as named hypotheses, and less visible in
+theorem statements.</p>
 <p>Like the random-oracle model, this is a heuristic restriction of the adversary's
 strategy class, not an assumption that could be true or false of Pallas or Vesta.
 Random-oracle non-instantiability (Canetti–Goldreich–Halevi,
 <a href="https://eprint.iacr.org/1998/011">The Random Oracle Methodology, Revisited</a>) is the
-standing warning against reading
-in-model theorems as instantiated guarantees. The heuristic earns its keep only if two
-supporting claims hold. First, re-expression: an adversary that is only <em>incidentally</em>
-non-algebraic must be re-expressible as an algebraic one at similar cost. Every generic
-adversary is algebraic —it only ever combines the elements it received— so the
-algebraic-adversary restriction is strictly weaker than the generic-group one; the
-substance is the claim that the concrete curves offer no useful operations that are
-neither generic nor algebraic. Second, the <em>known</em> deviations of the curves from generic
-must not obstruct the re-expression. Pasta's efficient endomorphism is the sharp
-example: it acts as scalar multiplication by a known cube root of unity, so an adversary
-using it remains algebraic — its outputs still carry representations. The same
-structure genuinely cheapens the best generic attacks (the automorphism-class rho walk
-behind the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> figure above), which the coverage parameters absorb. Deviating from
-generic and obstructing algebraicity are different failures, and the endomorphism is the
-first (since it can reduce the number of group operations required) without being the
-second.</p>
-<p>The remaining supporting claim is that the modelled basis covers everything a realistic
-adversary can obtain. That is a claim about hash-to-curve, and it belongs with the
-reference-string discussion below.</p>
-<h2 id="fixed-bases-hash-to-curve-and-the-reference-string"><a class="header" href="#fixed-bases-hash-to-curve-and-the-reference-string">Fixed bases, hash-to-curve, and the reference string</a></h2>
+standing warning against reading in-model theorems as instantiated guarantees. The
+heuristic earns its keep only if three supporting claims hold:</p>
+<ol>
+<li><strong>Re-expression:</strong> an adversary that is only <em>incidentally</em> non-algebraic must
+be re-expressible as an algebraic one at similar cost.</li>
+<li><strong>Structural compatibility:</strong> an adversary must not be able to make essential
+use of known structure of a curve that is unavailable within the algebraic model
+we are using.</li>
+<li><strong>Basis sufficiency:</strong> the basis of group elements provided to the adversary
+is sufficient to model realistic attacks.</li>
+</ol>
+<p>The first claim says that our formalization of the algebraic model faithfully
+captures only the intended semantic restrictions; that is, if we write down some
+algorithm for a semantically algebraic attack, we will always be able to meet
+the syntactic requirements of the formalization.</p>
+<p>The second claim is about the reasonableness of applying the AGM (in our variant)
+to the particular curves used by our protocol, Pallas and Vesta. That is, do they
+have known structure (or structure that an adversary might know) allowing for
+attacks outside the model that we need to be worried about in practice?</p>
+<p>Every generic adversary is algebraic —it only ever combines the elements it received—
+so the algebraic-adversary restriction is strictly weaker than the generic-group one.
+An example of structure that separates them is Pasta's efficient endomorphism: it
+acts as scalar multiplication by a known cube root of unity, so an adversary using
+it remains algebraic — its outputs still carry representations. The same structure
+genuinely cheapens the best <em>generic</em> attacks (the automorphism-class rho walk
+behind the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> figure above), which the coverage parameters absorb.
+Deviating from generic and obstructing algebraicity are different failures, and
+the endomorphism is the first (since it can reduce the number of group operations
+required) without being the second.</p>
+<p>The third supporting claim is that the modelled basis covers all group elements that
+may be useful to an adversary in realistic attacks. The next section covers that
+issue.</p>
+<h2 id="fixed-bases-the-group-hash-and-the-reference-string"><a class="header" href="#fixed-bases-the-group-hash-and-the-reference-string">Fixed bases, the group hash, and the reference string</a></h2>
 <p>Several reductions bottom out at discrete log by treating a set of group elements as
-<em>independent</em> — for example the value-commitment bases <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08222em;">V</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>, the
-Sinsemilla generators, and the proof system's inner-product reference string. Independence
-is what turns "find a nontrivial relation among these elements" into the discrete-log game:
-the reduction models each base as a random multiple of one generator and embeds its
-discrete-log challenge into that randomness.</p>
+<em>independent</em> — for example the value-commitment bases <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08222em;">V</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal">R</span></span></span></span>,
+the Sinsemilla generators, and the proof system's inner-product reference string.
+Independence is what turns "find a nontrivial relation among these elements" into the
+discrete-log game: the reduction models each base as a random multiple of one generator
+and embeds its discrete-log challenge into that randomness.</p>
 <p>In the deployed protocol, though, these bases are <em>fixed</em>. Each is produced once, by
 hashing public strings to the curve with <code>GroupHash</code> (spec
 <a href="https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta">§5.4.9.8</a>),
-and the resulting outputs are baked into the protocol as a Uniform Reference String. The
-gap between the two is the standard gap for protocols with a URS. We prove security for
-the family of protocols that sample the bases at random, over the distribution of that
-randomness. Then we argue heuristically that the deployed protocol, which fixes them via
-hash-to-curve, inherits it — provided that the hash-to-curve scheme admits no attack
-more efficient than the algebraic ones bounded by the proven reductions. The
+and the resulting outputs are baked into the protocol as a Uniform Reference String.
+The gap between the two is the standard gap for protocols with a URS. We prove security
+for the family of protocols that sample the bases at random, over the distribution of
+that randomness. Then we argue heuristically that the deployed protocol, which fixes
+them via the group hash, inherits it — provided that the group hash scheme admits no
+attack more efficient than the algebraic ones bounded by the proven reductions. The
 <a href="group-hash-indifferentiability.html">group-hash indifferentiability development</a>
-supplies the formal half of that judgement: the deployed group hash is
-indifferentiable from a random oracle into the group, under a named Weil-bound
-hypothesis, with the simulator exhibited as an algorithm. No Lean
-theorem instantiates the soundness endpoints at the deployed bases; identifying Halo2's
-hash-to-curve outputs with the sampled basis is the heuristic step
+supplies the formal half of that judgement: the deployed group hash is indifferentiable
+from a random oracle into the group, under a named Weil-bound hypothesis, with the
+simulator exhibited as an algorithm.</p>
+<p>No Lean theorem instantiates the soundness endpoints at the deployed bases;
+identifying Halo2's group hash outputs with the sampled basis is a heuristic step
 (<code>Zcash/TrustBoundary.lean</code> records this scope). The same heuristic underlies every
-fixed-base use of hash-to-curve here, including the value and note commitments, the
+fixed-base use of the group hash here, including the value and note commitments, the
 Merkle hash, and the proof system's reference string. The same primitive also produces
 bases on demand: <code>DiversifyHash</code> derives each diversified address base from <code>GroupHash</code>
 at key generation.</p>
@@ -409,27 +424,32 @@ from reliance on discrete-log binding/knowledge-soundness is therefore a whole-p
 concern, not a per-transaction one. See
 <a href="https://zips.z.cash/zip-2005#effectsofdiscrete-logarithm-breakingattacksbeforetheswitchtotherecoveryprotocol">ZIP 2005</a>
 for further discussion.</p>
-<p>What makes a hash-to-curve output a good base is that it comes with no known
+<p>What makes a group-hash output a good base is that it comes with no known
 representation over previously received elements. The same property cuts the other way
 for the adversary model. A realistic adversary can evaluate <code>GroupHash</code> directly on
 inputs of its choice, and every output it obtains is a group element held with no
 representation over a fixed basis — so an adversary with that access is not algebraic
-over any fixed finite basis. The faithful modelling makes hash-to-curve itself an oracle
-of the game: the adversary may query it, each fresh output joins the AGM basis as a new
-independent element, and the reduction may embed its challenge in programmed outputs.
-The development does not currently model that access. Each game fixes an enumerated
-basis of the generators its honest algorithms use, and its theorems quantify over
-adversaries algebraic over that basis. Two consequences should be stated plainly. For
-games whose honest parties themselves call <code>DiversifyHash</code> —Spendability and Spend
-Authority, where key generation derives the diversified base— the modelled adversary
-cannot express strategies a realistic adversary performs routinely, so those games need
-the oracle in the adversary's interface before their capstones carry their intended
-weight; the indifferentiability result is what licenses giving them that oracle as a
-random oracle. And enumerating, per game, the generators judged relevant leaves out fixed bases
-from other protocol components that a deployed adversary can obtain; nothing known
-suggests they help, but "nothing known suggests" is itself a heuristic judgement, and it
-should be visible rather than implicit. Both are known limitations of the current
-modelling (<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</p>
+over any fixed finite basis.</p>
+<p>The faithful modelling makes the group hash itself an oracle of the game: the adversary
+may query it, each fresh output joins the AGM basis as a new independent element, and
+the reduction may embed its challenge in programmed outputs. The development does not
+currently model that access. Each game fixes an enumerated basis of the generators its
+honest algorithms use, and its theorems quantify over adversaries algebraic over that
+basis. Two consequences should be stated plainly:</p>
+<ul>
+<li>For games whose honest parties themselves call <code>DiversifyHash</code> —Spendability and
+Spend Authority, where key generation derives the diversified base— the modelled
+adversary cannot express strategies a realistic adversary performs routinely, so
+those games need the oracle in the adversary's interface before their capstones
+carry their intended weight. The indifferentiability result is what licenses giving
+them that oracle as a random oracle.</li>
+<li>Enumerating, per game, the generators judged relevant leaves out fixed bases from
+other protocol components that a deployed adversary can obtain. Nothing known
+suggests they help, but "nothing known suggests" is itself a heuristic judgement,
+and it should be visible rather than implicit.</li>
+</ul>
+<p>Both are known limitations of the current modelling
+(<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</p>
 <p>These models and their limitations are part of every statement in the development: a
 capstone's bound is no stronger than the adversary class it quantifies over. For the
 property statements the models scope, see the
@@ -440,7 +460,7 @@ the <a href="proof-map.html"><strong>Proof Map</strong></a>; for the coined term
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../formal-verification/proof-map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../formal-verification/guide.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -454,7 +474,7 @@ the <a href="proof-map.html"><strong>Proof Map</strong></a>; for the coined term
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../formal-verification/proof-map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../formal-verification/guide.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

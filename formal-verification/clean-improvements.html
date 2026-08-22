@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Halo 2 Lawfulness and Certificate Elimination - The Ironwood Book</title>
+        <title>Clean Circuit Framework Improvements - The Ironwood Book</title>
 
 
         <!-- Custom HTML head -->
@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-df7c90e4.js";
+            window.path_to_searchindex_js = "../searchindex-c53bc987.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e251c89b.js"></script>
+        <script src="../toc-bb80af0a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -177,31 +177,45 @@
                 <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="halo2-lawfulness-and-certificate-elimination"><a class="header" href="#halo2-lawfulness-and-certificate-elimination">Halo2 lawfulness and certificate elimination</a></h1>
+<h1 id="clean-circuit-framework-improvements"><a class="header" href="#clean-circuit-framework-improvements">Clean circuit framework improvements</a></h1>
+<p>This note describes potential improvements to the generality and ergonomics of the
+Clean framework used in this development. Clean had not previously been applied to
+circuits for Halo 2 (or for any other proving system using Plonkish arithmetization);
+nor had it been applied to any circuit as large or complicated as the Orchard protocol's
+Action circuit. The accelerated timeline of the Ironwood deployment required us to focus
+on that circuit (in its pre- and post-NU6.3 versions), at the expense of generality.</p>
 <h2 id="status-and-scope"><a class="header" href="#status-and-scope">Status and scope</a></h2>
-<p>This note specifies the refactoring arc that replaces concrete, whole-Action
+<p>The refactoring arc described in this note would replace concrete, whole-Action
 computational certificates with reusable Halo2-Clean lawfulness and compiler theorems.
-The certificates that could be eliminated by generalizing their consumers are gone
-(<a href="https://github.com/zcash/ironwood/pull/145">#145</a>); the compositional-lawfulness side
-is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
+The certificates that could be eliminated by generalizing their consumers are already
+gone (<a href="https://github.com/zcash/ironwood/pull/145">#145</a>). The compositional-lawfulness
+side is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
+<p>The arc serves three purposes:</p>
+<ul>
+<li><strong>Generality.</strong> Lawfulness is proved once for Clean's primitives and preserved by its
+circuit combinators, so that the framework can handle further top-level circuits
+without comparable rework — at present, each new circuit would need its own
+hand-written whole-circuit certificate modules.</li>
+<li><strong>Error reporting.</strong> An incorrectly expressed circuit should fail the local proof
+obligation that names its mistake, rather than be silently repaired by the keygen
+model or surface only as an unexplained mismatch against a captured verifying key.</li>
+<li><strong>Claim hygiene.</strong> Concrete computation should be confined to checking deployment
+identity, so that a concrete check cannot silently stand in for a well-formedness
+property it does not establish.</li>
+</ul>
 <p>The deployed verifying-key equality is intentionally <strong>not</strong> part of this cleanup.
-Checking that the circuit-derived key equals the deployed Orchard key is a legitimate
-concrete trust-boundary check. It must not, however, double as evidence that the Clean
-formal circuit is internally lawful.</p>
+Checking that the circuit-derived key equals the deployed key is a required concrete
+trust-boundary check for any circuit. It is not the same thing as proving that a
+formal circuit expressed in Clean is internally lawful.</p>
 <p>The visible certificate list understates the architectural debt, for example:</p>
 <ul>
 <li>some certificates bundle independent facts;</li>
-<li>further wellformedness checks hide inside the VK-match bundle;</li>
+<li>further well-formedness checks hide inside the VK-match bundle;</li>
 <li><code>ConstraintSystem.closeWithOperations</code> silently repairs a missing configure/synthesis
 fact without proving that the repair is inactive (the verifier MSM match is against
 the repaired circuit that is actually proven, as it should be, but the repair impedes
 comparing the Lean code against the Rust implementation and should be unnecessary).</li>
 </ul>
-<p>The guiding rule is:</p>
-<blockquote>
-<p>A concrete VK comparison may establish deployment identity. It must not establish
-that a formal circuit is well formed.</p>
-</blockquote>
 <h2 id="why-closewithoperations-belongs-in-this-inventory"><a class="header" href="#why-closewithoperations-belongs-in-this-inventory">Why <code>closeWithOperations</code> belongs in this inventory</a></h2>
 <p>Clean currently defines <code>FormalCircuit.toConstraintSystem</code> by taking the raw result of
 <code>configure</code> and applying <code>ConstraintSystem.closeWithOperations</code> to the circuit's
@@ -268,7 +282,7 @@ decision for the lawfulness side of the arc, not another consumer generalization
 <p>Replacing the first kind with compositional lawfulness is the substance of this
 note, and <a href="https://github.com/zcash/ironwood/pull/202">#202</a> is that work in
 progress.</p>
-<h2 id="withdrawn-synthesis-laws-and-the-residual-fidelity-gap"><a class="header" href="#withdrawn-synthesis-laws-and-the-residual-fidelity-gap">Withdrawn synthesis laws and the residual fidelity gap</a></h2>
+<h2 id="withdrawn-synthesis-laws"><a class="header" href="#withdrawn-synthesis-laws">Withdrawn synthesis laws</a></h2>
 <p><code>TopLevelCircuit</code> once carried two static synthesis obligations: that a lookup
 operation's recorded enabled selectors exactly match the relevant selectors activated
 in its complete region at that row, and that lookup input expressions contain no
@@ -276,18 +290,19 @@ simple selectors. They were proved at the wrong abstraction layer — as fields 
 <code>TopLevelCircuit</code> rather than of <code>FormalCircuit</code>, backed by sidecars that retraced
 the entire Action and NoteCommit synthesis call graphs — and nothing consumed them,
 so they were withdrawn rather than relocated.</p>
-<p>That withdrawal leaves a known fidelity gap. Halo 2 rejects simple selectors supplied
-to a lookup argument — lookup registration panics on one — and Clean no longer models
-that rejection anywhere. Nothing in the present chain becomes unsound as a result,
-because nothing claims it; but a keygen-fidelity theorem relating Clean's
-<code>configure</code>/<code>synthesize</code> output to halo2's own key generation cannot be stated
-faithfully without it. Such a theorem will need a no-simple-selectors premiss
-reintroduced explicitly.</p>
-<p>When that happens, the premiss should not be reinstated in the withdrawn shape. These
-are laws of <code>FormalCircuit.synthesize</code>: the obligation belongs locally on
-lookup-emitting bundles, preserved compositionally by the circuit combinators, rather
-than reproved across a whole synthesis call graph and reattached at the top-level
-wrapper.</p>
+<p>The withdrawal removed the development's only statement of the second property. That
+loses nothing now: Halo 2 rejects simple selectors supplied to a lookup argument
+—lookup registration panics on one— so the property holds of any circuit that halo2
+accepted, in particular the deployed one, and no current claim consumes it.</p>
+<p>These synthesis checks would return as premisses of a future keygen-fidelity theorem
+relating Clean's <code>configure</code>/<code>synthesize</code> output to halo2's own key generation.
+Halo2's key generation is partial where Clean's model is total —Clean does not model
+the rejection— so the preferred design is for such a theorem to carry a
+no-simple-selectors premiss, discharged for a concrete circuit by computation.</p>
+<p>When the premiss is reintroduced, it should be as a local obligation on lookup-emitting
+bundles, preserved compositionally by the circuit combinators. This would be a law of
+<code>FormalCircuit.synthesize</code>, rather than a statement reproved across a whole synthesis
+call graph and reattached at the top-level wrapper.</p>
 <h2 id="proposed-lawfulness-interfaces"><a class="header" href="#proposed-lawfulness-interfaces">Proposed lawfulness interfaces</a></h2>
 <h3 id="1-exact-gate-query-support"><a class="header" href="#1-exact-gate-query-support">1. Exact gate query support</a></h3>
 <p>For a gate, the list supplied as <code>queriedCells</code> records Rust closure-call order, while
