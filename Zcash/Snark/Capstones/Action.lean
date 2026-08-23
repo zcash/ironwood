@@ -69,7 +69,8 @@ rather than proved, with its known strengthening named where one exists:
 The bounds these endpoints prove are exact inside that model. The machine-readable shape for a
 deployed interpretation is `ActionDeploymentInstantiation`
 (`Soundness/Action/DeploymentRecord.lean`), one identification field per floor; the deployed
-endpoint below consumes it and charges the joint Challenge255 bias explicitly.
+endpoint below consumes it, charges the joint Challenge255 bias once for the whole adaptive
+transcript, and prices that charge at `2^-136` against the record's certified query ceiling.
 
 Each is censused directly in `Fixtures/MultiAction/Honest/TrustBoundary.lean`.
 -/
@@ -364,12 +365,14 @@ theorem orchard_action_adaptiveStatement_2pow123_knowledge_finite_security
   intro actual εBias hbias
   exact event_measure_le_of_bias hbias _ hprob
 
-/-- **Deployed adaptive-statement knowledge capstone.** A complete deployment record instantiates
-the basis, typed verifier, concrete DLOG profile, and a deduplicated finite failure observer.  The
-proved joint Challenge255 hybrid transports the ideal `2^123` work-factor bound to that observer,
-charging `challengeQueryBound * challenge255Bias` once for the whole adaptive transcript rather
-than assuming an unjustified one-squeeze event bound. -/
-theorem orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security
+/-- The deployed knowledge-failure bound with the joint Challenge255 charge left symbolic.  A
+complete deployment record instantiates the basis, typed verifier, concrete DLOG profile, and a
+deduplicated finite failure observer.  The proved joint Challenge255 hybrid transports the ideal
+`2^123` work-factor bound to that observer, charging `challengeQueryBound * challenge255Bias`
+once for the whole adaptive transcript rather than assuming an unjustified one-squeeze event
+bound.  The charge is a free multiple of the record's budget here — `OracleComp.QueryBound` is
+upward-closed, so nothing in this statement keeps it small; the endpoint below prices it. -/
+theorem adaptiveStatementDeployedKnowledgeFailure_le_jointCharge
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex actionCircuit.n → T)
@@ -420,6 +423,33 @@ theorem orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_secur
     exact deployment.idealFailureMeasure_eq.trans_le hideal
   rw [deployment.dlogAdvantageAgrees]
   exact event_measure_le_of_bias hjoint {true} hidealObserver
+
+/-- **Deployed adaptive-statement knowledge capstone.** The joint Challenge255 charge of
+`adaptiveStatementDeployedKnowledgeFailure_le_jointCharge`, priced: the record certifies its
+observer's query budget no looser than one adversary run plus the verifier's squeezes
+(`challengeQueryBound_le`), the profile bounds the adversary's budget by `2^123`, and the exact
+bias is below `2^-260` (`challenge255Bias_le`), so the charge is below `2^-136`
+(`challenge255_joint_charge_le_at_2pow123`).  The deployed knowledge-failure probability is
+therefore within `2^-136` of the ideal `2^123` work-factor bound — a closed number, not a bound
+that a loose-but-valid budget could push past `1`. -/
+theorem orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security
+    (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
+    {T : Type*} [DecidableEq T]
+    (query : AugmentedIndex actionCircuit.n → T)
+    (family : ComputedAdaptiveActionStatementFSFamily (actionProofParamsFor numProofs))
+    (deployment : ActionDeploymentInstantiation (actionProofParamsFor numProofs) family query
+      (adaptiveStatement_pairCount_lt numProofs family) (2 ^ 123)) :
+    deployment.deployedFailurePMF.toOuterMeasure {true} ≤
+      deployment.dlogAdvantage (2 ^ 126) (2 ^ 126) + 1 / (2 ^ 83 : ENNReal) +
+        1 / (2 ^ 136 : ENNReal) := by
+  refine le_trans
+    (adaptiveStatementDeployedKnowledgeFailure_le_jointCharge numProofs hn query family
+      deployment)
+    (add_le_add le_rfl ?_)
+  refine challenge255_joint_charge_le_at_2pow123 deployment.profile.queryBound ?_
+    deployment.challengeQueryBound_le
+  rw [CircuitShape.withProofParams_k, actionCircuit.shape_k]
+  exact ActionPermutationDomain.domainExponent_lt
 
 /-- The selected proof's direct-decode source fits the `2^90` endpoint envelope.  All
 proof-controlled and instance entries have shape-indexed lengths; the sole list-valued input is

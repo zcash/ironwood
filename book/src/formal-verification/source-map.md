@@ -247,8 +247,10 @@ decode to the concrete Action statement and carry a failure as explicit relation
 `Action/AdaptiveStatement*` is the adaptive-statement stack, the strongest Action notion: one
 online-AGM adversary returns the public inputs and proof together. `DeploymentRecord` states the
 machine-readable deployment-instantiation record — one identification field per model floor
-(challenge law, basis law, key digest, typed acceptance, discrete-log advantage) — that a
-deployed interpretation of the capstones supplies. `AdaptiveStatementModel`
+(challenge law, basis law, key digest, typed acceptance, discrete-log advantage), plus a
+certified ceiling on the failure observer's query budget, without which the joint Challenge255
+charge would be a free multiple — that a deployed interpretation of the capstones supplies.
+`AdaptiveStatementModel`
 defines the game and binds the verifying key and selected instance commitments before `theta`;
 `Accounting`, `Terminal`, and `Surfaces` decode arbitrary statement prefixes and price the
 root, IPA, and semantic surfaces under the single `(Q + 1)` query factor; `Provenance`,
@@ -376,8 +378,9 @@ Where the deployed Action circuit's own statements are stated. `Action.lean` sta
 endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
 error-formula form, in resource-accounted finite-security form at the `2^123` work factor, in
 the staged-certified forms carrying their group-work accounting at `2^123` and `2^125` adversary
-work, and in the deployed form that consumes an `ActionDeploymentInstantiation` and charges the
-joint Challenge255 bias explicitly. Knowledge soundness is the only property advertised: it implies
+work, and in the deployed form that consumes an `ActionDeploymentInstantiation`, charges the
+joint Challenge255 bias once for the whole transcript, and prices that charge at `2^-136` against
+the record's certified query ceiling. Knowledge soundness is the only property advertised: it implies
 the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
 and their events are retired.
 

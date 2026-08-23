@@ -19,6 +19,9 @@ constant is exact; it is below `2 ^ -260` (`challenge255Bias_le`).  `challenge25
 states the event form and `challenge255_weightedBias_le` proves the continuation-weighted form.
 `challenge255_joint_eventBias_le` composes the latter through a complete adaptive query tree;
 `challenge255_badSet_le` runs one squeeze through the event transport.
+`challenge255_joint_charge_le_at_2pow123` prices the joint charge at the `2^123` work limit:
+an observer visiting at most `Q + (11 + k)` points, with `Q ≤ 2^123` and `k < 33`, pays under
+`2^-136` in total, which is the closed number the deployed Action capstone states.
 -/
 
 namespace Zcash.Snark
@@ -313,6 +316,29 @@ theorem challenge255Bias_le : challenge255Bias ≤ 1 / 2 ^ 260 := by
     ← ENNReal.div_eq_inv_mul,
     ENNReal.le_div_iff_mul_le (Or.inl h2pow0) (Or.inl h2powtop)]
   exact hnum'
+
+/-- The joint Challenge255 charge at the `2^123` work limit is below `2^-136`: an observer whose
+distinct-query ceiling is `Q + (11 + k)` with `Q ≤ 2^123` and `k < 33` visits fewer than `2^124`
+points, and each costs at most the exact bias, which is below `2^-260` (`challenge255Bias_le`).
+`Q + (11 + k)` is the envelope one adaptive-statement run certifies
+(`ComputedAdaptiveActionStatementFSFamily.relationFinderReads_card_le`): the adversary's `Q`
+transcript points plus the verifier's own `11 + k` squeezes. -/
+theorem challenge255_joint_charge_le_at_2pow123 {Q k n : ℕ} (hQ : Q ≤ 2 ^ 123) (hk : k < 33)
+    (hn : n ≤ Q + (11 + k)) :
+    (n : ℝ≥0∞) * challenge255Bias ≤ 1 / 2 ^ 136 := by
+  have hn' : n ≤ 2 ^ 124 :=
+    calc n ≤ Q + (11 + k) := hn
+      _ ≤ 2 ^ 123 + (11 + 32) := Nat.add_le_add hQ (by omega)
+      _ ≤ 2 ^ 124 := by norm_num
+  have h0 : ((2 : ℝ≥0∞) ^ 260) ≠ 0 := pow_ne_zero _ (by simp)
+  have htop : ((2 : ℝ≥0∞) ^ 260) ≠ ⊤ := ENNReal.pow_ne_top (by simp)
+  calc (n : ℝ≥0∞) * challenge255Bias
+      ≤ (2 ^ 124 : ℝ≥0∞) * (1 / 2 ^ 260) :=
+        mul_le_mul' (by exact_mod_cast hn') challenge255Bias_le
+    _ ≤ 1 / 2 ^ 136 := by
+        rw [one_div, one_div, ENNReal.le_inv_iff_mul_le, mul_right_comm, ← pow_add,
+          show 124 + 136 = 260 from rfl]
+        exact le_of_eq (ENNReal.mul_inv_cancel h0 htop)
 
 /-- One squeeze through the transport theorem: a bad set's probability under the deployed
 conversion is its uniform probability plus the exact bias. -/

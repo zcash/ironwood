@@ -10,9 +10,11 @@ deployed verifier requires identifying each modeled ingredient with its deployed
 floor, each stating the identification against the development's own definitions, with the
 deployed objects carried as record data.  Its finite failure observer is deduplicated before the
 proved Challenge255 hybrid is applied, so one record supplies a *joint* deployed experiment rather
-than an insufficient per-squeeze event bound.  `Capstones/Action.lean` consumes the record and
-derives the deployed knowledge-failure bound.  No term is constructed here, and fields whose
-floors are intentionally permanent say so in their docstrings.
+than an insufficient per-squeeze event bound, and its query budget is certified tight, so the
+hybrid's per-query charge totals a closed number rather than a free multiple.
+`Capstones/Action.lean` consumes the record and derives the deployed knowledge-failure bound.  No
+term is constructed here, and fields whose floors are intentionally permanent say so in their
+docstrings.
 
 The adversary-class restriction — deployed provers are modeled as represented online-AGM
 programs — is carried by `ComputedAdaptiveActionStatementFSFamily` itself, the type the record
@@ -38,7 +40,9 @@ each identified with its modeled counterpart.
 
 Fields split by status.  `challengeLawIsChallenge255` identifies the typed deployed conversion
 with `challenge255`; `challenge255_joint_eventBias_le` then discharges the adaptive joint hybrid,
-with only the permanent BLAKE2b-to-uniform-digest floor behind that identification. `basisIsGeneratorRO`
+with only the permanent BLAKE2b-to-uniform-digest floor behind that identification, and
+`challengeQueryBound_le` keeps the budget that hybrid is charged per query no looser than the
+experiment's own envelope. `basisIsGeneratorRO`
 is the GroupHash-as-random-oracle idealization, permanent up to the encoding-distribution
 groundwork.  `vkDigestAgreesOnCanonical` binds the family's opaque digest to the deployed one at
 the canonical key only — the capstones claim no cross-key binding.  `acceptsFaithful` is the
@@ -131,6 +135,15 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   stated query budget. -/
   failureObserverQueryBound : ∀ basis,
     (OracleComp.dedup [] (failureObserver basis)).QueryBound challengeQueryBound
+  /-- The budget is no looser than the experiment it prices: one adversary run, at most
+  `family.Q` transcript points, plus the verifier's own `11 + k` squeezes — the envelope
+  `relationFinderReads_card_le` certifies for one retained traversal.  `OracleComp.QueryBound` is
+  upward-closed, so `failureObserverQueryBound` alone is only a floor on `challengeQueryBound`,
+  and the capstone's joint charge `challengeQueryBound * challenge255Bias` could be padded past
+  `1`; this ceiling is what prices that charge at the closed `2^-136` the deployed endpoint
+  states. -/
+  challengeQueryBound_le :
+    challengeQueryBound ≤ family.Q + (11 + (AdaptiveActionStatementShape pp).k)
   /-- Lazy uniform answers to the deduplicated observer are exactly the whole-table ideal event
   bounded by the Action capstone.  This is the explicit typed fixture/refinement seam. -/
   idealFailureMeasure_eq :
@@ -167,6 +180,15 @@ noncomputable def deployedFailurePMF
   deployment.deployedBasisLaw.bind fun basis ↦
     (OracleComp.dedup [] (deployment.failureObserver basis)).runFreshPMF
       deployment.deployedChallengeLaw
+
+/-- The certified query ceiling at the profile's work limit: the adversary's budget is at most
+`workLimit` (`profile.queryBound`), so the observer visits at most `workLimit + (11 + k)` distinct
+points. -/
+theorem challengeQueryBound_le_workLimit
+    (deployment : ActionDeploymentInstantiation pp family query hchar workLimit) :
+    deployment.challengeQueryBound ≤ workLimit + (11 + (AdaptiveActionStatementShape pp).k) :=
+  le_trans deployment.challengeQueryBound_le
+    (Nat.add_le_add_right deployment.profile.queryBound _)
 
 /-- The observer's Boolean event has the intended model meaning on every concrete oracle table. -/
 theorem failureObserver_true_iff_model
