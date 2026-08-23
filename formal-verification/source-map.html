@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-6b217d63.js";
+            window.path_to_searchindex_js = "../searchindex-4102e48d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-951a8d74.js"></script>
@@ -345,7 +345,7 @@ less silent. This subtree is the <code>FixtureCheck</code> lake target, kept out
 captures are large, generated, and slow) but built by CI.
 <code>Shared/ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
 <code>Shared/TamperSweep</code> is the shared mutation vocabulary of the per-slot negative sweeps; <code>PostNu63</code> pins
-the canonical post-NU 6.3 verifying key and URS so fixture drift is visible here, and
+the canonical post-NU6.3 verifying key and URS so fixture drift is visible here, and
 <code>PostNu63Random</code> extends the same point equalities to the random captures — kept separate so the
 honest lane does not depend on compiling the random data modules. (The join between the captured
 instance commitments and the circuit-derived family lives in <code>Keygen/InstanceCapture</code>.)</p>
@@ -591,7 +591,7 @@ and its rounds (<code>HashPiece</code>, <code>HashPieceRound</code>), the <code>
 decompositions, the gate set, the canonicity checks, and the assembled <code>Main</code>/<code>MainBundle</code>
 contract at the extracted window scalar.</li>
 <li><strong><code>Action/</code></strong> — the top-level Orchard Action circuit. <code>Circuit</code> is the ironwood <code>configure</code>
-and <code>synthesize</code> in exact region-creation order; <code>CircuitPreIronwood</code> is the post-NU 6.2
+and <code>synthesize</code> in exact region-creation order; <code>CircuitPreNU63</code> is the post-NU6.2
 circuit without the cross-address region (both share <code>configure</code>);
 <code>RealBases</code> instantiates everything at the actual deployed constants; <code>PublicInput</code> declares the
 public instance-cell layout and splits the semantic witness into public and private halves;
