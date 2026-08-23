@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-b3340150.css">
+        <link rel="stylesheet" href="custom-a8328095.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-c53bc987.js";
+            window.path_to_searchindex_js = "searchindex-6b217d63.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-bb80af0a.js"></script>
+        <script src="toc-951a8d74.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -177,7 +177,7 @@
                 <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="ironwood-setup1λ"><a class="header" href="#ironwood-setup1λ">Ironwood <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3302em;"></span><span class="mrel sizing reset-size6 size5">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9684em;vertical-align:-0.225em;"></span><span class="mord text sizing reset-size6 size5"><span class="mord">Setup</span></span><span class="mopen sizing reset-size6 size5">(</span><span class="mord sizing reset-size6 size5"><span class="mord">1</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.826em;"><span style="top:-2.963em;margin-right:0.0556em;"><span class="pstrut" style="height:2.6em;"></span><span class="sizing reset-size5 size2 mtight"><span class="mord mathnormal mtight">λ</span></span></span></span></span></span></span></span><span class="mclose sizing reset-size6 size5">)</span></span></span></span></a></h1>
+<h1 id="formalizing-ironwood"><a class="header" href="#formalizing-ironwood">Formalizing Ironwood</a></h1>
 <p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span> is a project to deploy a new shielded pool, built to restore
 confidence for all Zcash'rs in the supply integrity of Zcash.</p>
 <p>A formal verification is in progress, which is intended to cover at least soundness
@@ -187,17 +187,20 @@ and accurately document the scope of what is and is not formally verified.</p>
 <h2 id="verifying-the-proofs"><a class="header" href="#verifying-the-proofs">Verifying the proofs</a></h2>
 <p>The formalization is a Lean 4 development over Mathlib, and building it
 re-elaborates every proof — a successful build <em>is</em> the verification. The single
-command is <code>lake build</code>, with two one-time prerequisites: install
+command is <code>lake build --wfail</code>, with two one-time prerequisites: install
 <a href="https://github.com/leanprover/elan"><code>elan</code></a> (the Lean toolchain manager, which
 reads <a href="lean-toolchain"><code>lean-toolchain</code></a> and installs the pinned toolchain
 automatically), then, from the repository root, fetch Mathlib's prebuilt
 artifacts so it need not be recompiled from source:</p>
 <pre><code class="language-sh">lake exe cache get   # one-time: download prebuilt Mathlib artifacts
-lake build           # verify everything (exactly what CI runs)
+lake build --wfail   # verify every proof; --wfail makes warnings fail, as CI does
 </code></pre>
+<p>CI runs the same build plus source-level consistency checks — census coverage,
+fixture digests, and regeneration diffs — documented in
+<a href="https://zcash.github.io/ironwood/formal-verification/ci-checks.html">Build and CI Checks</a>.</p>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
 <ul>
-<li><a href="https://zcash.github.io/ironwood/">The Ironwood Book</a></li>
+<li><a href="https://zcash.github.io/ironwood/" class="raleway">The Ironwood Book</a></li>
 </ul>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>Copyright 2026 Zcash Protocol Developers.</p>

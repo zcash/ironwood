@@ -30,7 +30,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-56612340.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-b3340150.css">
+        <link rel="stylesheet" href="custom-a8328095.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-c53bc987.js";
+            window.path_to_searchindex_js = "searchindex-6b217d63.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-bb80af0a.js"></script>
+        <script src="toc-951a8d74.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,7 +178,7 @@
                 <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="ironwood-setup1λ"><a class="header" href="#ironwood-setup1λ">Ironwood <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3302em;"></span><span class="mrel sizing reset-size6 size5">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9684em;vertical-align:-0.225em;"></span><span class="mord text sizing reset-size6 size5"><span class="mord">Setup</span></span><span class="mopen sizing reset-size6 size5">(</span><span class="mord sizing reset-size6 size5"><span class="mord">1</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.826em;"><span style="top:-2.963em;margin-right:0.0556em;"><span class="pstrut" style="height:2.6em;"></span><span class="sizing reset-size5 size2 mtight"><span class="mord mathnormal mtight">λ</span></span></span></span></span></span></span></span><span class="mclose sizing reset-size6 size5">)</span></span></span></span></a></h1>
+<h1 id="formalizing-ironwood"><a class="header" href="#formalizing-ironwood">Formalizing Ironwood</a></h1>
 <p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">Ironwood</span></span></span></span></span> is a project to deploy a new shielded pool, built to restore
 confidence for all Zcash'rs in the supply integrity of Zcash.</p>
 <p>A formal verification is in progress, which is intended to cover at least soundness
@@ -188,17 +188,20 @@ and accurately document the scope of what is and is not formally verified.</p>
 <h2 id="verifying-the-proofs"><a class="header" href="#verifying-the-proofs">Verifying the proofs</a></h2>
 <p>The formalization is a Lean 4 development over Mathlib, and building it
 re-elaborates every proof — a successful build <em>is</em> the verification. The single
-command is <code>lake build</code>, with two one-time prerequisites: install
+command is <code>lake build --wfail</code>, with two one-time prerequisites: install
 <a href="https://github.com/leanprover/elan"><code>elan</code></a> (the Lean toolchain manager, which
 reads <a href="lean-toolchain"><code>lean-toolchain</code></a> and installs the pinned toolchain
 automatically), then, from the repository root, fetch Mathlib's prebuilt
 artifacts so it need not be recompiled from source:</p>
 <pre><code class="language-sh">lake exe cache get   # one-time: download prebuilt Mathlib artifacts
-lake build           # verify everything (exactly what CI runs)
+lake build --wfail   # verify every proof; --wfail makes warnings fail, as CI does
 </code></pre>
+<p>CI runs the same build plus source-level consistency checks — census coverage,
+fixture digests, and regeneration diffs — documented in
+<a href="https://zcash.github.io/ironwood/formal-verification/ci-checks.html">Build and CI Checks</a>.</p>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
 <ul>
-<li><a href="https://zcash.github.io/ironwood/">The Ironwood Book</a></li>
+<li><a href="https://zcash.github.io/ironwood/" class="raleway">The Ironwood Book</a></li>
 </ul>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>Copyright 2026 Zcash Protocol Developers.</p>
@@ -3247,6 +3250,95 @@ against the binding-signature layer, <code>KeyBindingArm</code> discharges the k
 model, <code>Capstone</code> lifts the deterministic layer to a distribution over valid annotated ledgers,
 and <code>Completeness</code> checks the other direction — that an honest wallet's spend actually verifies.</li>
 </ul>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="build-and-ci-checks"><a class="header" href="#build-and-ci-checks">Build and CI checks</a></h1>
+<p>Building the Lean development re-elaborates every proof reachable from the build
+targets — a successful build <em>is</em> the verification. This page lists what CI runs on
+top of that build, and what each additional check guards. The workflow files under
+<code>.github/workflows/</code> are the mechanism; the substance of what they do is described
+here.</p>
+<h2 id="the-build"><a class="header" href="#the-build">The build</a></h2>
+<p>CI builds with</p>
+<pre><code class="language-sh">lake build --wfail Zcash FixtureCheck CircuitCheck MetaCheck SecurityCheck CensusCheck
+</code></pre>
+<p>The named targets are exactly the lakefile's default set, so <code>lake build --wfail</code>
+is equivalent. The <code>--wfail</code> treats warnings as errors. <code>sorry</code> elaborates with a
+warning, so among other things this causes any use of <code>sorry</code> to fail CI even where
+no census entry reaches it.</p>
+<p>The targets:</p>
+<ul>
+<li><strong><code>Zcash</code></strong> — the library: everything reachable from <code>Zcash.lean</code>, which imports
+<code>Zcash.TrustBoundary</code>, the library-wide axiom census. Building this target enforces
+every census entry in that file.</li>
+<li><strong><code>FixtureCheck</code></strong> — the captured fixtures, the knowledge soundness capstones, and
+the keygen certificate. The fixture-local trust boundaries and the <code>native_decide</code>
+fingerprint faithfulness checks run here; this target is separate because the
+captures are large and slow.</li>
+<li><strong><code>CircuitCheck</code></strong> — <code>Zcash.Circuits.Tests</code>: comparisons of the pinned verifying-key
+and layout dumps against the Lean circuit model.</li>
+<li><strong><code>MetaCheck</code></strong> — tests of <code>Zcash.Meta.AxiomCheck</code> itself: forged axioms exercising
+its rejection paths, kept out of the production import graph.</li>
+<li><strong><code>SecurityCheck</code></strong> — <code>Zcash.Security.Ledger.BridgeTests</code>: regression checks
+guarding the protocol distinctions a type-correct refinement could silently erase.</li>
+<li><strong><code>CensusCheck</code></strong> — the endpoint census enforced a second time, from the elaborated
+environment: every endpoint-named declaration in the census files' import closure
+must carry a direct pin.</li>
+</ul>
+<p>The build also re-elaborates proofs in the CompElliptic library that it depends on,
+but <em>not</em> necessarily every proof in that library, and <em>not</em> CompElliptic's
+<a href="https://github.com/daira/CompElliptic/blob/main/.github/workflows/ci.yml">additional CI checks</a>.</p>
+<h2 id="source-level-checks"><a class="header" href="#source-level-checks">Source-level checks</a></h2>
+<p>Each of these is a standalone script under <code>scripts/</code>, run by CI on every
+Lean-relevant change. All of them can be run locally from the repository root.</p>
+<ul>
+<li><strong><code>check_build_coverage.sh</code></strong> — CI and the lakefile agree on the target list, and
+every Lean module is reachable from it. A module no target reaches is not elaborated
+at all: its <code>sorry</code>s, its axiom drift, and even a failure to compile would be
+invisible to a green build.</li>
+<li><strong><code>check_endpoint_census.sh</code></strong> — every deliverable soundness endpoint is named in a
+census pin. The census commands traverse a declaration's <em>dependencies</em>, so an
+endpoint that nothing pinned depends on would otherwise be invisible to every census
+entry.</li>
+<li><strong><code>check_csimp_census.sh</code></strong> — every <code>@[csimp]</code> replacement lemma has its own
+<code>assert_axioms</code> entry. The compiler applies a csimp substitution in all downstream
+compiled code, but the lemma's own axioms are not propagated into downstream
+<code>native_decide</code> axiom tracking
+(<a href="https://github.com/leanprover/lean4/issues/7463">lean4#7463</a>).</li>
+<li><strong><code>check_costed_group_work_census.sh</code></strong> — the staged Vesta work model's host
+callbacks (<code>pure</code>/<code>map</code> payloads) carry non-group computation at no charge to the
+group-work counter. The cost language is shallow, so Lean cannot check that an
+opaque payload performs no Vesta group law; each such definition is therefore
+pinned, and a new one must join the census to be reviewed against that condition.</li>
+<li><strong><code>check_no_umbrella_imports.sh</code></strong> — no Lean file imports a Mathlib umbrella module.
+<code>import Mathlib</code> pulls in all of Mathlib, and several such processes in a parallel
+build create severe memory pressure.</li>
+<li><strong><code>check_fixture_manifest.sh</code></strong> — every machine-generated capture artifact matches
+its recorded digest and provenance entry in <code>Zcash/Snark/Fixtures/MANIFEST.tsv</code>.
+This binds the committed artifacts to their provenance on every run, with no Rust
+toolchain needed.</li>
+</ul>
+<h2 id="fixture-regeneration"><a class="header" href="#fixture-regeneration">Fixture regeneration</a></h2>
+<p><strong><code>scripts/regenerate-fingerprint-fixtures.sh</code></strong> proves the committed captures
+regenerate byte-for-byte from their sources: it clones the pinned Orchard release,
+asserts the tag and its published lockfile checksums, regenerates every capture family
+plus the proof-byte siblings, and diffs each committed artifact. CI runs the full
+regeneration when a fixture-relevant path changes; on every other run, the manifest
+check above still binds the artifacts to their recorded digests.</p>
+<p>The circuit-side layout dumps have no regeneration pipeline: their generator is
+unpublished one-off instrumentation in local halo2/orchard checkouts
+(<code>Zcash/Circuits/Fixtures/PROVENANCE.md</code> records the lineage). This should not be
+confused with the <em>verifier-fingerprint</em> exporter above, which is published and
+pinned. Publishing the layout instrumentation is
+<a href="https://github.com/zcash/ironwood/issues/207">#207</a>. CI instead pins the bytes of
+the layout dumps: <code>SHA256SUMS</code> must list exactly the committed dumps, each digest
+must match, and the <code>Stamp.lean</code> rendering of those pins —which carries a fixture
+change into Lake's import graph— must be current.</p>
+<h2 id="book-checks"><a class="header" href="#book-checks">Book checks</a></h2>
+<p>The book workflow validates the proof-journey page's graph data before building:
+<code>book/validate-proof-journey.py</code> checks the recorded edges against the checked-out
+Lean tree, so a renamed or deleted anchor fails CI rather than silently pointing at
+nothing. The book itself is then built with <code>mdbook</code>, which resolves every included
+file and internal link.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="working-notes"><a class="header" href="#working-notes">Working Notes</a></h1>
 <p>The pages in this section are development-facing notes: normative rules for how the

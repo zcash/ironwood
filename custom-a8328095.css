@@ -432,6 +432,12 @@ em {
     font-size: 0.83em !important;
 }
 
+.raleway {
+    font-family: 'raleway', Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+    font-style: normal !important;
+    font-weight: 500 !important;
+}
+
 /* Headings and the book title in upright Raleway (body text stays the theme font).
    The menu title shares the font but must not share the headings' top margin:
    a margin inside the fixed-height menu bar makes the bar taller than

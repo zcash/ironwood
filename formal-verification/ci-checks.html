@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Proof Journey - The Ironwood Book</title>
+        <title>Build and CI Checks - The Ironwood Book</title>
 
 
         <!-- Custom HTML head -->
@@ -177,59 +177,104 @@
                 <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="proof-journey"><a class="header" href="#proof-journey">Proof Journey</a></h1>
-<p>Follow the verifier-soundness argument in logical order, with the PR that landed each mechanized
-layer attached to the stage where it enters. Every anchor below is pinned at the current <code>main</code>, so
-the stages describe the tree as it stands rather than the stack that built it.</p>
-<style>
-.proofjourney-shell {
-  position: relative;
-  left: 50%;
-  width: min(1160px, calc(100vw - var(--sidebar-width, 300px) - 5rem));
-  transform: translateX(-50%);
-  margin: 0.6rem 0;
-}
-.proofjourney-shell iframe {
-  display: block;
-  width: 100%;
-  height: 920px;
-  border: 1px solid rgba(128,140,170,.35);
-  border-radius: 8px;
-}
-@media (max-width: 1080px) {
-  .proofjourney-shell { width: calc(100vw - 1.5rem); }
-}
-</style>
-<div class="proofjourney-shell">
-  <iframe id="proofjourney-frame" src="proof-journey-embed.html" title="Animated Ironwood verifier soundness journey"
-    loading="eager" allowfullscreen>
-  </iframe>
-</div>
-<p><a href="proof-map.html">Explore the complete map</a></p>
-<script>
-(function () {
-  var f = document.getElementById('proofjourney-frame');
-  if (!f) return;
-  function theme() { return /coal|navy|ayu/.test(document.documentElement.className) ? 'dark' : 'light'; }
-  function send() { try { f.contentWindow.postMessage({ iwtheme: theme() }, '*'); } catch (e) {} }
-  f.addEventListener('load', send);
-  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  window.addEventListener('message', function (event) {
-    if (event.source !== f.contentWindow || !event.data || !event.data.iwjourneyHeight) return;
-    f.style.height = Math.max(700, event.data.iwjourneyHeight + 2) + 'px';
-  });
-})();
-</script>
+<h1 id="build-and-ci-checks"><a class="header" href="#build-and-ci-checks">Build and CI checks</a></h1>
+<p>Building the Lean development re-elaborates every proof reachable from the build
+targets — a successful build <em>is</em> the verification. This page lists what CI runs on
+top of that build, and what each additional check guards. The workflow files under
+<code>.github/workflows/</code> are the mechanism; the substance of what they do is described
+here.</p>
+<h2 id="the-build"><a class="header" href="#the-build">The build</a></h2>
+<p>CI builds with</p>
+<pre><code class="language-sh">lake build --wfail Zcash FixtureCheck CircuitCheck MetaCheck SecurityCheck CensusCheck
+</code></pre>
+<p>The named targets are exactly the lakefile's default set, so <code>lake build --wfail</code>
+is equivalent. The <code>--wfail</code> treats warnings as errors. <code>sorry</code> elaborates with a
+warning, so among other things this causes any use of <code>sorry</code> to fail CI even where
+no census entry reaches it.</p>
+<p>The targets:</p>
+<ul>
+<li><strong><code>Zcash</code></strong> — the library: everything reachable from <code>Zcash.lean</code>, which imports
+<code>Zcash.TrustBoundary</code>, the library-wide axiom census. Building this target enforces
+every census entry in that file.</li>
+<li><strong><code>FixtureCheck</code></strong> — the captured fixtures, the knowledge soundness capstones, and
+the keygen certificate. The fixture-local trust boundaries and the <code>native_decide</code>
+fingerprint faithfulness checks run here; this target is separate because the
+captures are large and slow.</li>
+<li><strong><code>CircuitCheck</code></strong> — <code>Zcash.Circuits.Tests</code>: comparisons of the pinned verifying-key
+and layout dumps against the Lean circuit model.</li>
+<li><strong><code>MetaCheck</code></strong> — tests of <code>Zcash.Meta.AxiomCheck</code> itself: forged axioms exercising
+its rejection paths, kept out of the production import graph.</li>
+<li><strong><code>SecurityCheck</code></strong> — <code>Zcash.Security.Ledger.BridgeTests</code>: regression checks
+guarding the protocol distinctions a type-correct refinement could silently erase.</li>
+<li><strong><code>CensusCheck</code></strong> — the endpoint census enforced a second time, from the elaborated
+environment: every endpoint-named declaration in the census files' import closure
+must carry a direct pin.</li>
+</ul>
+<p>The build also re-elaborates proofs in the CompElliptic library that it depends on,
+but <em>not</em> necessarily every proof in that library, and <em>not</em> CompElliptic's
+<a href="https://github.com/daira/CompElliptic/blob/main/.github/workflows/ci.yml">additional CI checks</a>.</p>
+<h2 id="source-level-checks"><a class="header" href="#source-level-checks">Source-level checks</a></h2>
+<p>Each of these is a standalone script under <code>scripts/</code>, run by CI on every
+Lean-relevant change. All of them can be run locally from the repository root.</p>
+<ul>
+<li><strong><code>check_build_coverage.sh</code></strong> — CI and the lakefile agree on the target list, and
+every Lean module is reachable from it. A module no target reaches is not elaborated
+at all: its <code>sorry</code>s, its axiom drift, and even a failure to compile would be
+invisible to a green build.</li>
+<li><strong><code>check_endpoint_census.sh</code></strong> — every deliverable soundness endpoint is named in a
+census pin. The census commands traverse a declaration's <em>dependencies</em>, so an
+endpoint that nothing pinned depends on would otherwise be invisible to every census
+entry.</li>
+<li><strong><code>check_csimp_census.sh</code></strong> — every <code>@[csimp]</code> replacement lemma has its own
+<code>assert_axioms</code> entry. The compiler applies a csimp substitution in all downstream
+compiled code, but the lemma's own axioms are not propagated into downstream
+<code>native_decide</code> axiom tracking
+(<a href="https://github.com/leanprover/lean4/issues/7463">lean4#7463</a>).</li>
+<li><strong><code>check_costed_group_work_census.sh</code></strong> — the staged Vesta work model's host
+callbacks (<code>pure</code>/<code>map</code> payloads) carry non-group computation at no charge to the
+group-work counter. The cost language is shallow, so Lean cannot check that an
+opaque payload performs no Vesta group law; each such definition is therefore
+pinned, and a new one must join the census to be reviewed against that condition.</li>
+<li><strong><code>check_no_umbrella_imports.sh</code></strong> — no Lean file imports a Mathlib umbrella module.
+<code>import Mathlib</code> pulls in all of Mathlib, and several such processes in a parallel
+build create severe memory pressure.</li>
+<li><strong><code>check_fixture_manifest.sh</code></strong> — every machine-generated capture artifact matches
+its recorded digest and provenance entry in <code>Zcash/Snark/Fixtures/MANIFEST.tsv</code>.
+This binds the committed artifacts to their provenance on every run, with no Rust
+toolchain needed.</li>
+</ul>
+<h2 id="fixture-regeneration"><a class="header" href="#fixture-regeneration">Fixture regeneration</a></h2>
+<p><strong><code>scripts/regenerate-fingerprint-fixtures.sh</code></strong> proves the committed captures
+regenerate byte-for-byte from their sources: it clones the pinned Orchard release,
+asserts the tag and its published lockfile checksums, regenerates every capture family
+plus the proof-byte siblings, and diffs each committed artifact. CI runs the full
+regeneration when a fixture-relevant path changes; on every other run, the manifest
+check above still binds the artifacts to their recorded digests.</p>
+<p>The circuit-side layout dumps have no regeneration pipeline: their generator is
+unpublished one-off instrumentation in local halo2/orchard checkouts
+(<code>Zcash/Circuits/Fixtures/PROVENANCE.md</code> records the lineage). This should not be
+confused with the <em>verifier-fingerprint</em> exporter above, which is published and
+pinned. Publishing the layout instrumentation is
+<a href="https://github.com/zcash/ironwood/issues/207">#207</a>. CI instead pins the bytes of
+the layout dumps: <code>SHA256SUMS</code> must list exactly the committed dumps, each digest
+must match, and the <code>Stamp.lean</code> rendering of those pins —which carries a fixture
+change into Lake's import graph— must be current.</p>
+<h2 id="book-checks"><a class="header" href="#book-checks">Book checks</a></h2>
+<p>The book workflow validates the proof-journey page's graph data before building:
+<code>book/validate-proof-journey.py</code> checks the recorded edges against the checked-out
+Lean tree, so a renamed or deleted anchor fails CI rather than silently pointing at
+nothing. The book itself is then built with <code>mdbook</code>, which resolves every included
+file and internal link.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../formal-verification/action-advantage-function.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../formal-verification/source-map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../formal-verification/proof-map.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../formal-verification/working-notes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -239,11 +284,11 @@ the stages describe the tree as it stands rather than the stack that built it.</
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../formal-verification/action-advantage-function.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../formal-verification/source-map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../formal-verification/proof-map.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../formal-verification/working-notes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
