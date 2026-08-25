@@ -110,9 +110,12 @@ def actionWitnessOrRelationOfDecode?
                       (actionCircuit.instanceCommitment urs inputs) ps ch
                       (fun i hi => decode.toMemberDecode hchar i hi) haccepts hblinding
                       (polynomial .vanishingH) rfl
-                      (actionCircuit.toVerifierKey_fixedQueryCount urs)
-                      (actionCircuit.toVerifierKey_adviceQueryCount urs)
-                      (actionCircuit.toVerifierKey_instanceQueryCount urs)
+                      (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
+                        actionCircuit.toVerifierKey_fixedQueryCount urs)
+                      (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
+                        actionCircuit.toVerifierKey_adviceQueryCount urs)
+                      (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
+                        actionCircuit.toVerifierKey_instanceQueryCount urs)
                       (fun slot point hpoint =>
                         PSum.inl (decode.memberBinding hchar slot point hpoint))
                       (actionCircuit.permutationChunkRoutingCoherent urs)
@@ -120,8 +123,11 @@ def actionWitnessOrRelationOfDecode?
                         urs ActionConstraintBounds.domainExponent_lt)
                       (TopLevelAssignment.toVerifierKey_domainRoot
                         urs ActionConstraintBounds.domainExponent_lt)
-                      hnFp
-                      (by exact hxgoodProof.down) with
+                      (by
+                        simpa only [actionCircuit.toVerifierKey_n] using hnFp)
+                      (by
+                        simpa only [actionCircuit.toVerifierKey_n] using
+                          hxgoodProof.down) with
                   | PSum.inr relation =>
                       some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
                         (actionCircuit.shape.withProofParams pp).k basis ▸
@@ -129,7 +135,11 @@ def actionWitnessOrRelationOfDecode?
                   | PSum.inl hsatisfied =>
                       match action_bundleWitness_or_relation_of_decode_circuitSat pp urs rfl
                           inputs ps ch pU pW a decode hchar haccepts
-                          (polynomial .vanishingH) hsatisfied hgoodYProof.down
+                          (polynomial .vanishingH)
+                          (by
+                            simpa only [actionCircuit.toVerifierKey_n] using
+                              hsatisfied)
+                          hgoodYProof.down
                           hpermutationProof.down
                           hlookupProof.down with
                       | PSum.inl witness => some (Sum.inl witness)

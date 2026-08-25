@@ -136,11 +136,11 @@ theorem _root_.Halo2.TopLevelCircuit.lookup_eval
     (fixed advice instanceFeed : ℕ → F) (valuation : Query → F)
     (lookup : Fin top.lookupCount)
     (hinputCoverage :
-      ∀ expression ∈ top.constraintSystem.lookups[lookup.val].inputs,
+      ∀ expression ∈ (top.lookupAt lookup).inputs,
         expression.selectorsCovered
           (fun selector => (top.selectorMap.lookup selector).isSome) = true)
     (htableCoverage :
-      ∀ expression ∈ top.constraintSystem.lookups[lookup.val].tables,
+      ∀ expression ∈ (top.lookupAt lookup).tables,
         expression.selectorsCovered
           (fun selector => (top.selectorMap.lookup selector).isSome) = true)
     (hinterprets :
@@ -148,21 +148,24 @@ theorem _root_.Halo2.TopLevelCircuit.lookup_eval
         fixed advice instanceFeed valuation) :
     ((top.pinnedCS.lookupInputExprs.getD lookup.val []).map
         (RichExpression.eval fixed advice instanceFeed) =
-      top.constraintSystem.lookups[lookup.val].inputs.map
+      (top.lookupAt lookup).inputs.map
         (Expression.eval
           (substValuation top.selectorMap.lookup valuation))) ∧
     ((top.pinnedCS.lookupTableExprs.getD lookup.val []).map
         (RichExpression.eval fixed advice instanceFeed) =
-      top.constraintSystem.lookups[lookup.val].tables.map
+      (top.lookupAt lookup).tables.map
         (Expression.eval
           (substValuation top.selectorMap.lookup valuation))) := by
-  let argument := top.constraintSystem.lookups[lookup.val]
+  have hlookup : lookup.val < top.constraintSystem.lookups.length := by
+    rw [← top.lookupCount_eq_constraintSystem]
+    exact lookup.isLt
+  let argument := top.lookupAt lookup
   have hargument : argument ∈ top.constraintSystem.lookups :=
-    List.getElem_mem lookup.isLt
+    top.lookupAt_mem_constraintSystem lookup
   have hresolved := top.lookupQueriesResolved argument hargument
   exact PinnedConstraintSystem.derive_lookup_eval
     top.constraintSystem top.selectorMap fixed advice instanceFeed valuation
-    lookup.val lookup.isLt hinputCoverage htableCoverage hresolved.1 hresolved.2
+    lookup.val hlookup hinputCoverage htableCoverage hresolved.1 hresolved.2
     hinterprets
 
 end Zcash.Snark

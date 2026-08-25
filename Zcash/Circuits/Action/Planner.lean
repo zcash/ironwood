@@ -1,32 +1,21 @@
-import Zcash.Circuits.Action.TopLevel
+import Zcash.Circuits.Action.Compilation
 
 namespace Zcash.Circuits.Action
 
 open Halo2 FloorPlanner
 
-/-- Controlled reduced synthesis summary of the opaque Action circuit. Planner
-proofs use this interface instead of unfolding the top-level package repeatedly. -/
-theorem actionCircuit_synthesisSummary_eq :
-    actionCircuit.synthesisSummary =
-      Circuit.mainPostSynthesisSummary actionConfig := by
-  rw [Internal.actionCircuit_eq_impl]
-  unfold TopLevelCircuit.synthesisSummary Internal.actionCircuitImpl
-  rw [Circuit.circuit_synthesisSummary_eq]
-  exact congrArg Circuit.mainPostSynthesisSummary
-    (show Internal.actionCircuitImpl.config = actionConfig by rfl)
-
 /-- The selector-free reduced input to Action's physical V1 placement. -/
 def actionPlannerSummaries : List RegionShapeSummary :=
-  actionCircuit.synthesisSummary.regionShapes.map
+  actionSynthesisSummary.regionShapes.map
     RegionShapeSummary.withoutSelectors
 
 theorem actionPlannerSummaries_eq_physicalRegionShapes :
     actionPlannerSummaries =
-      actionCircuit.synthesisSummary.physicalRegionShapes := rfl
+      actionSynthesisSummary.physicalRegionShapes := rfl
 
 /-- Action's exact selector-free summary order after consensus pdqsort. -/
 def actionSortedPlannerSummaries : List RegionShapeSummary :=
-  (V1.sortedSummaryOrder actionCircuit.operations).map
+  (V1.sortedSummaryOrder actionOperations).map
     RegionShapeSummary.withoutSelectors
 
 private theorem actionConfig_advice0 : (actionConfig.advices 0).index = 0 := by rfl
@@ -66,19 +55,17 @@ def selectorAnchor (cfg : Circuit.Config) (selector : ℕ) : RegionColumn :=
   else
     .column .advice (cfg.advices 0).index
 
-/-- The concrete Action selector anchor solves the reduced equations exposed by its
-top-level circuit. -/
-theorem actionCircuit_lookupSelectorAnchorRequirements_satisfied :
+/-- The concrete Action selector anchor solves its reduced lookup-anchor equations. -/
+theorem actionLookupSelectorAnchorRequirements_satisfied :
     SelectorAnchorRequirementsSatisfied
-      actionCircuit.lookupSelectorAnchorRequirements
+      (LookupRangeCheck.lookupSelectorAnchorRequirements
+        actionConfig.lookupConfig)
       (selectorAnchor actionConfig) := by
-  rw [actionCircuit_lookupSelectorAnchorRequirements_eq]
   simp only [LookupRangeCheck.lookupSelectorAnchorRequirements,
     SelectorAnchorRequirementsSatisfied, List.forall_cons,
     List.forall_nil, and_true]
   rw [actionConfig_qRunning, actionConfig_runningSum]
   simp [selectorAnchor, actionConfig_advice9]
-
 
 private theorem hashPieceLoop_selectorAnchored
     (n offset : ℕ) (cfg : Sinsemilla.HashPiece.Config)
@@ -88,15 +75,16 @@ private theorem hashPieceLoop_selectorAnchored
       (Sinsemilla.HashPiece.loopSynthesisSummary n cfg offset
         |>.toRegionShapeSummary)
       anchor := by
+  unfold Sinsemilla.HashPiece.loopSynthesisSummary
+  rw [RegionSynthesisSummary.repeatColumnsWithSelectorPattern_toRegionShapeSummary
+    (instanceRowExtent := 0) (lookupActivationCount := 1)]
   cases n with
   | zero =>
       intro selector hselector
       exfalso
-      simp [Sinsemilla.HashPiece.loopSynthesisSummary,
-        RegionSynthesisSummary.repeatColumns,
+      simp [RegionSynthesisSummary.repeatColumns,
         RegionSynthesisSummary.toRegionShapeSummary] at hselector
   | succ n =>
-      unfold Sinsemilla.HashPiece.loopSynthesisSummary
       simp only [RegionSynthesisSummary.repeatColumns, Nat.succ_ne_zero,
         ↓reduceIte]
       apply V1.SummarySelectorsAnchoredBy.ofColumns
@@ -118,7 +106,8 @@ private theorem hashPieceCircuit_selectorAnchored
     simp
   · apply V1.SummarySelectorsAnchoredBy.combine
     · exact hashPieceLoop_selectorAnchored w offset cfg anchor hq
-    · apply V1.SummarySelectorsAnchoredBy.ofColumns
+    · rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+      apply V1.SummarySelectorsAnchoredBy.ofColumns
       intro selector hselector
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hselector
       rcases hselector with hselector | hselector | hselector
@@ -138,7 +127,8 @@ private theorem hashPieceCircuit_xA_mem
     FloorPlanner.mem_unionColumns_iff]
   apply Or.inr
   apply Or.inr
-  rw [RegionSynthesisSummary.ofColumns_columns,
+  rw [RegionSynthesisSummary.withSelectorActivations_columns,
+    RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff]
   exact Or.inr (by simp)
 
@@ -183,7 +173,8 @@ private theorem chainSlot_selectorAnchored
       FloorPlanner.mem_unionColumns_iff]
     exact Or.inl
       ((V1.column_mem_physicalColumns_iff kind index _).mp hphysical)
-  · simp only [RegionSynthesisSummary.ofColumns_columns,
+  · simp only [RegionSynthesisSummary.withSelectorActivations_columns,
+      RegionSynthesisSummary.ofColumns_columns,
       FloorPlanner.mem_unionColumns_iff, List.not_mem_nil,
       List.mem_cons, or_false] at hselector
     simp at hselector
@@ -229,7 +220,9 @@ private theorem witnessShortCheck_selectorAnchored
   apply V1.SummarySelectorsAnchoredBy.combine
   · apply V1.SummarySelectorsAnchoredBy.ofColumns
     simp
-  · apply V1.SummarySelectorsAnchoredBy.ofColumns
+  · unfold LookupRangeCheck.shortRangeCheckSynthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+    apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
     rcases hselector with rfl | rfl
@@ -249,7 +242,8 @@ private theorem hashToPoint_selectorAnchored
       anchor := by
   unfold Sinsemilla.HashToPoint.hashRegionSynthesisSummary
   apply V1.SummarySelectorsAnchoredBy.combine
-  · apply V1.SummarySelectorsAnchoredBy.ofColumns
+  · rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+    apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp only [Sinsemilla.HashPiece.initialYQGate_selector] at hselector
     simp at hselector
@@ -267,6 +261,7 @@ private theorem merkleGate_selectorAnchored
         |>.toRegionShapeSummary)
       anchor := by
   unfold Sinsemilla.Merkle.Gate.synthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -335,6 +330,7 @@ private theorem merkleLayer_selectorAnchored
   unfold Sinsemilla.Merkle.Layer.synthesisSummary
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -402,6 +398,8 @@ private theorem fullWidthInner_selectorAnchored
     Ecc.MulFixed.FullWidth.fullWidthGate_selector,
     RegionSynthesisSummary.toRegionShapeSummary_columns,
     RegionSynthesisSummary.combine_columns,
+    RegionSynthesisSummary.withSelectorActivations_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns,
     RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
@@ -413,6 +411,7 @@ private theorem fullWidthInner_selectorAnchored
       Ecc.MulFixed.processWindowSynthesisSummary,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       V1.column_mem_physicalColumns_iff,
       FloorPlanner.mem_unionColumns_iff,
       RegionSynthesisSummary.repeatColumns_columns,
@@ -425,6 +424,8 @@ private theorem fullWidthInner_selectorAnchored
       Ecc.MulFixed.windowStepColumns,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.withSelectorActivations_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       V1.column_mem_physicalColumns_iff,
       FloorPlanner.mem_unionColumns_iff,
       RegionSynthesisSummary.repeatColumns_columns,
@@ -437,6 +438,7 @@ private theorem add_selectorAnchored
     V1.SummarySelectorsAnchoredBy
       (Ecc.Add.synthesisSummary cfg offset |>.toRegionShapeSummary) anchor := by
   unfold Ecc.Add.synthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -495,6 +497,8 @@ private theorem shortInner_selectorAnchored
     Ecc.MulFixed.coordsGate_selector,
     RegionSynthesisSummary.toRegionShapeSummary_columns,
     RegionSynthesisSummary.combine_columns,
+    RegionSynthesisSummary.withSelectorActivations_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns,
     RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
@@ -506,6 +510,7 @@ private theorem shortInner_selectorAnchored
       Ecc.MulFixed.processWindowSynthesisSummary,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       RegionSynthesisSummary.repeatColumns_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
@@ -518,6 +523,8 @@ private theorem shortInner_selectorAnchored
       Ecc.MulFixed.windowStepColumns,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.withSelectorActivations_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       RegionSynthesisSummary.repeatColumns_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
@@ -539,6 +546,7 @@ private theorem shortMsw_selectorAnchored
     Ecc.Add.synthesisSummary,
     RegionSynthesisSummary.toRegionShapeSummary_columns,
     RegionSynthesisSummary.combine_columns,
+    RegionSynthesisSummary.withSelectorActivations_columns,
     RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
   simp at hselector
@@ -550,6 +558,7 @@ private theorem shortMsw_selectorAnchored
       Ecc.Add.synthesisSummary,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.withSelectorActivations_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
       FloorPlanner.mem_unionColumns_iff]
@@ -620,6 +629,7 @@ private theorem poseidonPermute_selectorAnchored
   simp only [Poseidon.permuteSynthesisSummary,
     RegionSynthesisSummary.toRegionShapeSummary_columns,
     RegionSynthesisSummary.combine_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns,
     RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
@@ -631,6 +641,7 @@ private theorem poseidonPermute_selectorAnchored
     simp only [Poseidon.permuteSynthesisSummary,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       RegionSynthesisSummary.repeatColumns_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
@@ -657,6 +668,8 @@ private theorem poseidonHash_selectorAnchored
     simp
   · apply V1.SelectorAnchoredBy.combine
     · apply V1.SelectorAnchoredBy.ofRegion
+      unfold Poseidon.addInputRegionSynthesisSummary
+      rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
       apply V1.SummarySelectorsAnchoredBy.ofColumns
       intro selector hselector
       simp at hselector
@@ -680,6 +693,7 @@ private theorem addChip_selectorAnchored
     V1.SummarySelectorsAnchoredBy
       (AddChip.synthesisSummary cfg offset |>.toRegionShapeSummary) anchor := by
   unfold AddChip.synthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -720,7 +734,9 @@ private theorem baseFieldInner_selectorAnchored
     Ecc.MulFixed.coordsGate_selector,
     RegionSynthesisSummary.toRegionShapeSummary_columns,
     RegionSynthesisSummary.combine_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns,
+    RegionSynthesisSummary.withSelectorActivations_columns,
     RegionSynthesisSummary.ofColumns_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
   simp [FloorPlanner.mem_unionColumns_iff] at hselector
@@ -731,6 +747,7 @@ private theorem baseFieldInner_selectorAnchored
       Ecc.MulFixed.processWindowSynthesisSummary,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       RegionSynthesisSummary.repeatColumns_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
@@ -743,7 +760,9 @@ private theorem baseFieldInner_selectorAnchored
       Ecc.MulFixed.windowStepColumns,
       RegionSynthesisSummary.toRegionShapeSummary_columns,
       RegionSynthesisSummary.combine_columns,
+      RegionSynthesisSummary.repeatColumnsWithSelector_columns,
       RegionSynthesisSummary.repeatColumns_columns,
+      RegionSynthesisSummary.withSelectorActivations_columns,
       RegionSynthesisSummary.ofColumns_columns,
       V1.column_mem_physicalColumns_iff,
       FloorPlanner.mem_unionColumns_iff]
@@ -759,6 +778,8 @@ private theorem witnessCheck13_selectorAnchored
       (Ecc.MulFixed.BaseFieldElem.witnessCheck13SynthesisSummary cfg).regionShapes
       anchor := by
   apply V1.SelectorAnchoredBy.ofRegion
+  unfold LookupRangeCheck.rangeCheckSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -777,6 +798,7 @@ private theorem baseFieldCanonicity_selectorAnchored
         |>.toRegionShapeSummary)
       anchor := by
   unfold Ecc.MulFixed.BaseFieldElem.canonicityRegionSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -842,6 +864,8 @@ private theorem witnessCheck_selectorAnchored
         K numWords strict cfg).regionShapes
       anchor := by
   apply V1.SelectorAnchoredBy.ofRegion
+  unfold LookupRangeCheck.rangeCheckSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp [hnumWords] at hselector
@@ -899,6 +923,7 @@ private theorem actionCommitIvkGate_selectorAnchored :
         |>.toRegionShapeSummary)
       (selectorAnchor actionConfig) := by
   unfold CommitIvk.synthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -1003,7 +1028,8 @@ private theorem incompleteDoubleAndAdd_selectorAnchored
     rw [RegionSynthesisSummary.combine_columns,
       FloorPlanner.mem_unionColumns_iff]
     apply Or.inl
-    rw [RegionSynthesisSummary.ofColumns_columns,
+    rw [RegionSynthesisSummary.withSelectorActivations_columns,
+      RegionSynthesisSummary.ofColumns_columns,
       FloorPlanner.mem_unionColumns_iff]
     exact Or.inr (by simp)
   intro selector hselector
@@ -1012,7 +1038,8 @@ private theorem incompleteDoubleAndAdd_selectorAnchored
   rw [RegionSynthesisSummary.combine_columns,
     FloorPlanner.mem_unionColumns_iff] at hselector
   rcases hselector with hselector | hselector
-  · rw [RegionSynthesisSummary.ofColumns_columns,
+  · rw [RegionSynthesisSummary.withSelectorActivations_columns,
+      RegionSynthesisSummary.ofColumns_columns,
       FloorPlanner.mem_unionColumns_iff] at hselector
     rcases hselector with hselector | hselector
     · simp at hselector
@@ -1024,6 +1051,7 @@ private theorem incompleteDoubleAndAdd_selectorAnchored
       FloorPlanner.mem_unionColumns_iff] at hselector
     rcases hselector with hselector | hselector
     · rw [Ecc.MulIncomplete.loopSynthesisSummary,
+        RegionSynthesisSummary.repeatColumnsWithSelectorAt_columns,
         RegionSynthesisSummary.repeatColumns_columns] at hselector
       split at hselector
       · simp at hselector
@@ -1034,7 +1062,8 @@ private theorem incompleteDoubleAndAdd_selectorAnchored
           subst selector
           simpa only [RegionSynthesisSummary.toRegionShapeSummary_columns,
             hq2] using hxP
-    · rw [RegionSynthesisSummary.ofColumns_columns,
+    · rw [RegionSynthesisSummary.withSelectorActivations_columns,
+        RegionSynthesisSummary.ofColumns_columns,
         FloorPlanner.mem_unionColumns_iff] at hselector
       rcases hselector with hselector | hselector
       · simp at hselector
@@ -1061,6 +1090,7 @@ private theorem completeMul_selectorAnchored
     · apply V1.SummarySelectorsAnchoredBy.ofColumns
       simp
     · rw [Ecc.MulComplete.roundsSynthesisSummary,
+        RegionSynthesisSummary.repeatColumnsWithSelectorPattern_toRegionShapeSummary,
         RegionSynthesisSummary.repeatColumns]
       exact V1.SummarySelectorsAnchoredBy.empty anchor
   | succ numBits =>
@@ -1069,6 +1099,7 @@ private theorem completeMul_selectorAnchored
     · apply V1.SummarySelectorsAnchoredBy.ofColumns
       simp
     · unfold Ecc.MulComplete.roundsSynthesisSummary
+      rw [RegionSynthesisSummary.repeatColumnsWithSelectorPattern_toRegionShapeSummary]
       rw [RegionSynthesisSummary.repeatColumns]
       simp only [Nat.succ_ne_zero, ↓reduceIte]
       apply V1.SummarySelectorsAnchoredBy.ofColumns
@@ -1105,7 +1136,8 @@ private theorem actionVariableMulMain_selectorAnchored :
           all_goals unfold selectorAnchor actionConfig
           all_goals configure_norm
         · apply V1.SummarySelectorsAnchoredBy.combine
-          · apply V1.SummarySelectorsAnchoredBy.ofColumns
+          · rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+            apply V1.SummarySelectorsAnchoredBy.ofColumns
             intro selector hselector
             simp at hselector
             subst selector
@@ -1149,6 +1181,7 @@ private theorem actionMulOverflow_selectorAnchored :
       all_goals unfold selectorAnchor actionConfig
       all_goals configure_norm
     · apply V1.SelectorAnchoredBy.ofRegion
+      rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
       apply V1.SummarySelectorsAnchoredBy.ofColumns
       intro selector hselector
       simp at hselector
@@ -1182,6 +1215,8 @@ private theorem pointNonId_selectorAnchored
       (Ecc.WitnessPoint.pointNonIdSynthesisSummary cfg offset
         |>.toRegionShapeSummary)
       anchor := by
+  unfold Ecc.WitnessPoint.pointNonIdSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -1272,6 +1307,8 @@ private theorem point_selectorAnchored
       (Ecc.WitnessPoint.pointSynthesisSummary cfg offset
         |>.toRegionShapeSummary)
       anchor := by
+  unfold Ecc.WitnessPoint.pointSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -1318,6 +1355,7 @@ private theorem actionCrossAddress_selectorAnchored :
   apply V1.SelectorAnchoredBy.ofRegion
   intro selector hselector
   simp only [RegionSynthesisSummary.toRegionShapeSummary_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns] at hselector
   simp [FloorPlanner.mem_unionColumns_iff,
     Circuit.crossAddressColumns] at hselector
@@ -1329,6 +1367,7 @@ private theorem actionCrossAddress_selectorAnchored :
     norm_num
   rw [hanchor]
   simp [RegionSynthesisSummary.toRegionShapeSummary_columns,
+    RegionSynthesisSummary.repeatColumnsWithSelector_columns,
     RegionSynthesisSummary.repeatColumns_columns,
     FloorPlanner.mem_unionColumns_iff, Circuit.crossAddressColumns,
     physicalColumns]
@@ -1343,14 +1382,19 @@ private theorem witnessCheckDecomposed_selectorAnchored
       (LookupRangeCheck.witnessCheckDecomposedSynthesisSummary cfg).regionShapes
       anchor := by
   apply V1.SelectorAnchoredBy.ofRegion
-  apply V1.SummarySelectorsAnchoredBy.ofColumns
-  intro selector hselector
-  simp at hselector
-  rcases hselector with rfl | rfl
-  · rw [hlookup]
-    simp [physicalColumns]
-  · rw [hrunning]
-    simp [physicalColumns]
+  apply V1.SummarySelectorsAnchoredBy.combine
+  · apply V1.SummarySelectorsAnchoredBy.ofColumns
+    simp
+  · unfold LookupRangeCheck.rangeCheckAtDecomposedSynthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+    apply V1.SummarySelectorsAnchoredBy.ofColumns
+    intro selector hselector
+    simp at hselector
+    rcases hselector with rfl | rfl
+    · rw [hlookup]
+      simp [physicalColumns]
+    · rw [hrunning]
+      simp [physicalColumns]
 
 private theorem yCanonicity_selectorAnchored
     (gcfg : NoteCommit.YCanonicity.Config)
@@ -1378,6 +1422,7 @@ private theorem yCanonicity_selectorAnchored
       hlookup hrunning)
   apply V1.SelectorAnchoredBy.ofRegion
   unfold NoteCommit.YCanonicity.synthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
   apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
   simp at hselector
@@ -1534,6 +1579,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.DecomposeB.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1543,6 +1589,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.DecomposeD.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1552,6 +1599,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.DecomposeE.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1561,6 +1609,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.DecomposeG.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1570,6 +1619,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.DecomposeH.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1579,6 +1629,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.GdCanonicity.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1588,6 +1639,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.PkdCanonicity.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1597,6 +1649,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.ValueCanonicity.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1606,6 +1659,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.RhoCanonicity.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1615,6 +1669,7 @@ private theorem noteGates_selectorAnchored
   apply V1.SelectorAnchoredBy.combine
   · apply V1.SelectorAnchoredBy.ofRegion
     unfold NoteCommit.PsiCanonicity.synthesisSummary
+    rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
     apply V1.SummarySelectorsAnchoredBy.ofColumns
     intro selector hselector
     simp at hselector
@@ -1688,10 +1743,9 @@ private theorem orchardChecks_selectorAnchored :
   unfold Circuit.orchardChecksSynthesisSummary
   apply V1.SelectorAnchoredBy.ofRegion
   unfold Circuit.orchardChecksRegionSynthesisSummary
+  rw [RegionSynthesisSummary.withSelectorActivations_toRegionShapeSummary]
+  apply V1.SummarySelectorsAnchoredBy.ofColumns
   intro selector hselector
-  simp only [RegionSynthesisSummary.toRegionShapeSummary_columns,
-    RegionSynthesisSummary.ofColumns_columns,
-    FloorPlanner.mem_unionColumns_iff] at hselector
   simp at hselector
   subst selector
   have hanchor : selectorAnchor actionConfig actionConfig.qOrchard.index =
@@ -1700,9 +1754,7 @@ private theorem orchardChecks_selectorAnchored :
     rw [actionConfig_qOrchard]
     norm_num
   rw [hanchor]
-  simp [RegionSynthesisSummary.toRegionShapeSummary_columns,
-    RegionSynthesisSummary.ofColumns_columns,
-    FloorPlanner.mem_unionColumns_iff, physicalColumns]
+  simp [physicalColumns]
 
 private theorem actionSynthNotes_selectorAnchored :
     V1.SelectorAnchoredBy
@@ -1742,20 +1794,19 @@ private theorem actionMainPost_selectorAnchored :
 
 /-- Every selector in the reduced Action synthesis summary is anchored to the column selected by
 `selectorAnchor`. -/
-theorem actionCircuit_selectorAnchored :
-    V1.SelectorAnchoredBy actionCircuit.synthesisSummary.regionShapes
+theorem actionSelectorAnchored :
+    V1.SelectorAnchoredBy actionSynthesisSummary.regionShapes
       (selectorAnchor actionConfig) := by
-  rw [actionCircuit_synthesisSummary_eq]
-  exact actionMainPost_selectorAnchored
+  simpa only [actionSynthesisSummary] using actionMainPost_selectorAnchored
 
 /-- Reduces the Action circuit's physical V1 placement endpoint to the endpoint computed from its
 selector-free, consensus-sorted region summaries. -/
-theorem actionCircuit_placementEnd_eq :
-    V1.placementEnd actionCircuit.operations =
+theorem actionPlacementEnd_eq :
+    V1.placementEnd actionOperations =
       V1.slotSummaryEndFrom actionSortedPlannerSummaries ∅ := by
   apply V1.placementEnd_eq_slotSummaryEndFrom_withoutSelectors
-    actionCircuit.operations (selectorAnchor actionConfig)
-  rw [← actionCircuit.synthesisSummary_eq_operations]
-  exact actionCircuit_selectorAnchored
+    actionOperations (selectorAnchor actionConfig)
+  rw [← actionSynthesisSummary_eq_operations]
+  exact actionSelectorAnchored
 
 end Zcash.Circuits.Action

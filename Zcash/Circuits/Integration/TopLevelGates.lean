@@ -78,7 +78,7 @@ theorem resolverInterpretsGates
   have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
     (fun _ => 0) row
-    homega
+    (by simpa only [top.toVerifierKey_omega] using homega)
     (pinnedQueryState top.pinnedCS)
     (by
       simp only [top.toVerifierKey_adviceQueryLayout,
@@ -93,7 +93,7 @@ theorem resolverInterpretsGates
     (top.toVerifierKey_fixedQueryCount urs)
     (top.toVerifierKey_instanceQueryCount urs)
   rw [top.pinnedQueryState_eq_gateQueryState] at hfinal
-  exact hfinal
+  simpa only [top.toVerifierKey_omega] using hfinal
 
 /-- The circuit-derived selector map has the roots required by gate scaling. -/
 theorem selectorRootsWellFormed
@@ -198,7 +198,8 @@ opaque polynomialWitness
     · exact hfixed
     · exact henabled
     · exact hcompressed
-  exact enabledGatePolynomialWitnessOfResolver
+  simpa only [top.toVerifierKey_omega] using
+    enabledGatePolynomialWitnessOfResolver
     (numProofs := pp.numProofs)
     (k := k)
     (top.toVerifierKey urs)

@@ -33,7 +33,9 @@ theorem vk_instanceQueryLayout_length : vk.instanceQueryLayout.length = 1 := rfl
 theorem vk_fixedQueryLayout_length : vk.fixedQueryLayout.length = 29 := rfl
 
 private theorem action_domainExponent_eq : actionCircuit.domainExponent = 11 := by
-  exact Zcash.Circuits.Action.actionCircuit_domainExponent_eq
+  rw [Halo2.TopLevelCircuit.domainExponent,
+    Zcash.Circuits.Action.actionCircuit_shape_eq,
+    Zcash.Circuits.Action.actionShape_k]
 
 private theorem vk_domain_eq :
     (vk.omega, vk.n) =

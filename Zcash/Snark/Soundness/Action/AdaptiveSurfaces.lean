@@ -473,10 +473,11 @@ instance adaptiveActionCommitmentActive_decidable
 
 /-- The derived Action advice layout never names an out-of-range advice column. -/
 theorem adaptiveActionAdviceLayout_column_lt
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (column : ℕ) (rotation : ℤ)
     (hmem : (column, rotation) ∈ (ActionTerminal.vkAt basis).adviceQueryLayout) :
     column < actionCircuit.adviceColumnCount := by
+  rw [actionCircuit.adviceColumnCount_eq_constraintSystem]
   apply List.forall_iff_forall_mem.mp
     actionCircuit.adviceQueryLayout_columns_lt (column, rotation)
   simpa only [ActionTerminal.vkAt,
@@ -497,15 +498,27 @@ theorem adaptiveActionActive_query
       q.commId = id := by
   let vk := ActionTerminal.vkAt basis
   let ic := actionCircuit.instanceCommitment (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) inputs
-  have hadviceCount :=
-    actionCircuit.toVerifierKey_adviceQueryCount
-      (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
-  have hinstanceCount :=
-    actionCircuit.toVerifierKey_instanceQueryCount
-      (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
-  have hfixedCount :=
-    actionCircuit.toVerifierKey_fixedQueryCount
-      (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
+  have hadviceCount :
+      vk.adviceQueryLayout.length =
+        (actionCircuit.shape.withProofParams pp).numAdviceQueries := by
+    simpa only [vk, Halo2.CircuitShape.withProofParams_numAdviceQueries,
+      TopLevelCircuit.adviceQueryCount] using
+        actionCircuit.toVerifierKey_adviceQueryCount
+          (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
+  have hinstanceCount :
+      vk.instanceQueryLayout.length =
+        (actionCircuit.shape.withProofParams pp).numInstanceQueries := by
+    simpa only [vk, Halo2.CircuitShape.withProofParams_numInstanceQueries,
+      TopLevelCircuit.instanceQueryCount] using
+        actionCircuit.toVerifierKey_instanceQueryCount
+          (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
+  have hfixedCount :
+      vk.fixedQueryLayout.length =
+        (actionCircuit.shape.withProofParams pp).numFixedQueries := by
+    simpa only [vk, Halo2.CircuitShape.withProofParams_numFixedQueries,
+      TopLevelCircuit.fixedQueryCount] using
+        actionCircuit.toVerifierKey_fixedQueryCount
+          (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
   cases id with
   | instanceCol p column =>
       rcases hactive with ⟨hp, rotation, hlayout⟩
@@ -515,7 +528,7 @@ theorem adaptiveActionActive_query
   | adviceCol p column =>
       rcases hactive with ⟨hp, hcolumn, rotation, hlayout⟩
       obtain ⟨j, hj, hentry⟩ := List.mem_iff_getElem.mp hlayout
-      have hje : j < actionCircuit.adviceQueryCount := by
+      have hje : j < (actionCircuit.shape.withProofParams pp).numAdviceQueries := by
         simpa only [← hadviceCount] using hj
       obtain ⟨q, hq, hqid, -⟩ := advice_query_mem_assembleQueries_eval
         vk ic ps ch ⟨p, hp⟩ hj hje
@@ -548,9 +561,8 @@ theorem adaptiveActionActive_query
         vk ic ps ch ⟨p, hp⟩ ⟨l, hl⟩
       exact ⟨q, hq, hqid⟩
   | permCommon c =>
-      have hc : c < actionCircuit.permutationColumnCount := hactive
       obtain ⟨q, hq, hqid, -⟩ := permCommon_query_mem_assembleQueries
-        vk ic ps ch ⟨c, hc⟩
+        vk ic ps ch ⟨c, hactive⟩
       exact ⟨q, hq, hqid⟩
   | vanishingH => exact False.elim hactive
   | randomPoly => exact False.elim hactive
@@ -586,7 +598,10 @@ theorem adaptiveActionQuery_active_or_terminal
         (List.of_mem_zip hentry).1
       left
       exact ⟨proofIndex.isLt,
-        adaptiveActionAdviceLayout_column_lt basis entry.1.1 entry.1.2 hlayout,
+        by
+          simpa only [Halo2.CircuitShape.withProofParams_numAdviceColumns,
+            TopLevelCircuit.adviceColumnCount] using
+              adaptiveActionAdviceLayout_column_lt basis entry.1.1 entry.1.2 hlayout,
         entry.1.2, hlayout⟩
     · simp only [permutationQueries, List.mem_append] at hpermutation
       rcases hpermutation with hregular | hlast
@@ -630,7 +645,10 @@ theorem adaptiveActionQuery_active_or_terminal
     obtain ⟨entry, hentry, rfl⟩ := hcommon
     left
     have := (List.of_mem_zip hentry).2
-    simpa using this
+    simpa only [adaptiveActionCommitmentActive,
+      List.mem_range, List.length_ofFn,
+      Halo2.CircuitShape.withProofParams_numPermutationColumns,
+      actionCircuit_shape_eq] using this
   · simp [vanishingQueries] at hvanishing
     rcases hvanishing with rfl | rfl
     · exact Or.inr (Or.inl rfl)
@@ -675,7 +693,7 @@ theorem adaptiveActionActive_point_mem_stage
   let urs := ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis
   let ic := actionCircuit.instanceCommitment urs inputs
   have hvkAt : family.vk basis = ActionTerminal.vkAt basis := by
-    simpa only [ActionTerminal.vkAt, CircuitShape.withProofParams_k] using hvk basis
+    simpa only [ActionTerminal.vkAt, Halo2.CircuitShape.withProofParams_k] using hvk basis
   cases id with
   | instanceCol p column =>
       rcases hactive with ⟨hp, rotation, hlayout⟩
@@ -697,7 +715,8 @@ theorem adaptiveActionActive_point_mem_stage
   | adviceCol p column =>
       rcases hactive with ⟨hp, hcolumn, rotation, hlayout⟩
       have hcolumn' : column < actionCircuit.adviceColumnCount := by
-        simpa only [actionCircuit.shape_numAdviceColumns] using hcolumn
+        simpa only [Halo2.CircuitShape.withProofParams_numAdviceColumns,
+          TopLevelCircuit.adviceColumnCount] using hcolumn
       let ap := data.algebraicProof.adviceCommitments ⟨p, hp⟩ ⟨column, hcolumn⟩
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
@@ -777,11 +796,17 @@ theorem adaptiveActionActive_point_mem_stage
           data.algebraicProof.lookupPermutedTable_mem_actionRepresentationsBefore
             n ⟨p, hp⟩ ⟨l, hl⟩ hn
   | permCommon c =>
-      have hc : c < actionCircuit.permutationColumnCount := hactive
-      obtain ⟨ap, hap, hpoint⟩ := family.permutationCommonRepresented basis ⟨c, hc⟩
+      have hactive' :
+          c < (actionCircuit.shape.withProofParams pp).numPermutationColumns := by
+        simpa only [adaptiveActionCommitmentActive] using hactive
+      have hc : c < actionCircuit.permutationColumnCount := by
+        simpa only [Halo2.CircuitShape.withProofParams_numPermutationColumns] using
+          hactive'
+      obtain ⟨ap, hap, hpoint⟩ :=
+        family.permutationCommonRepresented basis ⟨c, hactive'⟩
       refine ⟨(ActionTerminal.vkAt basis).permutationCommonCommitment ⟨c, hc⟩,
         ?_, ap, List.mem_append.mpr (Or.inr hap), ?_⟩
-      · simp [assembledCommitment, finFnG, hc]
+      · simp only [assembledCommitment, finFnG, dif_pos hactive']
         congr 2
       · rw [← hvkAt]
         exact hpoint

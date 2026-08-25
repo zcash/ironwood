@@ -95,8 +95,8 @@ theorem toVerifierKey_domainRowsInjective
     (hbound : top.domainExponent < 33) :
     Function.Injective fun row : Fin (top.toVerifierKey urs).n =>
       (top.toVerifierKey urs).omega ^ (row : ℕ) := by
-  simpa only [top.toVerifierKey_n, top.toVerifierKey_omega] using
-    domainRowsInjective (top := top) hbound
+  rw [top.toVerifierKey_n, top.toVerifierKey_omega]
+  exact domainRowsInjective (top := top) hbound
 
 /-- The verifier key derived from a top-level circuit uses the circuit's
 evaluation-domain root. -/
@@ -181,10 +181,15 @@ theorem resolverEnvironment_eq_environment
   apply congrArg₂ Environment.mk
   · funext column row
     cases column.kind with
-    | advice => rfl
+    | advice =>
+        simp only [top.toVerifierKey_omega, proofAssignment,
+          resolverAssignment_advice]
     | fixed =>
-        exact hfixed ⟨column.index⟩ row
-    | «instance» => rfl
+        simpa only [top.toVerifierKey_omega] using
+          hfixed ⟨column.index⟩ row
+    | «instance» =>
+        simp only [top.toVerifierKey_omega, proofAssignment,
+          resolverAssignment_instance]
   · rfl
 
 @[simp] theorem environment_usableRows

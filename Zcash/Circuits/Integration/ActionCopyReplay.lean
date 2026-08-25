@@ -78,6 +78,8 @@ def actionCopyReplayWitness_or_relation
         (FlatCell actionNumPermCols actionDomainSize)
         (NontrivialRelation (F := Fp) urs.g urs.u urs.w) ⊕'
       NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+  have hkDomain : actionCircuit.domainExponent = urs.k :=
+    hk
   have hn : actionCircuit.n ≠ 0 :=
     actionCircuit.n_ne_zero
   have hsatisfaction :=
@@ -114,7 +116,7 @@ def actionCopyReplayWitness_or_relation
         (exclusions.good proofIndex)
     have hdomainSize :
         actionCircuit.n = 2 ^ urs.k := by
-      rw [actionCircuit.n_eq_two_pow_domainExponent, hk]
+      rw [actionCircuit.n_eq_two_pow_domainExponent, hkDomain]
     have hfixedRead : ∀ {column row : ℕ} {value : Fp},
         (column, row, value) ∈
             topLevelRequiredFixedEntries actionCircuit →
@@ -129,7 +131,7 @@ def actionCopyReplayWitness_or_relation
           (top := actionCircuit) (pp := pp) (urs := urs)
           fixedCoherence
           (TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-            ActionConstraintBounds.domainExponent_lt hk)
+            ActionConstraintBounds.domainExponent_lt hkDomain)
           hdomainSize proofIndex hentry
       simpa only [actionActiveRows] using source
     exact

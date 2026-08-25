@@ -283,7 +283,7 @@ theorem AdaptiveStatementDirectDlogProfile.solverCost_le {pp : ProofParams}
   constructor
   · unfold adaptiveStatementDlogRandomOracleQueries
     rw [adaptiveStatementDlogTraversalSlots_eq_four]
-    rw [CircuitShape.withProofParams_k, actionCircuit.shape_k]
+    rw [Halo2.CircuitShape.withProofParams_k]
     have hk := ActionConstraintBounds.domainExponent_lt
     have hT := profile.targetAtLeastSeventyTwo
     calc
@@ -323,7 +323,7 @@ theorem AdaptiveStatementDirectDlogProfile.knowledgeExtractorCost_le {pp : Proof
   constructor
   · unfold adaptiveStatementKnowledgeExtractorRandomOracleQueries
       adaptiveStatementKnowledgeExtractorTraversalSlots
-    rw [CircuitShape.withProofParams_k, actionCircuit.shape_k]
+    rw [Halo2.CircuitShape.withProofParams_k]
     have hk := ActionConstraintBounds.domainExponent_lt
     have hT := profile.targetAtLeastSeventyTwo
     calc

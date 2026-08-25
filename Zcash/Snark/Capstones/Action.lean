@@ -108,7 +108,7 @@ theorem adaptiveStatement_pairCount_lt (numProofs : ℕ)
       (family.runProof basis O).proof.1 (family.runRecord basis O) < scalarFieldOrder := by
   intro basis O
   refine lt_of_le_of_lt (deployedX4PairCount_le_numPointSets _ _ _ _) ?_
-  rw [CircuitShape.withProofParams_numPointSets]
+  rw [Halo2.CircuitShape.withProofParams_numPointSets]
   norm_num [actionProofParamsFor, scalarFieldOrder,
     CompElliptic.Fields.Pasta.PALLAS_BASE_CARD]
 
@@ -169,7 +169,7 @@ theorem orchard_action_adaptiveStatement_knowledge_error_bound
   calc
     _ = _ := hevent
     _ ≤ _ := by
-      simpa only [epsilon, CircuitShape.withProofParams_k] using
+      simpa only [epsilon, Halo2.CircuitShape.withProofParams_k] using
         (family.adaptiveStatementKnowledgeFailure_prob_le
           (adaptiveStatement_pairCount_lt numProofs family) B epsilon
             profile.finderAdvantageLE hsurface)
@@ -243,7 +243,7 @@ theorem orchard_action_adaptiveStatement_certified_knowledge_error_bound
   calc
     _ = _ := hevent
     _ ≤ _ := by
-      simpa only [epsilon, CircuitShape.withProofParams_k] using
+      simpa only [epsilon, Halo2.CircuitShape.withProofParams_k] using
         (family.adaptiveStatementKnowledgeFailure_prob_le
           (adaptiveStatement_pairCount_lt numProofs family) B epsilon
             profile.finderAdvantageLE_current hsurface)
@@ -348,7 +348,7 @@ theorem orchard_action_adaptiveStatement_2pow123_knowledge_finite_security
     refine le_trans ?_ (add_le_add le_rfl
       (adaptiveStatementStatisticalModelFor_le_action numProofs family.Q))
     unfold adaptiveStatementStatisticalModelFor actionSemanticModelFor
-    dsimp only
+    dsimp only [Halo2.TopLevelCircuit.domainExponent]
     push_cast
     simp only [div_eq_mul_inv]
     ring_nf
@@ -594,7 +594,7 @@ private theorem adaptiveStatementCertifiedEndpoint
     refine le_trans ?_ (add_le_add le_rfl
       (adaptiveStatementStatisticalModelFor_le_action numProofs family.Q))
     unfold adaptiveStatementStatisticalModelFor actionSemanticModelFor
-    dsimp only
+    dsimp only [Halo2.TopLevelCircuit.domainExponent]
     push_cast
     simp only [div_eq_mul_inv]
     ring_nf

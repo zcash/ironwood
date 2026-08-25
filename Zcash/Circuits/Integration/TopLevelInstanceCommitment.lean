@@ -106,10 +106,10 @@ variable
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     (pp : ProofParams) (urs : URS G)
-    (hk : top.shape.k = urs.k)
+    (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (pU pW : Fp) (a : Fin (2 ^ urs.k) → Fp)
     (batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -159,7 +159,7 @@ def acceptedColumn_eq_rowPolynomial_or_relation
       NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
   let column := (top.publicInputLayout.cells index).1
   have hk' : top.domainExponent = urs.k :=
-    top.shape_k.symm.trans hk
+    hk
   have hn : 2 ^ urs.k = 2 ^ top.domainExponent :=
     congrArg (2 ^ ·) hk'.symm
   have hrows' : Function.Injective
@@ -188,7 +188,13 @@ def acceptedColumn_eq_rowPolynomial_or_relation
         (shape := top.shape.withProofParams pp)
         (top.toVerifierKey urs) (top.instanceCommitment urs inputs) ps ch
         proofIndex column.index instanceRotation
-        (top.toVerifierKey_instanceQueryCount urs)
+        (by
+          calc
+            (top.toVerifierKey urs).instanceQueryLayout.length =
+                top.instanceQueryCount :=
+              top.toVerifierKey_instanceQueryCount urs
+            _ = (top.shape.withProofParams pp).numInstanceQueries :=
+              (top.shape.withProofParams_numInstanceQueries pp).symm)
         hvkLayout
   have hbound :=
     CanonicalMemberConstraintRelation.acceptedInstanceColumn_eq_rowPolynomial_or_relation

@@ -55,8 +55,9 @@ theorem topLevelResolverPermutationCell_card
   rw [← Finset.mul_sum]
   congr 1
   let chunks := (top.toVerifierKey urs).permutationChunks
-  have hchunks : chunks.length = top.shape.numPermutationSets :=
+  have hchunks : chunks.length = top.permutationSetCount :=
     top.toVerifierKey_permutationChunks_length urs
+  simp only [TopLevelCircuit.permutationSetCount] at hchunks
   rw [← hchunks]
   rw [← List.sum_ofFn]
   calc
@@ -73,9 +74,10 @@ theorem topLevelResolverPermutationCell_card
     _ = chunks.flatten.length := by
       rw [List.length_flatten]
     _ = top.permutationColumnCount := by
+      rw [top.permutationColumnCount_eq_permutationColumns_length]
       simp only [chunks, top.toVerifierKey_permutationChunks,
         verifierCS_permutationChunks_flatten, List.length_zipIdx,
-        List.length_map, TopLevelCircuit.permutationColumnCount]
+        List.length_map]
 
 namespace ActionTerminal
 
@@ -94,21 +96,21 @@ variable (pp : ProofParams)
   (inputs : Fin pp.numProofs → PublicInputs Fp)
   (hvk : ∀ basis, family.vk basis =
     actionCircuit.toVerifierKey
-      (ursOfAugmentedBasis actionCircuit.shape.k basis))
+      (ursOfAugmentedBasis actionCircuit.domainExponent basis))
   (hI : ∀ basis, family.instanceCommitment basis =
-    actionCircuit.instanceCommitment (ursOfAugmentedBasis actionCircuit.shape.k basis) inputs)
+    actionCircuit.instanceCommitment (ursOfAugmentedBasis actionCircuit.domainExponent basis) inputs)
   (hchar : ∀ basis O, deployedX4PairCount
     (actionCircuit.toVerifierKey
-      (ursOfAugmentedBasis actionCircuit.shape.k basis))
-    (actionCircuit.instanceCommitment (ursOfAugmentedBasis actionCircuit.shape.k basis) inputs)
+      (ursOfAugmentedBasis actionCircuit.domainExponent basis))
+    (actionCircuit.instanceCommitment (ursOfAugmentedBasis actionCircuit.domainExponent basis) inputs)
     (straightLineRunOutput family basis O).1.proof.1
     (straightLineRunRecord family basis O) < scalarFieldOrder)
 
 /-- The deployed Action key at one basis. -/
 abbrev vkAt
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG) :
+    (basis : AugmentedIndex actionCircuit.n → VestaG) :
     VerifyingKey actionCircuit.shape Fp VestaG :=
-  actionCircuit.toVerifierKey (ursOfAugmentedBasis actionCircuit.shape.k basis)
+  actionCircuit.toVerifierKey (ursOfAugmentedBasis actionCircuit.domainExponent basis)
 
 /-- A challenge record carrying only `θ` and `β` — the fields a pre-`x` exclusion set reads. -/
 def semanticChRecord (theta beta : Fp) {k : ℕ} : Challenges k Fp :=
@@ -125,10 +127,10 @@ def semanticChRecord (theta beta : Fp) {k : ℕ} : Challenges k Fp :=
 /-- The run record's challenge at squeeze index `i` is the oracle's answer at the index-`i`
 squeeze prefix. -/
 theorem straightLineRunRecord_read
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-        + 3 * actionCircuit.shape.k) → Fp) (i : Fin 11) :
+        + 3 * actionCircuit.domainExponent) → Fp) (i : Fin 11) :
     wrappedPreIpaReads (straightLineRunOutput family basis O) i =
       O (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) i) :=
   congrFun (straightLineRunReads_eq family basis O) i
@@ -147,12 +149,12 @@ theorem actionThetaFailureEvent_subset
     topLevelThetaFailureEvent actionCircuit pp family static inputs hvk hI hchar ⊆
       cut.surfaceEvent (fun basis s =>
         ↑(TopLevelLookup.thetaBadSet actionCircuit pp
-          (ursOfAugmentedBasis actionCircuit.shape.k basis) (view s))) := by
+          (ursOfAugmentedBasis actionCircuit.domainExponent basis) (view s))) := by
   rintro ⟨basis, O⟩ ⟨h, hmem⟩
   dsimp only at hmem
   have hin := not_not.mp hmem
   rw [TopLevelLookup.thetaBadSet_congr actionCircuit pp
-    (ursOfAugmentedBasis actionCircuit.shape.k basis)
+    (ursOfAugmentedBasis actionCircuit.domainExponent basis)
     (fun id hid => hview basis O h id hid)] at hin
   have hproj : (straightLineRunRecord family basis O).theta =
       O (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 0) :=
@@ -163,7 +165,7 @@ theorem actionThetaFailureEvent_subset
 /-- Probability bound for the `θ` failure event: `(Q + 1)` times the per-state `θ` set
 probability. -/
 theorem actionThetaFailure_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     (cut : SequentialCut family.toComputedAlgebraicFSFamily 0)
     (view : cut.State → CommitmentId → CPoly)
     (hview : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
@@ -171,14 +173,14 @@ theorem actionThetaFailure_probability_bound {T : Type*} [DecidableEq T]
         topLevelRunPolynomial actionCircuit pp family static inputs hvk hI hchar basis O h id =
           view ((cut.pre basis).run O) id)
     {epsilon : ENNReal}
-    (hbad : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbad : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cut.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       ↑(TopLevelLookup.thetaBadSet actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.shape.k basis) (view s)) ≤ epsilon) :
+        (ursOfAugmentedBasis actionCircuit.domainExponent basis) (view s)) ≤ epsilon) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelThetaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * epsilon := by
@@ -205,7 +207,7 @@ theorem actionBetaFailureEvent_subset
           (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupBetaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) 0
-            (k := actionCircuit.shape.k)) (view s)
+            (k := actionCircuit.domainExponent)) (view s)
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) := by
   rintro ⟨basis, O⟩ ⟨h, hmem⟩
   dsimp only at hmem
@@ -230,7 +232,7 @@ theorem actionBetaFailureEvent_subset
 /-- Probability bound for the `β` failure event: `(Q + 1)` times the per-state probability of the
 union of the two `β` exclusion sets. -/
 theorem actionBetaFailure_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     (cut : SequentialCut family.toComputedAlgebraicFSFamily 1)
     (view : cut.State → CommitmentId → CPoly)
     (thetaOf : cut.State → Fp)
@@ -241,18 +243,18 @@ theorem actionBetaFailure_probability_bound {T : Type*} [DecidableEq T]
     (htheta : ∀ basis O, (straightLineRunRecord family basis O).theta =
       thetaOf ((cut.pre basis).run O))
     {epsilon : ENNReal}
-    (hbad : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbad : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cut.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       (↑(allResolverPermutationBetaBadSet pp.numProofs (vkAt basis) (view s)
         (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupBetaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) 0
-            (k := actionCircuit.shape.k)) (view s)
+            (k := actionCircuit.domainExponent)) (view s)
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) ≤ epsilon) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelBetaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * epsilon := by
@@ -283,7 +285,7 @@ theorem actionGammaFailureEvent_subset
           (semanticChRecord (thetaOf s) (betaOf s)) (view s) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) (betaOf s)
-            (k := actionCircuit.shape.k)) (view s)
+            (k := actionCircuit.domainExponent)) (view s)
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) := by
   rintro ⟨basis, O⟩ ⟨h, hmem⟩
   dsimp only at hmem
@@ -310,7 +312,7 @@ theorem actionGammaFailureEvent_subset
 /-- Probability bound for the `γ` failure event: `(Q + 1)` times the per-state probability of the
 union of the two `γ` exclusion sets. -/
 theorem actionGammaFailure_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     (cut : SequentialCut family.toComputedAlgebraicFSFamily 2)
     (view : cut.State → CommitmentId → CPoly)
     (thetaOf betaOf : cut.State → Fp)
@@ -323,18 +325,18 @@ theorem actionGammaFailure_probability_bound {T : Type*} [DecidableEq T]
     (hbeta : ∀ basis O, (straightLineRunRecord family basis O).beta =
       betaOf ((cut.pre basis).run O))
     {epsilon : ENNReal}
-    (hbad : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbad : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cut.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       (↑(allResolverPermutationGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) (betaOf s)) (view s) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) (betaOf s)
-            (k := actionCircuit.shape.k)) (view s)
+            (k := actionCircuit.domainExponent)) (view s)
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) ≤ epsilon) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelGammaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * epsilon := by
@@ -385,17 +387,19 @@ theorem actionXYFailureEvent_subset
   rcases not_and_or.mp hmem with hx | hy'
   · have hin := not_not.mp hx
     rw [hmodelX basis O h, hy basis O, hvanishing basis O h, hprojX] at hin
-    exact Set.mem_union_left _ (Finset.mem_coe.mpr hin)
+    exact Set.mem_union_left _ (Finset.mem_coe.mpr (by
+      simpa only [actionCircuit.toVerifierKey_n] using hin))
   · rw [not_forall] at hy'
     obtain ⟨j, hj⟩ := hy'
     have hin := not_not.mp hj
     rw [hmodelY basis O h, hprojY] at hin
-    exact Set.mem_union_right _ (Set.mem_iUnion.mpr ⟨j, Finset.mem_coe.mpr hin⟩)
+    exact Set.mem_union_right _ (Set.mem_iUnion.mpr ⟨j, Finset.mem_coe.mpr (by
+      simpa only [actionCircuit.toVerifierKey_n] using hin)⟩)
 
 /-- Probability bound for the fused `x`/`y` failure event: each half pays its own state-surface
 price. -/
 theorem actionXYFailure_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     (cutY : SequentialCut family.toComputedAlgebraicFSFamily 3)
     (cutX : SequentialCut family.toComputedAlgebraicFSFamily 4)
     (modelY : cutY.State → ConstraintPolyModel pp.numProofs)
@@ -414,7 +418,7 @@ theorem actionXYFailure_probability_bound {T : Type*} [DecidableEq T]
           CommitmentId.vanishingH =
         vanishingOf ((cutX.pre basis).run O))
     {epsilonX epsilonY : ENNReal}
-    (hbadX : ∀ (_basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbadX : ∀ (_basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cutX.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       ↑(szBadSet (combineConstraints (modelX s).fixedCols (modelX s).adviceCols
         (modelX s).instanceCols (modelX s).gates (modelX s).sets (modelX s).chunks
@@ -422,21 +426,20 @@ theorem actionXYFailure_probability_bound {T : Type*} [DecidableEq T]
         (modelX s).theta (yOf s) (modelX s).chunkLen (modelX s).l0 (modelX s).lLast
         (modelX s).lBlind -
         vanishingOf s * (X ^ actionCircuit.n - 1))) ≤ epsilonX)
-    (hbadY : ∀ (_basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbadY : ∀ (_basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cutY.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       (⋃ j, ↑(szBadSet (foldSplitWitness (modelY s).constraints actionCircuit.n j))) ≤
         epsilonY) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelXYFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * epsilonX + (family.Q + 1 : ℕ) * epsilonY := by
   refine le_trans (measure_mono (Set.preimage_mono
     (actionXYFailureEvent_subset pp family static inputs hvk hI hchar cutY cutX
       modelY modelX yOf vanishingOf hmodelY hmodelX hy hvanishing))) ?_
-  rw [Set.preimage_union]
   refine le_trans (measure_union_le _ _) (add_le_add ?_ ?_)
   · exact cutX.surfaceEvent_prob_le query _ hbadX
   · exact cutY.surfaceEvent_prob_le query _ hbadY
@@ -452,13 +455,13 @@ Schwartz–Zippel exclusion, priced by `uniformChallenge_szBadSet` at its fold d
 /-- Probability bound for the per-state `θ` bad set: the row-by-arity budget over the field
 size. -/
 theorem actionThetaBadSet_probability_bound
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (poly : CommitmentId → CPoly) :
     (PMF.uniformOfFintype Fp).toOuterMeasure
       ↑(TopLevelLookup.thetaBadSet actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.shape.k basis) poly) ≤
+        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly) ≤
       (TopLevelLookup.thetaBudget actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.shape.k basis) poly : ℝ≥0∞) /
+        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly : ℝ≥0∞) /
         (Fintype.card Fp : ℝ≥0∞) :=
   TopLevelLookup.uniformChallenge_thetaBadSet
     poly
@@ -466,14 +469,14 @@ theorem actionThetaBadSet_probability_bound
 /-- Probability bound for the per-state `β` bad sets: permutation cells plus lookup pair
 counts. -/
 theorem actionBetaBadSets_probability_bound
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (theta : Fp) (poly : CommitmentId → CPoly) :
     (PMF.uniformOfFintype Fp).toOuterMeasure
       (↑(allResolverPermutationBetaBadSet pp.numProofs (vkAt basis) poly
         (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupBetaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord theta 0
-            (k := actionCircuit.shape.k)) poly
+            (k := actionCircuit.domainExponent)) poly
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) ≤
       ((∑ p : Fin pp.numProofs,
         (Fintype.card (ResolverPermutationCell (shape := actionCircuit.shape)
@@ -492,15 +495,17 @@ theorem actionBetaBadSets_probability_bound
     (add_le_add
       (allResolverPermutationBetaBadSet_measure_le pp.numProofs (vkAt basis) poly
         (actionCircuit.usableRowsAt actionCircuit.domainExponent))
-      (allResolverLookupBetaBadSet_measure_le pp.numProofs (vkAt basis)
-        (semanticChRecord theta 0
-          (k := actionCircuit.shape.k)) poly
-        (actionCircuit.n - actionCircuit.blindingFactors - 2)))
+      (by
+        simpa only [TopLevelCircuit.lookupCount] using
+          allResolverLookupBetaBadSet_measure_le pp.numProofs (vkAt basis)
+            (semanticChRecord theta 0
+              (k := actionCircuit.domainExponent)) poly
+            (actionCircuit.n - actionCircuit.blindingFactors - 2)))
 
 /-- Probability bound for the per-state `γ` bad sets: doubled permutation cells plus lookup pair
 counts. -/
 theorem actionGammaBadSets_probability_bound
-    (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (theta beta : Fp) (poly : CommitmentId → CPoly) :
     (PMF.uniformOfFintype Fp).toOuterMeasure
       (↑(allResolverPermutationGammaBadSet pp.numProofs (vkAt basis)
@@ -508,7 +513,7 @@ theorem actionGammaBadSets_probability_bound
           (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord theta beta
-            (k := actionCircuit.shape.k)) poly
+            (k := actionCircuit.domainExponent)) poly
           (actionCircuit.n - actionCircuit.blindingFactors - 2))) ≤
       ((∑ p : Fin pp.numProofs,
         2 * Fintype.card (ResolverPermutationCell (shape := actionCircuit.shape)
@@ -523,10 +528,12 @@ theorem actionGammaBadSets_probability_bound
       (allResolverPermutationGammaBadSet_measure_le pp.numProofs (vkAt basis)
         (semanticChRecord theta beta (k := actionCircuit.domainExponent)) poly
         (actionCircuit.usableRowsAt actionCircuit.domainExponent))
-      (allResolverLookupGammaBadSet_measure_le pp.numProofs (vkAt basis)
-        (semanticChRecord theta beta
-          (k := actionCircuit.shape.k))
-        poly (actionCircuit.n - actionCircuit.blindingFactors - 2)))
+      (by
+        simpa only [TopLevelCircuit.lookupCount] using
+          allResolverLookupGammaBadSet_measure_le pp.numProofs (vkAt basis)
+            (semanticChRecord theta beta
+              (k := actionCircuit.domainExponent))
+            poly (actionCircuit.n - actionCircuit.blindingFactors - 2)))
 
 /-- Probability bound for the per-state `y` bad set: `n` times the constraint count over the field
 size. -/
@@ -742,17 +749,17 @@ def ActionSequentialExecution.toCuts {Dx L : ℕ}
 /-- Probability bound for the bundle's `θ` event: `(Q + 1) · Nθ / |Fp|`, with `Nθ` capping the
 row-by-arity budget. -/
 theorem ActionSequentialCuts.theta_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     {Dx L : ℕ} (cuts : ActionSequentialCuts pp family static inputs hvk hI hchar Dx L)
     {Ntheta : ℕ}
-    (hbudget : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hbudget : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (poly : CommitmentId → CPoly),
       TopLevelLookup.thetaBudget actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.shape.k basis) poly ≤ Ntheta) :
+        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly ≤ Ntheta) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelThetaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * ((Ntheta : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)) := by
@@ -765,10 +772,10 @@ theorem ActionSequentialCuts.theta_probability_bound {T : Type*} [DecidableEq T]
 /-- Probability bound for the bundle's `β` event: `(Q + 1) · Nβ / |Fp|`, with `Nβ` capping cells
 plus lookup pairs. -/
 theorem ActionSequentialCuts.beta_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     {Dx L : ℕ} (cuts : ActionSequentialCuts pp family static inputs hvk hI hchar Dx L)
     {Nbeta : ℕ}
-    (hcap : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hcap : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (poly : CommitmentId → CPoly),
       (∑ p : Fin pp.numProofs,
         (Fintype.card (ResolverPermutationCell (shape := actionCircuit.shape)
@@ -784,7 +791,7 @@ theorem ActionSequentialCuts.beta_probability_bound {T : Type*} [DecidableEq T]
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelBetaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * ((Nbeta : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)) := by
@@ -798,10 +805,10 @@ theorem ActionSequentialCuts.beta_probability_bound {T : Type*} [DecidableEq T]
 /-- Probability bound for the bundle's `γ` event: `(Q + 1) · Nγ / |Fp|`, with `Nγ` capping
 doubled cells plus lookup pairs. -/
 theorem ActionSequentialCuts.gamma_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     {Dx L : ℕ} (cuts : ActionSequentialCuts pp family static inputs hvk hI hchar Dx L)
     {Ngamma : ℕ}
-    (hcap : ∀ (basis : AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG)
+    (hcap : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (poly : CommitmentId → CPoly),
       (∑ p : Fin pp.numProofs,
         2 * Fintype.card (ResolverPermutationCell (shape := actionCircuit.shape)
@@ -812,7 +819,7 @@ theorem ActionSequentialCuts.gamma_probability_bound {T : Type*} [DecidableEq T]
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelGammaFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * ((Ngamma : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)) := by
@@ -829,7 +836,7 @@ theorem ActionSequentialCuts.gamma_probability_bound {T : Type*} [DecidableEq T]
 `(Q + 1) · Dx / |Fp| + (Q + 1) · Ny / |Fp|`, with `Dx` the fold-degree cap and `Ny` capping
 `n · L`. -/
 theorem ActionSequentialCuts.xy_probability_bound {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : AugmentedIndex actionCircuit.n → T)
     {Dx L : ℕ} (cuts : ActionSequentialCuts pp family static inputs hvk hI hchar Dx L)
     {Ny : ℕ}
     (hn : actionCircuit.n ≠ 0)
@@ -837,7 +844,7 @@ theorem ActionSequentialCuts.xy_probability_bound {T : Type*} [DecidableEq T]
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
-          + 3 * actionCircuit.shape.k) → Fp))).toOuterMeasure
+          + 3 * actionCircuit.domainExponent) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
           topLevelXYFailureEvent actionCircuit pp family static inputs hvk hI hchar)
       ≤ (family.Q + 1 : ℕ) * ((Dx : ℝ≥0∞) / (Fintype.card Fp : ℝ≥0∞)) +

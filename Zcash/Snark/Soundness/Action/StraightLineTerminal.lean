@@ -446,9 +446,12 @@ def actionTerminalWitnessOrRelationFinder
                     (actionCircuit.instanceCommitment urs inputs) pnu.1.proof.1 ch
                     (fun i hi => decode.toMemberDecode (hchar basis O) i hi) haccepts hblinding
                     (polynomial .vanishingH) rfl
-                    (actionCircuit.toVerifierKey_fixedQueryCount urs)
-                    (actionCircuit.toVerifierKey_adviceQueryCount urs)
-                    (actionCircuit.toVerifierKey_instanceQueryCount urs)
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
+                      actionCircuit.toVerifierKey_fixedQueryCount urs)
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
+                      actionCircuit.toVerifierKey_adviceQueryCount urs)
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
+                      actionCircuit.toVerifierKey_instanceQueryCount urs)
                     (fun slot point hpoint =>
                       PSum.inl (decode.memberBinding (hchar basis O) slot point hpoint))
                     (actionCircuit.permutationChunkRoutingCoherent urs)
@@ -456,8 +459,11 @@ def actionTerminalWitnessOrRelationFinder
                       urs ActionConstraintBounds.domainExponent_lt)
                     (TopLevelAssignment.toVerifierKey_domainRoot
                       urs ActionConstraintBounds.domainExponent_lt)
-                    hnFp
-                    (by exact hxgoodProof.down) with
+                    (by
+                      simpa only [actionCircuit.toVerifierKey_n] using hnFp)
+                    (by
+                      simpa only [actionCircuit.toVerifierKey_n] using
+                        hxgoodProof.down) with
                 | PSum.inr relation =>
                     some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
                       (actionCircuit.shape.withProofParams pp).k basis ▸
@@ -468,7 +474,11 @@ def actionTerminalWitnessOrRelationFinder
                         (pnu.1.multiU (wrappedPreIpaReads pnu))
                         (pnu.1.multiBlind (wrappedPreIpaReads pnu))
                         (pnu.1.aMulti (wrappedPreIpaReads pnu)) decode (hchar basis O) haccepts
-                        (polynomial .vanishingH) hsatisfied hgoodYProof.down
+                        (polynomial .vanishingH)
+                        (by
+                          simpa only [actionCircuit.toVerifierKey_n] using
+                            hsatisfied)
+                        hgoodYProof.down
                         hpermutationProof.down hlookupProof.down with
                     | PSum.inl witness => some (Sum.inl witness)
                     | PSum.inr relation =>

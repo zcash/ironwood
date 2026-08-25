@@ -387,11 +387,21 @@ def EnabledLookup.inputSelectorValuesRealized_or_bad
                 (top.placement lookup.region + lookup.row : ℕ) =
               (rows compressed.packedCol).getD
                 (top.placement lookup.region + lookup.row) 0 := by
+          have hrowsVk : Function.Injective
+              fun i : Fin (2 ^ urs.k) =>
+                (top.toVerifierKey urs).omega ^ (i : ℕ) := by
+            simpa only [top.toVerifierKey_omega] using hrows
+          have hpolynomialVk :
+              poly (.fixedCol compressed.packedCol) =
+                instanceRowPolynomial (2 ^ urs.k)
+                  (top.toVerifierKey urs).omega
+                  (rows compressed.packedCol) := by
+            simpa only [top.toVerifierKey_omega] using hpolynomial
           exact resolverFixedRead_of_rowPolynomial
-            urs (top.toVerifierKey urs) poly rows hrows proofIndex
+            urs (top.toVerifierKey urs) poly rows hrowsVk proofIndex
             (top.usableRowsAt top.domainExponent) compressed.packedCol
             (top.placement lookup.region + lookup.row)
-            hdomainRow hpolynomial
+            hdomainRow hpolynomialVk
         rw [Halo2.substValuation, hcompressed]
         change
           (selReplacement compressed).eval

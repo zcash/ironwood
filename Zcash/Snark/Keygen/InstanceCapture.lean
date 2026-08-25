@@ -139,7 +139,8 @@ theorem publicInputRows_capturedActionInputs (proofIndex : Fin Fixture.shape.num
 
 /-- The structurally derived Action domain exponent agrees with the captured URS's `k = 11`. -/
 theorem actionCircuit_domainExponent : actionCircuit.domainExponent = capturedURS.k := by
-  rw [Zcash.Circuits.Action.actionCircuit_domainExponent_eq]
+  rw [Halo2.TopLevelCircuit.domainExponent,
+    actionCircuit_shape_eq, actionShape_k]
   rfl
 
 /-- The derived verifying key's domain generator is the captured URS's, so a key stated at that key's

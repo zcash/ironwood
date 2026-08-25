@@ -1212,6 +1212,12 @@ theorem configure_lookupInputArity_le (G : Generators) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hlength
   omega
 
+set_option maxRecDepth 10000 in
+/-- Action's closed configure run records twenty-five distinct advice queries. -/
+theorem configure_adviceQueries_length (G : Generators) :
+    ((configure G).run {}).2.adviceQueries.length = 25 := by
+  configure_norm
+
 private instance elaboratedConfigure (G : Generators) : ElaboratedConfigure (configure G) := by
   unfold configure
   infer_instance
@@ -1596,7 +1602,7 @@ def synthOrchardChecks (cfg : Config) (witnessCells : WitnessCells)
 
 def orchardChecksRegionSynthesisSummary (cfg : Config) :
     FloorPlanner.RegionSynthesisSummary :=
-  FloorPlanner.RegionSynthesisSummary.ofColumns
+  (FloorPlanner.RegionSynthesisSummary.ofColumns
     [.column .advice (cfg.advices 0).index,
       .column .advice (cfg.advices 1).index,
       .column .advice (cfg.advices 2).index,
@@ -1606,7 +1612,8 @@ def orchardChecksRegionSynthesisSummary (cfg : Config) :
       .column .advice (cfg.advices 6).index,
       .column .advice (cfg.advices 7).index,
       .selector cfg.qOrchard.index]
-    1 0 (ENABLE_OUTPUT + 1)
+    1 0 (ENABLE_OUTPUT + 1)).withSelectorActivations
+      [(cfg.qOrchard.index, 0)]
 
 @[synthesis_summary_norm]
 theorem orchardChecksRegionSynthesisSummary_lookupActivationCount (cfg : Config) :
@@ -1635,6 +1642,7 @@ theorem synthOrchardChecks_fixedAssignmentsAgree (cfg : Config)
   apply FloorPlanner.RegionSynthesisSummary.HasNoFixedColumns.hasNoFixedAssignments
   rw [orchardChecksRegion_synthesisSummary_eq]
   rw [orchardChecksRegionSynthesisSummary]
+  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_withSelectorActivations]
   apply (FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns
     _ _ _ (ENABLE_OUTPUT + 1)).2
   simp
@@ -2083,8 +2091,10 @@ theorem crossAddressRow_synthesisSummary_eq (cfg : Config)
     (oldCell newCell : AssignedCell Fp) (row : ℕ) (region : RegionIndex) :
     FloorPlanner.regionSynthesisSummary
         ((synthCrossAddressRow cfg oldCell newCell row).operations region) =
-      FloorPlanner.RegionSynthesisSummary.ofColumns
-        (crossAddressColumns cfg) (row + 1) 4 (DISABLE_CROSS_ADDRESS + 1) := by
+      (FloorPlanner.RegionSynthesisSummary.ofColumns
+        (crossAddressColumns cfg) (row + 1) 4
+          (DISABLE_CROSS_ADDRESS + 1)).withSelectorActivations
+            [(cfg.qOrchard.index, row)] := by
   apply FloorPlanner.RegionSynthesisSummary.ext <;>
     simp only [synthCrossAddressRow, crossAddressColumns, orchardGate, circuit_norm,
       synthesis_summary_norm]
@@ -2106,8 +2116,9 @@ def synthCrossAddressChecks (cfg : Config) (pts : Var AddressPoints Fp) :
 def synthCrossAddressChecksSynthesisSummary (cfg : Config) :
     FloorPlanner.SynthesisSummary :=
   FloorPlanner.SynthesisSummary.ofRegion
-    (FloorPlanner.RegionSynthesisSummary.repeatColumns
-      (crossAddressColumns cfg) 0 1 1 4 4 (DISABLE_CROSS_ADDRESS + 1))
+    (FloorPlanner.RegionSynthesisSummary.repeatColumnsWithSelector
+      cfg.qOrchard.index (crossAddressColumns cfg) 0 1 1 4 4
+        (DISABLE_CROSS_ADDRESS + 1))
 
 @[synthesis_summary_norm]
 theorem synthCrossAddressChecksSynthesisSummary_lookupActivationCount (cfg : Config) :
@@ -2127,6 +2138,19 @@ theorem synthCrossAddressChecksSynthesisSummary_instanceRowExtent_eq (cfg : Conf
   norm_num
 
 @[synthesis_summary_norm]
+theorem synthCrossAddressChecksSynthesisSummary_hasNoFixedWrites (cfg : Config) :
+    (synthCrossAddressChecksSynthesisSummary cfg).HasNoFixedWrites := by
+  rw [synthCrossAddressChecksSynthesisSummary]
+  apply (FloorPlanner.SynthesisSummary.hasNoFixedWrites_ofRegion _).2
+  apply (FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_repeatColumnsWithSelector
+    cfg.qOrchard.index (crossAddressColumns cfg) 0 1 1 4 4
+      (DISABLE_CROSS_ADDRESS + 1)).2
+  apply (FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_repeatColumns
+    (crossAddressColumns cfg) 0 1 1 4 4 (DISABLE_CROSS_ADDRESS + 1)).2
+  right
+  simp [crossAddressColumns]
+
+@[synthesis_summary_norm]
 theorem synthCrossAddressChecks_synthesisSummary_eq
     (cfg : Config) (pts : Var AddressPoints Fp) (region : RegionIndex) :
     FloorPlanner.synthesisSummary
@@ -2141,14 +2165,15 @@ theorem synthCrossAddressChecks_synthesisSummary_eq
               (pts.pkdOld.y, pts.pkdNew.y)]
             let (oldCell, newCell) := coords[row]!
             synthCrossAddressRow cfg oldCell newCell row).operations region) =
-        FloorPlanner.RegionSynthesisSummary.repeatColumns
-          (crossAddressColumns cfg) 0 1 1 4 4
+        FloorPlanner.RegionSynthesisSummary.repeatColumnsWithSelector
+          cfg.qOrchard.index (crossAddressColumns cfg) 0 1 1 4 4
             (DISABLE_CROSS_ADDRESS + 1) := by
     rw [RegionCircuit.forRange'_regionSynthesisSummary]
     simp only [crossAddressRow_synthesisSummary_eq]
     simpa only [Nat.zero_add, Nat.one_mul] using
-      (FloorPlanner.RegionSynthesisSummary.foldr_ofColumns_eq_repeatColumns
-        (crossAddressColumns cfg) 0 1 1 4 4 (DISABLE_CROSS_ADDRESS + 1))
+      (FloorPlanner.RegionSynthesisSummary.foldr_ofColumnsWithSelector_eq_repeatColumnsWithSelector
+          cfg.qOrchard.index (crossAddressColumns cfg) 0 1 1 4 4
+            (DISABLE_CROSS_ADDRESS + 1))
   rw [synthCrossAddressChecks, operations_assignRegion,
     FloorPlanner.synthesisSummary_region_cons,
     FloorPlanner.synthesisSummary_nil,
@@ -2199,13 +2224,8 @@ theorem synthCrossAddressChecks_hasNoFixedWrites
     (region : RegionIndex) :
     ((synthCrossAddressChecks config points).operations region).HasNoFixedWrites := by
   apply FloorPlanner.SynthesisSummary.HasNoFixedWrites.hasNoFixedWrites
-  rw [synthCrossAddressChecks_synthesisSummary_eq,
-    synthCrossAddressChecksSynthesisSummary,
-    FloorPlanner.SynthesisSummary.hasNoFixedWrites_ofRegion]
-  apply (FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_repeatColumns
-    _ 0 1 1 4 4 (DISABLE_CROSS_ADDRESS + 1)).2
-  right
-  simp [crossAddressColumns]
+  rw [synthCrossAddressChecks_synthesisSummary_eq]
+  exact synthCrossAddressChecksSynthesisSummary_hasNoFixedWrites config
 
 @[keygen_norm]
 theorem synthCrossAddressChecks_lookupSelectorAssignmentsAgree

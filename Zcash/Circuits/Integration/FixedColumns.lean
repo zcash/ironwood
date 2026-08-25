@@ -77,7 +77,7 @@ theorem topLevelFixedQuery_of_layout
     (urs : URS G) (pp : ProofParams)
     (instanceCommitment : Fin pp.numProofs → ℕ → G)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (column : ℕ) (rotation : ℤ)
     (hlayout : (column, rotation) ∈ top.fixedQueryLayout) :
     ∃ q ∈ assembleQueries (top.toVerifierKey urs)
@@ -86,8 +86,7 @@ theorem topLevelFixedQuery_of_layout
   apply fixedQuery_of_layout
     (shape := top.shape.withProofParams pp)
     (top.toVerifierKey urs) instanceCommitment ps ch column rotation
-  · simpa only [top.shape_numFixedQueries] using
-      top.toVerifierKey_fixedQueryCount urs
+  · exact top.toVerifierKey_fixedQueryCount urs
   · simpa only [top.toVerifierKey_fixedQueryLayout] using hlayout
 
 omit [AddCommGroup G] [Module Fp G] [DecidableEq G] in
@@ -180,8 +179,8 @@ theorem topLevelFixedLayout_of_assembledQuery
     (urs : URS G) (pp : ProofParams)
     (instanceCommitment : Fin pp.numProofs → ℕ → G)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
-    (q : VerifierQuery top.shape.k Fp G)
+    (ch : Challenges top.domainExponent Fp)
+    (q : VerifierQuery top.domainExponent Fp G)
     (hq : q ∈ assembleQueries (top.toVerifierKey urs)
       instanceCommitment ps ch)
     (column : ℕ) (hid : q.commId = .fixedCol column) :
@@ -729,10 +728,10 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     {pp : ProofParams} {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment : Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -829,11 +828,11 @@ def topLevelFixedConstraints_or_relation
     {top : TopLevelCircuit Fp Config PublicInput}
     {pp : ProofParams}
     {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment :
       Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -912,11 +911,11 @@ def topLevelFixedEntryRead_or_relation
     {top : TopLevelCircuit Fp Config PublicInput}
     {pp : ProofParams}
     {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment :
       Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)

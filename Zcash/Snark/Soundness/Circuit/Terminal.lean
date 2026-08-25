@@ -236,10 +236,10 @@ variable
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     (pp : ProofParams) (urs : URS G)
-    (hk : top.shape.k = urs.k)
+    (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (pU pW : Fp) (a : Fin (2 ^ urs.k) → Fp)
     (batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -387,10 +387,10 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     (pp : ProofParams) (urs : URS G)
-    (hk : (top.shape.withProofParams pp).k = urs.k)
+    (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges (top.shape.withProofParams pp).k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (pU pW : Fp) (a : Fin (2 ^ urs.k) → Fp)
     (batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -486,46 +486,76 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
         (NontrivialRelation (F := Fp) urs.g urs.u urs.w)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
       NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
-  have hrows :
-      Function.Injective
-        (fun row : Fin top.n =>
-          top.omega ^ (row : ℕ)) :=
-    TopLevelAssignment.domainRowsInjective
-      (top := top) domainExponent_lt
-  have hroot :
-      top.omega ^ top.n = 1 :=
-    TopLevelAssignment.domainRoot
-      (top := top) domainExponent_lt
   have hnFp : (top.n : Fp) ≠ 0 :=
     TopLevelAssignment.domainSizeCastNeZero
       (top := top) domainExponent_lt
-  rcases
-      acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
-        urs hk (top.toVerifierKey urs)
-        (top.instanceCommitment urs inputs) ps ch memberDecode
-        haccepts (top.toVerifierKey_blindingFactors_lt_n urs)
+  have terminal :=
+    acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
+      (G := G) (shape := top.shape.withProofParams pp)
+      (pU := pU) (pW := pW) (a := a)
+      (batchOpenings := batchOpenings)
+      urs hk (top.toVerifierKey urs)
+      (top.instanceCommitment urs inputs) ps ch
+  have outcome :=
+      terminal memberDecode
+  have terminal :=
+    outcome haccepts (top.toVerifierKey_blindingFactors_lt_n urs)
+  have outcome :=
+      terminal
         hpoly hquot
-        (by simpa only [CircuitShape.withProofParams_numFixedQueries,
-            top.shape_numFixedQueries] using
+        (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
           top.toVerifierKey_fixedQueryCount urs)
-        (by simpa only [CircuitShape.withProofParams_numAdviceQueries,
-            top.shape_numAdviceQueries] using
+        (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
           top.toVerifierKey_adviceQueryCount urs)
-        (by simpa only [CircuitShape.withProofParams_numInstanceQueries,
-            top.shape_numInstanceQueries] using
+        (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
           top.toVerifierKey_instanceQueryCount urs)
+  have terminal := outcome
         hbind
         (top.permutationChunkRoutingCoherent urs)
-        (by simpa only [top.toVerifierKey_n, top.toVerifierKey_omega] using hrows)
-        (by simpa only [top.toVerifierKey_n, top.toVerifierKey_omega] using hroot)
-        (by simpa only [top.toVerifierKey_n] using hnFp)
-        hxgood with
-    hsatisfied | relation
-  · exact topLevelStatements_or_relation_of_circuitSat
-      top pp urs hk inputs ps ch pU pW a
-      batchOpenings memberDecode haccepts hpoly
-      hsatisfied hgoodY (correctness hsatisfied)
-  · exact PSum.inr relation
+  have hrowsVk : Function.Injective
+      fun row : Fin (top.toVerifierKey urs).n =>
+        (top.toVerifierKey urs).omega ^ (row : ℕ) :=
+    TopLevelAssignment.toVerifierKey_domainRowsInjective
+      urs domainExponent_lt
+  have outcome := terminal hrowsVk
+  have hrootVk :
+      (top.toVerifierKey urs).omega ^ (top.toVerifierKey urs).n = 1 :=
+    TopLevelAssignment.toVerifierKey_domainRoot urs domainExponent_lt
+  have outcome := outcome hrootVk
+  have hnFpVk : ((top.toVerifierKey urs).n : Fp) ≠ 0 := by
+    rw [top.toVerifierKey_n]
+    exact hnFp
+  have outcome := outcome hnFpVk
+  have hxgoodVk :
+      let model :=
+        CanonicalMemberConstraintRelation.acceptedModel
+          (shape := top.shape.withProofParams pp)
+          (memberDecode := memberDecode)
+          (hblinding := top.toVerifierKey_blindingFactors_lt_n urs)
+          haccepts
+      ch.x ∉ szBadSet
+        (combineConstraints
+          model.fixedCols model.adviceCols model.instanceCols model.gates
+          model.sets model.chunks model.lookups
+          model.beta model.gamma model.delta model.theta ch.y
+          model.chunkLen model.l0 model.lLast model.lBlind -
+        hpoly * (X ^ (top.toVerifierKey urs).n - 1)) := by
+    simpa only [top.toVerifierKey_n] using hxgood
+  have outcome := outcome hxgoodVk
+  exact match outcome with
+  | .inl hsatisfied => by
+      have hsatisfiedTop :
+          (CanonicalMemberConstraintRelation.acceptedModel
+            (shape := top.shape.withProofParams pp)
+            (memberDecode := memberDecode)
+            (hblinding := top.toVerifierKey_blindingFactors_lt_n urs)
+            haccepts).CircuitSat ch.y hpoly top.n a := by
+        simpa only [top.toVerifierKey_n] using hsatisfied
+      exact topLevelStatements_or_relation_of_circuitSat
+        top pp urs hk inputs ps ch pU pW a
+        batchOpenings memberDecode haccepts hpoly
+        hsatisfiedTop hgoodY (correctness hsatisfiedTop)
+  | .inr relation => PSum.inr relation
 
 assert_no_sorry
   topLevelStatements_or_relation_of_decodedMemberPolynomial_eq

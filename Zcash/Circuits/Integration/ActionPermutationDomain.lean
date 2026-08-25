@@ -37,64 +37,6 @@ variable {G : Type} [AddCommGroup G] [Inhabited G]
 abbrev actionShape (pp : ProofParams) : Shape :=
   actionCircuit.shape.withProofParams pp
 
-/-- The derived Action VK has one verifier permutation set per chunk. -/
-theorem chunkCount :
-    actionCircuit.verifierCS.permutationChunks.length =
-      actionCircuit.permutationSetCount :=
-  verifierCS_permutationChunks_length actionCircuit
-
-set_option maxRecDepth 100000 in
-/-- Every Action permutation chunk has width at most the circuit's chunk width. -/
-theorem chunkLength_le :
-    ∀ i, i < actionCircuit.permutationSetCount →
-      (actionCircuit.verifierCS.permutationChunks.getD i []).length ≤
-        actionCircuit.chunkLen := by
-  intro i hi
-  have hiChunks :
-      i <
-        actionCircuit.verifierCS.permutationChunks.length := by
-    rw [verifierCS_permutationChunks_length]
-    exact hi
-  rw [verifierCS_permutationChunks_getD_length actionCircuit i hiChunks]
-  exact min_le_left _ _
-
-/-- Resolver pairing preserves each concrete VK chunk's width. -/
-theorem resolverPairsLength_le
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly)
-    (p : Fin pp.numProofs) :
-    ∀ i, i < actionCircuit.permutationSetCount →
-      (ResolverPermutationPairs (actionCircuit.toVerifierKey urs) poly p i).length ≤
-        actionCircuit.chunkLen := by
-  intro i hi
-  simpa only [actionCircuit.toVerifierKey_permutationChunks,
-    actionCircuit.toVerifierKey_chunkLen,
-    ResolverPermutationPairs, permutationChunkPairsOfResolver,
-    List.length_map] using
-    chunkLength_le i hi
-
-set_option maxRecDepth 100000 in
-/-- A resolver-backed chunk has exactly the compiler-derived suffix width. -/
-theorem resolverPairsLength_eq_min
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly)
-    (p : Fin pp.numProofs)
-    (chunk : Fin actionCircuit.permutationSetCount) :
-    (ResolverPermutationPairs
-        (actionCircuit.toVerifierKey urs) poly p chunk).length =
-      min actionCircuit.chunkLen
-        (actionCircuit.permutationColumnCount -
-          (chunk : ℕ) * actionCircuit.chunkLen) := by
-  simp only [ResolverPermutationPairs,
-    permutationChunkPairsOfResolver, List.length_map,
-    actionCircuit.toVerifierKey_permutationChunks]
-  have hi :
-      (chunk : ℕ) <
-        actionCircuit.verifierCS.permutationChunks.length := by
-    rw [verifierCS_permutationChunks_length]
-    exact chunk.isLt
-  exact verifierCS_permutationChunks_getD_length actionCircuit chunk hi
-
 /--
 Flattening the derived verifier chunks and decoding their query references
 recovers the compiler's original permutation-column order.
@@ -230,14 +172,14 @@ theorem namesInjective
             min actionCircuit.chunkLen
               (actionCircuit.permutationColumnCount -
                 (j.1 : ℕ) * actionCircuit.chunkLen) := by
-        simpa only [resolverPairsLength_eq_min pp urs poly p j.1] using
+        simpa only [actionCircuit.resolverPermutationPairs_length urs poly p j.1] using
           j.2.isLt
       have hj'Width :
           (j'.2 : ℕ) <
             min actionCircuit.chunkLen
               (actionCircuit.permutationColumnCount -
                 (j'.1 : ℕ) * actionCircuit.chunkLen) := by
-        simpa only [resolverPairsLength_eq_min pp urs poly p j'.1] using
+        simpa only [actionCircuit.resolverPermutationPairs_length urs poly p j'.1] using
           j'.2.isLt
       have hj :
           (j.1 : ℕ) * actionCircuit.chunkLen + (j.2 : ℕ) <
@@ -273,12 +215,14 @@ theorem namesInjective
         constraintSystem_chunkLen_pos actionCircuit.constraintSystem
       have hjColumn :
           (j.2 : ℕ) < actionCircuit.chunkLen :=
-        lt_of_lt_of_le j.2.isLt
-          (resolverPairsLength_le pp urs poly p j.1 j.1.isLt)
+        lt_of_lt_of_le j.2.isLt (by
+          rw [actionCircuit.resolverPermutationPairs_length urs poly p j.1]
+          exact min_le_left _ _)
       have hj'Column :
           (j'.2 : ℕ) < actionCircuit.chunkLen :=
-        lt_of_lt_of_le j'.2.isLt
-          (resolverPairsLength_le pp urs poly p j'.1 j'.1.isLt)
+        lt_of_lt_of_le j'.2.isLt (by
+          rw [actionCircuit.resolverPermutationPairs_length urs poly p j'.1]
+          exact min_le_left _ _)
       have hchunk :
           (j.1 : ℕ) = (j'.1 : ℕ) := by
         have hjDiv :
@@ -334,7 +278,7 @@ theorem namesInjective
       exact (Fin.heq_ext_iff hwidth).mpr hcolumn
   intro c d hname
   have hwiden := widenPermutationChunkCell_injective
-    (nc := actionCircuit.shape.numPermutationSets)
+    (nc := actionCircuit.permutationSetCount)
     (width := fun i =>
       (ResolverPermutationPairs (actionCircuit.toVerifierKey urs) poly p i).length)
     hactive
@@ -369,7 +313,7 @@ def cycleOfKeygenColumnsAt
       (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p
         m))
     (hcolumns : ∀
-      (chunk : Fin actionCircuit.shape.numPermutationSets)
+      (chunk : Fin actionCircuit.permutationSetCount)
       (column : Fin
         (ResolverPermutationPairs (actionCircuit.toVerifierKey urs) poly p chunk).length),
       (ResolverPermutationPairs
@@ -400,7 +344,7 @@ def cycleOfKeygenColumns
       (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p
         activeRows))
     (hcolumns : ∀
-      (chunk : Fin actionCircuit.shape.numPermutationSets)
+      (chunk : Fin actionCircuit.permutationSetCount)
       (column : Fin
         (ResolverPermutationPairs (actionCircuit.toVerifierKey urs) poly p chunk).length),
       (ResolverPermutationPairs

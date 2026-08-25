@@ -116,7 +116,7 @@ theorem actionThetaBudget (numProofs : ℕ) :
                 ≤ 2 ^ 12 * (2 ^ 11 * 4) :=
               Nat.mul_le_mul_right _ actionLookupActivationCount_le
             _ = 2 ^ 25 := by norm_num
-        simpa only [CircuitShape.withProofParams, actionProofParamsFor,
+        simpa only [Halo2.CircuitShape.withProofParams, actionProofParamsFor,
           Nat.cast_id, _root_.mul_assoc] using Nat.mul_le_mul_left numProofs hscaled
 
 /-- The tight β budget is `950835027` per Action, including permutation cells and all three
@@ -269,7 +269,7 @@ theorem capturedActionThetaBudget :
                 ≤ 2 ^ 12 * (2 ^ 11 * 4) :=
               Nat.mul_le_mul_right _ actionLookupActivationCount_le
             _ = 2 ^ 25 := by norm_num
-        simpa only [CircuitShape.withProofParams, actionProofParams, actionProofParamsFor,
+        simpa only [Halo2.CircuitShape.withProofParams, actionProofParams, actionProofParamsFor,
           _root_.one_mul, Nat.cast_id] using hscaled
 
 /-- The captured `β` surface budget is at most `2^35`. -/
@@ -412,7 +412,7 @@ theorem capturedActionConstraintCount_bound
     (inputs : Fin actionProofParams.numProofs → PublicInputs Fp)
     (ps : ProofString (actionCircuit.shape.withProofParams actionProofParams) Fp VestaG)
     (source : List (AlgebraicPoint (F := Fp) basis))
-    (ch : Challenges actionCircuit.domainExponent Fp) :
+    (ch : Challenges (actionCircuit.shape.withProofParams actionProofParams).k Fp) :
     (adaptiveActionCommittedModel actionProofParams basis inputs ps source ch).constraints.length
       ≤ 2 ^ 12 := by
   unfold adaptiveActionCommittedModel adaptiveActionCommittedModelOf
@@ -463,7 +463,8 @@ theorem actionConstraintCount_bound (numProofs : ℕ)
       PublicInputs Fp)
     (ps : ProofString (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)) Fp VestaG)
     (source : List (AlgebraicPoint (F := Fp) basis))
-    (ch : Challenges actionCircuit.domainExponent Fp) :
+    (ch : Challenges
+      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k Fp) :
     (adaptiveActionCommittedModel (actionProofParamsFor numProofs) basis inputs ps source ch).constraints.length ≤
       numProofs * 2 ^ 12 := by
   unfold ConstraintPolyModel.constraints
@@ -503,7 +504,8 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
       PublicInputs Fp)
     (ps : ProofString (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)) Fp VestaG)
     (source : List (AlgebraicPoint (F := Fp) basis))
-    (ch : Challenges actionCircuit.domainExponent Fp) :
+    (ch : Challenges
+      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k Fp) :
     (adaptiveActionPreXDifference (actionProofParamsFor numProofs) basis inputs ps source ch).natDegree ≤
       20470 := by
   let avk := ActionTerminal.vkAt basis
@@ -522,19 +524,24 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
     intro g
     unfold onlinePointPolynomial
     have h := coeffsToPoly_natDegree_lt
-      (n := 2 ^ actionCircuit.domainExponent)
+      (n := 2 ^
+        (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k)
       (by positivity)
       (onlinePointCoordinates
         (shape := actionCircuit.shape.withProofParams (actionProofParamsFor numProofs))
         source g).1
     have hsize :
-        2 ^ actionCircuit.domainExponent = 2048 := by
-      rw [action_domainExponent_eq]
+        2 ^ (actionCircuit.shape.withProofParams
+          (actionProofParamsFor numProofs)).k = 2048 := by
+      rw [Halo2.CircuitShape.withProofParams_k,
+        actionCircuit_shape_eq, actionShape_k]
       norm_num
     calc
       (onlinePointPolynomial
           (shape := actionCircuit.shape.withProofParams (actionProofParamsFor numProofs))
-          source g).natDegree ≤ 2 ^ actionCircuit.domainExponent - 1 :=
+          source g).natDegree ≤
+            2 ^ (actionCircuit.shape.withProofParams
+              (actionProofParamsFor numProofs)).k - 1 :=
         Nat.le_sub_one_of_lt h
       _ = 2047 := by rw [hsize]
   have hpoly : ∀ id, (poly id).natDegree ≤ 2047 := by
@@ -673,11 +680,14 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
     · intro j
       exact hpoint _
     · dsimp only [avk]
+      have hquotient :
+          actionCircuit.quotientPieceCount = shape.numQuotientPieces :=
+        (actionDerivedShapeCounts numProofs).2.2.2.2
+      simp only [Halo2.TopLevelCircuit.quotientPieceCount] at hquotient
       rw [ActionTerminal.vkAt, actionCircuit.toVerifierKey_n,
           derived_scalars.2.1,
-        CircuitShape.withProofParams_numQuotientPieces,
-        actionCircuit.shape_numQuotientPieces,
-        (actionDerivedShapeCounts numProofs).2.2.2.2]
+        Halo2.CircuitShape.withProofParams_numQuotientPieces,
+        hquotient]
       have hshape : 2 ^ shape.k - 1 = 2047 := by
         norm_num [shape]
       simpa only [hshape] using vk_quotient_tail_le
@@ -992,7 +1002,8 @@ theorem adaptive_action_constraint_count_of_le_for (numProofs : ℕ)
         Nat → VestaG)
     (ps : ProofString (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)) Fp VestaG)
     (source : List (AlgebraicPoint (F := Fp) basis))
-    (ch : Challenges actionCircuit.domainExponent Fp) :
+    (ch : Challenges
+      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k Fp) :
     (adaptiveActionCommittedModelOf
       (ActionTerminal.vkAt basis)
       instanceCommitment ps source ch
@@ -1034,7 +1045,8 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
         Nat → VestaG)
     (ps : ProofString (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)) Fp VestaG)
     (source : List (AlgebraicPoint (F := Fp) basis))
-    (ch : Challenges actionCircuit.domainExponent Fp) :
+    (ch : Challenges
+      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k Fp) :
     (adaptiveActionPreXDifferenceOf
       (ActionTerminal.vkAt basis)
       instanceCommitment ps source ch
@@ -1054,19 +1066,24 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
     intro g
     unfold onlinePointPolynomial
     have h := coeffsToPoly_natDegree_lt
-      (n := 2 ^ actionCircuit.domainExponent)
+      (n := 2 ^
+        (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).k)
       (by positivity)
       (onlinePointCoordinates
         (shape := actionCircuit.shape.withProofParams (actionProofParamsFor numProofs))
         source g).1
     have hsize :
-        2 ^ actionCircuit.domainExponent = 2048 := by
-      rw [action_domainExponent_eq]
+        2 ^ (actionCircuit.shape.withProofParams
+          (actionProofParamsFor numProofs)).k = 2048 := by
+      rw [Halo2.CircuitShape.withProofParams_k,
+        actionCircuit_shape_eq, actionShape_k]
       norm_num
     calc
       (onlinePointPolynomial
           (shape := actionCircuit.shape.withProofParams (actionProofParamsFor numProofs))
-          source g).natDegree ≤ 2 ^ actionCircuit.domainExponent - 1 :=
+          source g).natDegree ≤
+            2 ^ (actionCircuit.shape.withProofParams
+              (actionProofParamsFor numProofs)).k - 1 :=
         Nat.le_sub_one_of_lt h
       _ = 2047 := by rw [hsize]
   have hpoly : ∀ id, (poly id).natDegree ≤ 2047 := by
@@ -1203,11 +1220,14 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
     · intro j
       exact hpoint _
     · dsimp only [avk]
+      have hquotient :
+          actionCircuit.quotientPieceCount = shape.numQuotientPieces :=
+        (actionDerivedShapeCounts numProofs).2.2.2.2
+      simp only [Halo2.TopLevelCircuit.quotientPieceCount] at hquotient
       rw [ActionTerminal.vkAt, actionCircuit.toVerifierKey_n,
           derived_scalars.2.1,
-        CircuitShape.withProofParams_numQuotientPieces,
-        actionCircuit.shape_numQuotientPieces,
-        (actionDerivedShapeCounts numProofs).2.2.2.2]
+        Halo2.CircuitShape.withProofParams_numQuotientPieces,
+        hquotient]
       have hshape : 2 ^ shape.k - 1 = 2047 := by
         norm_num [shape]
       simpa only [hshape] using vk_quotient_tail_le
@@ -1217,7 +1237,7 @@ adaptive statement. Commitment values change coefficients, not the proved degree
 cardinalities. -/
 theorem orchard_adaptiveActionStatementSurface_measure_le_for
     (numProofs : ℕ)
-    (basis : AugmentedIndex (2 ^ actionCircuit.domainExponent) → VestaG)
+    (basis : AugmentedIndex actionCircuit.n → VestaG)
     (instanceCommitment :
       Fin (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)).numProofs →
         Nat → VestaG)

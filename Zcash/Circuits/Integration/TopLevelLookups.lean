@@ -36,8 +36,7 @@ structure EnabledLookup.TopLevelRoute
     (top : TopLevelCircuit Fp Config PublicInput)
     (lookup : EnabledLookup Fp) where
   index : Fin top.lookupCount
-  argument :
-    top.constraintSystem.lookups[index.val] = lookup.argument
+  argument : top.lookupAt index = lookup.argument
 
 /--
 Configure/synthesis closure selects a configured lookup index for every enabled
@@ -58,8 +57,11 @@ def EnabledLookup.topLevelRoute
     List.getElem_idxOf hindex
   refine
     { index := ⟨index, ?_⟩
-      argument := hget }
-  simpa only [TopLevelCircuit.lookupCount] using hindex
+      argument := ?_ }
+  · rw [top.lookupCount_eq_constraintSystem]
+    exact hindex
+  · unfold TopLevelCircuit.lookupAt
+    exact hget
 
 /--
 Every extracted lookup activation lies inside the top-level circuit's keygen row
@@ -274,9 +276,10 @@ theorem resolverInterpretsPinned
       Nat.le_of_lt_succ (by
         simpa using coherence.domainExponent_lt)
     exact top.omega_ne_zero hk
-  exact resolverQueryFeeds_interpret
+  have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
-    (fun _ => 0) row homega
+    (fun _ => 0) row
+    (by simpa only [top.toVerifierKey_omega] using homega)
     (pinnedQueryState top.pinnedCS)
     (by
       simp only [top.toVerifierKey_adviceQueryLayout,
@@ -290,6 +293,7 @@ theorem resolverInterpretsPinned
     (top.toVerifierKey_adviceQueryCount urs)
     (top.toVerifierKey_fixedQueryCount urs)
     (top.toVerifierKey_instanceQueryCount urs)
+  simpa only [top.toVerifierKey_omega] using hfinal
 
 end TopLevelConstraintBounds
 
@@ -384,16 +388,15 @@ theorem projectedValues
   let route :=
     lookup.topLevelRoute (top := top) henabled
   have hrouteMem :
-      top.constraintSystem.lookups[route.index.val] ∈
-        top.constraintSystem.lookups :=
-    List.getElem_mem ..
+      top.lookupAt route.index ∈ top.constraintSystem.lookups :=
+    top.lookupAt_mem_constraintSystem route.index
   have hinputCoverage :=
     topLevelLookupInputs_selectorsCovered top
-      top.constraintSystem.lookups[route.index.val]
+      (top.lookupAt route.index)
       hrouteMem
   have htableCoverage :=
     tablesCovered (top := top)
-      top.constraintSystem.lookups[route.index.val]
+      (top.lookupAt route.index)
   have projectAt (row : ℕ) :=
     top.lookup_eval
       (fun query =>
@@ -505,6 +508,7 @@ theorem projectedPolynomialValues
       lookup henabled selectors
   constructor
   · rw [lookupInputPolyOfResolver_eq,
+      top.toVerifierKey_lookupInputExprs,
       compress_eval_eq_foldPoly,
       eval_foldPoly_eq_compressValues]
     change compressValues ch.theta
@@ -518,6 +522,7 @@ theorem projectedPolynomialValues
     exact congrArg (compressValues ch.theta) projected.1
   · intro row hrow
     rw [lookupTablePolyOfResolver_eq,
+      top.toVerifierKey_lookupTableExprs,
       compress_eval_eq_foldPoly,
       eval_foldPoly_eq_compressValues]
     change compressValues ch.theta
@@ -573,7 +578,10 @@ def deployedWitness
         (top.toVerifierKey urs) poly proofIndex
         (top.usableRowsAt top.domainExponent))
   ch.theta := by
-  let vk := top.toVerifierKey urs
+  have projected :=
+    projectedPolynomialValues gateCoherence ch poly
+      proofIndex lookup henabled selectors
+  generalize hvk : top.toVerifierKey urs = vk at *
   let environment :=
     resolverEnvironment vk poly proofIndex
       (top.usableRowsAt top.domainExponent)
@@ -581,12 +589,15 @@ def deployedWitness
     lookup.topLevelRoute (top := top) henabled
   let u := vk.n - vk.blindingFactors - 2
   have hn : vk.n = top.n := by
-    simpa only [vk] using top.toVerifierKey_n urs
+    rw [← hvk]
+    exact top.toVerifierKey_n urs
   have homega : vk.omega = top.omega := by
-    simpa only [vk] using top.toVerifierKey_omega urs
+    rw [← hvk]
+    exact top.toVerifierKey_omega urs
   have hblinding :
       vk.blindingFactors = top.blindingFactors := by
-    simpa only [vk] using top.toVerifierKey_blindingFactors urs
+    rw [← hvk]
+    exact top.toVerifierKey_blindingFactors urs
   have hu :
       u = top.n - top.blindingFactors - 2 := by
     simp only [u, hn, hblinding]
@@ -608,9 +619,6 @@ def deployedWitness
       top.omega ^ top.n = 1 :=
     TopLevelAssignment.domainRoot
       gateCoherence.domainExponent_lt
-  have projected :=
-    projectedPolynomialValues gateCoherence ch poly
-      proofIndex lookup henabled selectors
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=
@@ -627,7 +635,8 @@ def deployedWitness
   have hrows' : Function.Injective
       fun row : Fin vk.n =>
         vk.omega ^ (row : ℕ) := by
-    simpa only [hn, homega] using hrows
+    rw [hn, homega]
+    exact hrows
   have hroot' :
       vk.omega ^ vk.n = 1 := by
     simpa only [hn, homega] using hroot
@@ -647,8 +656,10 @@ def deployedWitness
           (permutationSetsOfResolver (numProofs := pp.numProofs) vk poly)
           (permutationChunksOfResolver (numProofs := pp.numProofs) vk poly)
           canonical.1 canonical.2.1 canonical.2.2) vk.n := by
-    rw [top.constraintModel_eq_constraintModelOfResolver] at satisfactionAtVk
-    simpa only [vk, canonical] using satisfactionAtVk
+    rw [top.constraintModel_eq_constraintModelOfResolver]
+      at satisfactionAtVk
+    subst vk
+    simpa only [canonical, top.toVerifierKey_omega] using satisfactionAtVk
   have scalarSubset :
       ∀ row : Fin (u + 1), ∃ tableRow : Fin (u + 1),
         lookupColumnRows vk.omega
@@ -665,7 +676,7 @@ def deployedWitness
       (permutationChunksOfResolver (numProofs := pp.numProofs) vk poly)
       canonical.1 canonical.2.1 canonical.2.2 proofIndex route.index
       domain (by simpa only [hu] using resolverGood)
-  simpa only [vk, environment] using
+  simpa only [environment] using
     { omega := vk.omega
       input :=
         lookupInputPolyOfResolver vk ch poly
@@ -823,7 +834,7 @@ def topLevelLookupChallengeExclusions?
     (poly : CommitmentId → CPoly) :
     Option (PLift (ChallengeExclusions top pp urs ch poly)) :=
   let vk := top.toVerifierKey urs
-  let u := vk.n - vk.blindingFactors - 2
+  let u := top.n - top.blindingFactors - 2
   match hresolver : resolverLookupBundleExclusions? pp.numProofs vk ch poly u with
   | none => none
   | some resolver =>
@@ -859,7 +870,7 @@ theorem topLevelLookupChallengeExclusions?_isSome_of
     (hexclusions : ChallengeExclusions top pp urs ch poly) :
     (topLevelLookupChallengeExclusions? top pp urs ch poly).isSome := by
   let vk := top.toVerifierKey urs
-  let u := vk.n - vk.blindingFactors - 2
+  let u := top.n - top.blindingFactors - 2
   obtain ⟨resolver, hresolver⟩ := Option.isSome_iff_exists.mp
     (resolverLookupBundleExclusions?_isSome_of pp.numProofs vk ch poly u
       hexclusions.gamma hexclusions.beta)

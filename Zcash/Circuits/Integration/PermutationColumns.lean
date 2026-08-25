@@ -148,8 +148,9 @@ theorem commitment_ofKeygen
   unfold topLevelPermutationCommitment
   have hcolumn' :
       column < (Keygen.permColsOf top.constraintSystem).length := by
-    simpa [TopLevelCircuit.permutationColumnCount,
-      TopLevelCircuit.permutationColumns, Keygen.permColsOf] using hcolumn
+    rw [top.permutationColumnCount_eq_permutationColumns_length] at hcolumn
+    simpa only [TopLevelCircuit.permutationColumns,
+      Keygen.permColsOf, List.length_map] using hcolumn
   have hcommit :=
     Keygen.permutationCommitmentsOf_getD_eq_commitInstance
       urs top.constraintSystem (top.operations)

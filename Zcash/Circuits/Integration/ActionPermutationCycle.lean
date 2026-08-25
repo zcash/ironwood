@@ -54,7 +54,7 @@ theorem actionPermutationRows_eq_chunkRowName
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
-    (chunk : Fin actionCircuit.shape.numPermutationSets)
+    (chunk : Fin actionCircuit.permutationSetCount)
     (column : Fin
       (ResolverPermutationPairs
         (actionCircuit.toVerifierKey urs) poly proofIndex chunk).length)
@@ -101,13 +101,14 @@ theorem actionChunkCommonIndex
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
-    (chunk : Fin actionCircuit.shape.numPermutationSets)
+    (chunk : Fin actionCircuit.permutationSetCount)
     (column : Fin
       (ResolverPermutationPairs
         (actionCircuit.toVerifierKey urs) poly proofIndex chunk).length) :
     ((actionCircuit.verifierCS.permutationChunks.getD chunk []).getD
         column ((.advice 0), 0)).2 =
       (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ) := by
+  rw [← actionCircuit.toVerifierKey_permutationChunks urs]
   let vk := actionCircuit.toVerifierKey urs
   let global : ℕ :=
     (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ)
@@ -173,8 +174,9 @@ theorem actionChunkCommonIndex
       rw [hflatten]
     _ = global := zipIdx_getD_snd _ (ColumnRef.advice 0) global
       (by
-        simpa only [List.length_map,
-          TopLevelCircuit.permutationColumnCount] using hglobal)
+        simp only [List.length_map]
+        rw [← actionCircuit.permutationColumnCount_eq_permutationColumns_length]
+        exact hglobal)
 
 omit [Module Fp G] [DecidableEq G] in
 theorem actionRowsInjectiveAtUrs
@@ -184,7 +186,8 @@ theorem actionRowsInjectiveAtUrs
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) domainExponent_lt hk
+      (top := actionCircuit) domainExponent_lt
+      hk
 
 set_option maxRecDepth 100000 in
 def actionResolverPermutationCycle_or_relation
@@ -232,14 +235,144 @@ def actionResolverPermutationCycle_or_relation
         (actionActiveSigma pp urs relation.polynomial proofIndex)
       ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
   classical
+  have hkDomain : actionCircuit.domainExponent = urs.k :=
+    hk
   have hkUrs : urs.k ≤ 32 := by
-    rw [← hk]
+    rw [← hkDomain]
     exact Nat.le_of_lt_succ domainExponent_lt
   let setup := LagrangePrefixSetup.ofDerived urs hkUrs
+  have hcolumns : ∀
+      (chunk : Fin actionCircuit.permutationSetCount)
+      (column : Fin
+        (ResolverPermutationPairs
+          (actionCircuit.toVerifierKey urs) relation.polynomial
+          proofIndex chunk).length),
+      (ResolverPermutationPairs
+        (actionCircuit.toVerifierKey urs) relation.polynomial
+        proofIndex chunk)[column].2 =
+          keygenSigmaColumn
+            actionCircuit.omega Arithmetic.deltaFp actionCircuit.chunkLen
+            (actionFullSigma pp urs relation.polynomial proofIndex)
+            chunk column ⊕'
+        NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+    intro chunk column
+    let vk := actionCircuit.toVerifierKey urs
+    have hcommonIndex :=
+      actionChunkCommonIndex pp urs relation.polynomial proofIndex
+        chunk column
+    have hcommon :
+        (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ) <
+          actionCircuit.permutationColumnCount := by
+      have hlt :=
+        ((Zcash.Snark.actionChunkFlatten
+          pp urs relation.polynomial proofIndex
+          ⟨chunk, ⟨0, Zcash.Snark.actionDomainSize_pos⟩, column⟩).2).isLt
+      simpa only [Zcash.Snark.actionChunkFlatten_apply_column,
+        Zcash.Snark.actionNumPermCols_eq_derived] using hlt
+    let common : Fin actionCircuit.permutationColumnCount :=
+      ⟨(chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ), hcommon⟩
+    let shapeCommon : Fin actionCircuit.permutationColumnCount :=
+      common
+    have homega :
+        vk.omega = omegaOf urs.k := by
+      simpa only [vk, actionCircuit.toVerifierKey_omega,
+        TopLevelCircuit.omega] using congrArg omegaOf hkDomain
+    let key : LagrangeCommitmentKey urs vk.omega := by
+      let sourceKey :=
+        LagrangeCommitmentKey.ofPrefix urs
+          (omegaOf urs.k) (derivedUrsGLagrange urs)
+          setup.generator_eq
+      exact
+        { generators := sourceKey.generators
+          generator_eq := by
+            intro i
+            rw [homega]
+            exact sourceKey.generator_eq i }
+    have hcommit :
+        vk.permutationCommonCommitment shapeCommon =
+          key.commitInstance
+            (topLevelPermutationRows
+              actionCircuit common) 1 := by
+      simp only [vk]
+      rw [actionCircuit.toVerifierKey_permutationCommonCommitment]
+      have source :=
+        PermutationCommitmentCoherence.commitment_ofKeygen
+          actionCircuit urs hkDomain setup common
+          common.isLt
+      simpa only [topLevelPermutationCommitment, key,
+        LagrangeCommitmentKey.commitInstance,
+        LagrangeCommitmentKey.commitRows] using source
+    have hj :
+        (column : ℕ) <
+          (vk.permutationChunks.getD chunk []).length := by
+      simpa only [vk, ResolverPermutationPairs,
+        permutationChunkPairsOfResolver, List.length_map] using
+          column.isLt
+    have hval :
+        ∀ i : Fin Zcash.Snark.actionDomainSize,
+          (topLevelPermutationRows
+            actionCircuit common).getD (i : ℕ) 0 =
+            chunkRowName vk.omega vk.delta vk.chunkLen
+              (Zcash.Snark.actionFullSigma
+                pp urs relation.polynomial proofIndex
+                ⟨chunk, i, column⟩).1
+              (Zcash.Snark.actionFullSigma
+                pp urs relation.polynomial proofIndex
+                ⟨chunk, i, column⟩).2.1
+              (Zcash.Snark.actionFullSigma
+                pp urs relation.polynomial proofIndex
+                ⟨chunk, i, column⟩).2.2 := by
+      intro i
+      have source :=
+        actionPermutationRows_eq_chunkRowName
+          pp urs relation.polynomial proofIndex chunk column i
+      have hcommonRow :
+          (common : ℕ) =
+            ((Zcash.Snark.actionChunkFlatten
+              pp urs relation.polynomial proofIndex
+              ⟨chunk, i, column⟩).2 : ℕ) := by
+        simp only [common,
+          Zcash.Snark.actionChunkFlatten_apply_column]
+      rw [hcommonRow]
+      simpa only [vk,
+        actionCircuit.toVerifierKey_omega,
+        actionCircuit.toVerifierKey_delta,
+        actionCircuit.toVerifierKey_chunkLen] using source
+    have hidx :
+        ((vk.permutationChunks.getD chunk [])[column]).2 =
+          (shapeCommon : ℕ) := by
+      calc
+        ((vk.permutationChunks.getD chunk [])[column]).2 =
+            ((vk.permutationChunks.getD chunk []).getD
+              column ((.advice 0), 0)).2 :=
+          congrArg Prod.snd (List.getD_eq_getElem _ _ hj).symm
+        _ = ((actionCircuit.verifierCS.permutationChunks.getD chunk []).getD
+              column ((.advice 0), 0)).2 := by
+          simp only [vk, actionCircuit.toVerifierKey_permutationChunks]
+        _ = (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ) :=
+          hcommonIndex
+        _ = (common : ℕ) := (Fin.val_mk hcommon).symm
+        _ = (shapeCommon : ℕ) := by
+          simp only [shapeCommon]
+    have hidentified :=
+      relation.resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation_of_size
+        proofIndex chunk column hj shapeCommon hidx key
+        (topLevelPermutationRows
+          actionCircuit common)
+        hcommit (actionRowsInjectiveAtUrs urs hk)
+        (by
+          simpa only [Zcash.Snark.actionDomainSize] using
+            congrArg (2 ^ ·) hkDomain)
+        (Zcash.Snark.actionFullSigma
+          pp urs relation.polynomial proofIndex)
+        chunk column hval
+    simpa only [actionCircuit.toVerifierKey_omega,
+      actionCircuit.toVerifierKey_delta,
+      actionCircuit.toVerifierKey_chunkLen] using hidentified
   -- The successful cycle is returned as data; only its sigma equality is proof-valued.
-  refine bindOrRelationWitness
+  exact bindOrRelationWitness
     (finForallOrRelationWitness fun chunk =>
-      finForallOrRelationWitness fun column => ?_)
+      finForallOrRelationWitness fun column => hcolumns chunk column)
     (fun hcolumns =>
       ⟨cycleOfKeygenColumnsAt pp urs relation.polynomial proofIndex
         actionActiveRows_le_domainSize
@@ -251,112 +384,5 @@ def actionResolverPermutationCycle_or_relation
         (Zcash.Snark.actionActiveSigma_widen
           pp urs relation.polynomial proofIndex),
         rfl⟩)
-  let vk := actionCircuit.toVerifierKey urs
-  have hcommonIndex :=
-    actionChunkCommonIndex pp urs relation.polynomial proofIndex
-      chunk column
-  have hcommon :
-      (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ) <
-        actionCircuit.permutationColumnCount := by
-    have hlt :=
-      ((Zcash.Snark.actionChunkFlatten
-        pp urs relation.polynomial proofIndex
-        ⟨chunk, ⟨0, Zcash.Snark.actionDomainSize_pos⟩, column⟩).2).isLt
-    simpa only [Zcash.Snark.actionChunkFlatten_apply_column,
-      Zcash.Snark.actionNumPermCols_eq_derived] using hlt
-  let common : Fin actionCircuit.permutationColumnCount :=
-    ⟨(chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ), hcommon⟩
-  have homega :
-      vk.omega = omegaOf urs.k := by
-    simpa only [vk, actionCircuit.toVerifierKey_omega,
-      TopLevelCircuit.omega] using congrArg omegaOf hk
-  let key : LagrangeCommitmentKey urs vk.omega := by
-    let sourceKey :=
-      LagrangeCommitmentKey.ofPrefix urs
-        (omegaOf urs.k) (derivedUrsGLagrange urs)
-        setup.generator_eq
-    exact
-      { generators := sourceKey.generators
-        generator_eq := by
-          intro i
-          rw [homega]
-          exact sourceKey.generator_eq i }
-  have hcommit :
-      vk.permutationCommonCommitment common =
-        key.commitInstance
-          (topLevelPermutationRows
-            actionCircuit common) 1 := by
-    simp only [vk]
-    rw [actionCircuit.toVerifierKey_permutationCommonCommitment]
-    have source :=
-      PermutationCommitmentCoherence.commitment_ofKeygen
-        actionCircuit urs hk setup common
-        common.isLt
-    simpa only [topLevelPermutationCommitment, key,
-      LagrangeCommitmentKey.commitInstance,
-      LagrangeCommitmentKey.commitRows] using source
-  have hj :
-      (column : ℕ) <
-        (vk.permutationChunks.getD chunk []).length := by
-    simpa only [vk, ResolverPermutationPairs,
-      permutationChunkPairsOfResolver, List.length_map] using
-        column.isLt
-  have hval :
-      ∀ i : Fin Zcash.Snark.actionDomainSize,
-        (topLevelPermutationRows
-          actionCircuit common).getD (i : ℕ) 0 =
-          chunkRowName vk.omega vk.delta vk.chunkLen
-            (Zcash.Snark.actionFullSigma
-              pp urs relation.polynomial proofIndex
-              ⟨chunk, i, column⟩).1
-            (Zcash.Snark.actionFullSigma
-              pp urs relation.polynomial proofIndex
-              ⟨chunk, i, column⟩).2.1
-            (Zcash.Snark.actionFullSigma
-              pp urs relation.polynomial proofIndex
-              ⟨chunk, i, column⟩).2.2 := by
-    intro i
-    have source :=
-      actionPermutationRows_eq_chunkRowName
-        pp urs relation.polynomial proofIndex chunk column i
-    have hcommonRow :
-        (common : ℕ) =
-          ((Zcash.Snark.actionChunkFlatten
-            pp urs relation.polynomial proofIndex
-            ⟨chunk, i, column⟩).2 : ℕ) := by
-      simp only [common,
-        Zcash.Snark.actionChunkFlatten_apply_column]
-    rw [hcommonRow]
-    simpa only [vk,
-      actionCircuit.toVerifierKey_omega,
-      actionCircuit.toVerifierKey_delta,
-      actionCircuit.toVerifierKey_chunkLen] using source
-  have hidx :
-      ((vk.permutationChunks.getD chunk [])[column]).2 =
-        (common : ℕ) := by
-    calc
-      ((vk.permutationChunks.getD chunk [])[column]).2 =
-          ((vk.permutationChunks.getD chunk []).getD
-            column ((.advice 0), 0)).2 :=
-        congrArg Prod.snd (List.getD_eq_getElem _ _ hj).symm
-      _ = ((actionCircuit.verifierCS.permutationChunks.getD chunk []).getD
-            column ((.advice 0), 0)).2 := by
-        simp only [vk, actionCircuit.toVerifierKey_permutationChunks]
-      _ = (chunk : ℕ) * actionCircuit.chunkLen + (column : ℕ) :=
-        hcommonIndex
-      _ = (common : ℕ) := (Fin.val_mk hcommon).symm
-  have hidentified :=
-    relation.resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation_of_size
-      proofIndex chunk column hj common hidx key
-      (topLevelPermutationRows
-        actionCircuit common)
-      hcommit (actionRowsInjectiveAtUrs urs hk)
-      (by
-        simpa only [Zcash.Snark.actionDomainSize] using
-          congrArg (2 ^ ·) hk)
-      (Zcash.Snark.actionFullSigma
-        pp urs relation.polynomial proofIndex)
-      chunk column hval
-  exact hidentified
 
 end Zcash.Snark

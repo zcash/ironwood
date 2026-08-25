@@ -1,4 +1,4 @@
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.TopLevel
 import Zcash.Circuits.Integration.TopLevelGates
 
 /-!
@@ -28,7 +28,9 @@ theorem selectorDegree :
 /-- The circuit-derived Action domain exponent is within Pasta's supported range. -/
 theorem domainExponent_lt :
     actionCircuit.domainExponent < 33 := by
-  rw [Zcash.Circuits.Action.actionCircuit_domainExponent_eq]
+  rw [TopLevelCircuit.domainExponent,
+    Zcash.Circuits.Action.actionCircuit_shape_eq,
+    Zcash.Circuits.Action.actionShape_k]
   norm_num
 
 /-- The deployed Orchard Action circuit satisfies the polynomial bridge's numerical

@@ -1,5 +1,5 @@
 import Clean.Halo2.TopLevel
-import Zcash.Circuits.Action.PublicInput
+import Zcash.Circuits.Action.Shape
 import Zcash.Circuits.Action.Spec
 
 /-!
@@ -10,10 +10,6 @@ namespace Zcash.Circuits.Action
 
 open Halo2
 open Circuit
-
-/-- The closed configure output used by the Action top-level circuit. -/
-def actionConfig : Config :=
-  (configure Specs.Sinsemilla.orchardGenerators {}).1
 
 theorem initialGeneratorTableIdx_mem
     (cfg : Config) (i : RegionIndex) :
@@ -88,12 +84,12 @@ private theorem configured_closesEnvironment
     let formal := circuit Specs.Sinsemilla.orchardGenerators orchardBases
     formal.EnvAssumptions
       (TopLevelCompilation.config formal)
-      (TopLevelCompilation.placedEnvironment
-        formal PublicInputs.layout assignment) := by
+      (TopLevelCompilation.placedEnvironmentAt
+        formal (2 ^ actionShape.k) assignment) := by
   let formal := circuit Specs.Sinsemilla.orchardGenerators orchardBases
   let env :=
-    TopLevelCompilation.placedEnvironment
-      formal PublicInputs.layout assignment
+    TopLevelCompilation.placedEnvironmentAt
+      formal (2 ^ actionShape.k) assignment
   change EnvAssumptions
     (configure Specs.Sinsemilla.orchardGenerators {}).1 env
   have htable :
@@ -117,11 +113,16 @@ private theorem configured_closesEnvironment
   have hUsable : 2 ^ Specs.K ≤ env.env.usableRows := by
     change
       2 ^ Specs.K ≤
-        2 ^ TopLevelCompilation.domainExponent formal PublicInputs.layout -
+        2 ^ actionShape.k -
           (TopLevelCompilation.constraintSystem formal).blindingFactors - 1
-    exact htable.trans
+    have hfit := htable.trans
       (TopLevelCompilation.usedRows_le_usableRowsAt_domainExponent
         formal PublicInputs.layout)
+    have hk : actionShape.k =
+        TopLevelCompilation.domainExponent formal PublicInputs.layout := by
+      simpa only [formal, actionShape] using actionDomainExponent_eq.symm
+    rw [hk]
+    exact hfit
   obtain ⟨hs2, hm1, hm2, hlookup⟩ := configuredTableSharing
   obtain ⟨hfull, hshort, hbaseField, hdistinct⟩ :=
     configured_pureEnvironmentAssumptions env
@@ -136,13 +137,6 @@ private theorem actionSelectorRequirements :
     (circuit Specs.Sinsemilla.orchardGenerators orchardBases).selectorRequirements
       () {} := by
   dsimp only [FormalCircuit.selectorRequirements, Circuit.circuit,
-    Circuit.elaboratedPost, Circuit.configureElaborated]
-  trivial
-
-private theorem actionQueryRequirements :
-    (circuit Specs.Sinsemilla.orchardGenerators orchardBases).queryRequirements
-      () {} := by
-  dsimp only [FormalCircuit.queryRequirements, Circuit.circuit,
     Circuit.elaboratedPost, Circuit.configureElaborated]
   trivial
 
@@ -175,6 +169,8 @@ def Internal.actionCircuitImpl : TopLevelCircuit Fp Config PublicInputs where
     set_option maxRecDepth 10000 in
       decide
   publicInputLayout := PublicInputs.layout
+  shape := actionShape
+  shape_eq := actionShape_eq_compiled
   PrivateWitness := PrivateWitness
   extractPrivate := fun cfg env =>
     PrivateWitness.ofActionData (extractPost cfg () 0 env)
@@ -222,6 +218,12 @@ theorem Internal.actionCircuit_eq_impl :
     actionCircuit = Internal.actionCircuitImpl :=
   actionCircuitPacked.property
 
+/-- The opaque Action package publishes the fully reduced circuit shape. -/
+@[simp] theorem actionCircuit_shape_eq :
+    actionCircuit.shape = actionShape := by
+  rw [Internal.actionCircuit_eq_impl]
+  rfl
+
 /-- Action's reduced lookup-selector anchor equations are exactly those of its
 top-level range-check configuration. -/
 theorem actionCircuit_lookupSelectorAnchorRequirements_eq :
@@ -230,6 +232,15 @@ theorem actionCircuit_lookupSelectorAnchorRequirements_eq :
         actionConfig.lookupConfig := by
   rw [Internal.actionCircuit_eq_impl]
   rfl
+
+/-- The concrete Action anchor satisfies the requirements published by the
+opaque top-level circuit. -/
+theorem actionCircuit_lookupSelectorAnchorRequirements_satisfied :
+    SelectorAnchorRequirementsSatisfied
+      actionCircuit.lookupSelectorAnchorRequirements
+      (selectorAnchor actionConfig) := by
+  rw [actionCircuit_lookupSelectorAnchorRequirements_eq]
+  exact actionLookupSelectorAnchorRequirements_satisfied
 
 /-- Action's configured primary column witnesses that its permutation family is
 nonempty. -/
@@ -288,15 +299,8 @@ theorem actionCircuit_numInstanceColumns_eq :
 /-- Action's closed configure run equality-enables fifteen distinct columns. -/
 theorem actionCircuit_permutationColumnCount_eq :
     actionCircuit.permutationColumnCount = 15 := by
-  rw [Internal.actionCircuit_eq_impl]
-  simpa only [Internal.actionCircuitImpl,
-    TopLevelCircuit.permutationColumnCount,
-    TopLevelCircuit.permutationColumns,
-    TopLevelCircuit.constraintSystem,
-    TopLevelCompilation.constraintSystem,
-    Circuit.circuit] using
-      Circuit.configure_permutationColumns_length
-        Specs.Sinsemilla.orchardGenerators
+  rw [TopLevelCircuit.permutationColumnCount, actionCircuit_shape_eq]
+  rfl
 
 /-- Every lookup in the Action constraint system has at most four inputs. -/
 theorem actionCircuit_lookupInputArity_le

@@ -23,7 +23,7 @@ polynomials, `commit_lagrange` for both commitment families — and assembles th
 
 `TopLevelCircuit.shape` records every circuit-fixed count. Proof invocation parameters
 remain separate and do not enter `TopLevelCircuit.toVerifierKey`; callers combine them
-with `CircuitShape.withProofParams` only when they need a complete proof `Shape`. The
+with `Halo2.CircuitShape.withProofParams` only when they need a complete proof `Shape`. The
 Action capture certification lives in `Certificate.lean`.
 
 ## Rust reference
@@ -82,79 +82,6 @@ theorem omega_ne_zero
     top.omega ≠ 0 :=
   (Zcash.Arithmetic.omegaOf_isPrimitiveRoot
     top.domainExponent hbound).isUnit (by positivity) |>.ne_zero
-
-/-- The circuit-fixed shape shared by the top-level circuit's verifying key and proofs. -/
-def shape (top : TopLevelCircuit Fp Config PublicInput) : CircuitShape :=
-  { k := top.domainExponent
-    numAdviceColumns := top.adviceColumnCount
-    numLookups := top.lookupCount
-    numPermutationSets := top.permutationSetCount
-    numPermutationColumns := top.permutationColumnCount
-    numQuotientPieces := top.quotientPieceCount
-    numInstanceColumns := top.constraintSystem.numInstanceColumns
-    numInstanceQueries := top.instanceQueryCount
-    numAdviceQueries := top.adviceQueryCount
-    numFixedQueries := top.fixedQueryCount }
-
-/-- The shape reads its domain exponent off the circuit. -/
-@[simp] theorem shape_k
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.k = top.domainExponent := by
-  simp only [shape]
-
-/-- The shape reads its advice-column count off the circuit. -/
-@[simp] theorem shape_numAdviceColumns
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numAdviceColumns = top.adviceColumnCount := by
-  simp only [shape]
-
-/-- The shape reads its lookup count off the circuit. -/
-@[simp] theorem shape_numLookups
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numLookups = top.lookupCount := by
-  simp only [shape]
-
-/-- The shape reads its permutation-set count off the circuit. -/
-@[simp] theorem shape_numPermutationSets
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numPermutationSets = top.permutationSetCount := by
-  simp only [shape]
-
-/-- The shape reads its permutation-column count off the circuit. -/
-@[simp] theorem shape_numPermutationColumns
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numPermutationColumns = top.permutationColumnCount := by
-  simp only [shape]
-
-/-- The shape reads its quotient-piece count off the circuit. -/
-@[simp] theorem shape_numQuotientPieces
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numQuotientPieces = top.quotientPieceCount := by
-  simp only [shape]
-
-/-- The shape reads its instance-column count off the circuit's constraint system. -/
-@[simp] theorem shape_numInstanceColumns
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numInstanceColumns = top.constraintSystem.numInstanceColumns := by
-  simp only [shape]
-
-/-- The shape reads its instance-query count off the circuit. -/
-@[simp] theorem shape_numInstanceQueries
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numInstanceQueries = top.instanceQueryCount := by
-  simp only [shape]
-
-/-- The shape reads its advice-query count off the circuit. -/
-@[simp] theorem shape_numAdviceQueries
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numAdviceQueries = top.adviceQueryCount := by
-  simp only [shape]
-
-/-- The shape reads its fixed-query count off the circuit. -/
-@[simp] theorem shape_numFixedQueries
-    (top : TopLevelCircuit Fp Config PublicInput) :
-    top.shape.numFixedQueries = top.fixedQueryCount := by
-  simp only [shape]
 
 /-- **The verifying key of a closed top-level circuit**: the `TopLevelCircuit` carries
 unit configuration and synthesis inputs, so the only remaining input is the URS —
@@ -315,8 +242,8 @@ theorem toVerifierKey_adviceQueryCount
     (urs : URS G) :
     (top.toVerifierKey urs).adviceQueryLayout.length =
       top.adviceQueryCount := by
-  simpa only [adviceQueryCount] using
-    congrArg List.length (top.toVerifierKey_adviceQueryLayout urs)
+  rw [top.toVerifierKey_adviceQueryLayout,
+    top.adviceQueryCount_eq_adviceQueryLayout_length]
 
 /-- The derived key's fixed-query layout has the shape count computed from the same
 top-level pinned constraint system. -/
@@ -325,8 +252,8 @@ theorem toVerifierKey_fixedQueryCount
     (urs : URS G) :
     (top.toVerifierKey urs).fixedQueryLayout.length =
       top.fixedQueryCount := by
-  simpa only [fixedQueryCount] using
-    congrArg List.length (top.toVerifierKey_fixedQueryLayout urs)
+  rw [top.toVerifierKey_fixedQueryLayout,
+    top.fixedQueryCount_eq_fixedQueryLayout_length]
 
 /-- The derived key's instance-query layout has the shape count computed from the same
 top-level pinned constraint system. -/
@@ -335,7 +262,7 @@ theorem toVerifierKey_instanceQueryCount
     (urs : URS G) :
     (top.toVerifierKey urs).instanceQueryLayout.length =
       top.instanceQueryCount := by
-  simpa only [instanceQueryCount] using
-    congrArg List.length (top.toVerifierKey_instanceQueryLayout urs)
+  rw [top.toVerifierKey_instanceQueryLayout,
+    top.instanceQueryCount_eq_instanceQueryLayout_length]
 
 end Halo2.TopLevelCircuit
