@@ -6,6 +6,7 @@ import Zcash.Snark.Fixtures.SingleAction.Honest.Negative
 import Zcash.Snark.Fixtures.SingleAction.Honest.Negative.Sweep
 import Zcash.Snark.Fixtures.SingleAction.Honest.Boundary
 import Zcash.Snark.Fixtures.SingleAction.Honest.Transcript
+import Zcash.Snark.Fixtures.PinnedKey
 import Zcash.Meta.AxiomCheck
 import Mathlib.Util.AssertNoSorry
 
@@ -435,3 +436,91 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
+
+-- The key digest opening the transcript, derived from the pinned key description
+-- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
+assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
+  Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+
+-- The pinned key description (`PinnedKey.lean`): parsed losslessly, hashed to the captured digest,
+-- and read back field by field against the captured key.
+assert_axioms Zcash.Snark.PinnedKey.pinnedKeyDescription_parses +native(
+  Zcash.Snark.PinnedKey.pinnedKeyDescription_parses)
+assert_axioms Zcash.Snark.PinnedKey.pinned_renderCompact +native(
+  Zcash.Snark.PinnedKey.pinned_renderCompact)
+assert_axioms Zcash.Snark.PinnedKey.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.PinnedKey.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.PinnedKey.base_modulus_eq +native(
+  Zcash.Snark.PinnedKey.base_modulus_eq)
+assert_axioms Zcash.Snark.PinnedKey.scalar_modulus_eq +native(
+  Zcash.Snark.PinnedKey.scalar_modulus_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_k_eq +native(
+  Zcash.Snark.PinnedKey.domain_k_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_extended_k_eq +native(
+  Zcash.Snark.PinnedKey.domain_extended_k_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_omega_eq +native(
+  Zcash.Snark.PinnedKey.domain_omega_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_fixed_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_fixed_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_advice_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_advice_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_instance_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_instance_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_selectors_eq +native(
+  Zcash.Snark.PinnedKey.num_selectors_eq)
+assert_axioms Zcash.Snark.PinnedKey.gates_eq +native(
+  Zcash.Snark.PinnedKey.gates_eq)
+assert_axioms Zcash.Snark.PinnedKey.advice_queries_eq +native(
+  Zcash.Snark.PinnedKey.advice_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.instance_queries_eq +native(
+  Zcash.Snark.PinnedKey.instance_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.fixed_queries_eq +native(
+  Zcash.Snark.PinnedKey.fixed_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.permutation_columns_eq +native(
+  Zcash.Snark.PinnedKey.permutation_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.lookups_eq +native(
+  Zcash.Snark.PinnedKey.lookups_eq)
+assert_axioms Zcash.Snark.PinnedKey.constants_eq +native(
+  Zcash.Snark.PinnedKey.constants_eq)
+assert_axioms Zcash.Snark.PinnedKey.minimum_degree_eq +native(
+  Zcash.Snark.PinnedKey.minimum_degree_eq)
+assert_axioms Zcash.Snark.PinnedKey.fixed_commitments_eq +native(
+  Zcash.Snark.PinnedKey.fixed_commitments_eq)
+assert_axioms Zcash.Snark.PinnedKey.permutation_commitments_eq +native(
+  Zcash.Snark.PinnedKey.permutation_commitments_eq)

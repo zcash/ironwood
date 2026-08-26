@@ -48,6 +48,12 @@ challenge schedule, and the `fingerprint_matches` claim — are exporter output,
 `proof-bytes.hex` siblings in the match-only families. Editing either by hand breaks the
 byte-for-byte CI gate and is overwritten by the next capture; changes belong upstream.
 
+`PinnedKey.lean` derives the verifying-key digest that opens every transcript: it hashes the pinned
+Post-NU6.3 key description and reads its fields back against the captured key. The description
+enters as `PinnedKeyDescription.lean`, **rendered from the vendored `circuit_description_post_nu6_3`**
+(orchard's source file at the pinned release) by `scripts/render-pinned-key-description.py`;
+CI re-renders and diffs it.
+
 `ProofHex.lean` in the match-only families is **rendered from the `proof-bytes.hex` sibling** by
 `scripts/render-proof-bytes.sh` (header "Rendered from … Do not edit by hand"); CI re-renders and
 diffs it on every run (`render-proof-bytes.sh --check`), so it cannot drift from the `.hex`.
