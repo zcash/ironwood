@@ -136,6 +136,23 @@ The follow-up capture APIs make the fixture mode explicit in their names: accept
 released 0.3.5/0.15.5 pins above; once those APIs are released and the pins advance, the same
 `capturedProofHex` value can come directly from the generated fixture.
 
+That Orchard follow-up also applies each byte-level negative used by `ProofBytes.lean` to these
+exact deterministic proof strings and checks it through Halo2's deployed `Blake2bRead` parser.
+The current 0.15.5 regeneration pin predates this additional assertion; advancing the pin after
+the follow-up is released will bring the Rust-side negative checks into Ironwood's regeneration
+run without changing the committed proof bytes.
+
+### The pinned key description
+
+`circuit_description_post_nu6_3` is orchard's committed pinned verifying-key description at the
+pinned release — the pretty `{:#?}` rendering of `VerifyingKey::pinned()` — taken by `git show`
+from the release tag (the regeneration script diffs it, and it carries a manifest row). What
+halo2 hashes into `transcript_repr` is the compact `{:?}` rendering of the same value;
+`scripts/render-pinned-key-description.py` writes that into `PinnedKeyDescription.lean`, CI
+re-renders and diffs it, and `PinnedKey.lean` pins the conversion by hashing the result to the
+captured digest. Once the exporter emits the compact text itself, the vendored file and the
+rendering retire.
+
 ### Reproducing
 
 ```

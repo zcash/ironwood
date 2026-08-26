@@ -8,8 +8,10 @@ This module composes the raw-instance rejection path with the statement-bound Fi
 schedule.  Raw public columns are checked before they are committed.  The VK transcript
 representation and every resulting instance commitment are then absorbed before proof-controlled
 advice commitments and the first challenge. Binding the key here means binding its opaque transcript
-representation; this model does not connect `vkTranscriptRepr` to the fields of `vk`. Halo2's
-BLAKE2b hash of the pinned key and its collision resistance remain below this abstraction boundary.
+representation; this model itself does not connect `vkTranscriptRepr` to the fields of `vk`. At
+the captures that connection is checked: `Fixtures/PinnedKey.lean` derives the digest from the
+pinned key description (`Verifier/KeyDigest.lean`) and reads the description's fields back against
+the key. Its collision resistance — no other key hashing to it — remains below this boundary.
 
 The column commitment operation remains a parameter here.  For Orchard it is instantiated by the
 existing Lagrange-basis commitment model; this entry point controls when it may run and how its

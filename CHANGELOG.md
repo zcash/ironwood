@@ -18,3 +18,9 @@ and this project adheres to Rust's notion of
   rendered by `scripts/render-proof-bytes.sh`), plus byte-level negatives.
 - Fiat–Shamir separation across action counts (`Zcash/Snark/Soundness/FiatShamir/
   ActionCount.lean`): oracle locality of the schedule and disjointness of the pre-`θ` cones.
+- The verifying-key digest derived rather than captured (`Zcash/Snark/Verifier/KeyDigest.lean`,
+  `Fixtures/PinnedKey.lean`): halo2's `Halo2-Verify-Key` BLAKE2b over the pinned key description
+  reproduces every capture's `transcript_repr`, the description's fields are read back against
+  the captured key, and each family's statement of record opens the transcript with the derived
+  digest. The description is vendored from the pinned orchard release and rendered by
+  `scripts/render-pinned-key-description.py`.

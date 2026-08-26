@@ -77,7 +77,9 @@ rather than proved, with its known strengthening named where one exists:
   finder (`AdaptiveStatementDlogProfile`, `CertifiedAdaptiveStatementDlogProfile`); relating that
   bound to a standard resource-bounded DLOG game and a concrete security estimate is external.
 * *Key digest* — `vkHash` is opaque: one canonical key per basis, no cross-key binding claimed
-  (`AdaptiveStatementModel.lean`, *Intended instantiation*).
+  (`AdaptiveStatementModel.lean`, *Intended instantiation*). At the captures the digest is
+  derived, not taken: `Fixtures/PinnedKey.lean` hashes the pinned key description and checks its
+  fields against the derived key; cross-key binding would need BLAKE2b's collision resistance.
 * *Acceptance* — `DeployedAccepts` starts at typed, post-decode values and prices one proof
   bundle. The decode beneath it is modeled and canonical (`Verifier/ProofBytes.lean`, checked
   against the random captures' raw bytes) but not composed into the acceptance predicate, and

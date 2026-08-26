@@ -22,6 +22,9 @@ record: it replaces the captured oracle table with the deployed hash itself, der
 challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
 `deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
 separates a schedule error from an encoding or hash error.
+`nonInteractiveFingerprint_matches_derived_keyDigest` goes one step further: the key digest that
+opens the transcript is derived from the pinned key description (`Fixtures/PinnedKey.lean`), so
+nothing in the Fiat–Shamir prefix is a captured value.
 -/
 
 namespace Zcash.Snark.Fixture
@@ -89,5 +92,33 @@ theorem nonInteractiveFingerprint_matches_derived_inputs_blake2b :
 
 assert_no_sorry nonInteractiveFingerprint_matches_derived_blake2b
 assert_no_sorry nonInteractiveFingerprint_matches_derived_inputs_blake2b
+
+/-- **The fingerprint match with nothing captured in the Fiat–Shamir prefix.** As
+`nonInteractiveFingerprint_matches_derived_blake2b`, with the key digest that opens the
+transcript derived from the pinned key description (`keyDigest_eq_capturedVkTranscriptRepr`)
+rather than taken from the capture. -/
+theorem nonInteractiveFingerprint_matches_derived_keyDigest :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript
+        (fun _ => keyDigest PinnedKey.pinnedKeyDescription)
+        derivedVk derivedInstanceCommitment ps)
+      capturedMsm := by
+  rw [keyDigest_eq_capturedVkTranscriptRepr]
+  exact nonInteractiveFingerprint_matches_derived_blake2b
+
+/-- The strongest form with the derived digest: derived key, derived instance commitments,
+challenges from transcript bytes, and a derived key digest opening the transcript. -/
+theorem nonInteractiveFingerprint_matches_derived_inputs_keyDigest :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript
+        (fun _ => keyDigest PinnedKey.pinnedKeyDescription)
+        derivedVk
+        (actionCircuit.instanceCommitment capturedURS Keygen.capturedActionInputs) ps)
+      capturedMsm := by
+  rw [Keygen.instanceCommitment_capturedActionInputs]
+  exact nonInteractiveFingerprint_matches_derived_keyDigest
+
+assert_no_sorry nonInteractiveFingerprint_matches_derived_keyDigest
+assert_no_sorry nonInteractiveFingerprint_matches_derived_inputs_keyDigest
 
 end Zcash.Snark.Fixture
