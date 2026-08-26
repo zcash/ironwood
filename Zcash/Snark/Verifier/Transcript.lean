@@ -32,7 +32,9 @@ distinct oracle queries, and byte-level prefix structure is typed prefix structu
 
 Each capture family's `Transcript.lean` checks `deriveChallenges halo2Transcript` against every
 captured challenge. The security development still idealizes the squeeze as a random oracle; what
-leaves the trusted base here is the encoding beneath it, not BLAKE2b's randomness.
+leaves the trusted base here is the encoding beneath it, not BLAKE2b's randomness. The
+verifying-key digest that opens the transcript enters as a scalar; its derivation from the pinned
+key stays with the capture (`Verifier/Deployed.lean`).
 -/
 
 namespace Zcash.Snark
@@ -132,6 +134,9 @@ def encodeElt : TranscriptElt Fp VestaG → List UInt8
 def encodeTranscript (t : List (TranscriptElt Fp VestaG)) : List UInt8 :=
   t.flatMap encodeElt
 
+/-! The `simp` normal forms of `encodeTranscript`: the nil case is kept for completeness of the
+trio, the other two carry the proofs below. -/
+
 /-- The empty transcript has absorbed nothing. -/
 @[simp] theorem encodeTranscript_nil : encodeTranscript [] = [] := rfl
 
@@ -152,12 +157,6 @@ theorem pointBytes_injective : Function.Injective pointBytes := by
   obtain ⟨hx, hy⟩ := List.append_inj h (by simp)
   exact SWPoint.ext_pair (by
     rw [coordRepr_toList_injective hx, coordRepr_toList_injective hy])
-
-/-- Equal scalar encodings come from the same scalar. -/
-theorem scalarBytes_injective : Function.Injective scalarBytes := by
-  intro s t h
-  simp only [scalarBytes, List.cons.injEq, true_and] at h
-  exact scalarRepr_toList_injective h
 
 /-- The encoding is a prefix code: an element's bytes followed by anything determine the element
 and the continuation. The tag byte fixes the constructor and hence the length; each payload is
@@ -234,16 +233,5 @@ of the typed prefix, reduced to a scalar; `deriveChallenges halo2Transcript` is 
 challenge derivation from the transcript bytes up. -/
 def halo2Transcript : FiatShamir Fp VestaG :=
   ⟨fun t => challengeOfDigest (squeezeDigest t)⟩
-
-/-- The deployed squeeze, unfolded: the digest of the absorbed bytes, reduced to a scalar. -/
-theorem halo2Transcript_squeeze (t : List (TranscriptElt Fp VestaG)) :
-    halo2Transcript.squeeze t = challengeOfDigest (squeezeDigest t) := rfl
-
-/-- Distinct typed prefixes reach the hash as distinct byte strings; equal squeezes can only come
-from a BLAKE2b collision. -/
-theorem squeezeDigest_eq_of_encodeTranscript_eq {s t : List (TranscriptElt Fp VestaG)}
-    (h : encodeTranscript s = encodeTranscript t) : squeezeDigest s = squeezeDigest t := by
-  unfold squeezeDigest
-  rw [h]
 
 end Zcash.Snark
