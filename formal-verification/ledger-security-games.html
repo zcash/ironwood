@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-4102e48d.js";
+            window.path_to_searchindex_js = "../searchindex-80f93269.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-951a8d74.js"></script>
@@ -268,7 +268,7 @@ flowchart TD
   click KS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean&quot; _blank
   click DL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
   click ROM &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
-  click KERR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionKappaArm.lean&quot; _blank
+  click KERR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionKnowledgeError.lean&quot; _blank
   click RDSA &quot;https://github.com/zcash/ironwood/issues/121&quot; _blank
 
   classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
@@ -295,6 +295,20 @@ flowchart TD
 <span style="color:#cf222e"> ■ </span> named hypothesis; formalization deferred<br/>
 <span style="color:#57606a"> ■ </span> assumption or heuristic model; terminal by design<br/>
 </p>
+<h2 id="what-the-balance-capstones-assume"><a class="header" href="#what-the-balance-capstones-assume">What the Balance capstones assume</a></h2>
+<p>The Balance capstones are stated for a <em>Knowledge-Soundness-idealized</em> adversary
+(<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardIntegrityExperiment.lean"><code>IdealizedKSBalanceAdversary</code></a>):
+one that outputs a witness-annotated ledger, every Action carrying the witness for the
+Action statement. The annotation is where knowledge soundness of the Action circuit enters:
+nothing yet connects an accepting Halo 2 proof to those witnesses, so the <code>idealizedks</code> in
+the capstones' names marks results that are complete over this idealized ledger model but
+not yet composed with the circuit layer. That composition is the dashed red edge above
+(<a href="https://github.com/zcash/ironwood/issues/147">#147</a>); until it lands, the Balance
+integrity node stays amber even though every ledger-side arm is machine-checked. This is an
+incompleteness of the proof, not an accepted modelling trade-off. The capstones' accepted
+trade-offs —the binding challenge hash as a random oracle, the programmed value and
+binding bases carried to the deployed ones by the reference-string heuristic, elided byte
+encodings— are documented at <code>IdealizedKSBalanceAdversary.violationEvent</code>.</p>
 <p>This picture is a deliberate approximation, and is likely to change as the formalization
 proceeds. The RedDSA node is a named hypothesis rather than a terminal assumption: its
 discharge edge names the reduction for security of signatures with re-randomizable keys
@@ -303,7 +317,7 @@ section 3), adapted to the ±-randomized variant, together with the same straigh
 AGM+ROM extraction of Fuchsbauer–Plouviez–Seurin
 (<a href="https://eprint.iacr.org/2019/877">Blind Schnorr Signatures and Signed ElGamal Encryption in the Algebraic Group Model</a>,
 Theorem 1) that discharges the binding-signature extractability node at
-<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mord">/∣</span><span class="mord mathbb">F</span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DL</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>. The two arms differ in the signing
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mord">/</span><span class="mord"><span class="mord"><span class="mspace" style="margin-right:-0.05em;"></span><span class="mord text"><span class="mord textsf">#</span></span><span class="mord"><span class="mord"><span class="mord mathbb">F</span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DL</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>. The two arms differ in the signing
 oracle: the binding-signature extraction has none to simulate, because the signature
 extracted from is the adversary's own, while the RedDSA unforgeability game has one.
 The planned discharge is to simulate the signing oracle by programming the challenge
@@ -319,10 +333,11 @@ assumption it rests on — see
 <a href="security-models.html#the-algebraic-adversary-restriction">Security Models</a>. The
 random-oracle node remains a terminal because some error terms genuinely bottom out
 there: they are counting arguments over the oracle table, with no computational
-assumption. The games are the top-level capstones. The ledger model requires the adversary to
-supply, along with any accepting proof, a <strong>witness or replay evidence</strong> for the Action
-statement (<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the
-previously supplied witness. Each component argument consumes the statement's satisfaction
+assumption. The games are the top-level capstones.</p>
+<p>As stated above, the KS-idealized ledger model requires the adversary to supply, along
+with any accepting proof, a <strong>witness or replay evidence</strong> for the Action statement
+(<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the previously
+supplied witness. Each component argument consumes the statement's satisfaction
 <em>on that witness</em>. Knowledge soundness is what is <em>intended</em> to justify that modelling:
 whenever the ledger layer needs a witness, the extractor would compute one —or compute
 break data— from the accepting proof. That hand-off is not yet formalized in any form:
