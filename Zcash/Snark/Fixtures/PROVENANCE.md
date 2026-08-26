@@ -130,6 +130,12 @@ artifacts, and CI runs `scripts/render-proof-bytes.sh --check` on every event to
 diff them. They carry no manifest row of their own: the `.hex` they are rendered from is
 manifest-pinned, and the render check binds the rendering to it.
 
+The follow-up capture APIs make the fixture mode explicit in their names: accepting captures use
+`dump_vesta_lean_fixture_honest_with_proof_bytes`, while non-accepting captures use
+`dump_vesta_lean_fixture_match_only_with_proof_bytes`. This branch remains reproducible from the
+released 0.3.5/0.15.5 pins above; once those APIs are released and the pins advance, the same
+`capturedProofHex` value can come directly from the generated fixture.
+
 ### Reproducing
 
 ```
