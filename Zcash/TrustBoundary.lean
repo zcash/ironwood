@@ -35,6 +35,7 @@ import Zcash.Snark.Soundness.AGM.ProbabilityVesta
 import Zcash.Snark.Soundness.FiatShamir.Adversary
 import Zcash.Snark.Soundness.FiatShamir.ActionCount
 import Zcash.Snark.Verifier.ProofBytes
+import Zcash.Snark.Verifier.KeyDigest
 import Zcash.Snark.Soundness.Composition.Bridge
 import Zcash.Snark.Soundness.Composition.DeployedConstraintContainment
 import Zcash.Snark.Soundness.Composition.DeployedRootContainment
@@ -2187,3 +2188,12 @@ assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
 assert_axioms Zcash.Snark.preTheta_cones_disjoint
 assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
 assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
+
+-- The verifying-key digest (`Verifier/KeyDigest.lean`): `transcript_repr` recomputed from the
+-- pinned key description, and Rust's `Debug` value language read back into the verifier's
+-- vocabulary. The fixture lane (`Fixtures/PinnedKey.lean`) checks both against the captures.
+assert_computable Zcash.Snark.keyDigest +choice
+assert_computable Zcash.Snark.DebugValue.parse? +choice
+assert_computable Zcash.Snark.DebugValue.renderCompact +choice
+assert_computable Zcash.Snark.DebugValue.expr? +choice
+assert_computable Zcash.Snark.DebugValue.point? +choice

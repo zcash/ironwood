@@ -11,7 +11,9 @@
 # fails the sweep, whatever it is named.
 #
 # "Generated-looking" mirrors the regeneration script's own set check: a `.lean` file under
-# `Zcash/Snark/Fixtures/` whose first line is the exporter header, or any `.hex` file there.
+# `Zcash/Snark/Fixtures/` whose first line is the exporter header, any `.hex` file there, and
+# the vendored pinned-key description `circuit_description_post_nu6_3` (an orchard source file
+# at the pinned release, not exporter output, but bound to that release the same way).
 # Keep `EXPORTER_HEADER_RE` in sync between the two scripts. Run from the repository root;
 # exits non-zero on violation.
 set -euo pipefail
@@ -70,7 +72,7 @@ while IFS= read -r f; do
 done < <(find Zcash/Snark/Fixtures -name '*.lean' | sort)
 while IFS= read -r f; do
   generated+="$f"$'\n'
-done < <(find Zcash/Snark/Fixtures -name '*.hex' | sort)
+done < <(find Zcash/Snark/Fixtures \( -name '*.hex' -o -name 'circuit_description_post_nu6_3' \) | sort)
 
 while IFS= read -r f; do
   [[ -z "$f" ]] && continue

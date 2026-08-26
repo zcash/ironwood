@@ -10,9 +10,11 @@ fixture generation, the `orchard` implementation first compares the exact `Pinne
 debug representation against its checked-in `circuit_description_post_nu6_3`; `halo2` then derives
 and emits the transcript representation below from that same verified key object.
 
-Lean does not reimplement `halo2`'s `Debug` serialization or BLAKE2b derivation. The hand-pinned
-scalar here makes fixture drift visible in this repository, while the Rust regeneration assertion
-binds it to the full canonical pinned key.
+The hand-pinned scalar here makes fixture drift visible in this repository, while the Rust
+regeneration assertion binds it to the full canonical pinned key. `Fixtures/PinnedKey.lean` goes
+further: it hashes the pinned description itself (vendored at the pinned release) with halo2's
+`Halo2-Verify-Key` BLAKE2b and reads its fields back against the captured key, so the scalar is
+derived rather than only pinned.
 
 The point-level equalities below identify the two captures' URS and verifying-key commitment
 points; the multi-action verifying-key certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`)
