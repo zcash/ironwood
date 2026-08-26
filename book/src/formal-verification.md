@@ -161,9 +161,9 @@ Rust↔Lean boundary. The byte layer beneath it is modeled and checked against t
 captured challenge is recomputed from halo2's transcript encoding through a Lean BLAKE2b
 (`Snark/Verifier/Transcript.lean`), and the random captures' raw proof bytes decode to their typed
 proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`). BLAKE2b's idealization as a
-random oracle remains external, and the verifying-key digest that opens the transcript is a
-captured scalar rather than a derived one; `Snark/Fingerprint/Match.lean` enumerates the
-boundary.
+random oracle remains external; the verifying-key digest that opens the transcript is itself
+recomputed from the pinned key description (`Snark/Fixtures/PinnedKey.lean`).
+`Snark/Fingerprint/Match.lean` enumerates the boundary.
 
 **The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
 `CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off

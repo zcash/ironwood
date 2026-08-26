@@ -33,8 +33,8 @@ distinct oracle queries, and byte-level prefix structure is typed prefix structu
 Each capture family's `Transcript.lean` checks `deriveChallenges halo2Transcript` against every
 captured challenge. The security development still idealizes the squeeze as a random oracle; what
 leaves the trusted base here is the encoding beneath it, not BLAKE2b's randomness. The
-verifying-key digest that opens the transcript enters as a scalar; its derivation from the pinned
-key stays with the capture (`Verifier/Deployed.lean`).
+verifying-key digest that opens the transcript is derived from the pinned key description in
+`Verifier/KeyDigest.lean`.
 -/
 
 namespace Zcash.Snark

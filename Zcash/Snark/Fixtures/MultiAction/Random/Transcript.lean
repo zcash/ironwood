@@ -1,4 +1,6 @@
 import Zcash.Snark.Fixtures.MultiAction.Random.FiatShamir
+import Zcash.Snark.Fixtures.PinnedKeyDescription
+import Zcash.Snark.Verifier.KeyDigest
 import Zcash.Snark.Verifier.Transcript
 
 /-!
@@ -41,6 +43,12 @@ theorem deriveChallengesForStatement_matches_blake2b :
       derivedInstanceCommitment ps = ch := by
   rw [deriveChallengesForStatement, ← capturedInit_eq_initialTranscript]
   exact deriveChallenges_matches_blake2b
+
+/-- The captured key digest opening this family's transcript is the digest of the pinned key
+description (`Fixtures/PinnedKey.lean` reads that description's fields against the key). -/
+theorem keyDigest_eq_capturedVkTranscriptRepr :
+    keyDigest PinnedKey.pinnedKeyDescription = capturedVkTranscriptRepr := by
+  native_decide
 
 /-- The fingerprint match with every challenge recomputed from transcript bytes. -/
 theorem nonInteractiveFingerprint_matches_blake2b :

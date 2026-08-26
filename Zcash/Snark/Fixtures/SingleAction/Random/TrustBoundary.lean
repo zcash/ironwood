@@ -418,3 +418,29 @@ assert_axioms Zcash.Snark.FixtureRandom.non_residue_x_rejected +native(
 assert_axioms Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated +native(
   Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated,
   CompElliptic.Fields.Pasta.vestaBase)
+
+-- The key digest opening the transcript, derived from the pinned key description
+-- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
+assert_axioms Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches,
+  Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)
