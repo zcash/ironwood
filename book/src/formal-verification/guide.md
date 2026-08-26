@@ -285,8 +285,10 @@ be missed.
 * **Attacks do not depend on specific encodings**. The formalization covers the byte-level
   encodings of the proof string and of the Fiat–Shamir transcript — canonical decoding of curve
   points and field elements, and the bytes the hash sees — and checks them against captured
-  runs. The encodings of other transmitted protocol messages (notes, keys, transaction fields)
-  are still expressed through the specification's abstract types. This is a potentially
+  runs. The verifying-key digest that opens the transcript is the exception: it enters as a
+  captured scalar, and its derivation from the pinned key is not modelled. The encodings of
+  other transmitted protocol messages (notes, keys, transaction fields) are still expressed
+  through the specification's abstract types. This is a potentially
   significant category of gap, because (despite substantial attention to this area in audits
   and code review) Zcash implementations have had quite a few significant security bugs due to
   unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
@@ -318,8 +320,10 @@ proves this of its own model, and captured fixtures check that model against rea
 The byte layer beneath is modelled too: how each absorbed element becomes bytes, the running
 BLAKE2b state, and the reduction of the digest to a field element are executable Lean, and every
 captured challenge is recomputed from bytes. The encoding is proved injective and prefix-free, so
-distinct typed transcripts are distinct hash inputs. What remains outside the proof is the
-hash's randomness: the security argument idealizes BLAKE2b's digest as uniform.
+distinct typed transcripts are distinct hash inputs. One absorbed element is a captured value
+rather than a derived one: the verifying-key digest that opens the transcript, whose derivation
+from the pinned key is not modelled. What remains outside the proof otherwise is the hash's
+randomness: the security argument idealizes BLAKE2b's digest as uniform.
 
 ### Facts checked by running code, not by the kernel
 
@@ -361,7 +365,8 @@ Everything above, collected.
 5. **The deployed list of curve points is as good as a sampled one.** Security is proved for
    protocols that sample it; the real one is hashed into existence and baked in.
 6. **Encodings outside the proof.** The proof string and the transcript are modelled to the
-   byte; the encodings of other protocol messages are not.
+   byte from the verifying-key digest onward; that digest's derivation from the pinned key, and
+   the encodings of other protocol messages, are not.
 7. **Facts established by running code trust the compiler.** Each is pinned to its
    owning declaration at build time, and each is independently re-checkable — but the
    compiled code they run is the whole fast native arithmetic, proven correct in the
