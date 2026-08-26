@@ -155,7 +155,7 @@ theorem preThetaTranscriptForStatement_getElem?_point {shape : Shape} (vk : F)
 /-! ## Separation -/
 
 /-- A prefix agrees with the list at every index it covers. -/
-theorem IsPrefix.getElem?_eq_of_lt {α : Type*} {l₁ l₂ : List α} (h : l₁ <+: l₂) {i : ℕ}
+theorem getElem?_eq_of_prefix_of_lt {α : Type*} {l₁ l₂ : List α} (h : l₁ <+: l₂) {i : ℕ}
     (hi : i < l₁.length) : l₂[i]? = l₁[i]? := by
   obtain ⟨r, rfl⟩ := h
   rw [List.getElem?_append_left hi]
@@ -187,7 +187,7 @@ theorem preTheta_not_prefix_of_numProofs_lt {shape shape' : Shape}
   obtain ⟨P, hP⟩ := preThetaTranscriptForStatement_getElem?_point vk' inst' ps'
     (1 + (shape.numProofs * shape.numInstanceColumns + shape.numProofs * shape.numAdviceColumns))
     (by omega) (by rw [← hcols, ← hadv]; omega)
-  rw [IsPrefix.getElem?_eq_of_lt hpre hi, hch] at hP
+  rw [getElem?_eq_of_prefix_of_lt hpre hi, hch] at hP
   cases hP
 
 /-- More actions of the same circuit make a longer pre-`θ` transcript. -/
