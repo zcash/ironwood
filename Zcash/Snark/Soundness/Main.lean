@@ -35,12 +35,12 @@ variable {G : Type*} [AddCommGroup G] [Module Fp G]
 /-- **Deployed acceptance.** `assemble?` succeeds on the typed proof string and the assembled MSM
 evaluates to zero over the URS — the hypothesis every soundness endpoint consumes.
 
-The predicate begins at typed, post-decode values by design: byte parsing, canonical encodings,
-transcript serialization, and BLAKE2b sit below the accepted formal floor, checked pointwise by
-the fingerprint captures rather than universally refined — a byte-level verifier model remains
-open work (`Fingerprint/Match.lean`, *What remains external*). Acceptance prices one
-proof bundle: halo2's optional `BatchVerifier` aggregation layer is outside the formalized
-verifier. -/
+The predicate begins at typed, post-decode values by design. The byte layer beneath is modeled —
+canonical proof-string decoding in `Verifier/ProofBytes.lean`, transcript serialization and BLAKE2b
+in `Verifier/Transcript.lean` — and checked against the captures, but not composed into this
+predicate: a byte-level acceptance predicate remains open work (`Fingerprint/Match.lean`, *What
+remains external*). Acceptance prices one proof bundle: halo2's optional `BatchVerifier`
+aggregation layer is outside the formalized verifier. -/
 def DeployedAccepts [DecidableEq G] [Inhabited G] (shape : Shape) (urs : URS G)
     (hk : shape.k = urs.k) (vk : VerifyingKey shape Fp G) (instanceCommitment : Fin shape.numProofs → ℕ → G) (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp) : Prop :=

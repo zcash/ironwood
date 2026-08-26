@@ -7,7 +7,11 @@
 --   one tier down, in `Zcash/Arithmetic/`; `Core.lean` is a one-name compatibility alias for
 --   the byte-locked fixture captures and nothing else.
 -- * `Verifier/` — the transcription layer: the deployed halo2 verifier's MSM assembly as a pure
---   Lean function (queries, expressions, multiopen, IPA fold, Fiat–Shamir schedule).
+--   Lean function (queries, expressions, multiopen, IPA fold, Fiat–Shamir schedule). `Transcript`
+--   and `ProofBytes` are the byte layer beneath it — halo2's transcript encoding under an
+--   executable BLAKE2b (`Common/Hash/Blake2b`), and the canonical proof-string codec. They are
+--   deliberately not re-exported here: the capture lanes reach them through their own
+--   `Transcript.lean`/`ProofBytes.lean`, and the census through `Zcash/TrustBoundary.lean`.
 -- * `Fingerprint/` — the faithfulness cross-check: the captured-fixture match (`native_decide`,
 --   loaded in the auto-generated `Fixture.lean`) plus the Schwartz–Zippel bound.
 -- * `Soundness/` — the soundness argument, in dependency layers. `Ipa/` (opening relation and the

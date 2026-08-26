@@ -1,4 +1,5 @@
 import Zcash.Snark.Fixtures.SingleAction.Random.FiatShamir
+import Zcash.Snark.Fixtures.SingleAction.Random.Transcript
 import Zcash.Snark.Fixtures.SingleAction.Random.VkCertificate
 import Mathlib.Util.AssertNoSorry
 
@@ -23,6 +24,12 @@ The instance side stays `derivedInstanceCommitment` — already a derivation, th
 commitment of the captured public inputs, pinned to the captured points by
 `instance_commitments_derived` — since only the honest single-action capture has a
 `Keygen/InstanceCapture.lean` analogue.
+
+The byte-level form, `nonInteractiveFingerprint_matches_derived_blake2b`, is the statement of
+record: it replaces the captured oracle table with the deployed hash itself, deriving every
+challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
+`deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
+separates a schedule error from an encoding or hash error.
 -/
 
 namespace Zcash.Snark.FixtureRandom
@@ -42,5 +49,20 @@ theorem nonInteractiveFingerprint_matches_derived :
   exact nonInteractiveFingerprint_matches
 
 assert_no_sorry nonInteractiveFingerprint_matches_derived
+
+/-- **The fingerprint match at the derived key, from transcript bytes.** As
+`nonInteractiveFingerprint_matches_derived`, with the captured oracle table replaced by the
+deployed hash: every challenge is BLAKE2b over halo2's transcript encoding of the derived prefix
+and the proof. -/
+theorem nonInteractiveFingerprint_matches_derived_blake2b :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript (fun _ => capturedVkTranscriptRepr)
+        derivedVk derivedInstanceCommitment ps)
+      capturedMsm := by
+  have h : vk = derivedVk := vk_eq_derived
+  rw [← h]
+  exact nonInteractiveFingerprint_matches_blake2b
+
+assert_no_sorry nonInteractiveFingerprint_matches_derived_blake2b
 
 end Zcash.Snark.FixtureRandom

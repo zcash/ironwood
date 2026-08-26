@@ -19,8 +19,9 @@ BLAKE2b hash of the proof so far — is modeled at the typed level by `deriveCha
 `Common.Oracle` and `Soundness.FiatShamir.Execution` model its random-oracle execution and query
 accounting; the fixtures check the schedule model against the captured schedule and fold it into
 the fingerprint (`deriveChallenges_matches_captured_schedule`, `nonInteractiveFingerprint_matches`).
-What stays idealized: BLAKE2b itself, the byte serialization of absorbed points and scalars, and the
-challenge domain-prefix byte (the typed `.challenge` marker carries no data).
+The byte layer beneath — the serialization of absorbed points and scalars, the domain-prefix bytes,
+BLAKE2b, and the digest-to-field conversion — is `halo2Transcript` (`Verifier/Transcript.lean`),
+checked against every capture. What stays idealized is BLAKE2b's behaviour as a random oracle.
 -/
 
 namespace Zcash.Snark

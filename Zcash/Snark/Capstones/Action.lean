@@ -70,16 +70,19 @@ rather than proved, with its known strengthening named where one exists:
 * *Challenges* — squeezes are exactly uniform (`uniformChallenge`).  The deployed conversion
   reduces a 64-byte digest modulo `p`; its exact reduction bias is priced by
   `challenge255_weightedBias_le`, and `challenge255_joint_eventBias_le` composes it through an
-  adaptive deduplicated query tree (`Soundness/Oracle/Challenge255.lean`). Idealizing BLAKE2b as a
-  uniform digest remains external.
+  adaptive deduplicated query tree (`Soundness/Oracle/Challenge255.lean`). The byte layer beneath
+  the schedule — halo2's transcript encoding and BLAKE2b itself — is modeled and checked against
+  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform remains external.
 * *DLOG hardness* — each profile takes a caller-supplied advantage bound for its exact relation
   finder (`AdaptiveStatementDlogProfile`, `CertifiedAdaptiveStatementDlogProfile`); relating that
   bound to a standard resource-bounded DLOG game and a concrete security estimate is external.
 * *Key digest* — `vkHash` is opaque: one canonical key per basis, no cross-key binding claimed
   (`AdaptiveStatementModel.lean`, *Intended instantiation*).
 * *Acceptance* — `DeployedAccepts` starts at typed, post-decode values and prices one proof
-  bundle; byte encoding and halo2's optional `BatchVerifier` sit outside the formalized
-  verifier (`Fingerprint/Match.lean`, *What remains external*).  The deployment record pins the
+  bundle. The decode beneath it is modeled and canonical (`Verifier/ProofBytes.lean`, checked
+  against the random captures' raw bytes) but not composed into the acceptance predicate, and
+  halo2's optional `BatchVerifier` sits outside the formalized verifier (`Fingerprint/Match.lean`,
+  *What remains external*).  The deployment record pins the
   call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
   zero-padding makes a shorter column verify as its zero-padding
   (`assembleNonInteractiveInstances?_padColumns`), aliasing a missing trailing row to
