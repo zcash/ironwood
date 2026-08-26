@@ -72,6 +72,10 @@ Lean-relevant change. All of them can be run locally from the repository root.
   its recorded digest and provenance entry in `Zcash/Snark/Fixtures/MANIFEST.tsv`.
   This binds the committed artifacts to their provenance on every run, with no Rust
   toolchain needed.
+* **`render-proof-bytes.sh --check`** — each match-only family's `ProofHex.lean`, the
+  raw proof bytes as Lean data, re-renders identically from its `proof-bytes.hex`
+  artifact, so the bytes the proof-string decoder is checked against are the captured
+  ones.
 
 ## Fixture regeneration
 

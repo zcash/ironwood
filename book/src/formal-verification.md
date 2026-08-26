@@ -156,10 +156,12 @@ What the fixture captures actually *check* is the statement of record in each fa
 `Boundary.lean` — `nonInteractiveFingerprint_matches_derived` — with the quantified match and its
 ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headliners in
 `Fixtures/*/Random/Epsilon.lean`. Capture lineage, seeds, and the reproducibility pipeline are in
-`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed,
-post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
-domain-prefix bytes, and BLAKE2b remain external; `Snark/Fingerprint/Match.lean` enumerates this
-boundary, tracked in [#66](https://github.com/zcash/ironwood/issues/66).
+`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed
+Rust↔Lean boundary. The byte layer beneath it is modeled and checked against the captures: every
+captured challenge is recomputed from halo2's transcript encoding through a Lean BLAKE2b
+(`Snark/Verifier/Transcript.lean`), and the random captures' raw proof bytes decode to their typed
+proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`). BLAKE2b's idealization as a
+random oracle remains external; `Snark/Fingerprint/Match.lean` enumerates the boundary.
 
 **The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
 `CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off

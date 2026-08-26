@@ -33,6 +33,8 @@ import Zcash.Security.BindingSignature.DiscreteLog
 import Zcash.Snark.Soundness.AGM.DeployedConstraintSupply
 import Zcash.Snark.Soundness.AGM.ProbabilityVesta
 import Zcash.Snark.Soundness.FiatShamir.Adversary
+import Zcash.Snark.Soundness.FiatShamir.ActionCount
+import Zcash.Snark.Verifier.ProofBytes
 import Zcash.Snark.Soundness.Composition.Bridge
 import Zcash.Snark.Soundness.Composition.DeployedConstraintContainment
 import Zcash.Snark.Soundness.Composition.DeployedRootContainment
@@ -2149,3 +2151,39 @@ assert_axioms Zcash.Circuits.Action.Separation.preNU63_synthesize_eq_base +nativ
 assert_axioms Zcash.Circuits.Action.Separation.specPost_iff_base_and_crossAddress
 assert_axioms Zcash.Circuits.Action.Separation.preNU63_spec_omits_crossAddress
 assert_axioms Zcash.Circuits.Action.Separation.crossAddressBinding_nontrivial
+
+-- The Fiat–Shamir byte layer (`Verifier/Transcript.lean`): halo2's transcript encoding, an
+-- executable BLAKE2b (`Common/Hash/Blake2b.lean`), and the concrete oracle `halo2Transcript` the
+-- capture families run the schedule through, with the encoding's injectivity and prefix-freeness.
+assert_computable Zcash.Common.Blake2b.digest64
+assert_computable Zcash.Snark.encodeTranscript +choice
+assert_computable Zcash.Snark.halo2Transcript +choice
+assert_axioms Zcash.Snark.LEOS2IP_I2LEOSP_256
+assert_axioms Zcash.Snark.encodeElt_append_inj
+assert_axioms Zcash.Snark.encodeTranscript_prefix_iff
+assert_axioms Zcash.Snark.encodeTranscript_injective
+assert_axioms Zcash.Snark.LEOS2IP_digest_lt
+
+-- The proof-string byte layer (`Verifier/ProofBytes.lean`): canonical decoding of scalars and
+-- points in both directions, lifted to vectors, and the reader and serializer as executable data.
+-- Point decoding runs Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream
+-- compiler trust.
+assert_computable Zcash.Snark.decodeScalar32 +choice
+assert_computable Zcash.Snark.decodePoint32 +choice +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_computable Zcash.Snark.readProof? +choice +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_computable Zcash.Snark.serializeProof +choice
+assert_axioms Zcash.Snark.decodeScalar32_eq_some_iff
+assert_axioms Zcash.Snark.decodePoint32_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.scalarReader_eq_some_iff
+assert_axioms Zcash.Snark.pointReader_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.readVec_serializeVec
+assert_axioms Zcash.Snark.readVec_eq_some
+
+-- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
+-- oracle locality, the disjointness of the pre-`θ` cones at different counts — typed and
+-- byte-level — and the reprogramming corollary.
+assert_axioms Zcash.Snark.deriveChallenges_congr_of_agree_on_cone
+assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
+assert_axioms Zcash.Snark.preTheta_cones_disjoint
+assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
+assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
