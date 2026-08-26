@@ -11,6 +11,7 @@ import Zcash.Snark.Capstones.Action
 import Zcash.Snark.Contract.Action
 import Zcash.Snark.Fixtures.MultiAction.Honest.Boundary
 import Zcash.Snark.Fixtures.PostNu63
+import Zcash.Snark.Fixtures.MultiAction.Honest.Transcript
 import Zcash.Meta.AxiomCheck
 
 /-!
@@ -722,3 +723,39 @@ CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
 CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived
+
+-- The byte layer beneath the schedule (`Transcript.lean`): every captured challenge recomputed
+-- from halo2's transcript encoding through BLAKE2b, and the fingerprint match restated on it.
+-- `deriveChallenges_matches_blake2b` is the only new compiler-trust element; the derived-key
+-- statement of record inherits it in place of the captured-table schedule check.
+assert_axioms Zcash.Snark.Fixture2.markerSchedule_matches_blake2b +native(
+  Zcash.Snark.Fixture2.markerSchedule_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b +native(
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.deriveChallengesForStatement_matches_blake2b +native(
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_blake2b +native(
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.fingerprint_matches)
+assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived)

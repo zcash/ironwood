@@ -118,7 +118,13 @@ The pure function that assembles the fingerprint MSM in the exact order of halo2
   query back to the canonical group element it references.
 - `Expressions` recomputes the vanishing argument's `expected_h_eval`.
 - `Ipa` is the inner-product-argument opening (`compute_s` / `compute_b`).
-- `FiatShamir` models halo2's BLAKE2b challenge schedule as an abstract `squeeze`.
+- `FiatShamir` models halo2's challenge schedule over an abstract `squeeze`.
+- `Transcript` is the byte layer beneath it: halo2's tagged transcript encoding, an executable
+  BLAKE2b (`Common/Hash/Blake2b`), and the concrete oracle `halo2Transcript` every capture family
+  runs the schedule through, with the encoding proved injective and prefix-free.
+- `ProofBytes` is the proof-string codec: canonical `read_point`/`read_scalar` decoders (a read
+  succeeds exactly on the element's own encoding), the reader in the verifier's read order, and
+  the serializer, checked against the random captures' raw bytes.
 - `AssembleSpec` says what the rejecting `assemble?` returns when it does not reject — exactly
   the total assembly's value — the operational interface both the fingerprint walk and the
   deployed soundness layer consume.
@@ -356,7 +362,10 @@ Six subtrees carry the heavier machinery:
   adaptive adversary model (`OracleComp`), the Fiat–Shamir-to-AGM handoff (`Algebraic`),
   oracle-domain reduction to finite support (`DomainReduction`), and the adaptive interface and
   pre-IPA query accounting (`Adaptive`, `PreIpa`, `Provenance`). These components use the bounded
-  querying-adversary model to price straight-line pinned-root events.
+  querying-adversary model to price straight-line pinned-root events. `ActionCount` proves the
+  schedule's oracle locality and that the pre-`θ` cones of different action counts are disjoint —
+  typed and byte-level — so reprogramming the oracle on one count's cone changes no challenge of
+  another.
 - **`Oracle/`** — the squeeze idealization and its deployed gap. `ChallengeUniform` gives the
   exactly-uniform challenge law over `Fp`; `Challenge255` prices the deployed conversion against
   that ideal — a uniform 512-bit digest reduced modulo `p` overshoots uniform by exactly

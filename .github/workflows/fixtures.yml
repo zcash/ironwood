@@ -79,6 +79,12 @@ jobs:
       # recorded provenance on every run, not only when a full regeneration executes.
       - name: Check the fixture provenance manifest
         run: ./scripts/check_fixture_manifest.sh
+      # The match-only families' raw proof bytes also enter Lean as rendered `ProofHex.lean`
+      # modules, a deterministic function of the manifest-pinned `.hex` artifacts. Re-render and
+      # diff on every event, so the bytes the proof-string decoder is checked against cannot
+      # drift from the captured ones.
+      - name: Check the rendered proof-byte modules against their .hex artifacts
+        run: ./scripts/render-proof-bytes.sh --check
       # Regeneration is expensive (real k=11 Orchard proofs + verifier runs), so only run
       # it when a committed capture artifact or the pins change.
       #
