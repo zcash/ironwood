@@ -10,7 +10,7 @@ Families are organised by action count, then by what the capture is:
 
 ```
 Fixtures/
-├── Shared/              ScheduleMarker, TamperSweep — family-independent helpers
+├── Shared/              ScheduleMarker, TamperSweep, Hex — family-independent helpers
 ├── PostNu63.lean        cross-capture VK/URS equalities for the honest captures
 ├── PostNu63Random.lean  the same equalities extended to the random captures
 ├── SingleAction/
@@ -20,6 +20,13 @@ Fixtures/
     ├── Honest/          2 actions, accepting run
     └── Random/          2 actions, random proof string
 ```
+
+Every family carries a `Transcript.lean`: the captured challenges recomputed from transcript
+bytes — halo2's tagged encoding under a Lean BLAKE2b — rather than looked up in the captured
+oracle table, and the fingerprint match restated on that concrete oracle. The random families
+additionally carry `ProofBytes.lean`, which reads their raw proof bytes with Lean's canonical
+proof-string decoder back to the captured typed proof (and serializes it back), plus byte-level
+negatives; the bytes themselves enter Lean through the rendered `ProofHex.lean`.
 
 **Honest** captures run the verifier on a real proof, so the MSM evaluates to the identity.
 They are the non-vacuity witnesses, they feed the deployed capstone lane, and they carry the
@@ -41,9 +48,13 @@ challenge schedule, and the `fingerprint_matches` claim — are exporter output,
 `proof-bytes.hex` siblings in the match-only families. Editing either by hand breaks the
 byte-for-byte CI gate and is overwritten by the next capture; changes belong upstream.
 
-Everything else is hand-written: `FiatShamir.lean`, `Boundary.lean`, `Faithfulness.lean`,
-`VkCertificate.lean`, `Negative.lean`, `Epsilon.lean`, and each family's `TrustBoundary.lean`
-census.
+`ProofHex.lean` in the match-only families is **rendered from the `proof-bytes.hex` sibling** by
+`scripts/render-proof-bytes.sh` (header "Rendered from … Do not edit by hand"); CI re-renders and
+diffs it on every run (`render-proof-bytes.sh --check`), so it cannot drift from the `.hex`.
+
+Everything else is hand-written: `FiatShamir.lean`, `Transcript.lean`, `ProofBytes.lean`,
+`Boundary.lean`, `Faithfulness.lean`, `VkCertificate.lean`, `Negative.lean`, `Epsilon.lean`, and
+each family's `TrustBoundary.lean` census.
 
 `PROVENANCE.md` records the pinned release the captures regenerate from, the seeds, and how to
 reproduce them.

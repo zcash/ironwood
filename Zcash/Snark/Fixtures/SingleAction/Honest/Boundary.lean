@@ -1,4 +1,5 @@
 import Zcash.Snark.Fixtures.SingleAction.Honest.FiatShamir
+import Zcash.Snark.Fixtures.SingleAction.Honest.Transcript
 import Zcash.Snark.Keygen.InstanceCapture
 import Mathlib.Util.AssertNoSorry
 
@@ -15,6 +16,12 @@ challenges are derived rather than taken as given.
 
 Both theorems rewrite certificate equalities into the captured match — stating the boundary
 at derived artifacts costs no new evaluation.
+
+The byte-level form, `nonInteractiveFingerprint_matches_derived_blake2b`, is the statement of
+record: it replaces the captured oracle table with the deployed hash itself, deriving every
+challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
+`deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
+separates a schedule error from an encoding or hash error.
 -/
 
 namespace Zcash.Snark.Fixture
@@ -53,5 +60,34 @@ theorem nonInteractiveFingerprint_matches_derived_inputs :
 
 assert_no_sorry nonInteractiveFingerprint_matches_derived
 assert_no_sorry nonInteractiveFingerprint_matches_derived_inputs
+
+/-- **The fingerprint match at the derived key, from transcript bytes.** As
+`nonInteractiveFingerprint_matches_derived`, with the captured oracle table replaced by the
+deployed hash: every challenge is BLAKE2b over halo2's transcript encoding of the derived prefix
+and the proof. -/
+theorem nonInteractiveFingerprint_matches_derived_blake2b :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript (fun _ => capturedVkTranscriptRepr)
+        derivedVk derivedInstanceCommitment ps)
+      capturedMsm := by
+  unfold derivedVk
+  have h := Keygen.vk_eq_toVerifierKey
+  rw [← h]
+  exact nonInteractiveFingerprint_matches_blake2b
+
+/-- **The strongest form**: derived key, derived instance commitments, and challenges from
+transcript bytes. Nothing on the Lean side of the comparison is a dump entry or a captured
+oracle value. -/
+theorem nonInteractiveFingerprint_matches_derived_inputs_blake2b :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript (fun _ => capturedVkTranscriptRepr)
+        derivedVk
+        (actionCircuit.instanceCommitment capturedURS Keygen.capturedActionInputs) ps)
+      capturedMsm := by
+  rw [Keygen.instanceCommitment_capturedActionInputs]
+  exact nonInteractiveFingerprint_matches_derived_blake2b
+
+assert_no_sorry nonInteractiveFingerprint_matches_derived_blake2b
+assert_no_sorry nonInteractiveFingerprint_matches_derived_inputs_blake2b
 
 end Zcash.Snark.Fixture

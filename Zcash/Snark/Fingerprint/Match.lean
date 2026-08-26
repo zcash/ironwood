@@ -130,8 +130,12 @@ Eleven premises remain trusted rather than fixture-checked:
   few-line reviewed diff;
 * rejection paths — the deployed accept path is straight-line in proof values post-decode
   (`Core/ProofString.lean`), corroborated by the random captures running to completion;
-* byte→algebraic decode — deployed rejects non-canonical encodings, the safe direction;
-* Fiat–Shamir bytes and BLAKE2b — the typed schedule is not a transcript-binding model;
+* byte→algebraic decode — `readProof?` is canonical (`Verifier/ProofBytes.lean`) and reads the
+  random captures' raw bytes to their captured typed proofs; that the deployed reader is the same
+  function is checked on those two captures, not refined universally;
+* Fiat–Shamir bytes — `halo2Transcript` recomputes every captured challenge from bytes through a
+  Lean BLAKE2b (`Verifier/Transcript.lean`); BLAKE2b's identification with a random oracle stays
+  idealized;
 * the pinned-point caveat — a published capture could be special-cased by a malicious edit,
   excluded by review and by seeds fixed before code;
 * sampled-point distribution — applying the literal ε treats scalar expansion from fixed public

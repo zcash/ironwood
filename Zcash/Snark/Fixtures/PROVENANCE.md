@@ -121,6 +121,15 @@ rejects any generated-looking artifact that lacks an entry, so the committed byt
 bound to their recorded provenance between full regenerations. Editing a capture means
 regenerating it and updating its manifest row in the same change.
 
+### Rendered proof bytes
+
+Each match-only family's `proof-bytes.hex` is also carried as Lean data, `ProofHex.lean`, so the
+proof-string decoder can be checked against the exact bytes the deployed verifier consumed.
+`scripts/render-proof-bytes.sh` writes those modules as a deterministic function of the `.hex`
+artifacts, and CI runs `scripts/render-proof-bytes.sh --check` on every event to re-render and
+diff them. They carry no manifest row of their own: the `.hex` they are rendered from is
+manifest-pinned, and the render check binds the rendering to it.
+
 ### Reproducing
 
 ```

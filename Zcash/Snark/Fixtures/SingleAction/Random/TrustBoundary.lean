@@ -4,6 +4,8 @@ import Zcash.Snark.Fixtures.SingleAction.Random.Negative
 import Zcash.Snark.Fixtures.SingleAction.Random.Boundary
 import Zcash.Snark.Fixtures.SingleAction.Random.Epsilon
 import Zcash.Snark.Fixtures.PostNu63Random
+import Zcash.Snark.Fixtures.SingleAction.Random.Transcript
+import Zcash.Snark.Fixtures.SingleAction.Random.ProofBytes
 import Zcash.Meta.AxiomCheck
 
 /-!
@@ -347,3 +349,72 @@ Zcash.Snark.FixtureRandom.otherLen_eq._native.native_decide.ax_1_1,
 Zcash.Snark.FixtureRandom.valid_capture_assembles._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.FixtureRandom.fingerprint_matches_positional
+
+-- The byte layer beneath the schedule (`Transcript.lean`): every captured challenge recomputed
+-- from halo2's transcript encoding through BLAKE2b, and the fingerprint match restated on it.
+-- `deriveChallenges_matches_blake2b` is the only new compiler-trust element; the derived-key
+-- statement of record inherits it in place of the captured-table schedule check.
+assert_axioms Zcash.Snark.FixtureRandom.markerSchedule_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.markerSchedule_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.deriveChallengesForStatement_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
+  Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
+  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches)
+
+-- The proof-string byte layer (`ProofBytes.lean`): the captured raw bytes decode to exactly the
+-- captured typed proof and serialize back to them, plus the byte-level negatives. Point
+-- decoding runs Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream compiler
+-- trust, so every theorem that runs the decoder names it.
+assert_computable Zcash.Snark.hexDecode? +choice
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofHex_decodes +native(
+  Zcash.Snark.FixtureRandom.capturedProofHex_decodes)
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofBytes_length +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_length)
+assert_axioms Zcash.Snark.FixtureRandom.serializeProof_eq_capturedProofBytes +native(
+  Zcash.Snark.FixtureRandom.serializeProof_eq_capturedProofBytes)
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofBytes_decodes +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.truncated_proof_rejected +native(
+  Zcash.Snark.FixtureRandom.truncated_proof_rejected,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.non_canonical_scalar_rejected +native(
+  Zcash.Snark.FixtureRandom.non_canonical_scalar_rejected,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.identity_point_rejected +native(
+  Zcash.Snark.FixtureRandom.identity_point_rejected,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.out_of_range_coordinate_rejected +native(
+  Zcash.Snark.FixtureRandom.out_of_range_coordinate_rejected,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.non_residue_x_rejected +native(
+  Zcash.Snark.FixtureRandom.non_residue_x_rejected,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated +native(
+  Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated,
+  CompElliptic.Fields.Pasta.vestaBase)
