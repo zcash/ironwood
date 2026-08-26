@@ -5,8 +5,8 @@ import Mathlib.Tactic.TypeStar
 # BLAKE2b
 
 An executable BLAKE2b (RFC 7693) over `UInt64` words, in the one parameter configuration halo2's
-Fiat–Shamir transcript uses: a digest length, a 16-byte personalization, no key, no salt, and the
-sequential (fanout 1, depth 1) mode. The deployed transcript hashes with `blake2b_simd`; this module
+Fiat–Shamir transcript uses: the full 64-byte digest, a 16-byte personalization, no key, no salt,
+and the sequential (fanout 1, depth 1) mode. The deployed transcript hashes with `blake2b_simd`; this module
 lets Lean recompute those digests, so the byte layer beneath the typed challenge schedule can be
 checked against the captured runs instead of idealized away.
 
@@ -98,10 +98,6 @@ def compress (h : Vector UInt64 8) (m : Vector UInt64 16) (t : UInt64) (last : B
 def wordLE (bs : List UInt8) : UInt64 :=
   (bs.take 8).reverse.foldl (fun acc b => (acc <<< 8) ||| b.toUInt64) 0
 
-/-- The little-endian bytes of a word. -/
-def bytesLE (w : UInt64) : List UInt8 :=
-  (List.range 8).map fun i => (w >>> UInt64.ofNat (8 * i)).toUInt8
-
 /-- Read a 128-byte block as sixteen little-endian words; a short block is zero-padded. -/
 def loadBlock (bs : List UInt8) : Vector UInt64 16 :=
   Vector.ofFn fun i : Fin 16 => wordLE ((bs.drop (8 * i.val)).take 8)
@@ -136,17 +132,6 @@ def finalBytes (h : Vector UInt64 8) : Vector UInt8 64 :=
 /-- The full 64-byte BLAKE2b digest of `msg` under personalization `personal`, unkeyed. -/
 def digest64 (personal : Vector UInt8 16) (msg : List UInt8) : Vector UInt8 64 :=
   finalBytes (hashBlocks (initialState 64 personal) 0 msg)
-
-/-- BLAKE2b with `outLen ≤ 64` output bytes under personalization `personal`, unkeyed. The output
-length enters the parameter block, so this is not a truncation of `digest64` unless `outLen = 64`. -/
-def hash (outLen : ℕ) (personal : Vector UInt8 16) (msg : List UInt8) : List UInt8 :=
-  (finalBytes (hashBlocks (initialState outLen personal) 0 msg)).toList.take outLen
-
-/-- At the full output length, `hash` is `digest64`. -/
-theorem hash_64 (personal : Vector UInt8 16) (msg : List UInt8) :
-    hash 64 personal msg = (digest64 personal msg).toList := by
-  simp only [hash, digest64]
-  exact List.take_of_length_le (by simp)
 
 /-- An all-zero personalization: the RFC 7693 configuration. -/
 def noPersonal : Vector UInt8 16 := Vector.ofFn fun _ => 0

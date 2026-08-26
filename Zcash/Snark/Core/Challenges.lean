@@ -21,7 +21,8 @@ accounting; the fixtures check the schedule model against the captured schedule 
 the fingerprint (`deriveChallenges_matches_captured_schedule`, `nonInteractiveFingerprint_matches`).
 The byte layer beneath — the serialization of absorbed points and scalars, the domain-prefix bytes,
 BLAKE2b, and the digest-to-field conversion — is `halo2Transcript` (`Verifier/Transcript.lean`),
-checked against every capture. What stays idealized is BLAKE2b's behaviour as a random oracle.
+checked against every capture. The verifying-key digest that opens the transcript is captured, not
+derived (`Verifier/Deployed.lean`); what stays idealized is BLAKE2b's behaviour as a random oracle.
 -/
 
 namespace Zcash.Snark

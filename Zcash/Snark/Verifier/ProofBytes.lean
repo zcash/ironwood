@@ -44,9 +44,6 @@ def leInt (bs : List UInt8) : ℕ := Nat.ofDigits 256 (bs.map UInt8.toNat)
 /-- On a fixed-length vector, `leInt` is `LEOS2IP`. -/
 theorem leInt_toList {m : ℕ} (S : Vector UInt8 m) : leInt S.toList = LEOS2IP S := rfl
 
-/-- The empty string denotes zero. -/
-@[simp] theorem leInt_nil : leInt [] = 0 := rfl
-
 /-- The first byte is the least significant digit. -/
 theorem leInt_cons (b : UInt8) (bs : List UInt8) : leInt (b :: bs) = b.toNat + 256 * leInt bs := by
   simp [leInt, Nat.ofDigits_cons]
@@ -533,7 +530,9 @@ def readProof? (shape : Shape) : ProofReader (ProofString shape Fp VestaG) := do
     ipaF }
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
-order. -/
+order. The deployed verifier ignores trailing bytes; the consensus rules fix the proof length
+(ZIP 225: `2720 + 2272 · nActionsOrchard`), so a proof of the right length either parses exactly or
+is rejected, which is the form the capture checks state. -/
 def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UInt8 :=
   serializeGrid shape.numProofs shape.numAdviceColumns pointBytesCompressed ps.adviceCommitments
     ++ serializeVec shape.numProofs (fun _ g => serializeVec shape.numLookups
@@ -560,13 +559,5 @@ def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UIn
         ps.ipaRounds
     ++ scalarBytesRaw ps.ipaC
     ++ scalarBytesRaw ps.ipaF
-
-/-- Read a proof that must consume its byte string exactly. The deployed verifier itself ignores
-trailing bytes; the consensus rules fix the proof length, so a proof of the right length either
-parses exactly or is rejected. -/
-def decodeProofExact? (shape : Shape) (bs : List UInt8) : Option (ProofString shape Fp VestaG) :=
-  match (readProof? shape).run bs with
-  | some (ps, []) => some ps
-  | _ => none
 
 end Zcash.Snark
