@@ -76,6 +76,10 @@ Lean-relevant change. All of them can be run locally from the repository root.
   raw proof bytes as Lean data, re-renders identically from its `proof-bytes.hex`
   artifact, so the bytes the proof-string decoder is checked against are the captured
   ones.
+* **`render-pinned-key-description.py --check`** — `PinnedKeyDescription.lean`, the
+  compact text halo2 hashes into the verifying-key digest, re-renders identically from
+  the vendored pinned description, so the digest Lean derives is over the release's
+  key.
 
 ## Fixture regeneration
 
