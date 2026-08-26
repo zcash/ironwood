@@ -16,9 +16,13 @@ random proof string, whose elements are random canonical values rather than a pr
 
 The negatives tamper with the bytes rather than the typed data: a truncated string, a
 non-canonical scalar, the identity encoding, an out-of-range coordinate, and a non-residue `x`
-are all rejected, and flipping a sign bit decodes to the negated point. The deployed rejections
-they mirror are exercised Rust-side by orchard's `fingerprint_rejected_capture_two_actions`; a
-capture of those runs is the pending capture-side counterpart.
+are all rejected, and flipping a sign bit decodes to the negated point. They exercise Lean's
+decoder; that the deployed one rejects the same strings rests on `decodePoint32_eq_some_iff` and
+`decodeScalar32_eq_some_iff` together with a reading of `pasta_curves`' `from_bytes` and
+`from_repr`, not on captured runs — of these cases only truncation has a deployed run behind it
+(orchard's Rust-only `fingerprint_rejected_capture_two_actions` truncates and desynchronizes the
+stream and tampers one evaluation). Captures of the deployed verifier rejecting each malformed
+string are the pending capture-side counterpart.
 -/
 
 namespace Zcash.Snark.FixtureRandom
