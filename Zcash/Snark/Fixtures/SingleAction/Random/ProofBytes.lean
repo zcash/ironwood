@@ -69,6 +69,7 @@ def nonCanonicalFinalScalar : List UInt8 :=
   capturedProofBytes.take (capturedProofBytes.length - 32)
     ++ List.ofFn fun i : Fin 32 => UInt8.ofNat ((ps.ipaF.val + scalarFieldOrder) / 256 ^ i.val % 256)
 
+/-- Encoding the final scalar as its value plus the modulus makes the proof reader fail. -/
 theorem non_canonical_scalar_rejected :
     (readProof? shape).run nonCanonicalFinalScalar = none := by
   native_decide
@@ -76,6 +77,7 @@ theorem non_canonical_scalar_rejected :
 /-- The first advice commitment replaced by the identity's encoding, 32 zero bytes. -/
 def identityFirstPoint : List UInt8 := List.replicate 32 0 ++ capturedProofBytes.drop 32
 
+/-- Replacing the first commitment by the identity encoding makes the proof reader fail. -/
 theorem identity_point_rejected : (readProof? shape).run identityFirstPoint = none := by
   apply readProof?_eq_none_of_first_point (m := 0) (n := 9) rfl rfl
   exact pointReader_eq_none_of_prefix (by simp) decodePoint32_zero_eq_none
@@ -86,6 +88,7 @@ def outOfRangeFirstPoint : List UInt8 :=
   (List.ofFn fun i : Fin 32 => UInt8.ofNat (PALLAS_SCALAR_CARD / 256 ^ i.val % 256))
     ++ capturedProofBytes.drop 32
 
+/-- Replacing the first commitment by a non-canonical coordinate makes the proof reader fail. -/
 theorem out_of_range_coordinate_rejected :
     (readProof? shape).run outOfRangeFirstPoint = none := by
   apply readProof?_eq_none_of_first_point (m := 0) (n := 9) rfl rfl
@@ -95,6 +98,7 @@ theorem out_of_range_coordinate_rejected :
 in the Vesta base field: no point has this `x`. -/
 def nonResidueFirstPoint : List UInt8 := (2 :: List.replicate 31 0) ++ capturedProofBytes.drop 32
 
+/-- Replacing the first commitment by an `x` with no curve point makes the proof reader fail. -/
 theorem non_residue_x_rejected : (readProof? shape).run nonResidueFirstPoint = none := by
   apply readProof?_eq_none_of_first_point (m := 0) (n := 9) rfl rfl
   exact pointReader_eq_none_of_prefix (by simp) decodePoint32_two_eq_none
