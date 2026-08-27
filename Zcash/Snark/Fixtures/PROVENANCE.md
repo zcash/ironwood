@@ -29,12 +29,11 @@ do not alter the deployed verifier.
 
 | Source | Commit | Assertion |
 |---|---|---|
-| `zcash/orchard` PR #544 | `b3108d2cf4bab40591d5ca85c7657493a60d464f` | fetched from the canonical repository's `refs/pull/544/head` and checked out by exact SHA |
-| `zcash/halo2` PR #933 | `6ff6d4bda665bd326cd01205c035a67f9628663f` | the script first verifies Orchard #544's older temporary personal-fork pin, then replaces only that Cargo URL/revision and lock source with this canonical URL and exact SHA; every cargo invocation runs `--locked` |
+| `zcash/orchard` PR #544 | `b81271110ed363ba8455369a925dec21db9e452f` | fetched from the canonical repository's `refs/pull/544/head` and checked out by exact SHA |
+| `zcash/halo2` PR #933 | `fbc2dc537c97f70881021b79a686bc6477eca394` | the script asserts Orchard #544's temporary Cargo pin resolves exactly this commit through the canonical `zcash/halo2` URL; every cargo invocation runs `--locked` |
 
 The PR refs are movable; the SHAs above are the reproducibility boundary. Advancing either pin is
-an explicit review change. No personal-fork URL is consumed by the generator after the script's
-checked normalization.
+an explicit review change. No personal-fork URL appears anywhere in the pipeline.
 
 ### The capture changes
 
