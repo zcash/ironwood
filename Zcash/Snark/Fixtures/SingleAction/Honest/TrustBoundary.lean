@@ -498,14 +498,21 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Fixture.instance_commitments_derived,
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 
--- The exporter-emitted pinned key description (`PinnedKey.lean`): parsed losslessly, hashed to the
--- captured digest, and read back field by field against the captured key.
+-- The exporter-emitted pinned key description (`PinnedKey.lean`): parsed losslessly and read
+-- back field by field against the captured key (its digest check is the family's own
+-- `keyDigest_eq_capturedVkTranscriptRepr`, censused above). The parsed value and the readers the
+-- native claims range over are ordinary definitions, censused flagless so compiler trust cannot
+-- reach them; well-formedness of the parse is derived from the `base_modulus_eq` field check.
+assert_axioms Zcash.Snark.PinnedKey.pinned
+assert_axioms Zcash.Snark.PinnedKey.fuel
+assert_axioms Zcash.Snark.PinnedKey.cs
+assert_axioms Zcash.Snark.PinnedKey.domain
+assert_axioms Zcash.Snark.PinnedKey.queryIndexAt
+assert_axioms Zcash.Snark.PinnedKey.toQuerySpace
 assert_axioms Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses +native(
-  Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses)
+  Zcash.Snark.PinnedKey.base_modulus_eq)
 assert_axioms Zcash.Snark.PinnedKey.pinned_renderCompact +native(
   Zcash.Snark.PinnedKey.pinned_renderCompact)
-assert_axioms Zcash.Snark.PinnedKey.keyDigest_eq_capturedVkTranscriptRepr +native(
-  Zcash.Snark.PinnedKey.keyDigest_eq_capturedVkTranscriptRepr)
 assert_axioms Zcash.Snark.PinnedKey.base_modulus_eq +native(
   Zcash.Snark.PinnedKey.base_modulus_eq)
 assert_axioms Zcash.Snark.PinnedKey.scalar_modulus_eq +native(

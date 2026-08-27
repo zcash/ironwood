@@ -15,7 +15,10 @@ and this project adheres to Rust's notion of
 - The proof-string byte layer: canonical `read_point`/`read_scalar` decoders and the reader and
   serializer in the verifier's read order (`Zcash/Snark/Verifier/ProofBytes.lean`), checked
   against the exporters' exact consumed proof bytes (`Fixtures/*/*/ProofBytes.lean`), plus
-  byte-level negatives.
+  byte-level negatives. Each family anchors one native parse; the length, truncation,
+  non-canonical-tail, and sign-bit facts are theorems over that anchor, through a byte-accounting
+  lemma fixing every accepted parse at `proofLength` and a head-replacement lemma binding the
+  sign bit to `y`.
 - Fiat–Shamir separation across action counts (`Zcash/Snark/Soundness/FiatShamir/
   ActionCount.lean`): oracle locality of the schedule and disjointness of the pre-`θ` cones.
 - The verifying-key digest derived rather than captured (`Zcash/Snark/Verifier/KeyDigest.lean`,

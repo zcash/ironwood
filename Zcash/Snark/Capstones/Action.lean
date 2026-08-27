@@ -78,8 +78,9 @@ rather than proved, with its known strengthening named where one exists:
   bound to a standard resource-bounded DLOG game and a concrete security estimate is external.
 * *Key digest* — `vkHash` is opaque: one canonical key per basis, no cross-key binding claimed
   (`AdaptiveStatementModel.lean`, *Intended instantiation*). At the captures the digest scalar is
-  recomputed from the exact exporter-emitted preimage: `Fixtures/PinnedKey.lean` hashes that string
-  and checks its fields against the captured key, which is certified equal to the derived key. The
+  recomputed from the exact exporter-emitted preimage: each family's `Transcript.lean` hashes that
+  string, and `Fixtures/PinnedKey.lean` checks its fields against the captured key, which is
+  certified equal to the derived key. The
   fixture inputs remain trusted; cross-key binding would need BLAKE2b's collision resistance.
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
