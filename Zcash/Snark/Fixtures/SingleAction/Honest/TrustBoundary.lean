@@ -406,14 +406,12 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_blak
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
@@ -424,14 +422,12 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
@@ -452,8 +448,7 @@ assert_axioms Zcash.Snark.Fixture.serializeProof_eq_capturedProofBytes +native(
   Zcash.Snark.Fixture.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes +native(
-  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes,
-  CompElliptic.Fields.Pasta.vestaBase)
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes)
 assert_axioms Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero +native(
   Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero)
 assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsBytes +native(
@@ -473,14 +468,12 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyD
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived,
@@ -492,14 +485,12 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived,
