@@ -2240,6 +2240,6 @@ assert_computable Zcash.Snark.DebugValue.point? +choice
 -- `Describes` reads a description back against the key and shape it claims to describe — the
 -- identification `DeployedAcceptsBytes` carries; its decidability is what each honest capture
 -- evaluates.
-assert_computable Zcash.Snark.toQuerySpace
+assert_computable Zcash.Snark.toQuerySpace +choice
 assert_computable Zcash.Snark.Describes +choice
 assert_computable Zcash.Snark.decidableDescribes +choice
