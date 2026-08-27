@@ -20,8 +20,18 @@ trust in the captured digest scalar; the string and captured key remain capture 
 captured key is the derived key (`Keygen/Certificate.lean`), so every comparison below transports
 to `derivedVk`.
 
-What this does not give is cross-key binding: that no other key has this digest is BLAKE2b's
-collision resistance, idealized like its randomness (`Capstones/Action.lean`, *Key digest*).
+The reading below is the one `Describes` (`Verifier/KeyDigest.lean`) makes of any description
+against any key, stated here field by field: `pinned`, `cs`, and `domain` are its
+`descriptionValue`, `descriptionCs`, and `descriptionDomain`, and the permutation columns pass
+through its `toQuerySpace`. Each honest family discharges `Describes` for its own emitted string —
+the two families emit the same one — as the key-identification conjunct of `DeployedAcceptsBytes`
+(`Fixtures/*/Honest/ProofBytes.lean`); the keygen-only literals checked here have no key
+counterpart and stay fixture pins.
+
+What this does not give is cross-key binding: that no other key has this digest is collision
+resistance of the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, which two merely
+`p`-congruent digests defeat without a BLAKE2b collision (`challengeOfDigest_eq_iff_modEq`) —
+idealized like BLAKE2b's randomness (`Capstones/Action.lean`, *Key digest*).
 
 `field?` reads the first occurrence of a field name. A description that repeated a field with a
 divergent second copy could pass these reads while hashing the divergent text; that shape cannot
@@ -35,10 +45,10 @@ open Zcash.Snark Zcash.Snark.DebugValue
 open CompElliptic.Fields.Pasta
 
 /-- The exporter-emitted pinned description, parsed; the parse theorem shows the fallback is unused. -/
-def pinned : DebugValue := (parse? Fixture.capturedPinnedKeyDescription).getD (.atom "")
+def pinned : DebugValue := descriptionValue Fixture.capturedPinnedKeyDescription
 
 /-- Recursion budget for reading expressions: one unit per character bounds every nesting. -/
-def fuel : ℕ := Fixture.capturedPinnedKeyDescription.length
+def fuel : ℕ := descriptionFuel Fixture.capturedPinnedKeyDescription
 
 /-- The parse is lossless: rendering it compactly gives back the hashed text. -/
 theorem pinned_renderCompact : renderCompact pinned = Fixture.capturedPinnedKeyDescription := by
@@ -47,10 +57,10 @@ theorem pinned_renderCompact : renderCompact pinned = Fixture.capturedPinnedKeyD
 /-! ## The pinned fields against the captured key -/
 
 /-- The pinned constraint system. -/
-def cs : DebugValue := (pinned.field? "cs").getD (.atom "")
+def cs : DebugValue := descriptionCs Fixture.capturedPinnedKeyDescription
 
 /-- The pinned evaluation domain. -/
-def domain : DebugValue := (pinned.field? "domain").getD (.atom "")
+def domain : DebugValue := descriptionDomain Fixture.capturedPinnedKeyDescription
 
 /-- The base modulus string names Vesta's base field order. -/
 theorem base_modulus_eq :
@@ -64,7 +74,7 @@ theorem capturedPinnedKeyDescription_parses :
   rcases hp : parse? Fixture.capturedPinnedKeyDescription with _ | v
   · have hb := base_modulus_eq
     have hpinned : pinned = DebugValue.atom "" := by
-      unfold pinned
+      unfold pinned descriptionValue
       rw [hp, Option.getD_none]
     rw [hpinned] at hb
     simp [DebugValue.field?] at hb
@@ -126,27 +136,15 @@ theorem fixed_queries_eq :
     (cs.field? "fixed_queries" >>= listOf? query?) = some Fixture.vk.fixedQueryLayout := by
   native_decide
 
-/-- The first query of raw column `c` at rotation 0 in the layout `l` — halo2's
-`get_any_query_index(column, Rotation::cur())`, which is how `permutation::verifier` locates
-the evaluation of a permutation column. -/
-def queryIndexAt (l : List (ℕ × ℤ)) (c : ℕ) : Option ℕ := l.findIdx? (· = (c, 0))
-
-/-- A pinned permutation column, moved from the description's raw column space into the
-verifier's query-index space — the vocabulary `permutationChunks` speaks — through the captured
-query layouts, themselves checked against the pinned ones by the `*_queries_eq` theorems. -/
-def toQuerySpace : ColumnRef → Option ColumnRef
-  | .advice c => (queryIndexAt Fixture.vk.adviceQueryLayout c).map .advice
-  | .fixed c => (queryIndexAt Fixture.vk.fixedQueryLayout c).map .fixed
-  | .instance c => (queryIndexAt Fixture.vk.instanceQueryLayout c).map .instance
-
 /-- The permutation argument's columns are the captured chunks' columns, in order. The pinned
 description lists raw column indices where the captured chunks name each column by its
 rotation-0 query slot, so the comparison passes each pinned column through the same
 `get_any_query_index` translation the deployed verifier applies when it reads a permutation
-column's evaluation. -/
+column's evaluation (`toQuerySpace`, through the captured query layouts, themselves checked
+against the pinned ones by the `*_queries_eq` theorems). -/
 theorem permutation_columns_eq :
     (((cs.field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
-        >>= fun l => l.mapM toQuerySpace)
+        >>= fun l => l.mapM (toQuerySpace Fixture.vk))
       = some (Fixture.vk.permutationChunks.flatten.map Prod.fst) := by
   native_decide
 
