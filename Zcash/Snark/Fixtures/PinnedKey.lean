@@ -22,6 +22,11 @@ to `derivedVk`.
 
 What this does not give is cross-key binding: that no other key has this digest is BLAKE2b's
 collision resistance, idealized like its randomness (`Capstones/Action.lean`, *Key digest*).
+
+`field?` reads the first occurrence of a field name. A description that repeated a field with a
+divergent second copy could pass these reads while hashing the divergent text; that shape cannot
+arise here because `pinned_renderCompact` pins the exact hashed string and Rust's derived `Debug`
+never emits a duplicate field.
 -/
 
 namespace Zcash.Snark.PinnedKey

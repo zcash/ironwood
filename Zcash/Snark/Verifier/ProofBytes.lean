@@ -226,7 +226,8 @@ theorem radicand_ne_zero (x : VestaBaseField) : x ^ 3 + Vesta.a * x + Vesta.b �
   rw [ha, hb, zero_mul, _root_.add_zero] at h
   exact eq_neg_of_add_eq_zero_left h
 
-/-- A nonzero `x` has a nonzero radicand root: `x = 0` would make the radicand `5`, a non-residue. -/
+/-- An `x` whose radicand has a root is nonzero: `x = 0` would make the radicand `5`, a
+non-residue. -/
 theorem x_ne_zero_of_sqrt {x r : VestaBaseField}
     (h : vestaBase.sqrt? (x ^ 3 + Vesta.a * x + Vesta.b) = some r) : x ≠ 0 := by
   intro hx
@@ -1108,7 +1109,8 @@ theorem lookupReader_length {bs rest : List UInt8} {e : LookupEval Fp}
 /-- The exact byte count `readProof?` accepts for a shape: 32 bytes per element, with the
 element counts read off the shape, and each permutation set contributing its shape-selected
 two or three scalars. At the deployed Orchard shape this is the consensus proof size
-(ZIP 225: `2720 + 2272 · nActionsOrchard`). -/
+(ZIP 225: `2720 + 2272 · nActionsOrchard`), kernel-checked at the captured action counts by
+each family's length theorem. -/
 def proofLength (shape : Shape) : ℕ :=
   shape.numProofs * (shape.numAdviceColumns * 32)
     + shape.numProofs * (shape.numLookups * 64)
@@ -1326,7 +1328,8 @@ theorem readProof?_none_of_noncanonical_final_scalar {shape : Shape} {bs V : Lis
 Bit 255 of a compressed encoding is the parity of `y`; the low 255 bits are `x`. Negation fixes
 `x` and flips the parity over an odd-order field, so flipping the top bit of a non-identity
 point's encoding is exactly the negated point's encoding, and a proof string with its leading
-point's sign bit flipped parses to the same proof with that one commitment negated. -/
+point's sign bit flipped still parses in full, with the negated point landing in the first
+advice commitment — the projection the fixture negatives state. -/
 
 /-- The bytes of `a` followed by the bytes of `b` read as `leInt a + 256^|a| · leInt b`. -/
 theorem leInt_append (a b : List UInt8) :
@@ -1423,8 +1426,9 @@ theorem readVec_run_replace_head {α : Type} {n : ℕ} {r : Fin (n + 1) → Proo
   rw [hx' bs₁ hx0]
   simp only [Option.bind_some, hg', StateT.run_pure, Option.pure_def, hgf]
 
-/-- The grid form of head replacement, at counts only known nonzero: the replacement lands at
-grid position `(0, 0)` and every other slot survives. -/
+/-- The grid form of head replacement, at counts only known nonzero: the read still succeeds
+with the same remainder, and the conclusion exposes the replacement at grid position `(0, 0)` —
+the one projection its consumer states. -/
 theorem readGrid_run_replace_head {α : Type} {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)
     {r : ProofReader α} {bs bs' rest : List UInt8} {f : Fin m → Fin n → α} {x' : α}
     (h : (readGrid m n r).run bs = some (f, rest))
