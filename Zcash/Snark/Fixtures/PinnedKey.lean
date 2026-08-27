@@ -5,9 +5,9 @@ import Zcash.Snark.Verifier.KeyDigest
 /-!
 # The verifying-key digest, derived from the pinned description
 
-The transcript's first element is the verifying key's digest, `transcript_repr`. Until now Lean
-took it from the capture (`capturedVkTranscriptRepr`, hand-pinned again in `PostNu63.lean`). This
-module derives it: `keyDigest` over the pinned Post-NU6.3 key description
+The transcript's first element is the verifying key's digest, `transcript_repr`. This module
+derives it instead of taking it from the capture (`capturedVkTranscriptRepr`, also pinned in
+`PostNu63.lean`): `keyDigest` over the pinned Post-NU6.3 key description
 (`PinnedKeyDescription.lean`, the exact text halo2 hashes) reproduces the captured digest
 (`keyDigest_eq_capturedVkTranscriptRepr`), and the description's fields, read back through
 `DebugValue`, are the captured key's fields — the domain, column counts, gates, query layouts,
