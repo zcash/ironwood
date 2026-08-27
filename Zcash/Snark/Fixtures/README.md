@@ -26,8 +26,9 @@ bytes — halo2's tagged encoding under a Lean BLAKE2b — rather than looked up
 oracle table, and the fingerprint match restated on that concrete oracle. Every family carries
 `ProofBytes.lean`, which reads its generated `capturedProofHex` with Lean's canonical proof-string
 decoder back to the captured typed proof and serializes it back. The honest families compose that
-parse and the derived transcript into `DeployedAcceptsBytes`; the random families instead add
-byte-level rejection and sign-bit negatives.
+parse and the derived transcript into `DeployedAcceptsBytes`, discharging its key identification
+(`Describes`) and identity exclusion by evaluation; the random families instead add byte-level
+rejection and sign-bit negatives.
 
 **Honest** captures run the verifier on a real proof, so the MSM evaluates to the identity.
 They are the non-vacuity witnesses, they feed the deployed capstone lane, and they carry both the

@@ -9,11 +9,12 @@ schedule.  Raw public columns are checked before they are committed.  The VK tra
 representation and every resulting instance commitment are then absorbed before proof-controlled
 advice commitments and the first challenge. Binding the key here means binding its opaque transcript
 representation; this model itself does not connect `vkTranscriptRepr` to the fields of `vk`. At
-the captures that connection is checked: each family's `Transcript.lean` derives the digest from
-the exporter-emitted pinned key description (`Verifier/KeyDigest.lean`), and
-`Fixtures/PinnedKey.lean` reads the description's
+the byte level `DeployedAcceptsBytes` does, through `Describes` (`Verifier/KeyDigest.lean`), and
+the captures check it: each family's `Transcript.lean` derives the digest from the
+exporter-emitted pinned key description, and `Fixtures/PinnedKey.lean` reads the description's
 fields back against the captured key, which the keygen certificate connects to the derived key. The
-fixture inputs and collision resistance — no other key hashing to it — remain below this boundary.
+fixture inputs and collision resistance of the reduced digest — no other key hashing to it modulo
+`p` — remain below this boundary.
 
 The column commitment operation remains a parameter here.  For Orchard it is instantiated by the
 existing Lagrange-basis commitment model; this entry point controls when it may run and how its
