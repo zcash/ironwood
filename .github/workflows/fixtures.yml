@@ -16,9 +16,9 @@ name: Fixtures
 # fixtures genuinely drifted from the pinned upstream, not run-to-run noise.
 #
 # Pins are single-sourced in `scripts/regenerate-fingerprint-fixtures.sh`: exact snapshots of
-# zcash/orchard#544 and zcash/halo2#933. The script fetches Orchard through the canonical PR ref,
-# verifies its older temporary personal-fork Halo2 patch, and replaces only that URL/revision and
-# lock source with the canonical pinned zcash/halo2 commit before running Cargo `--locked`. The
+# zcash/orchard#544 and zcash/halo2#933. The script fetches Orchard through the canonical PR ref
+# and asserts its temporary Cargo pin resolves the pinned zcash/halo2 commit through the
+# canonical URL before running Cargo `--locked`. The
 # base capture tooling remains the released halo2_proofs 0.3.5 / orchard 0.15.5 pipeline; these
 # draft follow-ups add direct proof-byte export, pinned-key preimage export, and deployed decoder
 # checks. All four families -- honest pair included -- regenerate from those exact snapshots.
