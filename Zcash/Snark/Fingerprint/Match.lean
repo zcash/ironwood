@@ -62,18 +62,19 @@ any batching layer prices on top of the per-proof artifact without adding transc
 
 ## The boundary at the derived key
 
-The statements of record are the `nonInteractiveFingerprint_matches_derived` theorems — one per
-capture family, in the four `Fixtures/*/*/Boundary.lean` modules: the challenges
-are derived by Lean's schedule model (`deriveChallenges`), and the verifying key is spelled as
-`derivedVk` — its end-to-end derivation from the ported `configure`/keygen at the captured URS
-(`Keygen/Certificate.lean`, transported to the other families by their
+The strongest statements of record are the
+`nonInteractiveFingerprint_matches_derived_keyDigest` theorems — one per capture family, in the
+four `Fixtures/*/*/Boundary.lean` modules. They run the schedule through the concrete transcript
+hash, derive the digest that opens it from the pinned key description, and spell the verifying
+key as `derivedVk` — its end-to-end derivation from the ported `configure`/keygen at the captured
+URS (`Keygen/Certificate.lean`, transported to the other families by their
 `VkCertificate.lean` modules). This ties the σ- and fixed-column polynomial content
 into the boundary: the compared bases are deterministic URS commitments of Lean's own keygen
 output, so a transcription error in that content moves a base point and fails the match — an
 accidental error cannot produce a colliding commitment, and a deliberate one has to solve
 discrete log. The dumped key record, the per-field checks in
 `Fixtures/SingleAction/Honest/VkMatch.lean`, and the standalone schedule theorems stay as diagnostics
-that name what broke; as trust elements the derived-form match subsumes them.
+that name what broke; as trust elements the strongest derived form subsumes them.
 
 The two honest families (`SingleAction`, `MultiAction`) state the match on real accepting
 proofs; the two match-only families (`{SingleAction,MultiAction}/Random`) state it on random proof strings, so the slots whose honest values are
