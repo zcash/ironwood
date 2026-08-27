@@ -444,17 +444,26 @@ assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 
 -- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
--- key digest plus BLAKE2b schedule into typed `DeployedAccepts`.
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
+-- identification with the captured key and shape (`Describes`) and the identity exclusion on the
+-- derived instance commitments, both evaluated here.
 assert_axioms Zcash.Snark.Fixture.capturedProofBytes_decodes +native(
   Zcash.Snark.Fixture.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.Fixture.serializeProof_eq_capturedProofBytes +native(
   Zcash.Snark.Fixture.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero +native(
+  Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero)
 assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsBytes +native(
   Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes,
   Zcash.Snark.Fixture.capturedProofBytes_decodes,
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero,
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived,
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr,
@@ -501,14 +510,13 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
 -- The exporter-emitted pinned key description (`PinnedKey.lean`): parsed losslessly and read
 -- back field by field against the captured key (its digest check is the family's own
 -- `keyDigest_eq_capturedVkTranscriptRepr`, censused above). The parsed value and the readers the
--- native claims range over are ordinary definitions, censused flagless so compiler trust cannot
--- reach them; well-formedness of the parse is derived from the `base_modulus_eq` field check.
+-- native claims range over are ordinary definitions (`Describes`' own, at the captured string),
+-- censused flagless so compiler trust cannot reach them; well-formedness of the parse is derived
+-- from the `base_modulus_eq` field check.
 assert_axioms Zcash.Snark.PinnedKey.pinned
 assert_axioms Zcash.Snark.PinnedKey.fuel
 assert_axioms Zcash.Snark.PinnedKey.cs
 assert_axioms Zcash.Snark.PinnedKey.domain
-assert_axioms Zcash.Snark.PinnedKey.queryIndexAt
-assert_axioms Zcash.Snark.PinnedKey.toQuerySpace
 assert_axioms Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses +native(
   Zcash.Snark.PinnedKey.base_modulus_eq)
 assert_axioms Zcash.Snark.PinnedKey.pinned_renderCompact +native(
