@@ -51,10 +51,10 @@ exporter output, as are the `proof-bytes.hex` siblings in the match-only familie
 by hand breaks the byte-for-byte CI gate and is overwritten by the next capture; changes belong
 upstream.
 
-`PinnedKey.lean` derives the verifying-key digest that opens every transcript from
-`capturedPinnedKeyDescription`, the exact compact string the pinned Halo2 exporter hashed and
-emitted in `Fixture.lean`, and reads its fields back against the captured key. Each family's
-`Transcript.lean` independently hashes its own generated copy. Regenerate-and-diff CI binds those
+`PinnedKey.lean` reads `capturedPinnedKeyDescription` — the exact compact string the pinned
+Halo2 exporter hashed and emitted in `Fixture.lean` — back field by field against the captured
+key. Each family's `Transcript.lean` hashes its own generated copy of that string to the
+captured digest that opens its transcript. Regenerate-and-diff CI binds those
 strings to the exact Orchard #544 and Halo2 #933 snapshots.
 
 Everything else is hand-written: `FiatShamir.lean`, `Transcript.lean`, `ProofBytes.lean`,

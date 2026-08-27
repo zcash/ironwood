@@ -2,19 +2,19 @@ import Zcash.Snark.Fixtures.SingleAction.Honest.Fixture
 import Zcash.Snark.Verifier.KeyDigest
 
 /-!
-# The verifying-key digest, derived from the pinned description
+# The pinned key description, read back against the captured key
 
 The transcript's first element is the verifying key's digest, `transcript_repr`. The pinned
 Halo2 exporter emits the exact compact `Debug` string it hashed as
-`Fixture.capturedPinnedKeyDescription`. This module independently hashes that string instead of
-taking the captured scalar on trust: `keyDigest` reproduces `capturedVkTranscriptRepr`, and the
-description's fields, read back through `DebugValue`, are the captured key's fields — the domain,
+`Fixture.capturedPinnedKeyDescription`. This module reads that string back through `DebugValue`
+and checks that the description's fields are the captured key's fields — the domain,
 column counts, gates, query layouts, permutation columns, lookups, and both commitment vectors —
 with the moduli, `extended_k`, `num_selectors`, `constants`, and `minimum_degree` checked against
 the literals the deployed circuit has, since the verifier's key carries no counterpart for them.
 
-Each family's `Transcript.lean` hashes its own exporter-emitted string and checks the result at its
-own captured scalar. Each `Boundary.lean` then states the fingerprint match with that recomputed
+Each family's `Transcript.lean` hashes its own exporter-emitted string and checks the result at
+its own captured scalar (`keyDigest_eq_capturedVkTranscriptRepr`). Each `Boundary.lean` then
+states the fingerprint match with that recomputed
 digest opening the transcript (`nonInteractiveFingerprint_matches_derived_keyDigest`). This removes
 trust in the captured digest scalar; the string and captured key remain capture outputs. The
 captured key is the derived key (`Keygen/Certificate.lean`), so every comparison below transports
@@ -35,18 +35,8 @@ def pinned : DebugValue := (parse? Fixture.capturedPinnedKeyDescription).getD (.
 /-- Recursion budget for reading expressions: one unit per character bounds every nesting. -/
 def fuel : ℕ := Fixture.capturedPinnedKeyDescription.length
 
-/-- The description is one well-formed `Debug` value. -/
-theorem capturedPinnedKeyDescription_parses :
-    (parse? Fixture.capturedPinnedKeyDescription).isSome = true := by
-  native_decide
-
 /-- The parse is lossless: rendering it compactly gives back the hashed text. -/
 theorem pinned_renderCompact : renderCompact pinned = Fixture.capturedPinnedKeyDescription := by
-  native_decide
-
-/-- **The captured key digest is the digest of the pinned description.** -/
-theorem keyDigest_eq_capturedVkTranscriptRepr :
-    keyDigest Fixture.capturedPinnedKeyDescription = Fixture.capturedVkTranscriptRepr := by
   native_decide
 
 /-! ## The pinned fields against the captured key -/
@@ -61,6 +51,19 @@ def domain : DebugValue := (pinned.field? "domain").getD (.atom "")
 theorem base_modulus_eq :
     (pinned.field? "base_modulus" >>= quotedHexNat?) = some PALLAS_SCALAR_CARD := by
   native_decide
+
+/-- The description is one well-formed `Debug` value: were the parse to fail, `pinned` would be
+the empty-atom fallback, which has no fields, contradicting `base_modulus_eq`. -/
+theorem capturedPinnedKeyDescription_parses :
+    (parse? Fixture.capturedPinnedKeyDescription).isSome = true := by
+  rcases hp : parse? Fixture.capturedPinnedKeyDescription with _ | v
+  · have hb := base_modulus_eq
+    have hpinned : pinned = DebugValue.atom "" := by
+      unfold pinned
+      rw [hp, Option.getD_none]
+    rw [hpinned] at hb
+    simp [DebugValue.field?] at hb
+  · rfl
 
 /-- The scalar modulus string names Vesta's scalar field order, the verifier's `F_p`. -/
 theorem scalar_modulus_eq :
@@ -118,9 +121,27 @@ theorem fixed_queries_eq :
     (cs.field? "fixed_queries" >>= listOf? query?) = some Fixture.vk.fixedQueryLayout := by
   native_decide
 
-/-- The permutation argument's columns are the captured chunks' columns, in order. -/
+/-- The first query of raw column `c` at rotation 0 in the layout `l` — halo2's
+`get_any_query_index(column, Rotation::cur())`, which is how `permutation::verifier` locates
+the evaluation of a permutation column. -/
+def queryIndexAt (l : List (ℕ × ℤ)) (c : ℕ) : Option ℕ := l.findIdx? (· = (c, 0))
+
+/-- A pinned permutation column, moved from the description's raw column space into the
+verifier's query-index space — the vocabulary `permutationChunks` speaks — through the captured
+query layouts, themselves checked against the pinned ones by the `*_queries_eq` theorems. -/
+def toQuerySpace : ColumnRef → Option ColumnRef
+  | .advice c => (queryIndexAt Fixture.vk.adviceQueryLayout c).map .advice
+  | .fixed c => (queryIndexAt Fixture.vk.fixedQueryLayout c).map .fixed
+  | .instance c => (queryIndexAt Fixture.vk.instanceQueryLayout c).map .instance
+
+/-- The permutation argument's columns are the captured chunks' columns, in order. The pinned
+description lists raw column indices where the captured chunks name each column by its
+rotation-0 query slot, so the comparison passes each pinned column through the same
+`get_any_query_index` translation the deployed verifier applies when it reads a permutation
+column's evaluation. -/
 theorem permutation_columns_eq :
-    ((cs.field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
+    (((cs.field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
+        >>= fun l => l.mapM toQuerySpace)
       = some (Fixture.vk.permutationChunks.flatten.map Prod.fst) := by
   native_decide
 

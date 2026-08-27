@@ -11,9 +11,10 @@ debug representation against its checked-in circuit description. The pinned `hal
 emits both the transcript representation below and the exact compact string it hashed.
 
 The hand-pinned scalar here makes fixture drift visible in this repository, while the Rust
-regeneration assertion binds it to the full canonical pinned key. `Fixtures/PinnedKey.lean` goes
-further: it hashes the exporter-emitted description with Halo2's `Halo2-Verify-Key` BLAKE2b and
-reads its fields back against the captured key, so the scalar is checked rather than only pinned.
+regeneration assertion binds it to the full canonical pinned key. The fixture lane goes further:
+each family's `Transcript.lean` hashes the exporter-emitted description with Halo2's
+`Halo2-Verify-Key` BLAKE2b to this scalar, and `Fixtures/PinnedKey.lean` reads the description's
+fields back against the captured key, so the scalar is checked rather than only pinned.
 
 The point-level equalities below identify the two captures' URS and verifying-key commitment
 points; the multi-action verifying-key certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`)
