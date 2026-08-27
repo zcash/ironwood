@@ -30,7 +30,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Exact reviewed snapshots. The PR numbers document where the commits are reviewed; the SHAs,
-# not their movable heads, are the reproducibility pins.
+# not their movable heads, are the reproducibility pins: a pin the PR head has moved past is
+# fetched by SHA (`prepare_orchard`).
 ORCHARD_COMMIT=b81271110ed363ba8455369a925dec21db9e452f # zcash/orchard#544
 ORCHARD_PR=544
 ORCHARD_URL=${ORCHARD_SRC:-https://github.com/zcash/orchard.git}
@@ -129,6 +130,15 @@ prepare_orchard() {
   if ! git -C "$dest" cat-file -e "${ORCHARD_COMMIT}^{commit}" 2>/dev/null; then
     # Canonical GitHub exposes fork-backed pull requests through this repository-owned ref.
     git -C "$dest" fetch --quiet origin "refs/pull/$ORCHARD_PR/head"
+  fi
+  if ! git -C "$dest" cat-file -e "${ORCHARD_COMMIT}^{commit}" 2>/dev/null; then
+    # The PR ref is movable: a force-push leaves the pinned SHA unreachable from it. GitHub serves
+    # any pushed commit by full SHA, so fetch the pin itself before giving up.
+    git -C "$dest" fetch --quiet origin "$ORCHARD_COMMIT" || true
+  fi
+  if ! git -C "$dest" cat-file -e "${ORCHARD_COMMIT}^{commit}" 2>/dev/null; then
+    echo "VIOLATION: pinned orchard commit $ORCHARD_COMMIT is neither the head of zcash/orchard#$ORCHARD_PR nor fetchable by SHA from $ORCHARD_URL" >&2
+    exit 1
   fi
   git -C "$dest" checkout --quiet --detach "$ORCHARD_COMMIT"
   git -C "$dest" reset --hard --quiet "$ORCHARD_COMMIT"

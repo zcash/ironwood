@@ -26,7 +26,15 @@ and this project adheres to Rust's notion of
   reproduces every capture's `transcript_repr`, the description's fields are read back against
   the captured key, and each family's statement of record opens the transcript with the derived
   digest. Each generated fixture carries the exact compact description the pinned exporter hashed.
+- `DeployedAcceptsBytes` requires the pinned description to describe the key and shape
+  (`Describes`, read back field by field from the description's constraint system) and, as halo2's
+  `common_point` does, refuses identity instance commitments; each honest capture discharges both
+  by evaluation.
 - A mutation test for the transcript tags (`Zcash/Snark/Soundness/FiatShamir/TagMutation.lean`):
   with halo2's domain tags deleted, the encoding collides a point with two scalars and a
   transcript with its pre-squeeze extension, so its injectivity fails; the deployed tags separate
   the same witnesses.
+
+### Changed
+- `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
+  `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
