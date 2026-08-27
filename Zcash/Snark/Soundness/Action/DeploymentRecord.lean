@@ -19,9 +19,10 @@ docstrings.
 The adversary-class restriction — deployed provers are modeled as represented online-AGM
 programs — is carried by `ComputedAdaptiveActionStatementFSFamily` itself, the type the record
 is parameterized over, so it appears as the record's parameter rather than as a field.
-The typed observer/table equality is deliberately the refinement boundary: it says which concrete
-finite experiment the deployed verifier implements without claiming byte-level refinement,
-concrete BLAKE2b hashing, or the outer batch wrapper.
+The typed observer/table equality is deliberately the capstone's refinement boundary: it says
+which concrete finite experiment the deployed verifier implements. `DeployedAcceptsBytes`
+separately composes canonical proof parsing and concrete BLAKE2b derivation into typed acceptance;
+this record still does not claim universal Rust-reader refinement or the outer batch wrapper.
 -/
 
 namespace Zcash.Snark
@@ -45,9 +46,10 @@ with only the permanent BLAKE2b-to-uniform-digest floor behind that identificati
 experiment's own envelope. `basisIsGeneratorRO`
 is the GroupHash-as-random-oracle idealization, permanent up to the encoding-distribution
 groundwork.  `vkDigestAgreesOnCanonical` binds the family's opaque digest to the deployed one at
-the canonical key only — the capstones claim no cross-key binding.  `acceptsFaithful` is the
-typed post-decode boundary: the byte-level verifier model stays open work
-(`Fingerprint/Match.lean`, *What remains external*).  `instanceColumnsExact` and `numProofs_pos`
+the canonical key only — the capstones claim no cross-key binding. `acceptsFaithful` identifies
+the typed core; `DeployedAcceptsBytes` supplies the explicit byte-to-typed composition, while a
+universal Rust-reader refinement remains external (`Fingerprint/Match.lean`, *What remains
+external*). `instanceColumnsExact` and `numProofs_pos`
 pin the shape of each deployed call behind that boundary: exact ten-row instance columns
 (excluding the trailing-zero commitment alias) and one invocation per present bundle carrying
 its positive action count. `dlogAdvantageAgrees` prevents the record from
