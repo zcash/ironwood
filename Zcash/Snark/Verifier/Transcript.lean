@@ -28,7 +28,9 @@ the deployed byte stream, element for element.
 Two facts make the byte layer a faithful carrier of the typed schedule. The encoding is
 injective, and it is prefix-free: `encodeTranscript_prefix_iff` says one element list's bytes are
 a prefix of another's exactly when the list itself is a prefix. So distinct typed transcripts are
-distinct oracle queries, and byte-level prefix structure is typed prefix structure.
+distinct oracle queries, and byte-level prefix structure is typed prefix structure. That the tags
+carry this is checked rather than asserted: `Soundness/FiatShamir/TagMutation.lean` deletes them
+and exhibits the collisions that appear.
 
 Each capture family's `Transcript.lean` checks `deriveChallenges halo2Transcript` against every
 captured challenge. The security development still idealizes the squeeze as a random oracle; what
