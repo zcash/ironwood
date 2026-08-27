@@ -386,17 +386,20 @@ assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_deriv
   Zcash.Snark.FixtureRandom2.deriveChallenges_matches_blake2b,
   Zcash.Snark.FixtureRandom2.fingerprint_matches)
 
--- The proof-string byte layer (`ProofBytes.lean`): the captured raw bytes decode to exactly the
--- captured typed proof and serialize back to them, plus the byte-level negatives. Point
--- decoding runs Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream compiler
--- trust, so every theorem that runs the decoder names it.
+-- The proof-string byte layer (`ProofBytes.lean`). Native execution is confined to facts that
+-- anchor the generated raw artifact: valid hex, its consensus length, its exact typed parse, and
+-- the full-stream suffix/sign mutations whose offsets are facts about that artifact. Serialization
+-- is now a theorem from the exact parse; the three malformed leading-point cases lift generic
+-- decoder proofs and add no fixture-local native axiom. Point-decoder statements still name the
+-- upstream native validity certificate carried by `vestaBase`.
 assert_computable Zcash.Snark.hexDecode? +choice
 assert_axioms Zcash.Snark.FixtureRandom2.capturedProofHex_decodes +native(
   Zcash.Snark.FixtureRandom2.capturedProofHex_decodes)
 assert_axioms Zcash.Snark.FixtureRandom2.capturedProofBytes_length +native(
   Zcash.Snark.FixtureRandom2.capturedProofBytes_length)
 assert_axioms Zcash.Snark.FixtureRandom2.serializeProof_eq_capturedProofBytes +native(
-  Zcash.Snark.FixtureRandom2.serializeProof_eq_capturedProofBytes)
+  Zcash.Snark.FixtureRandom2.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.FixtureRandom2.capturedProofBytes_decodes +native(
   Zcash.Snark.FixtureRandom2.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
@@ -407,13 +410,10 @@ assert_axioms Zcash.Snark.FixtureRandom2.non_canonical_scalar_rejected +native(
   Zcash.Snark.FixtureRandom2.non_canonical_scalar_rejected,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.FixtureRandom2.identity_point_rejected +native(
-  Zcash.Snark.FixtureRandom2.identity_point_rejected,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.FixtureRandom2.out_of_range_coordinate_rejected +native(
-  Zcash.Snark.FixtureRandom2.out_of_range_coordinate_rejected,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.FixtureRandom2.non_residue_x_rejected +native(
-  Zcash.Snark.FixtureRandom2.non_residue_x_rejected,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.FixtureRandom2.flipped_sign_decodes_negated +native(
   Zcash.Snark.FixtureRandom2.flipped_sign_decodes_negated,
