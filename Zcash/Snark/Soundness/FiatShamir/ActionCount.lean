@@ -16,8 +16,9 @@ at the byte level beneath it.
   prefix-incomparable: where the shorter one carries its challenge marker, the longer one is
   still absorbing a point. `preTheta_prefixFree_of_numProofs_ne` states both directions explicitly,
   and the two cones are therefore disjoint (`preTheta_cones_disjoint`).
-* `encodeTranscript_cones_disjoint` — the same for the byte strings the deployed hash sees, by
-  `encodeTranscript_prefix_iff`.
+* `encodeTranscript_prefixFree_of_numProofs_ne` and `encodeTranscript_cones_disjoint` — the same
+  statements for the byte strings the deployed hash sees, using `encodeTranscript_prefix_iff`
+  to transfer the typed prefix relationships to bytes.
 * `deriveChallenges_reprogram_other_count` — reprogramming the oracle anywhere on the `m`-action
   cone leaves every `n`-action challenge unchanged, for `n ≠ m`.
 
@@ -272,6 +273,26 @@ theorem encodeTranscript_cones_disjoint {shape shape' : Shape}
     exact preTheta_cones_disjoint hc hpos hne vk vk' inst inst' ps ps' _ ⟨this, List.prefix_rfl⟩
   · have := encodeTranscript_prefix_iff.mp (List.prefix_of_prefix_length_le h2 h1 hle)
     exact preTheta_cones_disjoint hc hpos hne vk vk' inst inst' ps ps' _ ⟨List.prefix_rfl, this⟩
+
+/-- **Byte-level prefix-freeness across action counts.** The BLAKE2b input prefix for one action
+count is never a prefix of the input prefix for another count, in either direction. -/
+theorem encodeTranscript_prefixFree_of_numProofs_ne {shape shape' : Shape}
+    (hc : shape.toCircuitShape = shape'.toCircuitShape)
+    (hpos : 0 < shape.numInstanceColumns + shape.numAdviceColumns)
+    (hne : shape.numProofs ≠ shape'.numProofs) (vk vk' : Fp)
+    (inst : Fin shape.numProofs → ℕ → VestaG) (inst' : Fin shape'.numProofs → ℕ → VestaG)
+    (ps : ProofString shape Fp VestaG) (ps' : ProofString shape' Fp VestaG) :
+    (¬ encodeTranscript (preThetaTranscriptForStatement vk inst ps) <+:
+        encodeTranscript (preThetaTranscriptForStatement vk' inst' ps')) ∧
+      (¬ encodeTranscript (preThetaTranscriptForStatement vk' inst' ps') <+:
+        encodeTranscript (preThetaTranscriptForStatement vk inst ps)) := by
+  constructor
+  · intro hprefix
+    exact (preTheta_prefixFree_of_numProofs_ne hc hpos hne vk vk' inst inst' ps ps').1
+      (encodeTranscript_prefix_iff.mp hprefix)
+  · intro hprefix
+    exact (preTheta_prefixFree_of_numProofs_ne hc hpos hne vk vk' inst inst' ps ps').2
+      (encodeTranscript_prefix_iff.mp hprefix)
 
 open Classical in
 /-- **Reprogramming the other count's cone is invisible.** Replacing the oracle's answers on every
