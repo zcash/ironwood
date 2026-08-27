@@ -58,7 +58,8 @@ field by field for the pinned Action key.
 This definition composes the modeled layers. Identifying Rust's reader with `readProof?` for every
 input remains a refinement boundary; the exact honest and random capture bytes exercise that
 boundary concretely. -/
-def DeployedAcceptsBytes (shape : Shape) (urs : URS VestaG) (hk : shape.k = urs.k)
+def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
+    (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (pinnedVkDescription : String)
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (proofBytes : List UInt8) : Prop :=
@@ -70,7 +71,7 @@ def DeployedAcceptsBytes (shape : Shape) (urs : URS VestaG) (hk : shape.k = urs.
 
 /-- Byte-level acceptance exposes the unique parsed proof and its canonical serialization before
 entering typed `DeployedAccepts`. -/
-theorem deployedAcceptsBytes_canonical {shape : Shape} {urs : URS VestaG}
+theorem deployedAcceptsBytes_canonical [Inhabited VestaG] {shape : Shape} {urs : URS VestaG}
     {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp VestaG}
     {pinnedVkDescription : String}
     {instanceCommitment : Fin shape.numProofs → ℕ → VestaG} {proofBytes : List UInt8}
