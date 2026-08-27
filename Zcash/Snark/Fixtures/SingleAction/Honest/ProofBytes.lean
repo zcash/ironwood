@@ -30,10 +30,10 @@ theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProof
   exact serializeProof_eq_of_readProof?_eq_some capturedProofBytes_decodes
 
 /-- **The accepting Rust capture reaches the byte-level predicate.** Parsing is exact, the key
-digest comes from the pinned key description, challenges come from the deployed BLAKE2b
+digest comes from the exporter-emitted pinned key description, challenges come from the deployed BLAKE2b
 transcript, and the resulting typed proof satisfies `DeployedAccepts`. -/
 theorem capture_deployedAcceptsBytes :
-    DeployedAcceptsBytes shape capturedURS rfl vk PinnedKey.pinnedKeyDescription
+    DeployedAcceptsBytes shape capturedURS rfl vk capturedPinnedKeyDescription
       derivedInstanceCommitment capturedProofBytes := by
   refine ⟨ps, capturedProofBytes_decodes, ?_⟩
   rw [keyDigest_eq_capturedVkTranscriptRepr,
