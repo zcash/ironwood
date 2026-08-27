@@ -2330,6 +2330,7 @@ assert_axioms Zcash.Snark.LEOS2IP_I2LEOSP_256
 assert_axioms Zcash.Snark.encodeElt_append_inj
 assert_axioms Zcash.Snark.encodeTranscript_prefix_iff
 assert_axioms Zcash.Snark.encodeTranscript_injective
+assert_axioms Zcash.Snark.challengeOfDigest_eq_iff_modEq
 assert_axioms Zcash.Snark.LEOS2IP_digest_lt
 
 -- The proof-string byte layer (`Verifier/ProofBytes.lean`): canonical decoding of scalars and

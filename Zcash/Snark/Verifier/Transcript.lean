@@ -41,6 +41,7 @@ namespace Zcash.Snark
 
 open CompElliptic CompElliptic.Fields.Pasta CompElliptic.CurveForms.ShortWeierstrass
 open Zcash.Common
+open Zcash.Arithmetic (scalarFieldOrder)
 
 /-! ## Little-endian field encodings -/
 
@@ -222,6 +223,17 @@ def squeezeDigest (t : List (TranscriptElt Fp VestaG)) : Vector UInt8 64 :=
 two 256-bit halves. This is the integer map whose bias `challenge255` prices. -/
 def challengeOfDigest (d : Vector UInt8 64) : Fp :=
   ((LEOS2IP d : ℕ) : Fp)
+
+/-- Equal converted challenges mean that the two digest integers are congruent modulo the scalar
+field order. This is deliberately not a digest-equality conclusion: reduction from 512 bits to
+`Fp` is many-to-one, so equal squeeze scalars need not exhibit a BLAKE2b collision. The random-
+oracle query separation used by the security model is instead the injectivity of
+`encodeTranscript` before hashing. -/
+theorem challengeOfDigest_eq_iff_modEq (d e : Vector UInt8 64) :
+    challengeOfDigest d = challengeOfDigest e ↔
+      LEOS2IP d ≡ LEOS2IP e [MOD scalarFieldOrder] := by
+  unfold challengeOfDigest
+  exact ZMod.natCast_eq_natCast_iff _ _ _
 
 /-- The digest integer is a 512-bit value, the sample space `challenge255` reduces. -/
 theorem LEOS2IP_digest_lt (d : Vector UInt8 64) : LEOS2IP d < 2 ^ 512 := by
