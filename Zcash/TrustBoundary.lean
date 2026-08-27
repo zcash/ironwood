@@ -34,6 +34,7 @@ import Zcash.Snark.Soundness.AGM.DeployedConstraintSupply
 import Zcash.Snark.Soundness.AGM.ProbabilityVesta
 import Zcash.Snark.Soundness.FiatShamir.Adversary
 import Zcash.Snark.Soundness.FiatShamir.ActionCount
+import Zcash.Snark.Soundness.FiatShamir.TagMutation
 import Zcash.Snark.Verifier.ProofBytes
 import Zcash.Snark.Verifier.KeyDigest
 import Zcash.Snark.Soundness.Composition.Bridge
@@ -2202,6 +2203,16 @@ assert_axioms Zcash.Snark.preTheta_prefixFree_of_numProofs_ne
 assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
 assert_axioms Zcash.Snark.encodeTranscript_prefixFree_of_numProofs_ne
 assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
+
+-- The tags are load-bearing (`Soundness/FiatShamir/TagMutation.lean`): with them deleted, the
+-- encoding collides a point with two scalars and a transcript with its pre-squeeze extension,
+-- while the deployed tags separate the same witnesses.
+assert_axioms Zcash.Snark.TagMutation.untagged_point_scalar_collision
+assert_axioms Zcash.Snark.TagMutation.untagged_not_injective_point_scalar
+assert_axioms Zcash.Snark.TagMutation.untagged_marker_collision
+assert_axioms Zcash.Snark.TagMutation.untagged_not_injective_marker
+assert_axioms Zcash.Snark.TagMutation.tagged_separates_witness
+assert_axioms Zcash.Snark.TagMutation.tagged_separates_marker
 
 -- The verifying-key digest (`Verifier/KeyDigest.lean`): `transcript_repr` recomputed from the exact
 -- exporter-emitted pinned-key string, and Rust's `Debug` value language read back into the
