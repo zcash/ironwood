@@ -39,8 +39,8 @@ def encodeTranscriptUntagged (t : List (TranscriptElt Fp VestaG)) : List UInt8 :
 /-- The witness point's `x`: `1`. -/
 def witnessX : VestaBaseField := 1
 
-/-- The witness point's `y`: a square root of `1³ + 5 = 6` in the Vesta base field, the root below
-`p`. -/
+/-- The witness point's `y`: a square root of `1³ + 5 = 6` in the Vesta base field. Its value is
+below `p` (as both roots' are), so its coordinate bytes also read back exactly as a scalar's. -/
 def witnessY : VestaBaseField :=
   0x1943666ea922ae6b13b64e3aae89754cacce3a7f298ba20c4e4389b9b0276a62
 
