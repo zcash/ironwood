@@ -158,10 +158,10 @@ Eleven premises remain trusted rather than fixture-checked:
   `TrustBoundary.lean`.
 
 Halo2's pinned-key digest is reimplemented: the pinned exporter emits its exact compact hash
-preimage as `capturedPinnedKeyDescription`; `Fixtures/PinnedKey.lean` hashes it
-(`Verifier/KeyDigest.lean`) to the captured `transcript_repr` and reads its fields back against the
-captured key. The string, captured key, and Orchard's own key-description comparison stay at the
-fixture-generation boundary.
+preimage as `capturedPinnedKeyDescription`; each family's `Transcript.lean` hashes it
+(`Verifier/KeyDigest.lean`) to the captured `transcript_repr`, and `Fixtures/PinnedKey.lean`
+reads its fields back against the captured key. The string, captured key, and Orchard's own
+key-description comparison stay at the fixture-generation boundary.
 -/
 
 namespace Zcash.Snark
