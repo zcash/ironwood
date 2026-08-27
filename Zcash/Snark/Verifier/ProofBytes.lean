@@ -9,13 +9,13 @@ writes down the reads beneath it — `read_point` and `read_scalar` from halo2's
 with `pasta_curves`' `from_bytes` and `from_repr` — as a decoder over the raw proof bytes, and the
 prover's `write_point`/`write_scalar` as the serializer.
 
-* `decodeScalar32` takes 32 bytes as a little-endian integer and accepts it only below `p`
-  (`from_repr`'s canonicality check).
-* `decodePoint32` takes 32 bytes: bit 255 is the parity of `y`, the low 255 bits are `x` and must
-  be below `q`; `y` is the square root of `x³ + 5` with the signalled parity. The all-zero string,
-  which `from_bytes` decodes to the identity, is rejected: the deployed transcript refuses to
-  absorb the identity, and no Vesta point has `x = 0` (`Vesta.no_onCurve_x_zero`), so the
-  rejection here is the deployed rejection one step earlier.
+* `decodeScalar32` accepts exactly 32 bytes as a little-endian integer and only when it is below
+  `p` (`from_repr`'s canonicality check).
+* `decodePoint32` accepts exactly 32 bytes: bit 255 is the parity of `y`, the low 255 bits are `x`
+  and must be below `q`; `y` is the square root of `x³ + 5` with the signalled parity. The
+  all-zero string, which `from_bytes` decodes to the identity, is rejected: the deployed
+  transcript refuses to absorb the identity, and no Vesta point has `x = 0`
+  (`Vesta.no_onCurve_x_zero`), so the rejection here is the deployed rejection one step earlier.
 * `readProof?` reads a whole proof in the verifier's read order — the order `deriveChallenges`
   absorbs in — and `serializeProof` writes one back.
 
@@ -106,18 +106,19 @@ theorem toBytes_toList_eq {P : VestaG} {bs : List UInt8} (h : bs.length = 32)
 `read_scalar` takes 32 bytes; `from_repr` accepts them only when the little-endian integer is
 below `p`, so a scalar has exactly one accepted encoding. -/
 
-/-- `from_repr`: 32 canonical little-endian bytes, or rejection. -/
+/-- `from_repr`: exactly 32 canonical little-endian bytes, or rejection. -/
 def decodeScalar32 (enc : List UInt8) : Option Fp :=
-  if leInt enc < scalarFieldOrder then some ((leInt enc : ℕ) : Fp) else none
+  if enc.length = 32 then
+    if leInt enc < scalarFieldOrder then some ((leInt enc : ℕ) : Fp) else none
+  else none
 
-/-- **Canonical scalar decoding.** On 32 bytes, decoding succeeds exactly on the scalar's own
-`to_repr`. -/
-theorem decodeScalar32_eq_some_iff {enc : List UInt8} (h : enc.length = 32) {s : Fp} :
+/-- **Canonical scalar decoding.** Decoding succeeds exactly on the scalar's 32-byte `to_repr`. -/
+theorem decodeScalar32_eq_some_iff {enc : List UInt8} {s : Fp} :
     decodeScalar32 enc = some s ↔ enc = (scalarRepr s).toList := by
   constructor
   · intro hd
     unfold decodeScalar32 at hd
-    split_ifs at hd with hlt
+    split_ifs at hd with h hlt
     simp only [Option.some.injEq] at hd
     subst hd
     refine (scalarRepr_toList_eq h ?_).symm
@@ -126,7 +127,8 @@ theorem decodeScalar32_eq_some_iff {enc : List UInt8} (h : enc.length = 32) {s :
   · intro heq
     rw [heq]
     unfold decodeScalar32
-    rw [leInt_toList, LEOS2IP_scalarRepr, if_pos (ZMod.val_lt s), ZMod.natCast_zmod_val]
+    rw [if_pos (by simp), leInt_toList, LEOS2IP_scalarRepr, if_pos (ZMod.val_lt s),
+      ZMod.natCast_zmod_val]
 
 /-! ## Decoding one point
 
@@ -153,17 +155,20 @@ theorem vestaBase_card_lt_signBit : PALLAS_SCALAR_CARD < signBit := by
 def paritySelect (r : VestaBaseField) (ysign : ℕ) : VestaBaseField :=
   if r.val % 2 = ysign then r else -r
 
-/-- `from_bytes` on 32 bytes, with the identity rejected as the transcript would reject it. -/
+/-- `from_bytes` on exactly 32 bytes, with the identity rejected as the transcript would reject
+it. -/
 def decodePoint32 (enc : List UInt8) : Option VestaG :=
-  if leInt enc % signBit < PALLAS_SCALAR_CARD then
-    match vestaBase.sqrt? (((leInt enc % signBit : ℕ) : VestaBaseField) ^ 3
-        + Vesta.a * ((leInt enc % signBit : ℕ) : VestaBaseField) + Vesta.b) with
-    | none => none
-    | some r =>
-        if hc : OnCurve Vesta.a Vesta.b (((leInt enc % signBit : ℕ) : VestaBaseField),
-            paritySelect r (leInt enc / signBit)) then
-          some ⟨_, _, Or.inl hc⟩
-        else none
+  if enc.length = 32 then
+    if leInt enc % signBit < PALLAS_SCALAR_CARD then
+      match vestaBase.sqrt? (((leInt enc % signBit : ℕ) : VestaBaseField) ^ 3
+          + Vesta.a * ((leInt enc % signBit : ℕ) : VestaBaseField) + Vesta.b) with
+      | none => none
+      | some r =>
+          if hc : OnCurve Vesta.a Vesta.b (((leInt enc % signBit : ℕ) : VestaBaseField),
+              paritySelect r (leInt enc / signBit)) then
+            some ⟨_, _, Or.inl hc⟩
+          else none
+    else none
   else none
 
 /-- The Vesta base field has odd order, so negation flips the parity of a nonzero value. -/
@@ -218,16 +223,16 @@ theorem x_ne_zero_of_sqrt {x r : VestaBaseField}
   rw [hrr, ha, hb]
   ring
 
-/-- **Canonical point decoding.** On 32 bytes, decoding succeeds exactly on the compressed encoding
-of a non-identity point. -/
-theorem decodePoint32_eq_some_iff {enc : List UInt8} (h : enc.length = 32) {P : VestaG} :
+/-- **Canonical point decoding.** Decoding succeeds exactly on the 32-byte compressed encoding of
+a non-identity point. -/
+theorem decodePoint32_eq_some_iff {enc : List UInt8} {P : VestaG} :
     decodePoint32 enc = some P ↔ P ≠ 0 ∧ enc = (toBytes P).toList := by
   have hq := vestaBase_card_lt_signBit
-  have hvlt : leInt enc < 2 ^ 256 := leInt_lt_of_length_32 h
   constructor
   · intro hd
     unfold decodePoint32 at hd
-    split_ifs at hd with hx
+    split_ifs at hd with h hx
+    have hvlt : leInt enc < 2 ^ 256 := leInt_lt_of_length_32 h
     generalize hsq : vestaBase.sqrt? (((leInt enc % signBit : ℕ) : VestaBaseField) ^ 3
         + Vesta.a * ((leInt enc % signBit : ℕ) : VestaBaseField) + Vesta.b) = sq at hd
     cases sq with
@@ -267,7 +272,7 @@ theorem decodePoint32_eq_some_iff {enc : List UInt8} (h : enc.length = 32) {P : 
     have hdiv : leInt (toBytes P).toList / signBit = P.y.val % 2 := by
       rw [hint, Nat.add_mul_div_right _ _ signBit_pos, Nat.div_eq_of_lt hxlt, Nat.zero_add]
     unfold decodePoint32
-    rw [if_pos (by rw [hmod]; exact ZMod.val_lt P.x)]
+    rw [if_pos (by simp), if_pos (by rw [hmod]; exact ZMod.val_lt P.x)]
     simp only [hmod, hdiv, ZMod.natCast_zmod_val]
     have hyy : P.y * P.y = P.x ^ 3 + Vesta.a * P.x + Vesta.b := by
       have hc : P.y ^ 2 = P.x ^ 3 + Vesta.a * P.x + Vesta.b := hOn
@@ -334,7 +339,7 @@ theorem read32_eq_some_iff {α : Type} {decode : List UInt8 → Option α} {enc 
 /-- `read_scalar` succeeds exactly on `write_scalar`'s output followed by the remainder. -/
 theorem scalarReader_eq_some_iff {bs : List UInt8} {s : Fp} {rest : List UInt8} :
     scalarReader.run bs = some (s, rest) ↔ bs = (scalarRepr s).toList ++ rest :=
-  read32_eq_some_iff (fun _ => by simp) (fun _ _ h => decodeScalar32_eq_some_iff h)
+  read32_eq_some_iff (fun _ => by simp) (fun _ _ _ => decodeScalar32_eq_some_iff)
 
 /-- `read_point` succeeds exactly on `write_point`'s output for a non-identity point followed by
 the remainder. -/
@@ -349,7 +354,7 @@ theorem pointReader_eq_some_iff {bs : List UInt8} {P : VestaG} {rest : List UInt
     simp only [Prod.mk.injEq] at hxy
     obtain ⟨rfl, rfl⟩ := hxy
     have htake : (bs.take 32).length = 32 := by simp [List.length_take, h32]
-    obtain ⟨hP, henc⟩ := (decodePoint32_eq_some_iff htake).mp hy
+    obtain ⟨hP, henc⟩ := decodePoint32_eq_some_iff.mp hy
     refine ⟨hP, ?_⟩
     conv_lhs => rw [← List.take_append_drop 32 bs]
     rw [henc]
@@ -359,7 +364,7 @@ theorem pointReader_eq_some_iff {bs : List UInt8} {P : VestaG} {rest : List UInt
     simp only [StateT.run]
     have hlen : (toBytes P).toList.length = 32 := by simp
     rw [if_pos (by simp), List.take_left' hlen, List.drop_left' hlen,
-      (decodePoint32_eq_some_iff hlen).mpr ⟨hP, rfl⟩]
+      decodePoint32_eq_some_iff.mpr ⟨hP, rfl⟩]
     rfl
 
 /-- Read `n` elements in index order, the reader at index `i` producing element `i`. -/
