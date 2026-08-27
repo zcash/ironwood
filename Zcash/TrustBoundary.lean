@@ -2198,8 +2198,10 @@ assert_axioms Zcash.Snark.readProof?_none_of_truncated +native(CompElliptic.Fiel
 assert_axioms Zcash.Snark.readProof?_none_of_noncanonical_final_scalar +native(
   CompElliptic.Fields.Pasta.vestaBase)
 
--- The byte-level acceptance wrapper parses the whole proof, derives the pinned-key digest and
--- BLAKE2b Fiat–Shamir challenges, and then enters the existing typed `DeployedAccepts` predicate.
+-- The byte-level acceptance wrapper requires the pinned description to describe the key
+-- (`Describes`), excludes identity instance commitments as halo2's `common_point` does, parses the
+-- whole proof, derives the pinned-key digest and BLAKE2b Fiat–Shamir challenges, and then enters
+-- the existing typed `DeployedAccepts` predicate.
 assert_computable Zcash.Snark.DeployedAcceptsBytes +choice +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(
@@ -2235,3 +2237,9 @@ assert_computable Zcash.Snark.DebugValue.parse? +choice
 assert_computable Zcash.Snark.DebugValue.renderCompact
 assert_computable Zcash.Snark.DebugValue.expr? +choice
 assert_computable Zcash.Snark.DebugValue.point? +choice
+-- `Describes` reads a description back against the key and shape it claims to describe — the
+-- identification `DeployedAcceptsBytes` carries; its decidability is what each honest capture
+-- evaluates.
+assert_computable Zcash.Snark.toQuerySpace
+assert_computable Zcash.Snark.Describes +choice
+assert_computable Zcash.Snark.decidableDescribes +choice
