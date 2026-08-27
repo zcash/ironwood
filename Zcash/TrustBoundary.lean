@@ -2203,9 +2203,10 @@ assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
 assert_axioms Zcash.Snark.encodeTranscript_prefixFree_of_numProofs_ne
 assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
 
--- The verifying-key digest (`Verifier/KeyDigest.lean`): `transcript_repr` recomputed from the
--- pinned key description, and Rust's `Debug` value language read back into the verifier's
--- vocabulary. The fixture lane (`Fixtures/PinnedKey.lean`) checks both against the captures.
+-- The verifying-key digest (`Verifier/KeyDigest.lean`): `transcript_repr` recomputed from the exact
+-- exporter-emitted pinned-key string, and Rust's `Debug` value language read back into the
+-- verifier's vocabulary. The fixture lane (`Fixtures/PinnedKey.lean`) checks both against the
+-- capture; the preimage string and captured key remain fixture inputs.
 assert_computable Zcash.Snark.keyDigest +choice
 assert_computable Zcash.Snark.DebugValue.parse? +choice
 assert_computable Zcash.Snark.DebugValue.renderCompact +choice
