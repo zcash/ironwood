@@ -2166,9 +2166,9 @@ assert_axioms Zcash.Snark.encodeTranscript_injective
 assert_axioms Zcash.Snark.LEOS2IP_digest_lt
 
 -- The proof-string byte layer (`Verifier/ProofBytes.lean`): canonical decoding of scalars and
--- points in both directions, lifted to vectors, and the reader and serializer as executable data.
--- Point decoding runs Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream
--- compiler trust.
+-- points in both directions, lifted through compound readers to the theorem that every successful
+-- whole-proof parse reconstructs exactly the consumed serialization. Point decoding runs
+-- Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream compiler trust.
 assert_computable Zcash.Snark.decodeScalar32 +choice
 assert_computable Zcash.Snark.decodePoint32 +choice +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_computable Zcash.Snark.readProof? +choice +native(CompElliptic.Fields.Pasta.vestaBase)
@@ -2179,6 +2179,8 @@ assert_axioms Zcash.Snark.scalarReader_eq_some_iff
 assert_axioms Zcash.Snark.pointReader_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.readVec_serializeVec
 assert_axioms Zcash.Snark.readVec_eq_some
+assert_axioms Zcash.Snark.readProof?_eq_some_serialize +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.serializeProof_eq_of_readProof?_eq_some +native(CompElliptic.Fields.Pasta.vestaBase)
 
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
 -- oracle locality, the disjointness of the pre-`θ` cones at different counts — typed and
