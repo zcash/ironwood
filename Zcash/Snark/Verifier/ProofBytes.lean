@@ -62,6 +62,20 @@ theorem leInt_lt_of_length_32 {bs : List UInt8} (h : bs.length = 32) : leInt bs 
   rw [h] at this
   exact lt_of_lt_of_eq this (by norm_num)
 
+/-- A string of zero bytes denotes zero. -/
+@[simp] theorem leInt_replicate_zero (n : ℕ) :
+    leInt (List.replicate n (0 : UInt8)) = 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp [List.replicate_succ, leInt_cons, ih]
+
+/-- Reading the explicit 32-byte little-endian rendering used by the malformed-coordinate
+fixtures recovers the integer it renders. -/
+theorem leInt_ofFn_32 (n : Fin (2 ^ 256)) :
+    leInt (List.ofFn fun i : Fin 32 => UInt8.ofNat (n.val / 256 ^ i.val % 256)) = n.val := by
+  rw [show (List.ofFn fun i : Fin 32 => UInt8.ofNat (n.val / 256 ^ i.val % 256)) =
+      (I2LEOSP 256 n).toList by rfl, leInt_toList, LEOS2IP_I2LEOSP_256]
+
 /-- Each byte is recovered from the little-endian integer: byte `i` is digit `i` in base 256. -/
 theorem leInt_div_pow_mod (bs : List UInt8) :
     ∀ i : ℕ, ∀ hi : i < bs.length, leInt bs / 256 ^ i % 256 = bs[i].toNat := by
@@ -292,6 +306,61 @@ theorem decodePoint32_eq_some_iff {enc : List UInt8} {P : VestaG} :
     simp only [hsel]
     rw [dif_pos hOn]
 
+/-- A square-root routine cannot return a value for a proved non-square. This uses its checked
+output equation, not native evaluation of the routine. -/
+theorem sqrt?_eq_none_of_not_isSquare {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+    (d : Fields.TonelliShanks F) {a : F} (ha : ¬ IsSquare a) : d.sqrt? a = none := by
+  cases h : d.sqrt? a with
+  | none => rfl
+  | some r =>
+      exfalso
+      exact ha ⟨r, (Fields.TonelliShanks.sqrt?_mul_self d h).symm⟩
+
+/-- The all-zero compressed encoding is rejected: it asks for a point with `x = 0`, for which the
+Vesta curve equation has no solution. -/
+theorem decodePoint32_zero_eq_none :
+    decodePoint32 (List.replicate 32 0) = none := by
+  have hsqrt : vestaBase.sqrt? (5 : VestaBaseField) = none :=
+    sqrt?_eq_none_of_not_isSquare vestaBase Vesta.five_not_isSquare
+  unfold decodePoint32
+  rw [if_pos (by simp), leInt_replicate_zero]
+  rw [if_pos (by norm_num [signBit, PALLAS_SCALAR_CARD])]
+  simpa [Vesta.a, Vesta.b] using hsqrt
+
+/-- Encoding the base-field modulus as a compressed `x` is rejected as non-canonical. -/
+theorem decodePoint32_baseModulus_eq_none :
+    decodePoint32
+      (List.ofFn fun i : Fin 32 =>
+        UInt8.ofNat (PALLAS_SCALAR_CARD / 256 ^ i.val % 256)) = none := by
+  have hq256 : PALLAS_SCALAR_CARD < 2 ^ 256 := by
+    exact lt_trans vestaBase_card_lt_signBit (by norm_num [signBit])
+  have hle :
+      leInt (List.ofFn fun i : Fin 32 =>
+        UInt8.ofNat (PALLAS_SCALAR_CARD / 256 ^ i.val % 256)) = PALLAS_SCALAR_CARD := by
+    simpa using leInt_ofFn_32 ⟨PALLAS_SCALAR_CARD, hq256⟩
+  unfold decodePoint32
+  rw [if_pos (by simp), hle, Nat.mod_eq_of_lt vestaBase_card_lt_signBit,
+    if_neg (Nat.lt_irrefl _)]
+
+/-- `13` is a quadratic non-residue in the Vesta base field. -/
+theorem thirteen_not_isSquare : ¬ IsSquare (13 : VestaBaseField) := by
+  rw [ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide : (13 : VestaBaseField) ≠ 0)]
+  reduce_mod_char
+  decide
+
+/-- The compressed encoding with `x = 2` is rejected because its curve-equation radicand is the
+non-residue `13`. -/
+theorem decodePoint32_two_eq_none :
+    decodePoint32 (2 :: List.replicate 31 0) = none := by
+  have hle : leInt (2 :: List.replicate 31 0) = 2 := by
+    simp [leInt_cons]
+  have hsqrt : vestaBase.sqrt? (13 : VestaBaseField) = none :=
+    sqrt?_eq_none_of_not_isSquare vestaBase thirteen_not_isSquare
+  unfold decodePoint32
+  rw [if_pos (by simp), hle]
+  rw [if_pos (by norm_num [signBit, PALLAS_SCALAR_CARD])]
+  simpa [signBit, Vesta.a, Vesta.b] using hsqrt
+
 /-! ## Stream readers -/
 
 -- Decidable equality on the typed proof, so a decoded proof can be compared with a captured one:
@@ -367,6 +436,15 @@ theorem pointReader_eq_some_iff {bs : List UInt8} {P : VestaG} {rest : List UInt
       decodePoint32_eq_some_iff.mpr ⟨hP, rfl⟩]
     rfl
 
+/-- If the first 32-byte point encoding is rejected, appending any stream suffix cannot make that
+point read succeed. -/
+theorem pointReader_eq_none_of_prefix {enc rest : List UInt8} (hlen : enc.length = 32)
+    (hdecode : decodePoint32 enc = none) : pointReader.run (enc ++ rest) = none := by
+  unfold pointReader read32
+  simp only [StateT.run]
+  rw [if_pos (by simp [hlen]), List.take_left' hlen, hdecode]
+  rfl
+
 /-- Read `n` elements in index order, the reader at index `i` producing element `i`. -/
 def readVec {α : Type} : (n : ℕ) → (Fin n → ProofReader α) → ProofReader (Fin n → α)
   | 0, _ => pure (fun i => i.elim0)
@@ -441,6 +519,12 @@ theorem readVec_eq_some {α : Type} (n : ℕ) (r : Fin n → ProofReader α)
 /-- Read `m × n` elements proof-major: for each proof, its `n` elements. -/
 def readGrid {α : Type} (m n : ℕ) (r : ProofReader α) : ProofReader (Fin m → Fin n → α) :=
   readVec m fun _ => readVec n fun _ => r
+
+/-- A nonempty proof-major grid fails immediately when its first element reader fails. -/
+theorem readGrid_eq_none_of_first {α : Type} {m n : ℕ} {r : ProofReader α}
+    {bs : List UInt8} (h : r.run bs = none) :
+    (readGrid (m + 1) (n + 1) r).run bs = none := by
+  simp [readGrid, readVec, h]
 
 /-- The bytes of `m × n` elements proof-major. -/
 def serializeGrid {α : Type} (m n : ℕ) (enc : α → List UInt8) (f : Fin m → Fin n → α) :
@@ -620,6 +704,17 @@ def readProof? (shape : Shape) : ProofReader (ProofString shape Fp VestaG) := do
     ipaRounds
     ipaC
     ipaF }
+
+/-- A proof with at least one proof and one advice column fails when its leading compressed point
+fails. This lifts element rejection without evaluating the rest of a captured proof. -/
+theorem readProof?_eq_none_of_first_point {shape : Shape} {m n : ℕ} {bs : List UInt8}
+    (hproofs : shape.numProofs = m + 1) (hadvice : shape.numAdviceColumns = n + 1)
+    (hpoint : pointReader.run bs = none) : (readProof? shape).run bs = none := by
+  unfold readProof?
+  rw [hproofs, hadvice]
+  simp only [StateT.run_bind]
+  rw [readGrid_eq_none_of_first hpoint]
+  rfl
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
 order. The deployed verifier ignores trailing bytes; the consensus rules fix the proof length
