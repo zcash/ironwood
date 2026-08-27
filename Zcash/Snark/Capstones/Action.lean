@@ -80,11 +80,12 @@ rather than proved, with its known strengthening named where one exists:
   (`AdaptiveStatementModel.lean`, *Intended instantiation*). At the captures the digest is
   derived, not taken: `Fixtures/PinnedKey.lean` hashes the pinned key description and checks its
   fields against the derived key; cross-key binding would need BLAKE2b's collision resistance.
-* *Acceptance* — `DeployedAccepts` starts at typed, post-decode values and prices one proof
-  bundle. The decode beneath it is modeled and canonical (`Verifier/ProofBytes.lean`, checked
-  against the random captures' raw bytes) but not composed into the acceptance predicate, and
-  halo2's optional `BatchVerifier` sits outside the formalized verifier (`Fingerprint/Match.lean`,
-  *What remains external*).  The deployment record pins the
+* *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
+  `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
+  challenge schedule into it. Both honest captures witness this byte-level predicate. Universal
+  refinement of Rust's reader to the Lean decoder and halo2's optional `BatchVerifier` remain
+  outside the formalized verifier (`Fingerprint/Match.lean`, *What remains external*). The
+  deployment record pins the
   call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
   zero-padding makes a shorter column verify as its zero-padding
   (`assembleNonInteractiveInstances?_padColumns`), aliasing a missing trailing row to

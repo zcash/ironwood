@@ -6,6 +6,7 @@ import Zcash.Snark.Fixtures.SingleAction.Honest.Negative
 import Zcash.Snark.Fixtures.SingleAction.Honest.Negative.Sweep
 import Zcash.Snark.Fixtures.SingleAction.Honest.Boundary
 import Zcash.Snark.Fixtures.SingleAction.Honest.Transcript
+import Zcash.Snark.Fixtures.SingleAction.Honest.ProofBytes
 import Zcash.Snark.Fixtures.PinnedKey
 import Zcash.Meta.AxiomCheck
 import Mathlib.Util.AssertNoSorry
@@ -441,6 +442,25 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
 -- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
 assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+
+-- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`.
+assert_axioms Zcash.Snark.Fixture.capturedProofBytes_decodes +native(
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.serializeProof_eq_capturedProofBytes +native(
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsBytes +native(
+  Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyDigest +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
