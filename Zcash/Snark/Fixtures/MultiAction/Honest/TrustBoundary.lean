@@ -749,14 +749,12 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_bla
   Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture2.fingerprint_matches,
   Zcash.Snark.Fixture2.instance_commitments_derived)
@@ -777,8 +775,7 @@ assert_axioms Zcash.Snark.Fixture2.serializeProof_eq_capturedProofBytes +native(
   Zcash.Snark.Fixture2.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes +native(
-  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes,
-  CompElliptic.Fields.Pasta.vestaBase)
+  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes)
 assert_axioms Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero +native(
   Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero)
 assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsBytes +native(
@@ -802,14 +799,12 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_key
   Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
-  Zcash.Circuits.Ecc.MulFixed.windowScalar_ne_zero,
   Zcash.Circuits.Ecc.MulFixed.Certs.commitIvkRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.noteCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.nullifierKCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.spendAuthGCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitRCert_check,
   Zcash.Circuits.Ecc.MulFixed.Certs.valueCommitVCert_check,
-  Zcash.Circuits.Ecc.MulFixed.Short.windowScalar_ne_zero,
   Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture2.fingerprint_matches,
   Zcash.Snark.Fixture2.instance_commitments_derived,
