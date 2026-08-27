@@ -23,14 +23,16 @@ Fixtures/
 
 Every family carries a `Transcript.lean`: the captured challenges recomputed from transcript
 bytes — halo2's tagged encoding under a Lean BLAKE2b — rather than looked up in the captured
-oracle table, and the fingerprint match restated on that concrete oracle. The random families
-additionally carry `ProofBytes.lean`, which reads their raw proof bytes with Lean's canonical
-proof-string decoder back to the captured typed proof (and serializes it back), plus byte-level
-negatives; the bytes themselves enter Lean as the generated fixture's `capturedProofHex`.
+oracle table, and the fingerprint match restated on that concrete oracle. Every family carries
+`ProofBytes.lean`, which reads its generated `capturedProofHex` with Lean's canonical proof-string
+decoder back to the captured typed proof and serializes it back. The honest families compose that
+parse and the derived transcript into `DeployedAcceptsBytes`; the random families instead add
+byte-level rejection and sign-bit negatives.
 
 **Honest** captures run the verifier on a real proof, so the MSM evaluates to the identity.
-They are the non-vacuity witnesses, they feed the deployed capstone lane, and they carry the
-per-slot sensitivity sweeps that name which proof field broke.
+They are the non-vacuity witnesses, they feed the deployed capstone lane, and they carry both the
+byte-to-acceptance composition and the per-slot sensitivity sweeps that name which proof field
+broke.
 
 **Random** captures run it on a random proof string. The run completes but does not accept, so
 the coefficient match is all these captures claim — they are match-only. They exist for the
