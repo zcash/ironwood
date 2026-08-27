@@ -447,18 +447,88 @@ def serializeGrid {α : Type} (m n : ℕ) (enc : α → List UInt8) (f : Fin m �
     List UInt8 :=
   serializeVec m (fun _ g => serializeVec n (fun _ => enc) g) f
 
+/-- **Grid canonicality.** A successful proof-major grid read reconstructs its consumed bytes. -/
+theorem readGrid_eq_some {α : Type} (m n : ℕ) (r : ProofReader α)
+    (enc : α → List UInt8)
+    (h : ∀ x bs rest, r.run bs = some (x, rest) → bs = enc x ++ rest)
+    (f : Fin m → Fin n → α) (bs rest : List UInt8)
+    (hread : (readGrid m n r).run bs = some (f, rest)) :
+    bs = serializeGrid m n enc f ++ rest := by
+  exact readVec_eq_some m (fun _ => readVec n fun _ => r)
+    (fun _ g => serializeVec n (fun _ => enc) g)
+    (fun _ g input output hg =>
+      readVec_eq_some n (fun _ => r) (fun _ => enc)
+        (fun _ x input output hx => h x input output hx) g input output hg)
+    f bs rest hread
+
+/-- Read two points in sequence. -/
+def pointPairReader : ProofReader (VestaG × VestaG) := do
+  let first ← pointReader
+  let second ← pointReader
+  pure (first, second)
+
+/-- Serialize two compressed points in sequence. -/
+def serializePointPair (points : VestaG × VestaG) : List UInt8 :=
+  (toBytes points.1).toList ++ (toBytes points.2).toList
+
+/-- **Point-pair canonicality.** A successful pair read reconstructs its consumed bytes. -/
+theorem pointPairReader_eq_some {bs rest : List UInt8} {points : VestaG × VestaG}
+    (hread : pointPairReader.run bs = some (points, rest)) :
+    bs = serializePointPair points ++ rest := by
+  simp only [pointPairReader, StateT.run_bind, Option.bind_eq_bind] at hread
+  obtain ⟨⟨first, bs₁⟩, hfirst, hread⟩ := Option.bind_eq_some_iff.mp hread
+  obtain ⟨⟨second, bs₂⟩, hsecond, hpure⟩ := Option.bind_eq_some_iff.mp hread
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change pointReader.run bs₁ = some (second, bs₂) at hsecond
+  rw [(pointReader_eq_some_iff.mp hfirst).2, (pointReader_eq_some_iff.mp hsecond).2]
+  simp only [serializePointPair, List.append_assoc]
+
 /-- Read one permutation set's evaluations: `eval`, `nextEval`, and `lastEval` exactly when the set
 is not the last (halo2 `permutation::verifier::Committed::evaluate`). -/
 def permSetReader (hasLast : Bool) : ProofReader (PermSetEval Fp) := do
   let eval ← scalarReader
   let nextEval ← scalarReader
-  let lastEval ← if hasLast then (some <$> scalarReader) else pure none
-  pure { eval, nextEval, lastEval }
+  if hasLast then do
+    let lastEval ← scalarReader
+    pure { eval, nextEval, lastEval := some lastEval }
+  else
+    pure { eval, nextEval, lastEval := none }
 
 /-- The bytes of one permutation set's evaluations. -/
 def serializePermSet (e : PermSetEval Fp) : List UInt8 :=
   (scalarRepr e.eval).toList ++ (scalarRepr e.nextEval).toList
     ++ (e.lastEval.map fun s => (scalarRepr s).toList).getD []
+
+/-- **Permutation-set canonicality.** A successful shape-directed read reconstructs exactly the
+bytes selected by its returned `lastEval`. -/
+theorem permSetReader_eq_some {hasLast : Bool} {bs rest : List UInt8} {e : PermSetEval Fp}
+    (hread : (permSetReader hasLast).run bs = some (e, rest)) :
+    bs = serializePermSet e ++ rest := by
+  cases hasLast with
+  | false =>
+      simp only [permSetReader, StateT.run_bind, Option.bind_eq_bind, Bool.false_eq_true,
+        if_false] at hread
+      obtain ⟨⟨eval, bs₁⟩, heval, hread⟩ := Option.bind_eq_some_iff.mp hread
+      obtain ⟨⟨nextEval, bs₂⟩, hnext, hpure⟩ := Option.bind_eq_some_iff.mp hread
+      simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+      obtain ⟨rfl, rfl⟩ := hpure
+      change scalarReader.run bs₁ = some (nextEval, bs₂) at hnext
+      rw [scalarReader_eq_some_iff.mp heval, scalarReader_eq_some_iff.mp hnext]
+      simp only [serializePermSet, Option.map_none, Option.getD_none, List.append_nil,
+        List.append_assoc]
+  | true =>
+      simp only [permSetReader, StateT.run_bind, Option.bind_eq_bind, if_true] at hread
+      obtain ⟨⟨eval, bs₁⟩, heval, hread⟩ := Option.bind_eq_some_iff.mp hread
+      obtain ⟨⟨nextEval, bs₂⟩, hnext, hread⟩ := Option.bind_eq_some_iff.mp hread
+      obtain ⟨⟨lastEval, bs₃⟩, hlast, hpure⟩ := Option.bind_eq_some_iff.mp hread
+      simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+      obtain ⟨rfl, rfl⟩ := hpure
+      change scalarReader.run bs₁ = some (nextEval, bs₂) at hnext
+      change scalarReader.run bs₂ = some (lastEval, bs₃) at hlast
+      rw [scalarReader_eq_some_iff.mp heval, scalarReader_eq_some_iff.mp hnext,
+        scalarReader_eq_some_iff.mp hlast]
+      simp only [serializePermSet, Option.map_some, Option.getD_some, List.append_assoc]
 
 /-- Read one lookup's five evaluations in halo2's order. -/
 def lookupReader : ProofReader (LookupEval Fp) := do
@@ -475,6 +545,29 @@ def serializeLookup (e : LookupEval Fp) : List UInt8 :=
     ++ (scalarRepr e.permutedInputEval).toList ++ (scalarRepr e.permutedInputInvEval).toList
     ++ (scalarRepr e.permutedTableEval).toList
 
+/-- **Lookup canonicality.** A successful lookup read reconstructs its five scalar encodings. -/
+theorem lookupReader_eq_some {bs rest : List UInt8} {e : LookupEval Fp}
+    (hread : lookupReader.run bs = some (e, rest)) :
+    bs = serializeLookup e ++ rest := by
+  simp only [lookupReader, StateT.run_bind, Option.bind_eq_bind] at hread
+  obtain ⟨⟨productEval, bs₁⟩, hproduct, hread⟩ := Option.bind_eq_some_iff.mp hread
+  obtain ⟨⟨productNextEval, bs₂⟩, hproductNext, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  obtain ⟨⟨permutedInputEval, bs₃⟩, hinput, hread⟩ := Option.bind_eq_some_iff.mp hread
+  obtain ⟨⟨permutedInputInvEval, bs₄⟩, hinputInv, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  obtain ⟨⟨permutedTableEval, bs₅⟩, htable, hpure⟩ := Option.bind_eq_some_iff.mp hread
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change scalarReader.run bs₁ = some (productNextEval, bs₂) at hproductNext
+  change scalarReader.run bs₂ = some (permutedInputEval, bs₃) at hinput
+  change scalarReader.run bs₃ = some (permutedInputInvEval, bs₄) at hinputInv
+  change scalarReader.run bs₄ = some (permutedTableEval, bs₅) at htable
+  rw [scalarReader_eq_some_iff.mp hproduct, scalarReader_eq_some_iff.mp hproductNext,
+    scalarReader_eq_some_iff.mp hinput, scalarReader_eq_some_iff.mp hinputInv,
+    scalarReader_eq_some_iff.mp htable]
+  simp only [serializeLookup, List.append_assoc]
+
 /-- The compressed bytes of a point (`write_point`). -/
 def pointBytesCompressed (P : VestaG) : List UInt8 := (toBytes P).toList
 
@@ -486,10 +579,7 @@ Squeezes consume no bytes, so this is `deriveChallenges`' absorb order restricte
 with the two IPA scalars `c` and `f` read after the last squeeze. -/
 def readProof? (shape : Shape) : ProofReader (ProofString shape Fp VestaG) := do
   let adviceCommitments ← readGrid shape.numProofs shape.numAdviceColumns pointReader
-  let lookupPermuted ← readGrid shape.numProofs shape.numLookups (do
-    let input ← pointReader
-    let table ← pointReader
-    pure (input, table))
+  let lookupPermuted ← readGrid shape.numProofs shape.numLookups pointPairReader
   let permutationProduct ← readGrid shape.numProofs shape.numPermutationSets pointReader
   let lookupProduct ← readGrid shape.numProofs shape.numLookups pointReader
   let vanishingRandom ← pointReader
@@ -506,10 +596,7 @@ def readProof? (shape : Shape) : ProofReader (ProofString shape Fp VestaG) := do
   let multiopenQPrime ← pointReader
   let multiopenU ← readVec shape.numPointSets fun _ => scalarReader
   let ipaS ← pointReader
-  let ipaRounds ← readVec shape.k fun _ => do
-    let l ← pointReader
-    let r ← pointReader
-    pure (l, r)
+  let ipaRounds ← readVec shape.k fun _ => pointPairReader
   let ipaC ← scalarReader
   let ipaF ← scalarReader
   pure {
@@ -540,8 +627,7 @@ order. The deployed verifier ignores trailing bytes; the consensus rules fix the
 is rejected, which is the form the capture checks state. -/
 def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UInt8 :=
   serializeGrid shape.numProofs shape.numAdviceColumns pointBytesCompressed ps.adviceCommitments
-    ++ serializeVec shape.numProofs (fun _ g => serializeVec shape.numLookups
-        (fun _ pr => pointBytesCompressed pr.1 ++ pointBytesCompressed pr.2) g)
+    ++ serializeGrid shape.numProofs shape.numLookups serializePointPair
         (fun p l => (ps.lookupPermutedInput p l, ps.lookupPermutedTable p l))
     ++ serializeGrid shape.numProofs shape.numPermutationSets pointBytesCompressed
         ps.permutationProduct
@@ -560,9 +646,190 @@ def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UIn
     ++ pointBytesCompressed ps.multiopenQPrime
     ++ serializeVec shape.numPointSets (fun _ => scalarBytesRaw) ps.multiopenU
     ++ pointBytesCompressed ps.ipaS
-    ++ serializeVec shape.k (fun _ pr => pointBytesCompressed pr.1 ++ pointBytesCompressed pr.2)
-        ps.ipaRounds
+    ++ serializeVec shape.k (fun _ => serializePointPair) ps.ipaRounds
     ++ scalarBytesRaw ps.ipaC
     ++ scalarBytesRaw ps.ipaF
+
+/-- **Whole-proof canonicality.** Every successful deployed-order parse reconstructs exactly the
+bytes it consumed, followed by the unread suffix.
+
+This direction is intentionally the public contract. An arbitrary typed `ProofString` can contain
+identity points or a permutation `lastEval` with the wrong shape, so `serializeProof` is total but
+need not produce an accepted byte string for every typed input. -/
+theorem readProof?_eq_some_serialize {shape : Shape} {bs rest : List UInt8}
+    {ps : ProofString shape Fp VestaG}
+    (hread : (readProof? shape).run bs = some (ps, rest)) :
+    bs = serializeProof ps ++ rest := by
+  unfold readProof? at hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceCommitments, bs₁⟩, hadviceCommitments, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupPermuted, bs₂⟩, hlookupPermuted, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationProduct, bs₃⟩, hpermutationProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupProduct, bs₄⟩, hlookupProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandom, bs₅⟩, hvanishingRandom, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨hPieces, bs₆⟩, hhPieces, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨instanceEvals, bs₇⟩, hinstanceEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceEvals, bs₈⟩, hadviceEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨fixedEvals, bs₉⟩, hfixedEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandomEval, bs₁₀⟩, hvanishingRandomEval, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationCommonEvals, bs₁₁⟩, hpermutationCommonEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationSetEvals, bs₁₂⟩, hpermutationSetEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupEvals, bs₁₃⟩, hlookupEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenQPrime, bs₁₄⟩, hmultiopenQPrime, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenU, bs₁₅⟩, hmultiopenU, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaS, bs₁₆⟩, hipaS, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaRounds, bs₁₇⟩, hipaRounds, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaC, bs₁₈⟩, hipaC, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaF, bs₁₉⟩, hipaF, hpure⟩ := Option.bind_eq_some_iff.mp hread
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change (readGrid shape.numProofs shape.numLookups pointPairReader).run bs₁ =
+    some (lookupPermuted, bs₂) at hlookupPermuted
+  change (readGrid shape.numProofs shape.numPermutationSets pointReader).run bs₂ =
+    some (permutationProduct, bs₃) at hpermutationProduct
+  change (readGrid shape.numProofs shape.numLookups pointReader).run bs₃ =
+    some (lookupProduct, bs₄) at hlookupProduct
+  change pointReader.run bs₄ = some (vanishingRandom, bs₅) at hvanishingRandom
+  change (readVec shape.numQuotientPieces fun _ => pointReader).run bs₅ =
+    some (hPieces, bs₆) at hhPieces
+  change (readGrid shape.numProofs shape.numInstanceQueries scalarReader).run bs₆ =
+    some (instanceEvals, bs₇) at hinstanceEvals
+  change (readGrid shape.numProofs shape.numAdviceQueries scalarReader).run bs₇ =
+    some (adviceEvals, bs₈) at hadviceEvals
+  change (readVec shape.numFixedQueries fun _ => scalarReader).run bs₈ =
+    some (fixedEvals, bs₉) at hfixedEvals
+  change scalarReader.run bs₉ = some (vanishingRandomEval, bs₁₀) at hvanishingRandomEval
+  change (readVec shape.numPermutationColumns fun _ => scalarReader).run bs₁₀ =
+    some (permutationCommonEvals, bs₁₁) at hpermutationCommonEvals
+  change (readVec shape.numProofs fun _ =>
+    readVec shape.numPermutationSets fun s =>
+      permSetReader (decide (s.val + 1 < shape.numPermutationSets))).run bs₁₁ =
+    some (permutationSetEvals, bs₁₂) at hpermutationSetEvals
+  change (readGrid shape.numProofs shape.numLookups lookupReader).run bs₁₂ =
+    some (lookupEvals, bs₁₃) at hlookupEvals
+  change pointReader.run bs₁₃ = some (multiopenQPrime, bs₁₄) at hmultiopenQPrime
+  change (readVec shape.numPointSets fun _ => scalarReader).run bs₁₄ =
+    some (multiopenU, bs₁₅) at hmultiopenU
+  change pointReader.run bs₁₅ = some (ipaS, bs₁₆) at hipaS
+  change (readVec shape.k fun _ => pointPairReader).run bs₁₆ =
+    some (ipaRounds, bs₁₇) at hipaRounds
+  change scalarReader.run bs₁₇ = some (ipaC, bs₁₈) at hipaC
+  change scalarReader.run bs₁₈ = some (ipaF, bs₁₉) at hipaF
+  have hadviceCommitmentBytes := readGrid_eq_some shape.numProofs shape.numAdviceColumns
+    pointReader pointBytesCompressed
+    (fun x input output hx => (pointReader_eq_some_iff.mp hx).2)
+    adviceCommitments bs bs₁ hadviceCommitments
+  have hlookupPermutedBytes := readGrid_eq_some shape.numProofs shape.numLookups
+    pointPairReader serializePointPair
+    (fun _ input output hx => pointPairReader_eq_some hx)
+    lookupPermuted bs₁ bs₂ hlookupPermuted
+  have hpermutationProductBytes := readGrid_eq_some shape.numProofs shape.numPermutationSets
+    pointReader pointBytesCompressed
+    (fun x input output hx => (pointReader_eq_some_iff.mp hx).2)
+    permutationProduct bs₂ bs₃ hpermutationProduct
+  have hlookupProductBytes := readGrid_eq_some shape.numProofs shape.numLookups
+    pointReader pointBytesCompressed
+    (fun x input output hx => (pointReader_eq_some_iff.mp hx).2)
+    lookupProduct bs₃ bs₄ hlookupProduct
+  have hvanishingRandomBytes := (pointReader_eq_some_iff.mp hvanishingRandom).2
+  have hhPieceBytes := readVec_eq_some shape.numQuotientPieces (fun _ => pointReader)
+    (fun _ => pointBytesCompressed)
+    (fun _ x input output hx => (pointReader_eq_some_iff.mp hx).2)
+    hPieces bs₅ bs₆ hhPieces
+  have hinstanceEvalBytes := readGrid_eq_some shape.numProofs shape.numInstanceQueries
+    scalarReader scalarBytesRaw
+    (fun _ input output hx => scalarReader_eq_some_iff.mp hx)
+    instanceEvals bs₆ bs₇ hinstanceEvals
+  have hadviceEvalBytes := readGrid_eq_some shape.numProofs shape.numAdviceQueries
+    scalarReader scalarBytesRaw
+    (fun _ input output hx => scalarReader_eq_some_iff.mp hx)
+    adviceEvals bs₇ bs₈ hadviceEvals
+  have hfixedEvalBytes := readVec_eq_some shape.numFixedQueries (fun _ => scalarReader)
+    (fun _ => scalarBytesRaw)
+    (fun _ _ input output hx => scalarReader_eq_some_iff.mp hx)
+    fixedEvals bs₈ bs₉ hfixedEvals
+  have hvanishingRandomEvalBytes := scalarReader_eq_some_iff.mp hvanishingRandomEval
+  have hpermutationCommonEvalBytes := readVec_eq_some shape.numPermutationColumns
+    (fun _ => scalarReader) (fun _ => scalarBytesRaw)
+    (fun _ _ input output hx => scalarReader_eq_some_iff.mp hx)
+    permutationCommonEvals bs₁₀ bs₁₁ hpermutationCommonEvals
+  have hpermutationSetEvalBytes :
+      bs₁₁ = serializeGrid shape.numProofs shape.numPermutationSets serializePermSet
+        permutationSetEvals ++ bs₁₂ := by
+    unfold serializeGrid
+    exact readVec_eq_some shape.numProofs
+      (fun _ => readVec shape.numPermutationSets fun s =>
+        permSetReader (decide (s.val + 1 < shape.numPermutationSets)))
+      (fun _ g => serializeVec shape.numPermutationSets (fun _ => serializePermSet) g)
+      (fun _ g input output hg =>
+        readVec_eq_some shape.numPermutationSets
+          (fun s => permSetReader (decide (s.val + 1 < shape.numPermutationSets)))
+          (fun _ => serializePermSet)
+          (fun _ _ input output hx => permSetReader_eq_some hx)
+          g input output hg)
+      permutationSetEvals bs₁₁ bs₁₂ hpermutationSetEvals
+  have hlookupEvalBytes := readGrid_eq_some shape.numProofs shape.numLookups
+    lookupReader serializeLookup
+    (fun _ input output hx => lookupReader_eq_some hx)
+    lookupEvals bs₁₂ bs₁₃ hlookupEvals
+  have hmultiopenQPrimeBytes := (pointReader_eq_some_iff.mp hmultiopenQPrime).2
+  have hmultiopenUBytes := readVec_eq_some shape.numPointSets (fun _ => scalarReader)
+    (fun _ => scalarBytesRaw)
+    (fun _ _ input output hx => scalarReader_eq_some_iff.mp hx)
+    multiopenU bs₁₄ bs₁₅ hmultiopenU
+  have hipaSBytes := (pointReader_eq_some_iff.mp hipaS).2
+  have hipaRoundBytes := readVec_eq_some shape.k (fun _ => pointPairReader)
+    (fun _ => serializePointPair)
+    (fun _ _ input output hx => pointPairReader_eq_some hx)
+    ipaRounds bs₁₆ bs₁₇ hipaRounds
+  have hipaCBytes := scalarReader_eq_some_iff.mp hipaC
+  have hipaFBytes := scalarReader_eq_some_iff.mp hipaF
+  have hlookupPermutedEta :
+      (fun p l => ((lookupPermuted p l).1, (lookupPermuted p l).2)) = lookupPermuted := by
+    funext p l
+    exact Prod.eta _
+  rw [hadviceCommitmentBytes, hlookupPermutedBytes, hpermutationProductBytes,
+    hlookupProductBytes, hvanishingRandomBytes, hhPieceBytes, hinstanceEvalBytes,
+    hadviceEvalBytes, hfixedEvalBytes, hvanishingRandomEvalBytes,
+    hpermutationCommonEvalBytes, hpermutationSetEvalBytes, hlookupEvalBytes,
+    hmultiopenQPrimeBytes, hmultiopenUBytes, hipaSBytes, hipaRoundBytes, hipaCBytes,
+    hipaFBytes]
+  simp only [serializeProof, pointBytesCompressed, scalarBytesRaw, hlookupPermutedEta,
+    List.append_assoc]
+
+/-- Exact parsing is the empty-suffix form of whole-proof canonicality. -/
+theorem serializeProof_eq_of_readProof?_eq_some {shape : Shape} {bs : List UInt8}
+    {ps : ProofString shape Fp VestaG}
+    (hread : (readProof? shape).run bs = some (ps, [])) :
+    serializeProof ps = bs := by
+  simpa using (readProof?_eq_some_serialize hread).symm
 
 end Zcash.Snark
