@@ -2187,6 +2187,11 @@ assert_axioms Zcash.Snark.readProof?_eq_none_of_first_point +native(CompElliptic
 assert_axioms Zcash.Snark.readProof?_eq_some_serialize +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.serializeProof_eq_of_readProof?_eq_some +native(CompElliptic.Fields.Pasta.vestaBase)
 
+-- The byte-level acceptance wrapper parses the whole proof, derives the pinned-key digest and
+-- BLAKE2b Fiat–Shamir challenges, and then enters the existing typed `DeployedAccepts` predicate.
+assert_computable Zcash.Snark.DeployedAcceptsBytes +choice +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(CompElliptic.Fields.Pasta.vestaBase)
+
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
 -- oracle locality, the disjointness of the pre-`θ` cones at different counts — typed and
 -- byte-level — and the reprogramming corollary.
