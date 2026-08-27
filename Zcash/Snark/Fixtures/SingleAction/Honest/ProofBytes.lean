@@ -36,8 +36,11 @@ theorem capture_deployedAcceptsBytes :
     DeployedAcceptsBytes shape capturedURS rfl vk capturedPinnedKeyDescription
       derivedInstanceCommitment capturedProofBytes := by
   refine ⟨ps, capturedProofBytes_decodes, ?_⟩
-  rw [keyDigest_eq_capturedVkTranscriptRepr,
-    deriveChallengesForStatement_matches_blake2b]
-  exact capture_deployedAccepts
+  have harg : deriveChallengesForStatement halo2Transcript
+      (keyDigest capturedPinnedKeyDescription) derivedInstanceCommitment ps = ch := by
+    rw [keyDigest_eq_capturedVkTranscriptRepr]
+    exact deriveChallengesForStatement_matches_blake2b
+  rw [harg]
+  with_reducible exact capture_deployedAccepts
 
 end Zcash.Snark.Fixture
