@@ -73,8 +73,10 @@ theorem leInt_lt_of_length_32 {bs : List UInt8} (h : bs.length = 32) : leInt bs 
 fixtures recovers the integer it renders. -/
 theorem leInt_ofFn_32 (n : Fin (2 ^ 256)) :
     leInt (List.ofFn fun i : Fin 32 => UInt8.ofNat (n.val / 256 ^ i.val % 256)) = n.val := by
-  rw [show (List.ofFn fun i : Fin 32 => UInt8.ofNat (n.val / 256 ^ i.val % 256)) =
-      (I2LEOSP 256 n).toList by rfl, leInt_toList, LEOS2IP_I2LEOSP_256]
+  have h : (List.ofFn fun i : Fin 32 => UInt8.ofNat (n.val / 256 ^ i.val % 256)) =
+      (I2LEOSP 256 n).toList := by
+    rw [I2LEOSP, Vector.toList_ofFn]
+  rw [h, leInt_toList, LEOS2IP_I2LEOSP_256]
 
 /-- Each byte is recovered from the little-endian integer: byte `i` is digit `i` in base 256. -/
 theorem leInt_div_pow_mod (bs : List UInt8) :
@@ -306,6 +308,25 @@ theorem decodePoint32_eq_some_iff {enc : List UInt8} {P : VestaG} :
     simp only [hsel]
     rw [dif_pos hOn]
 
+/-- `decodePoint32` rejects 32 bytes whose low 255 bits read at or above the base-field order:
+the non-canonical-coordinate branch, stated so the rejection can be shown without rewriting
+under the decoder's dependent branches. -/
+theorem decodePoint32_eq_none_of_x_ge {enc : List UInt8} (hlen : enc.length = 32)
+    (hge : ¬ leInt enc % signBit < PALLAS_SCALAR_CARD) : decodePoint32 enc = none := by
+  unfold decodePoint32
+  rw [if_pos hlen, if_neg hge]
+
+/-- `decodePoint32` rejects 32 bytes whose curve-equation radicand has no square root: the
+no-point branch, stated so the rejection can be shown without rewriting under the decoder's
+dependent branches. -/
+theorem decodePoint32_eq_none_of_sqrt_none {enc : List UInt8} (hlen : enc.length = 32)
+    (hlt : leInt enc % signBit < PALLAS_SCALAR_CARD)
+    (hsq : vestaBase.sqrt? (((leInt enc % signBit : ℕ) : VestaBaseField) ^ 3
+      + Vesta.a * ((leInt enc % signBit : ℕ) : VestaBaseField) + Vesta.b) = none) :
+    decodePoint32 enc = none := by
+  unfold decodePoint32
+  rw [if_pos hlen, if_pos hlt, hsq]
+
 /-- A square-root routine cannot return a value for a proved non-square. This uses its checked
 output equation, not native evaluation of the routine. -/
 theorem sqrt?_eq_none_of_not_isSquare {F : Type*} [Field F] [Fintype F] [DecidableEq F]
@@ -322,10 +343,13 @@ theorem decodePoint32_zero_eq_none :
     decodePoint32 (List.replicate 32 0) = none := by
   have hsqrt : vestaBase.sqrt? (5 : VestaBaseField) = none :=
     sqrt?_eq_none_of_not_isSquare vestaBase Vesta.five_not_isSquare
-  unfold decodePoint32
-  rw [if_pos (by simp), leInt_replicate_zero]
-  rw [if_pos (by norm_num [signBit, PALLAS_SCALAR_CARD])]
-  simpa [Vesta.a, Vesta.b] using hsqrt
+  have h0 : leInt (List.replicate 32 0) % signBit = 0 := by
+    rw [leInt_replicate_zero, Nat.zero_mod]
+  refine decodePoint32_eq_none_of_sqrt_none (by simp) ?_ ?_
+  · rw [h0]
+    norm_num [PALLAS_SCALAR_CARD]
+  · rw [h0]
+    simpa [Vesta.a, Vesta.b] using hsqrt
 
 /-- Encoding the base-field modulus as a compressed `x` is rejected as non-canonical. -/
 theorem decodePoint32_baseModulus_eq_none :
@@ -338,9 +362,9 @@ theorem decodePoint32_baseModulus_eq_none :
       leInt (List.ofFn fun i : Fin 32 =>
         UInt8.ofNat (PALLAS_SCALAR_CARD / 256 ^ i.val % 256)) = PALLAS_SCALAR_CARD := by
     simpa using leInt_ofFn_32 ⟨PALLAS_SCALAR_CARD, hq256⟩
-  unfold decodePoint32
-  rw [if_pos (by simp), hle, Nat.mod_eq_of_lt vestaBase_card_lt_signBit,
-    if_neg (Nat.lt_irrefl _)]
+  refine decodePoint32_eq_none_of_x_ge (by simp) ?_
+  rw [hle, Nat.mod_eq_of_lt vestaBase_card_lt_signBit]
+  exact Nat.lt_irrefl _
 
 /-- `13` is a quadratic non-residue in the Vesta base field. -/
 theorem thirteen_not_isSquare : ¬ IsSquare (13 : VestaBaseField) := by
@@ -352,14 +376,23 @@ theorem thirteen_not_isSquare : ¬ IsSquare (13 : VestaBaseField) := by
 non-residue `13`. -/
 theorem decodePoint32_two_eq_none :
     decodePoint32 (2 :: List.replicate 31 0) = none := by
-  have hle : leInt (2 :: List.replicate 31 0) = 2 := by
-    simp [leInt_cons]
   have hsqrt : vestaBase.sqrt? (13 : VestaBaseField) = none :=
     sqrt?_eq_none_of_not_isSquare vestaBase thirteen_not_isSquare
-  unfold decodePoint32
-  rw [if_pos (by simp), hle]
-  rw [if_pos (by norm_num [signBit, PALLAS_SCALAR_CARD])]
-  simpa [signBit, Vesta.a, Vesta.b] using hsqrt
+  have h2 : leInt (2 :: List.replicate 31 0) % signBit = 2 := by
+    rw [show leInt (2 :: List.replicate 31 0) = 2 by decide]
+    exact Nat.mod_eq_of_lt (by norm_num [signBit_eq])
+  refine decodePoint32_eq_none_of_sqrt_none (by simp) ?_ ?_
+  · rw [h2]
+    norm_num [PALLAS_SCALAR_CARD]
+  · rw [h2]
+    have : (((2 : ℕ) : VestaBaseField)) ^ 3 + Vesta.a * ((2 : ℕ) : VestaBaseField) + Vesta.b
+        = 13 := by
+      have ha : Vesta.a = 0 := rfl
+      have hb : Vesta.b = 5 := rfl
+      rw [ha, hb]
+      norm_num
+    rw [this]
+    exact hsqrt
 
 /-! ## Stream readers -/
 
@@ -525,6 +558,15 @@ theorem readGrid_eq_none_of_first {α : Type} {m n : ℕ} {r : ProofReader α}
     {bs : List UInt8} (h : r.run bs = none) :
     (readGrid (m + 1) (n + 1) r).run bs = none := by
   simp [readGrid, readVec, h]
+
+/-- The nonempty-grid failure at counts only known nonzero, so a caller need not rewrite a
+shape's projections into successor form inside the reader's dependent type. -/
+theorem readGrid_eq_none_of_first_of_ne_zero {α : Type} {m n : ℕ} {r : ProofReader α}
+    {bs : List UInt8} (hm : m ≠ 0) (hn : n ≠ 0) (h : r.run bs = none) :
+    (readGrid m n r).run bs = none := by
+  obtain ⟨m', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
+  obtain ⟨n', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  exact readGrid_eq_none_of_first h
 
 /-- The bytes of `m × n` elements proof-major. -/
 def serializeGrid {α : Type} (m n : ℕ) (enc : α → List UInt8) (f : Fin m → Fin n → α) :
@@ -707,13 +749,12 @@ def readProof? (shape : Shape) : ProofReader (ProofString shape Fp VestaG) := do
 
 /-- A proof with at least one proof and one advice column fails when its leading compressed point
 fails. This lifts element rejection without evaluating the rest of a captured proof. -/
-theorem readProof?_eq_none_of_first_point {shape : Shape} {m n : ℕ} {bs : List UInt8}
-    (hproofs : shape.numProofs = m + 1) (hadvice : shape.numAdviceColumns = n + 1)
+theorem readProof?_eq_none_of_first_point {shape : Shape} {bs : List UInt8}
+    (hproofs : shape.numProofs ≠ 0) (hadvice : shape.numAdviceColumns ≠ 0)
     (hpoint : pointReader.run bs = none) : (readProof? shape).run bs = none := by
   unfold readProof?
-  rw [hproofs, hadvice]
   simp only [StateT.run_bind]
-  rw [readGrid_eq_none_of_first hpoint]
+  rw [readGrid_eq_none_of_first_of_ne_zero hproofs hadvice hpoint]
   rfl
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
