@@ -2176,10 +2176,14 @@ assert_computable Zcash.Snark.readProof? +choice +native(CompElliptic.Fields.Pas
 assert_computable Zcash.Snark.serializeProof +choice
 assert_axioms Zcash.Snark.decodeScalar32_eq_some_iff
 assert_axioms Zcash.Snark.decodePoint32_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.decodePoint32_zero_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.decodePoint32_baseModulus_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.decodePoint32_two_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.scalarReader_eq_some_iff
 assert_axioms Zcash.Snark.pointReader_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.readVec_serializeVec
 assert_axioms Zcash.Snark.readVec_eq_some
+assert_axioms Zcash.Snark.readProof?_eq_none_of_first_point +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.readProof?_eq_some_serialize +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.serializeProof_eq_of_readProof?_eq_some +native(CompElliptic.Fields.Pasta.vestaBase)
 
