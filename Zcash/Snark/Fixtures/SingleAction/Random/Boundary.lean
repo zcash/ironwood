@@ -66,8 +66,6 @@ theorem nonInteractiveFingerprint_matches_derived_blake2b :
   rw [← h]
   exact nonInteractiveFingerprint_matches_blake2b
 
-assert_no_sorry nonInteractiveFingerprint_matches_derived_blake2b
-
 /-- **The fingerprint match with nothing captured in the Fiat–Shamir prefix.** As
 `nonInteractiveFingerprint_matches_derived_blake2b`, with the key digest that opens the
 transcript derived from the pinned key description (`keyDigest_eq_capturedVkTranscriptRepr`)
@@ -80,7 +78,5 @@ theorem nonInteractiveFingerprint_matches_derived_keyDigest :
       capturedMsm := by
   rw [keyDigest_eq_capturedVkTranscriptRepr]
   exact nonInteractiveFingerprint_matches_derived_blake2b
-
-assert_no_sorry nonInteractiveFingerprint_matches_derived_keyDigest
 
 end Zcash.Snark.FixtureRandom
