@@ -157,10 +157,11 @@ Eleven premises remain trusted rather than fixture-checked:
 * compiler trust for the fixture checks — censused per declaration in each family's
   `TrustBoundary.lean`.
 
-Halo2's pinned-key digest is reimplemented: `Fixtures/PinnedKey.lean` hashes the vendored
-Post-NU6.3 pinned description (`Verifier/KeyDigest.lean`) to the captured `transcript_repr` and
-reads its fields back against the key. Orchard's own comparison of that description with its
-committed `PinnedVerificationKey` text stays at the fixture-generation boundary.
+Halo2's pinned-key digest is reimplemented: the pinned exporter emits its exact compact hash
+preimage as `capturedPinnedKeyDescription`; `Fixtures/PinnedKey.lean` hashes it
+(`Verifier/KeyDigest.lean`) to the captured `transcript_repr` and reads its fields back against the
+captured key. The string, captured key, and Orchard's own key-description comparison stay at the
+fixture-generation boundary.
 -/
 
 namespace Zcash.Snark

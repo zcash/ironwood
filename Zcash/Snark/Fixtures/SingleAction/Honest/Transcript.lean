@@ -1,5 +1,4 @@
 import Zcash.Snark.Fixtures.SingleAction.Honest.FiatShamir
-import Zcash.Snark.Fixtures.PinnedKeyDescription
 import Zcash.Snark.Verifier.KeyDigest
 import Zcash.Snark.Verifier.Transcript
 
@@ -14,9 +13,9 @@ typed prefix, BLAKE2b-512 personalized `Halo2-Transcript`, the digest reduced mo
 the captured `ch`. The captured-table route stays as the diagnostic that separates a schedule
 error from an encoding or hash error.
 
-Nothing is captured beyond what `Fixture.lean` already carries — the affine coordinates, the
-verifying-key transcript scalar, the typed proof, and the challenges — so this is a recomputation
-of the deployed verifier's hashing, not a comparison against captured bytes.
+`Fixture.lean` carries the exact compact pinned-key string alongside the transcript scalar, typed
+proof, and challenges. Lean hashes that string and recomputes the challenges instead of trusting
+the captured scalar or challenge table; the string and typed capture remain exporter inputs.
 -/
 
 namespace Zcash.Snark.Fixture
@@ -42,10 +41,10 @@ theorem deriveChallengesForStatement_matches_blake2b :
   rw [deriveChallengesForStatement, ← capturedInit_eq_initialTranscript]
   exact deriveChallenges_matches_blake2b
 
-/-- The captured key digest opening this family's transcript is the digest of the pinned key
-description (`Fixtures/PinnedKey.lean` reads that description's fields against the key). -/
+/-- The captured key digest is the digest of the exact pinned-key string the exporter hashed.
+`Fixtures/PinnedKey.lean` separately parses this honest fixture's string against the key. -/
 theorem keyDigest_eq_capturedVkTranscriptRepr :
-    keyDigest PinnedKey.pinnedKeyDescription = capturedVkTranscriptRepr := by
+    keyDigest capturedPinnedKeyDescription = capturedVkTranscriptRepr := by
   native_decide
 
 /-- The fingerprint match with every challenge recomputed from transcript bytes. -/

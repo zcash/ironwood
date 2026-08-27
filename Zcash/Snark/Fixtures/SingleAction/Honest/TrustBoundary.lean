@@ -438,8 +438,8 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
 
--- The key digest opening the transcript, derived from the pinned key description
--- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
 assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 
@@ -498,10 +498,10 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
   Zcash.Snark.Fixture.instance_commitments_derived,
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 
--- The pinned key description (`PinnedKey.lean`): parsed losslessly, hashed to the captured digest,
--- and read back field by field against the captured key.
-assert_axioms Zcash.Snark.PinnedKey.pinnedKeyDescription_parses +native(
-  Zcash.Snark.PinnedKey.pinnedKeyDescription_parses)
+-- The exporter-emitted pinned key description (`PinnedKey.lean`): parsed losslessly, hashed to the
+-- captured digest, and read back field by field against the captured key.
+assert_axioms Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses +native(
+  Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses)
 assert_axioms Zcash.Snark.PinnedKey.pinned_renderCompact +native(
   Zcash.Snark.PinnedKey.pinned_renderCompact)
 assert_axioms Zcash.Snark.PinnedKey.keyDigest_eq_capturedVkTranscriptRepr +native(

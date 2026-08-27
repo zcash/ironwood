@@ -7,14 +7,13 @@ import Mathlib.Util.AssertNoSorry
 
 Cross-capture checks for the canonical Post-NU6.3 Orchard-protocol verifying key and URS. During
 fixture generation, the `orchard` implementation first compares the exact `PinnedVerificationKey`
-debug representation against its checked-in `circuit_description_post_nu6_3`; `halo2` then derives
-and emits the transcript representation below from that same verified key object.
+debug representation against its checked-in circuit description. The pinned `halo2` exporter then
+emits both the transcript representation below and the exact compact string it hashed.
 
 The hand-pinned scalar here makes fixture drift visible in this repository, while the Rust
 regeneration assertion binds it to the full canonical pinned key. `Fixtures/PinnedKey.lean` goes
-further: it hashes the pinned description itself (vendored at the pinned Orchard commit) with halo2's
-`Halo2-Verify-Key` BLAKE2b and reads its fields back against the captured key, so the scalar is
-derived rather than only pinned.
+further: it hashes the exporter-emitted description with Halo2's `Halo2-Verify-Key` BLAKE2b and
+reads its fields back against the captured key, so the scalar is checked rather than only pinned.
 
 The point-level equalities below identify the two captures' URS and verifying-key commitment
 points; the multi-action verifying-key certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`)
