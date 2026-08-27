@@ -104,7 +104,7 @@ mutual
     | 0, _ => none
     | fuel + 1, cs =>
         match skipWs cs with
-        | '"' :: rest => (takeStringLit [] rest).map fun p => (.atom p.1, p.2)
+        | '"' :: rest => (takeStringLit ['"'] rest).map fun p => (.atom p.1, p.2)
         | '[' :: rest => (parseSeq fuel ']' rest).map fun p => (.list p.1, p.2)
         | '(' :: rest => (parseSeq fuel ')' rest).map fun p => (.tuple "" p.1, p.2)
         | cs' =>
