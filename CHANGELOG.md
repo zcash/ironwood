@@ -23,3 +23,7 @@ and this project adheres to Rust's notion of
   reproduces every capture's `transcript_repr`, the description's fields are read back against
   the captured key, and each family's statement of record opens the transcript with the derived
   digest. Each generated fixture carries the exact compact description the pinned exporter hashed.
+- A mutation test for the transcript tags (`Zcash/Snark/Soundness/FiatShamir/TagMutation.lean`):
+  with halo2's domain tags deleted, the encoding collides a point with two scalars and a
+  transcript with its pre-squeeze extension, so its injectivity fails; the deployed tags separate
+  the same witnesses.
