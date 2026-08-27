@@ -2,7 +2,7 @@
 """Render the pinned Post-NU6.3 verifying-key description into a Lean module.
 
 `Zcash/Snark/Fixtures/circuit_description_post_nu6_3` is orchard's committed pinned key
-description at the release the captures regenerate from: the pretty (`{:#?}`) `Debug` rendering
+description at the commit the captures regenerate from: the pretty (`{:#?}`) `Debug` rendering
 of `VerifyingKey::pinned()`. What halo2 hashes into `transcript_repr` is the compact (`{:?}`)
 rendering of the same value, so this script parses the pretty text as Rust's derived-`Debug`
 value language and re-renders it compactly — `Name { f: v, g: w }`, `Name(a, b)`, `[a, b]`,
@@ -138,7 +138,7 @@ def rendered():
         "\n"
         "The compact `Debug` rendering of orchard's pinned Post-NU6.3 verifying key — the exact text\n"
         "halo2's `VerifyingKey::from_parts` hashes into `transcript_repr` — carried as Lean data.\n"
-        "Rendered from the vendored pretty description at the release the captures regenerate from;\n"
+        "Rendered from the vendored pretty description at the pinned Orchard commit;\n"
         "`Fixtures/PinnedKey.lean` hashes it and reads its fields. CI re-renders this module from\n"
         "the vendored text and diffs it, so the two cannot drift apart.\n"
         "-/\n"

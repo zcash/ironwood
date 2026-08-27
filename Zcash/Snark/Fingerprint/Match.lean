@@ -120,7 +120,7 @@ Halo2 URS. On the honest captures `capturedMsm_eval_eq_zero` computes the captur
 identity, and each honest family composes the run into `capture_deployedAccepts` — a witness
 that `DeployedAccepts`, the hypothesis every soundness endpoint consumes, is satisfiable,
 which no match-only capture can provide. All four fixtures regenerate
-byte-for-byte from the pinned `zcash/orchard` 0.15.5 release via
+byte-for-byte from exact `zcash/orchard#544` and `zcash/halo2#933` commits via
 `scripts/regenerate-fingerprint-fixtures.sh`, run in CI
 (`.github/workflows/fixtures.yml`); pins, seeds, and rationale in
 `Fixtures/PROVENANCE.md`.

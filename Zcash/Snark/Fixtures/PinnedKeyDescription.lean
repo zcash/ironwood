@@ -5,7 +5,7 @@
 
 The compact `Debug` rendering of orchard's pinned Post-NU6.3 verifying key — the exact text
 halo2's `VerifyingKey::from_parts` hashes into `transcript_repr` — carried as Lean data.
-Rendered from the vendored pretty description at the release the captures regenerate from;
+Rendered from the vendored pretty description at the pinned Orchard commit;
 `Fixtures/PinnedKey.lean` hashes it and reads its fields. CI re-renders this module from
 the vendored text and diffs it, so the two cannot drift apart.
 -/

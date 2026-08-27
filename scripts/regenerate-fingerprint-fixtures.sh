@@ -1,22 +1,19 @@
 #!/usr/bin/env bash
-# Regenerate every verifier-fingerprint fixture family from pinned public releases, and
+# Regenerate every verifier-fingerprint fixture family from pinned upstream PR snapshots, and
 # diff the results against the committed artifacts.
 #
 # The honest families (SingleAction, MultiAction) are captures of accepting runs of the
 # deployed verifier; the random match-only families come from the same pipeline plus the
-# capture tooling — a match-only exporter mode and `numInstanceColumns` shape emission in
-# halo2_proofs (zcash/halo2#924), and fabricate→replay random-capture drivers in orchard
-# (zcash/orchard#541). Both are upstream and released: the tooling ships in halo2_proofs
-# 0.3.5 and orchard 0.15.5, so the single pin below is a release tag of zcash/orchard and
-# nothing here depends on a fork or an unreleased branch. Orchard's own committed
-# Cargo.lock resolves halo2_proofs 0.3.5 from crates.io by checksum, so every cargo
-# invocation runs --locked against the published crate; the capture tooling is reached
-# through orchard's `verifier-fingerprint` feature, which forwards to halo2_proofs'
-# `unstable-verifier-fingerprint`. CI runs this script (fixtures.yml), enforcing that all
-# four families are byte-reproducible from released sources alone.
+# capture tooling. The base match-only pipeline is released in halo2_proofs 0.3.5 and orchard
+# 0.15.5; the proof-byte exporter and deployed decoder checks are pinned to zcash/halo2#933 and
+# zcash/orchard#544 below. Both commits are fetched through the canonical zcash repositories.
+# Orchard #544 still carries a temporary personal-fork Cargo patch at an older #933 revision, so
+# this script verifies that exact source line and replaces only the URL/revision and lock source
+# with the canonical zcash/halo2 #933 pin. Every cargo invocation then runs --locked. CI runs this
+# script (fixtures.yml), enforcing all four families byte-for-byte at those reviewed snapshots.
 #
-# Sources are cloned from the public repository at the pinned release; set ORCHARD_SRC to
-# a local checkout path to clone from that instead (fully offline). Set REGEN_WORK_DIR to
+# Sources are cloned from the canonical public repository; set ORCHARD_SRC to a local checkout
+# path containing the pinned commit to clone Orchard from that instead. Set REGEN_WORK_DIR to
 # keep/reuse the build tree across runs (much faster); it is reset hard to the pinned
 # commit each run. All four families are committed, so every generated artifact is diffed
 # byte-for-byte; a generated artifact with no committed counterpart (a future
@@ -33,17 +30,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# The pinned Orchard release carrying the capture drivers, and the tag its commit must
-# be. CI (fixtures.yml) runs this script, so this is the CI pin. Asserting the tag rather
-# than trusting the commit alone is what makes "released, not a branch head" checkable:
-# a branch commit that merely descends from a release would fail this.
-ORCHARD_COMMIT=29d1d55db62153dcaeef8ef631c8991c53ed1248 # zcash/orchard tag 0.15.5
-ORCHARD_TAG=0.15.5
+# Exact reviewed snapshots. The PR numbers document where the commits are reviewed; the SHAs,
+# not their movable heads, are the reproducibility pins.
+ORCHARD_COMMIT=b3108d2cf4bab40591d5ca85c7657493a60d464f # zcash/orchard#544
+ORCHARD_PR=544
 ORCHARD_URL=${ORCHARD_SRC:-https://github.com/zcash/orchard.git}
-# The released halo2_proofs the pinned Orchard lockfile must resolve, by version and
-# crates.io checksum: the exporter's provenance, asserted rather than assumed.
-HALO2_PROOFS_VERSION=0.3.5
-HALO2_PROOFS_LOCK_CHECKSUM=f5aca1c66059a919227dec97444a11a4350d2f9c820ca48690988f0aa0e81cbf
+HALO2_COMMIT=6ff6d4bda665bd326cd01205c035a67f9628663f # zcash/halo2#933
+HALO2_PR=933
+HALO2_URL=https://github.com/zcash/halo2.git
+# The older #933 snapshot and personal URL present in Orchard #544 are asserted before the
+# deterministic integration-only normalization, so an upstream edit cannot be patched blindly.
+ORCHARD_HALO2_COMMIT=d9a8c7374192d299d11366ed159bc1b3d1a38902
+ORCHARD_HALO2_URL=https://github.com/TalDerei/halo2.git
 
 REPO_ROOT=$PWD
 OUT_DIR=${REGEN_OUT_DIR:-scripts/generated}
@@ -51,7 +49,7 @@ OUT_DIR=${REGEN_OUT_DIR:-scripts/generated}
 # generated-file : committed-path : requirement
 # "required": the committed file must exist and match byte-for-byte. Every committed
 # family is required — a mismatch means the committed artifact drifted from what the
-# pinned release regenerates, or went missing. "optional" (currently unused) is for
+# pinned snapshots regenerate, or went missing. "optional" (currently unused) is for
 # generated artifacts with no committed counterpart yet — a future not-yet-ingested
 # shape — which are stashed in $OUT_DIR instead of failing.
 pairs=(
@@ -62,7 +60,7 @@ pairs=(
   "SingleAction.Random.proof-bytes.hex:Zcash/Snark/Fixtures/SingleAction/Random/proof-bytes.hex:required"
   "MultiAction.Random.proof-bytes.hex:Zcash/Snark/Fixtures/MultiAction/Random/proof-bytes.hex:required"
   # Orchard's pinned Post-NU6.3 verifying-key description: not exporter output but an orchard
-  # source file at the pinned release, taken by `git show` so it is bound to the tag like the
+  # source file at the pinned Orchard commit, taken by `git show` so it is bound to that pin like the
   # captures. `Fixtures/PinnedKey.lean` hashes its compact rendering into the key digest.
   "circuit_description_post_nu6_3:Zcash/Snark/Fixtures/circuit_description_post_nu6_3:required"
 )
@@ -123,9 +121,8 @@ else
   trap 'rm -rf "$WORK_DIR"' EXIT
 fi
 
-# Clone (or reuse) the Orchard source tree and force it to exactly the pinned release
-# commit, asserting that the commit is the release tag rather than merely descended from
-# one. `git clean` keeps target/ so a reused REGEN_WORK_DIR stays warm.
+# Clone (or reuse) the Orchard source tree and force it to exactly the pinned PR commit.
+# `git clean` keeps target/ so a reused REGEN_WORK_DIR stays warm.
 prepare_orchard() {
   local dest="$WORK_DIR/orchard"
   # The checkout slot must be a directory the work dir owns: a symlink here would aim the
@@ -139,7 +136,8 @@ prepare_orchard() {
     git clone --quiet "$ORCHARD_URL" "$dest"
   fi
   if ! git -C "$dest" cat-file -e "${ORCHARD_COMMIT}^{commit}" 2>/dev/null; then
-    git -C "$dest" fetch --quiet --tags origin
+    # Canonical GitHub exposes fork-backed pull requests through this repository-owned ref.
+    git -C "$dest" fetch --quiet origin "refs/pull/$ORCHARD_PR/head"
   fi
   git -C "$dest" checkout --quiet --detach "$ORCHARD_COMMIT"
   git -C "$dest" reset --hard --quiet "$ORCHARD_COMMIT"
@@ -148,48 +146,88 @@ prepare_orchard() {
     echo "VIOLATION: orchard is not at pinned commit $ORCHARD_COMMIT" >&2
     exit 1
   fi
-  local tagged
-  tagged=$(git -C "$dest" rev-parse --verify --quiet "refs/tags/$ORCHARD_TAG^{commit}" || true)
-  if [[ "$tagged" != "$ORCHARD_COMMIT" ]]; then
-    echo "VIOLATION: pinned commit is not the orchard $ORCHARD_TAG release tag" >&2
-    echo "  tag $ORCHARD_TAG -> ${tagged:-<absent>}" >&2
-    echo "  pinned commit    -> $ORCHARD_COMMIT" >&2
-    exit 1
-  fi
   if [[ -n "$(git -C "$dest" status --porcelain)" ]]; then
-    echo "VIOLATION: orchard working tree is not clean at the pinned release" >&2
+    echo "VIOLATION: orchard working tree is not clean at the pinned PR commit" >&2
     exit 1
   fi
-  echo "orchard is at the $ORCHARD_TAG release tag ($ORCHARD_COMMIT)."
+  echo "orchard is at zcash/orchard#$ORCHARD_PR commit $ORCHARD_COMMIT."
 }
 
 prepare_orchard
 
-# Assert the pinned release's own lockfile resolves the released halo2_proofs from
-# crates.io by checksum -- the exporter's provenance. No patching: the lockfile is used
-# as published, and every cargo invocation below runs --locked against it.
-lock_entry=$(grep -A3 '^name = "halo2_proofs"$' "$WORK_DIR/orchard/Cargo.lock")
+# Normalize Orchard #544's temporary dependency to the current #933 snapshot through the
+# canonical zcash/halo2 URL. `git apply --check` makes the expected old URL and SHA part of the
+# pin: if Orchard refreshes either, this script stops instead of silently rewriting new input.
+orchard_dir="$WORK_DIR/orchard"
+git -C "$orchard_dir" apply --check <<PATCH
+diff --git a/Cargo.lock b/Cargo.lock
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -993,7 +993,7 @@ dependencies = [
+ [[package]]
+ name = "halo2_proofs"
+ version = "0.3.5"
+-source = "git+$ORCHARD_HALO2_URL?rev=$ORCHARD_HALO2_COMMIT#$ORCHARD_HALO2_COMMIT"
++source = "git+$HALO2_URL?rev=$HALO2_COMMIT#$HALO2_COMMIT"
+ dependencies = [
+  "blake2b_simd",
+  "ff",
+diff --git a/Cargo.toml b/Cargo.toml
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -118 +118 @@
+-halo2_proofs = { git = "$ORCHARD_HALO2_URL", rev = "$ORCHARD_HALO2_COMMIT" }
++halo2_proofs = { git = "$HALO2_URL", rev = "$HALO2_COMMIT" }
+PATCH
+git -C "$orchard_dir" apply <<PATCH
+diff --git a/Cargo.lock b/Cargo.lock
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -993,7 +993,7 @@ dependencies = [
+ [[package]]
+ name = "halo2_proofs"
+ version = "0.3.5"
+-source = "git+$ORCHARD_HALO2_URL?rev=$ORCHARD_HALO2_COMMIT#$ORCHARD_HALO2_COMMIT"
++source = "git+$HALO2_URL?rev=$HALO2_COMMIT#$HALO2_COMMIT"
+ dependencies = [
+  "blake2b_simd",
+  "ff",
+diff --git a/Cargo.toml b/Cargo.toml
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -118 +118 @@
+-halo2_proofs = { git = "$ORCHARD_HALO2_URL", rev = "$ORCHARD_HALO2_COMMIT" }
++halo2_proofs = { git = "$HALO2_URL", rev = "$HALO2_COMMIT" }
+PATCH
+
+changed=$(git -C "$orchard_dir" diff --name-only | LC_ALL=C sort)
+if [[ "$changed" != $'Cargo.lock\nCargo.toml' ]]; then
+  echo "VIOLATION: Halo2 pin normalization changed an unexpected Orchard file:" >&2
+  printf '%s\n' "$changed" >&2
+  exit 1
+fi
+lock_entry=$(grep -A2 '^name = "halo2_proofs"$' "$orchard_dir/Cargo.lock")
 expected_entry='name = "halo2_proofs"
-version = "'"$HALO2_PROOFS_VERSION"'"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "'"$HALO2_PROOFS_LOCK_CHECKSUM"'"'
+version = "0.3.5"
+source = "git+'"$HALO2_URL"'?rev='"$HALO2_COMMIT"'#'"$HALO2_COMMIT"'"'
 if [[ "$lock_entry" != "$expected_entry" ]]; then
-  echo "VIOLATION: orchard's lockfile does not resolve the expected released halo2_proofs:" >&2
+  echo "VIOLATION: normalized Orchard lockfile does not resolve the pinned Halo2 commit:" >&2
   echo "$lock_entry" >&2
   exit 1
 fi
-echo "Cargo.lock resolves halo2_proofs $HALO2_PROOFS_VERSION from crates.io by checksum."
+echo "Cargo.lock resolves zcash/halo2#$HALO2_PR commit $HALO2_COMMIT through the canonical URL."
 
 # Install orchard's pinned toolchain (mirrors fixtures.yml), then run every capture
-# driver in one pass. The unanchored filter matches every upstream capture driver, and
-# deliberately not the Rust-only rejected:: capture. The released orchard also ships a
-# three-action match-only driver; it runs here but its output is not ingested, so only the
-# four committed families below are diffed.
+# driver in one pass. The unanchored filter matches every upstream capture driver; each random
+# driver runs its exact malformed-byte checks before exporting. It deliberately does not match the
+# separate Rust-only `fingerprint_rejected_capture_two_actions` test. Orchard also ships a
+# three-action match-only driver; it runs here but its output is not ingested, so only the four
+# committed families below are diffed.
 if command -v rustup >/dev/null 2>&1; then
   (cd "$WORK_DIR/orchard" && rustup show >/dev/null)
 fi
 mkdir -p "$WORK_DIR/out"
-# The pinned key description straight from the release tree, before the capture run.
+# The pinned key description straight from the pinned Orchard tree, before the capture run.
 git -C "$WORK_DIR/orchard" show "$ORCHARD_COMMIT:src/circuit_data/circuit_description_post_nu6_3" \
   > "$WORK_DIR/out/circuit_description_post_nu6_3"
 (
