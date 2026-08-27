@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-80f93269.js";
+            window.path_to_searchindex_js = "../searchindex-638ed659.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-951a8d74.js"></script>
+        <script src="../toc-d4c2b103.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -320,13 +320,10 @@ public statement, for example the structured Orchard Action public inputs.</li>
 shape counts, domain parameters, permutation chunks, and commitment families are
 outputs of the same circuit-owned keygen pipeline. Their correspondence must not be
 reintroduced as an arbitrary caller-supplied coherence record.</p>
-<p>The current <code>TopLevelGateCoherence</code> is useful scaffolding while the adapter is being
-built, but it should not survive as part of the public interface. Its definitional
-fields should be discharged directly from <code>toVerifierKey</code>; genuine semantic facts
-such as selector allocation, supported domain size, and degree bounds remain internal
-circuit/compiler obligations. Gate well-formedness is already intrinsic to <code>Gate</code>.
-The remaining facts should be derived or packaged once inside the boundary rather
-than supplied beside every soundness call.</p>
+<p>Gate and lookup registration plus selector allocation now come from packaged Clean
+lawfulness. The remaining <code>TopLevelConstraintBounds</code> contains only supported-domain
+and polynomial-degree bounds; it is not a gate-coherence sidecar. Gate
+well-formedness remains intrinsic to <code>Gate</code>.</p>
 
                     </main>
 
@@ -336,9 +333,6 @@ than supplied beside every soundness call.</p>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../formal-verification/clean-improvements.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -350,9 +344,6 @@ than supplied beside every soundness call.</p>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../formal-verification/clean-improvements.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
         </div>

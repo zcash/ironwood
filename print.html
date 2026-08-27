@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-80f93269.js";
+            window.path_to_searchindex_js = "searchindex-638ed659.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-951a8d74.js"></script>
+        <script src="toc-d4c2b103.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -831,11 +831,11 @@ different trust standards.</p>
 <p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) rest, in
 their abstract form over an arbitrary <code>Fp</code>-module, only on the standard classical axioms
 <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
-trust. Instantiated at a concrete Pasta curve they additionally inherit the compiler-trust
-axioms of the closed computational facts they rest on, discharged by <code>native_decide</code> (below).
-The <code>+native</code> annotations on the corresponding build-time checks record exactly which
-endpoints carry them, and the resulting trusted set is stated in reader-facing form in the
-Guide's <a href="formal-verification/guide.html#what-you-are-trusting">What you are trusting</a>.</p>
+trust. Instantiated at the concrete Pasta curves they may inherit CompElliptic's closed
+<code>native_decide</code> arithmetic facts: the Pallas or Vesta point-count witness and, where Pallas
+square-root data enters, its Tonelli–Shanks root-of-unity certificate. The reusable census also
+contains Ironwood's closed NU6.3 cross-address separation check. The <code>+native</code> flag on each
+build-time check names exactly which owners that endpoint reaches.</p>
 <p><strong><code>@[csimp]</code> replacement lemmas</strong> get their own <code>assert_axioms</code> entries in
 <code>Zcash/TrustBoundary.lean</code>, enforced by <code>scripts/check_csimp_census.sh</code> in CI: the compiler
 applies a csimp substitution in all downstream compiled code, but the axioms of the lemma's
@@ -2899,7 +2899,7 @@ checks rather than prose: a change that widens any checked declaration's trusted
 reachable <code>sorry</code>, an unexpected axiom, or <code>native_decide</code> where none was permitted — fails
 the build here. Computed break reductions are pinned with <code>assert_computable</code>, theorems with
 <code>assert_axioms</code>. The SNARK-side censuses were consolidated into this one file, so apart from
-the two per-capture fixture boundaries below it is the single place the trust claims are pinned.</li>
+the four per-capture fixture boundaries below it is the single place the trust claims are pinned.</li>
 </ul>
 <h2 id="arithmetic--zcasharithmetic"><a class="header" href="#arithmetic--zcasharithmetic">Arithmetic — <code>Zcash/Arithmetic/</code></a></h2>
 <p>The objects every other tier is stated over, and the evaluation lanes that make the concrete
@@ -3010,7 +3010,8 @@ with its <strong>Fiat–Shamir</strong> schedule check, its <code>Boundary</code
 key and schedule, its per-slot tamper sweep (<code>Negative/Sweep</code>), and its checked <code>TrustBoundary</code>
 turning the fingerprint match into
 build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
-to the ones derived end to end from the ported <code>configure</code>. The multi-action capture additionally
+to the ones derived end to end from the ported <code>configure</code> as a standalone diagnostic, not a
+soundness or fixture-trust input. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
 schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — its <code>2^123</code>
 work-factor instantiation and the conditionally staged-certified <code>2^123</code> and <code>2^125</code> adversary-work
@@ -3236,7 +3237,7 @@ ported, generic over <code>K</code>), <code>RunningSum</code>/<code>DecomposeRun
 phases (<code>Mul</code>, <code>MulIncomplete</code>, <code>MulIncompleteRound</code>, <code>MulComplete</code>, <code>MulOverflow</code>,
 <code>DoubleAndAdd</code>), and fixed-base multiplication (<code>MulFixed/</code>, with full-width, short, and
 base-field-element variants). <strong><code>MulFixed/Certs/</code></strong> holds the six deployed fixed bases with
-their window-table certificates, checked through <code>CertCheck</code>'s <code>ℕ</code>-literal evaluator.</li>
+their window-table certificates, kernel-checked through <code>CertCheck</code>'s <code>ℕ</code>-literal evaluator.</li>
 <li><strong><code>Sinsemilla/</code></strong> — the Sinsemilla chip: the <code>2^K</code> generator table (<code>Basic</code>), one hash piece
 and its rounds (<code>HashPiece</code>, <code>HashPieceRound</code>), the <code>⊥</code>-propagating chain (<code>Chain</code>,
 <code>HashToPoint</code>), the commit domain (<code>CommitDomain</code>), and the fixed-depth Merkle path (<code>Merkle</code>).</li>
@@ -3422,9 +3423,6 @@ refactoring arcs complete rather than kept continuously current.</p>
 <ul>
 <li><a href="formal-verification/clean-boundary.html">The Clean Boundary</a> is the normative rule for how Clean-originated
 concepts appear in ironwood.</li>
-<li><a href="formal-verification/clean-improvements.html">Clean Circuit Framework Improvements</a>
-specifies the arc that replaces whole-circuit computational certificates with
-compositional lawfulness.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="the-clean-boundary-architecture-rule"><a class="header" href="#the-clean-boundary-architecture-rule">The Clean boundary: architecture rule</a></h1>
@@ -3570,310 +3568,10 @@ public statement, for example the structured Orchard Action public inputs.</li>
 shape counts, domain parameters, permutation chunks, and commitment families are
 outputs of the same circuit-owned keygen pipeline. Their correspondence must not be
 reintroduced as an arbitrary caller-supplied coherence record.</p>
-<p>The current <code>TopLevelGateCoherence</code> is useful scaffolding while the adapter is being
-built, but it should not survive as part of the public interface. Its definitional
-fields should be discharged directly from <code>toVerifierKey</code>; genuine semantic facts
-such as selector allocation, supported domain size, and degree bounds remain internal
-circuit/compiler obligations. Gate well-formedness is already intrinsic to <code>Gate</code>.
-The remaining facts should be derived or packaged once inside the boundary rather
-than supplied beside every soundness call.</p>
-<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="clean-circuit-framework-improvements"><a class="header" href="#clean-circuit-framework-improvements">Clean circuit framework improvements</a></h1>
-<p>This note describes potential improvements to the generality and ergonomics of the
-Clean framework used in this development. Clean had not previously been applied to
-circuits for Halo 2 (or for any other proving system using Plonkish arithmetization);
-nor had it been applied to any circuit as large or complicated as the Orchard protocol's
-Action circuit. The accelerated timeline of the Ironwood deployment required us to focus
-on that circuit (in its pre- and post-NU6.3 versions), at the expense of generality.</p>
-<h2 id="status-and-scope"><a class="header" href="#status-and-scope">Status and scope</a></h2>
-<p>The refactoring arc described in this note would replace concrete, whole-Action
-computational certificates with reusable Halo2-Clean lawfulness and compiler theorems.
-The certificates that could be eliminated by generalizing their consumers are already
-gone (<a href="https://github.com/zcash/ironwood/pull/145">#145</a>). The compositional-lawfulness
-side is in progress (<a href="https://github.com/zcash/ironwood/pull/202">#202</a>).</p>
-<p>The arc serves three purposes:</p>
-<ul>
-<li><strong>Generality.</strong> Lawfulness is proved once for Clean's primitives and preserved by its
-circuit combinators, so that the framework can handle further top-level circuits
-without comparable rework — at present, each new circuit would need its own
-hand-written whole-circuit certificate modules.</li>
-<li><strong>Error reporting.</strong> An incorrectly expressed circuit should fail the local proof
-obligation that names its mistake, rather than be silently repaired by the keygen
-model or surface only as an unexplained mismatch against a captured verifying key.</li>
-<li><strong>Claim hygiene.</strong> Concrete computation should be confined to checking deployment
-identity, so that a concrete check cannot silently stand in for a well-formedness
-property it does not establish.</li>
-</ul>
-<p>The deployed verifying-key equality is intentionally <strong>not</strong> part of this cleanup.
-Checking that the circuit-derived key equals the deployed key is a required concrete
-trust-boundary check for any circuit. It is not the same thing as proving that a
-formal circuit expressed in Clean is internally lawful.</p>
-<p>The visible certificate list understates the architectural debt, for example:</p>
-<ul>
-<li>some certificates bundle independent facts;</li>
-<li>further well-formedness checks hide inside the VK-match bundle;</li>
-<li><code>ConstraintSystem.closeWithOperations</code> silently repairs a missing configure/synthesis
-fact without proving that the repair is inactive (the verifier MSM match is against
-the repaired circuit that is actually proven, as it should be, but the repair impedes
-comparing the Lean code against the Rust implementation and should be unnecessary).</li>
-</ul>
-<h2 id="why-closewithoperations-belongs-in-this-inventory"><a class="header" href="#why-closewithoperations-belongs-in-this-inventory">Why <code>closeWithOperations</code> belongs in this inventory</a></h2>
-<p>Clean currently defines <code>FormalCircuit.toConstraintSystem</code> by taking the raw result of
-<code>configure</code> and applying <code>ConstraintSystem.closeWithOperations</code> to the circuit's
-synthesis stream. Closure:</p>
-<ol>
-<li>appends gates enabled by synthesis but absent from <code>configure</code>;</li>
-<li>appends lookups enabled by synthesis but absent from <code>configure</code>;</li>
-<li>registers queries for those appended arguments; and</li>
-<li>increases <code>numSelectors</code> when lookup expressions use selectors beyond the bound
-allocated by <code>configure</code>.</li>
-</ol>
-<p>This produces a self-consistent internal object, but it is not the algorithm Halo2
-uses. In Halo2, synthesis can enable only a gate or lookup already established by
-configuration. If closure changes the raw constraint system, the model has repaired
-an invalid formal circuit instead of rejecting it.</p>
-<p>The problem is not cured by comparing the resulting pinned CS with a captured VK.
-Such a comparison says that the <em>repaired derivation</em> matches the deployed data; it
-does not say that the repair was inactive. In particular, semantically redundant or
-projection-equivalent repairs need not be observable in every downstream pinned
-field.</p>
-<p>The desired endpoint is:</p>
-<pre><code class="language-text">rawCS := (c.configure ci {}).2
-ops   := c.toOperations ci input
-
-FormalCircuit lawfulness proves:
-  every enabled gate is in rawCS.gates
-  every enabled lookup is in rawCS.lookups
-  every lookup selector is below rawCS.numSelectors
-
-c.toConstraintSystem ci input = rawCS
-c.toPinnedCS ci input = PinnedConstraintSystem.ofClosedOperations rawCS ops
-</code></pre>
-<p><code>closeWithOperations</code> can remain as a diagnostic or migration helper, but it should
-not define the canonical keygen semantics. A useful transition theorem is that lawful
-circuits satisfy</p>
-<pre><code class="language-text">rawCS.closeWithOperations ops = rawCS.
-</code></pre>
-<p>That theorem makes the current and intended pipelines coincide while callers migrate.
-After migration, the raw configure result should be used directly.</p>
-<p>The query-registration folds in closure are not a separate atomic obligation. Once
-both missing-argument lists are empty, those folds are inactive. The selector maximum
-is separate: it can change even with no missing lookup when a configured lookup
-mentions an unallocated selector.</p>
-<h2 id="the-concrete-computations-that-remain"><a class="header" href="#the-concrete-computations-that-remain">The concrete computations that remain</a></h2>
-<p>The computations that were generically provable, and those that existed only because
-downstream code demanded Action constants, are gone
-(<a href="https://github.com/zcash/ironwood/pull/145">#145</a>). Where their names survive, they
-are corollaries derived from the facts below, or they live inside the
-deployment-identity certificate (<code>Zcash/Snark/Keygen/Certificate.lean</code>) — the
-intended end state, since deployment identity is the one legitimate concrete check.</p>
-<p>Two kinds of concrete computation remain, and the axiom census pins both:</p>
-<ul>
-<li>the law-dependent obligations, discharged for the concrete Action circuit by the
-compute modules under <code>Zcash/Circuits/Integration/</code>: gate coherence and constraint
-degree, fixed-column coverage and realization, copy addressing, constant
-allocation, and permutation routing over the derived domain; and</li>
-<li>one exact permutation fact, the circuit's permutation-column count. The current
-circuit interfaces do not bound it — columns carry unbounded <code>Nat</code> indices and
-<code>Configure</code> is an arbitrary state function — so eliminating it needs either a
-configure law ensuring a duplicate-free in-range column list or an explicit
-supported-column-count law on the top-level keygen interface. That is a design
-decision for the lawfulness side of the arc, not another consumer generalization.</li>
-</ul>
-<p>Replacing the first kind with compositional lawfulness is the substance of this
-note, and <a href="https://github.com/zcash/ironwood/pull/202">#202</a> is that work in
-progress.</p>
-<h2 id="withdrawn-synthesis-laws"><a class="header" href="#withdrawn-synthesis-laws">Withdrawn synthesis laws</a></h2>
-<p><code>TopLevelCircuit</code> once carried two static synthesis obligations: that a lookup
-operation's recorded enabled selectors exactly match the relevant selectors activated
-in its complete region at that row, and that lookup input expressions contain no
-simple selectors. They were proved at the wrong abstraction layer — as fields of
-<code>TopLevelCircuit</code> rather than of <code>FormalCircuit</code>, backed by sidecars that retraced
-the entire Action and NoteCommit synthesis call graphs — and nothing consumed them,
-so they were withdrawn rather than relocated.</p>
-<p>The withdrawal removed the development's only statement of the second property. That
-loses nothing now: Halo 2 rejects simple selectors supplied to a lookup argument
-—lookup registration panics on one— so the property holds of any circuit that halo2
-accepted, in particular the deployed one, and no current claim consumes it.</p>
-<p>These synthesis checks would return as premisses of a future keygen-fidelity theorem
-relating Clean's <code>configure</code>/<code>synthesize</code> output to halo2's own key generation.
-Halo2's key generation is partial where Clean's model is total —Clean does not model
-the rejection— so the preferred design is for such a theorem to carry a
-no-simple-selectors premiss, discharged for a concrete circuit by computation.</p>
-<p>When the premiss is reintroduced, it should be as a local obligation on lookup-emitting
-bundles, preserved compositionally by the circuit combinators. This would be a law of
-<code>FormalCircuit.synthesize</code>, rather than a statement reproved across a whole synthesis
-call graph and reattached at the top-level wrapper.</p>
-<h2 id="proposed-lawfulness-interfaces"><a class="header" href="#proposed-lawfulness-interfaces">Proposed lawfulness interfaces</a></h2>
-<h3 id="1-exact-gate-query-support"><a class="header" href="#1-exact-gate-query-support">1. Exact gate query support</a></h3>
-<p>For a gate, the list supplied as <code>queriedCells</code> records Rust closure-call order, while
-expression traversal records syntactic use order and may repeat atoms differently.
-The right law is therefore support equality, not list equality:</p>
-<pre><code class="language-text">Gate.QueryExact gate :=
-  every entry of gate.queriedCells is an advice/fixed/instance query
-  ∧ constraintQuerySupport gate.constraints
-      = gate.queriedCells.toFinset
-  ∧ constraintSelectorSupport gate.constraints
-      = {gate.selector}
-</code></pre>
-<p>This captures the intent: the cells in the constraints are exactly the declared
-queries, plus the gate selector. If future Halo2 APIs deliberately permit valid but
-unused closure queries, equality can be relaxed to the required subset direction.
-Start with equality because it detects both missing and stale declarations.</p>
-<p>The existing <code>Gate.WellFormed</code> selector discipline and <code>QueryExact</code> should become
-parts of a single gate lawfulness interface. Construction should retain current call
-syntax through default proof arguments and tactics.</p>
-<p>Consequences should include:</p>
-<ul>
-<li>no invalid <code>queriedCells</code>;</li>
-<li>every expression query receives the intended registered query index;</li>
-<li>query coverage for every semantically consumed gate fixed column;</li>
-<li>expression projection is independent of an unrelated concrete VK check.</li>
-</ul>
-<h3 id="2-lookup-query-support"><a class="header" href="#2-lookup-query-support">2. Lookup query support</a></h3>
-<p>Lookups need the analogous law:</p>
-<pre><code class="language-text">LookupArgument.QueryExact argument declaredQueries :=
-  querySupport (argument.inputs ++ argument.tables)
-    = declaredQueries.toFinset
-</code></pre>
-<p>It composes with the existing lookup properties: table expressions are selector-free,
-input selectors are disciplined, tuple arities match, and activation rows are exact.
-The declaration must reflect the actual configure closure-call order when that order
-affects query indices.</p>
-<h3 id="3-configuresynthesis-registration"><a class="header" href="#3-configuresynthesis-registration">3. Configure/synthesis registration</a></h3>
-<p>The raw configure result and synthesis stream need a packaged law such as:</p>
-<pre><code class="language-text">FormalCircuit.RegisteredIn :=
-  let rawCS := (configure configInput {}).2
-  let ops := toOperations configInput input
-  OperationsKeygenCoherent rawCS ops
-  ∧ LookupSelectorsAllocated rawCS
-</code></pre>
-<p>The name and exact factorization can change, but the property must live on
-<code>FormalCircuit</code> (or a construction it contains), not beside each Action subcircuit.
-As with Clean's other lawfulness fields, primitives should prove it once and
-combinators should preserve it. A default tactic should solve ordinary bundles from
-those compositional lemmas.</p>
-<p>This law gives:</p>
-<ul>
-<li><code>missingEnabledGates rawCS ops = []</code>;</li>
-<li><code>missingEnabledLookups rawCS ops = []</code>;</li>
-<li>the closure selector maximum equals <code>rawCS.numSelectors</code>;</li>
-<li><code>rawCS.closeWithOperations ops = rawCS</code>; and</li>
-<li>canonical <code>toConstraintSystem</code> and <code>toPinnedCS</code> can use <code>rawCS</code> directly.</li>
-</ul>
-<p>This is stricter and more faithful than merely baking synthesis-enabled arguments into
-the derived CS.</p>
-<h3 id="4-configure-permutation-and-constant-laws"><a class="header" href="#4-configure-permutation-and-constant-laws">4. Configure permutation and constant laws</a></h3>
-<p>Configure should also expose:</p>
-<ul>
-<li>every equality-enabled column has the zero-rotation query required by permutation
-routing;</li>
-<li>every constant column is equality-enabled;</li>
-<li>every instance column targeted by synthesis is equality-enabled; and</li>
-<li>allocated column/selector counters are monotone and references are in range.</li>
-</ul>
-<p>These are good candidates for proof-by-construction in a restricted append-only
-configure monad. Until then, they should be fields preserved by configure primitives
-and discharged compositionally.</p>
-<h3 id="5-region-operation-lawfulness"><a class="header" href="#5-region-operation-lawfulness">5. Region-operation lawfulness</a></h3>
-<p>Each region should certify locally:</p>
-<ul>
-<li>every referenced cell was allocated in that region;</li>
-<li>referenced offsets are below the measured region extent;</li>
-<li>repeated writes to the same local fixed cell agree; and</li>
-<li>copy endpoints use equality-enabled columns.</li>
-</ul>
-<p>The V1 planner already proves that regions sharing a measured column receive
-non-overlapping column-and-row intervals. That generic theorem turns local fixed-write
-consistency into cross-region consistency. Regions may share row numbers; what cannot
-overlap is a cell in a shared column.</p>
-<p>Tables, constant allocation, and selector packing are separate compiler stages, not
-exceptions. Each stage needs a small consistency theorem and a composition theorem
-showing that its writes do not conflict with region writes or with the other stages.</p>
-<h3 id="6-operation-stream-lawfulness"><a class="header" href="#6-operation-stream-lawfulness">6. Operation-stream lawfulness</a></h3>
-<p>Reintroduce the two lookup synthesis laws on <code>FormalCircuit</code>, with compositional
-support in circuit and subcircuit constructors. The same formal-circuit lawfulness
-package should grow to cover:</p>
-<ul>
-<li>table loads for the same destination are consistent;</li>
-<li>constants are allocatable;</li>
-<li>instance constraints target enabled columns; and</li>
-<li>region-local laws hold for every synthesized region.</li>
-</ul>
-<p>These should compose through operation-list append and circuit calls, so a top-level
-circuit inherits them without enumerating every Action subcircuit in one theorem.</p>
-<h3 id="7-supported-domain"><a class="header" href="#7-supported-domain">7. Supported domain</a></h3>
-<p><code>TopLevelCircuit</code> should expose a supported-domain fact:</p>
-<pre><code class="language-text">∃ k ≤ fieldTwoAdicity, top.FitsAt k
-</code></pre>
-<p>Ideally this follows from per-region or per-bundle footprint bounds and generic
-planner bounds. If the complete structural proof is too large initially, a concrete
-domain check may remain only as a prominently marked interim certificate with this
-replacement named.</p>
-<h2 id="generic-compiler-proofs-still-required"><a class="header" href="#generic-compiler-proofs-still-required">Generic compiler proofs still required</a></h2>
-<p>Even a fully lawful circuit does not eliminate all work. The compiler needs reusable
-proofs that:</p>
-<ol>
-<li>permutation column lookup, chunking, and address encoding round-trip;</li>
-<li>V1 placement transports region-local bounds and consistency to placed cells; and</li>
-<li>selector compression covers every selector of a lawful gate or lookup.</li>
-</ol>
-<p>These are generic algorithms over small abstract inputs. They should be proved with
-behavioral simp lemmas and induction, not <code>rfl</code>/<code>whnf</code> through a concrete Action
-definition.</p>
-<h2 id="recommended-implementation-sequence"><a class="header" href="#recommended-implementation-sequence">Recommended implementation sequence</a></h2>
-<h3 id="phase-a--make-raw-configure-authoritative"><a class="header" href="#phase-a--make-raw-configure-authoritative">Phase A — make raw configure authoritative</a></h3>
-<ol>
-<li>Define the configure/synthesis registration and selector-allocation laws.</li>
-<li>Prove closure is inactive for lawful circuits.</li>
-<li>Put the law on <code>FormalCircuit</code> with compositional primitive/bundle support.</li>
-<li>Change canonical <code>toConstraintSystem</code>/<code>toPinnedCS</code> to use raw configure output.</li>
-<li>Retain <code>closeWithOperations</code> only as a migration/diagnostic helper.</li>
-</ol>
-<p>This phase replaces gate closure, lookup closure, and selector-bound closure and
-prevents the VK capture from hiding a modeling error.</p>
-<h3 id="phase-b--remove-concrete-downstream-demands-done"><a class="header" href="#phase-b--remove-concrete-downstream-demands-done">Phase B — remove concrete downstream demands (done)</a></h3>
-<p>Generalize permutation replay and domain consumers, leaving exact deployed constants
-visible only in the VK identity check. This landed in
-<a href="https://github.com/zcash/ironwood/pull/145">#145</a>; what survives of it is the
-law-dependent permutation-column count described above.</p>
-<h3 id="phase-c--gate-lookup-and-configure-lawfulness"><a class="header" href="#phase-c--gate-lookup-and-configure-lawfulness">Phase C — gate, lookup, and configure lawfulness</a></h3>
-<p>Add exact query support, degree bounds, permutation-column registration, constant
-column laws, and instance registration. This addresses query coverage, constant-cell
-routing, degree safety, permutation routing, primary-instance registration, invalid
-query declarations, and the local premiss of selector-compression coverage.</p>
-<h3 id="phase-d--generic-projection-and-algebra-largely-done"><a class="header" href="#phase-d--generic-projection-and-algebra-largely-done">Phase D — generic projection and algebra (largely done)</a></h3>
-<p>Prove query-layout projection, constant-stream value preservation,
-selector-compression coverage, and delta-power injectivity. The first, second, and
-fourth landed in <a href="https://github.com/zcash/ironwood/pull/145">#145</a>;
-selector-compression coverage remains.</p>
-<h3 id="phase-e--region-copy-constants-and-fixed-realization"><a class="header" href="#phase-e--region-copy-constants-and-fixed-realization">Phase E — region, copy, constants, and fixed realization</a></h3>
-<p>Build region-local allocation/write laws and generic placement transfer, then compose
-the fixed-producing stages. This addresses the region, copy, constant, and
-fixed-realization obligations.</p>
-<h3 id="phase-f--supported-domain"><a class="header" href="#phase-f--supported-domain">Phase F — supported domain</a></h3>
-<p>Derive the top-level domain bound compositionally. This can proceed in parallel with
-much of Phase E once the footprint interface is settled.</p>
-<h2 id="completion-criteria"><a class="header" href="#completion-criteria">Completion criteria</a></h2>
-<p>This arc is complete when:</p>
-<ul>
-<li>the canonical Clean keygen pipeline does not repair configure/synthesis mismatch;</li>
-<li>the lawfulness obligations are discharged generically or compositionally;</li>
-<li>lookup synthesis laws are carried by every <code>FormalCircuit</code> and preserved by its
-combinators;</li>
-<li>the Action integration capstone imports no concrete certificate theorems;</li>
-<li>no whole-Action <code>native_decide</code> remains for circuit correctness, layout
-consistency, query registration, routing, or domain safety;</li>
-<li>any retained concrete computation checks only deployment identity or fixture data;
-and</li>
-<li>adding another lawful top-level Halo2 circuit requires no analogous hand-written
-certificate module.</li>
-</ul>
-<h2 id="non-goals"><a class="header" href="#non-goals">Non-goals</a></h2>
-<p>This work does not remove the deployed Action VK capture, prove fixture provenance,
-or change verifier/soundness semantics to speak in Clean-native terms. It strengthens
-the Clean-to-Ironwood boundary so that the circuit interface arrives with the
-Ironwood-facing properties that soundness needs.</p>
+<p>Gate and lookup registration plus selector allocation now come from packaged Clean
+lawfulness. The remaining <code>TopLevelConstraintBounds</code> contains only supported-domain
+and polynomial-degree bounds; it is not a gate-coherence sidecar. Gate
+well-formedness remains intrinsic to <code>Gate</code>.</p>
 
                     </main>
 

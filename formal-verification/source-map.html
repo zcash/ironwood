@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-80f93269.js";
+            window.path_to_searchindex_js = "../searchindex-638ed659.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-951a8d74.js"></script>
+        <script src="../toc-d4c2b103.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -244,7 +244,7 @@ checks rather than prose: a change that widens any checked declaration's trusted
 reachable <code>sorry</code>, an unexpected axiom, or <code>native_decide</code> where none was permitted — fails
 the build here. Computed break reductions are pinned with <code>assert_computable</code>, theorems with
 <code>assert_axioms</code>. The SNARK-side censuses were consolidated into this one file, so apart from
-the two per-capture fixture boundaries below it is the single place the trust claims are pinned.</li>
+the four per-capture fixture boundaries below it is the single place the trust claims are pinned.</li>
 </ul>
 <h2 id="arithmetic--zcasharithmetic"><a class="header" href="#arithmetic--zcasharithmetic">Arithmetic — <code>Zcash/Arithmetic/</code></a></h2>
 <p>The objects every other tier is stated over, and the evaluation lanes that make the concrete
@@ -355,7 +355,8 @@ with its <strong>Fiat–Shamir</strong> schedule check, its <code>Boundary</code
 key and schedule, its per-slot tamper sweep (<code>Negative/Sweep</code>), and its checked <code>TrustBoundary</code>
 turning the fingerprint match into
 build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
-to the ones derived end to end from the ported <code>configure</code>. The multi-action capture additionally
+to the ones derived end to end from the ported <code>configure</code> as a standalone diagnostic, not a
+soundness or fixture-trust input. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
 schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — its <code>2^123</code>
 work-factor instantiation and the conditionally staged-certified <code>2^123</code> and <code>2^125</code> adversary-work
@@ -581,7 +582,7 @@ ported, generic over <code>K</code>), <code>RunningSum</code>/<code>DecomposeRun
 phases (<code>Mul</code>, <code>MulIncomplete</code>, <code>MulIncompleteRound</code>, <code>MulComplete</code>, <code>MulOverflow</code>,
 <code>DoubleAndAdd</code>), and fixed-base multiplication (<code>MulFixed/</code>, with full-width, short, and
 base-field-element variants). <strong><code>MulFixed/Certs/</code></strong> holds the six deployed fixed bases with
-their window-table certificates, checked through <code>CertCheck</code>'s <code>ℕ</code>-literal evaluator.</li>
+their window-table certificates, kernel-checked through <code>CertCheck</code>'s <code>ℕ</code>-literal evaluator.</li>
 <li><strong><code>Sinsemilla/</code></strong> — the Sinsemilla chip: the <code>2^K</code> generator table (<code>Basic</code>), one hash piece
 and its rounds (<code>HashPiece</code>, <code>HashPieceRound</code>), the <code>⊥</code>-propagating chain (<code>Chain</code>,
 <code>HashToPoint</code>), the commit domain (<code>CommitDomain</code>), and the fixed-depth Merkle path (<code>Merkle</code>).</li>

@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-80f93269.js";
+            window.path_to_searchindex_js = "searchindex-638ed659.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-951a8d74.js"></script>
+        <script src="toc-d4c2b103.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -241,11 +241,11 @@ different trust standards.</p>
 <p><strong>General, quantified theorems</strong> (the soundness statements and security reductions) rest, in
 their abstract form over an arbitrary <code>Fp</code>-module, only on the standard classical axioms
 <code>propext</code>, <code>Classical.choice</code>, and <code>Quot.sound</code> — no <code>sorry</code>, no additional axioms, no compiler
-trust. Instantiated at a concrete Pasta curve they additionally inherit the compiler-trust
-axioms of the closed computational facts they rest on, discharged by <code>native_decide</code> (below).
-The <code>+native</code> annotations on the corresponding build-time checks record exactly which
-endpoints carry them, and the resulting trusted set is stated in reader-facing form in the
-Guide's <a href="formal-verification/guide.html#what-you-are-trusting">What you are trusting</a>.</p>
+trust. Instantiated at the concrete Pasta curves they may inherit CompElliptic's closed
+<code>native_decide</code> arithmetic facts: the Pallas or Vesta point-count witness and, where Pallas
+square-root data enters, its Tonelli–Shanks root-of-unity certificate. The reusable census also
+contains Ironwood's closed NU6.3 cross-address separation check. The <code>+native</code> flag on each
+build-time check names exactly which owners that endpoint reaches.</p>
 <p><strong><code>@[csimp]</code> replacement lemmas</strong> get their own <code>assert_axioms</code> entries in
 <code>Zcash/TrustBoundary.lean</code>, enforced by <code>scripts/check_csimp_census.sh</code> in CI: the compiler
 applies a csimp substitution in all downstream compiled code, but the axioms of the lemma's
