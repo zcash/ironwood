@@ -6,10 +6,9 @@
 # deployed verifier; the random match-only families come from the same pipeline plus the
 # capture tooling. The base match-only pipeline is released in halo2_proofs 0.3.5 and orchard
 # 0.15.5; the proof-byte exporter and deployed decoder checks are pinned to zcash/halo2#933 and
-# zcash/orchard#544 below. Both commits are fetched through the canonical zcash repositories.
-# Orchard #544 still carries a temporary personal-fork Cargo patch at an older #933 revision, so
-# this script verifies that exact source line and replaces only the URL/revision and lock source
-# with the canonical zcash/halo2 #933 pin. Every cargo invocation then runs --locked. CI runs this
+# zcash/orchard#544 below. Both commits are fetched through the canonical zcash repositories,
+# and Orchard #544's temporary Cargo pin of halo2_proofs is asserted to resolve exactly the
+# #933 snapshot through the canonical URL. Every cargo invocation runs --locked. CI runs this
 # script (fixtures.yml), enforcing all four families byte-for-byte at those reviewed snapshots.
 #
 # Sources are cloned from the canonical public repository; set ORCHARD_SRC to a local checkout
@@ -32,16 +31,12 @@ cd "$(dirname "$0")/.."
 
 # Exact reviewed snapshots. The PR numbers document where the commits are reviewed; the SHAs,
 # not their movable heads, are the reproducibility pins.
-ORCHARD_COMMIT=b3108d2cf4bab40591d5ca85c7657493a60d464f # zcash/orchard#544
+ORCHARD_COMMIT=b81271110ed363ba8455369a925dec21db9e452f # zcash/orchard#544
 ORCHARD_PR=544
 ORCHARD_URL=${ORCHARD_SRC:-https://github.com/zcash/orchard.git}
-HALO2_COMMIT=6ff6d4bda665bd326cd01205c035a67f9628663f # zcash/halo2#933
+HALO2_COMMIT=fbc2dc537c97f70881021b79a686bc6477eca394 # zcash/halo2#933
 HALO2_PR=933
 HALO2_URL=https://github.com/zcash/halo2.git
-# The older #933 snapshot and personal URL present in Orchard #544 are asserted before the
-# deterministic integration-only normalization, so an upstream edit cannot be patched blindly.
-ORCHARD_HALO2_COMMIT=d9a8c7374192d299d11366ed159bc1b3d1a38902
-ORCHARD_HALO2_URL=https://github.com/TalDerei/halo2.git
 
 REPO_ROOT=$PWD
 OUT_DIR=${REGEN_OUT_DIR:-scripts/generated}
@@ -151,63 +146,17 @@ prepare_orchard() {
 
 prepare_orchard
 
-# Normalize Orchard #544's temporary dependency to the current #933 snapshot through the
-# canonical zcash/halo2 URL. `git apply --check` makes the expected old URL and SHA part of the
-# pin: if Orchard refreshes either, this script stops instead of silently rewriting new input.
+# Orchard #544 pins its temporary halo2_proofs dependency through the canonical zcash/halo2 URL.
+# Assert that its lockfile resolves exactly the #933 snapshot pinned above, so an upstream
+# refresh of either side stops this script instead of silently capturing against different
+# verifier sources.
 orchard_dir="$WORK_DIR/orchard"
-git -C "$orchard_dir" apply --check <<PATCH
-diff --git a/Cargo.lock b/Cargo.lock
---- a/Cargo.lock
-+++ b/Cargo.lock
-@@ -993,7 +993,7 @@ dependencies = [
- [[package]]
- name = "halo2_proofs"
- version = "0.3.5"
--source = "git+$ORCHARD_HALO2_URL?rev=$ORCHARD_HALO2_COMMIT#$ORCHARD_HALO2_COMMIT"
-+source = "git+$HALO2_URL?rev=$HALO2_COMMIT#$HALO2_COMMIT"
- dependencies = [
-  "blake2b_simd",
-  "ff",
-diff --git a/Cargo.toml b/Cargo.toml
---- a/Cargo.toml
-+++ b/Cargo.toml
-@@ -118 +118 @@
--halo2_proofs = { git = "$ORCHARD_HALO2_URL", rev = "$ORCHARD_HALO2_COMMIT" }
-+halo2_proofs = { git = "$HALO2_URL", rev = "$HALO2_COMMIT" }
-PATCH
-git -C "$orchard_dir" apply <<PATCH
-diff --git a/Cargo.lock b/Cargo.lock
---- a/Cargo.lock
-+++ b/Cargo.lock
-@@ -993,7 +993,7 @@ dependencies = [
- [[package]]
- name = "halo2_proofs"
- version = "0.3.5"
--source = "git+$ORCHARD_HALO2_URL?rev=$ORCHARD_HALO2_COMMIT#$ORCHARD_HALO2_COMMIT"
-+source = "git+$HALO2_URL?rev=$HALO2_COMMIT#$HALO2_COMMIT"
- dependencies = [
-  "blake2b_simd",
-  "ff",
-diff --git a/Cargo.toml b/Cargo.toml
---- a/Cargo.toml
-+++ b/Cargo.toml
-@@ -118 +118 @@
--halo2_proofs = { git = "$ORCHARD_HALO2_URL", rev = "$ORCHARD_HALO2_COMMIT" }
-+halo2_proofs = { git = "$HALO2_URL", rev = "$HALO2_COMMIT" }
-PATCH
-
-changed=$(git -C "$orchard_dir" diff --name-only | LC_ALL=C sort)
-if [[ "$changed" != $'Cargo.lock\nCargo.toml' ]]; then
-  echo "VIOLATION: Halo2 pin normalization changed an unexpected Orchard file:" >&2
-  printf '%s\n' "$changed" >&2
-  exit 1
-fi
 lock_entry=$(grep -A2 '^name = "halo2_proofs"$' "$orchard_dir/Cargo.lock")
 expected_entry='name = "halo2_proofs"
 version = "0.3.5"
 source = "git+'"$HALO2_URL"'?rev='"$HALO2_COMMIT"'#'"$HALO2_COMMIT"'"'
 if [[ "$lock_entry" != "$expected_entry" ]]; then
-  echo "VIOLATION: normalized Orchard lockfile does not resolve the pinned Halo2 commit:" >&2
+  echo "VIOLATION: Orchard lockfile does not resolve the pinned Halo2 commit:" >&2
   echo "$lock_entry" >&2
   exit 1
 fi
