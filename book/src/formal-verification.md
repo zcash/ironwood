@@ -163,9 +163,12 @@ captured challenge is recomputed from halo2's transcript encoding through a Lean
 (`Snark/Verifier/Transcript.lean`), and all four captures' generated proof bytes decode to their
 typed proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`).
 `DeployedAcceptsBytes` composes that exact parser, the key digest derived from the pinned
-description, and the BLAKE2b schedule into typed `DeployedAccepts`; both honest captures witness
-the composition. BLAKE2b's idealization as a random oracle and universal refinement of Rust's
-reader to the Lean decoder remain external. `Snark/Fingerprint/Match.lean` enumerates the boundary;
+description, and the BLAKE2b schedule into typed `DeployedAccepts`, requiring the description to
+describe the key (`Describes`) and excluding identity instance commitments as halo2 does; both
+honest captures witness the composition. BLAKE2b's idealization as a random oracle,
+`blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, and universal
+refinement of Rust's reader to the Lean decoder remain external. `Snark/Fingerprint/Match.lean`
+enumerates the boundary;
 the deployment identification and landing status are tracked in
 [#66](https://github.com/zcash/ironwood/issues/66).
 

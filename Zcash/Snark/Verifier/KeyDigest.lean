@@ -23,9 +23,15 @@ field-less struct or argument-less tuple. The extractors at the end turn the pin
 `Expr`, `ColumnRef`, query layouts, and Vesta points — the shapes `VerifyingKey` carries.
 
 Nothing here is trusted: the fixture checks that hashing the description reproduces the captured
-digest, and the description's fields are compared with the derived key field by field. What the
-digest cannot give is cross-key binding — that no other key hashes to it — which stays with
-BLAKE2b's collision resistance, idealized like its randomness.
+digest, and `Describes` below reads the description's fields back against the key and shape it
+claims to describe — the conjunct `DeployedAcceptsBytes` carries, discharged at each honest
+capture and restated field by field in `Fixtures/PinnedKey.lean`. What the digest cannot give is
+cross-key binding — that no other key hashes to it. That is collision resistance of the *reduced*
+digest `keyDigest`, BLAKE2b's 512-bit output taken modulo `p`: two descriptions whose digests are
+merely congruent modulo `p` share a key digest with no BLAKE2b collision
+(`challengeOfDigest_eq_iff_modEq`), so bare BLAKE2b collision resistance does not imply it. Under
+the random-oracle idealization the squeeze already takes, it holds at the usual birthday bound; it
+is idealized like BLAKE2b's randomness, not proved.
 -/
 
 namespace Zcash.Snark
@@ -306,5 +312,91 @@ def lookup? (fuel : ℕ) (v : DebugValue) : Option (List (Expr Fp) × List (Expr
   pure (inputs, tables)
 
 end DebugValue
+
+/-! ## The description against a key
+
+`Describes` is the identification `DeployedAcceptsBytes` requires between the description whose
+digest opens the transcript and the key the proof is checked against: the description's
+constraint system is the key's, and the counts `readProof?` reads by are that constraint
+system's. -/
+
+open DebugValue
+
+/-- The parsed description; a failed parse falls back to the field-less empty atom, which
+satisfies none of the `some`-valued reads below. -/
+def descriptionValue (s : String) : DebugValue := (parse? s).getD (.atom "")
+
+/-- The `cs` (constraint system) field of the parsed description. -/
+def descriptionCs (s : String) : DebugValue := ((descriptionValue s).field? "cs").getD (.atom "")
+
+/-- The `domain` field of the parsed description. -/
+def descriptionDomain (s : String) : DebugValue :=
+  ((descriptionValue s).field? "domain").getD (.atom "")
+
+/-- Recursion budget for reading expressions: one unit per character bounds every nesting. -/
+def descriptionFuel (s : String) : ℕ := s.length
+
+/-- The first query of raw column `c` at rotation 0 in the layout `l` — halo2's
+`get_any_query_index(column, Rotation::cur())`, which is how `permutation::verifier` locates
+the evaluation of a permutation column. -/
+def queryIndexAt (l : List (ℕ × ℤ)) (c : ℕ) : Option ℕ := l.findIdx? (· = (c, 0))
+
+/-- A pinned permutation column, moved from the description's raw column space into the
+verifier's query-index space — the vocabulary `permutationChunks` speaks — through the key's
+query layouts, themselves compared with the pinned ones by `Describes`. -/
+def toQuerySpace {shape : CircuitShape} (vk : VerifyingKey shape Fp VestaG) :
+    ColumnRef → Option ColumnRef
+  | .advice c => (queryIndexAt vk.adviceQueryLayout c).map .advice
+  | .fixed c => (queryIndexAt vk.fixedQueryLayout c).map .fixed
+  | .instance c => (queryIndexAt vk.instanceQueryLayout c).map .instance
+
+/-- **The description describes the key.** Every pinned field with a counterpart in the verifier's
+key or shape reads back to it: the moduli name Vesta's fields; the domain's `k` and `ω` are the
+shape's and the key's, with `n` the domain size `2 ^ k`; the column counts are the shape's; the
+gates, query layouts, permutation columns (through `toQuerySpace`), and lookups are the key's; and
+both commitment vectors are the key's, the fixed one over the pinned column count. The shape's
+query, permutation-set, and lookup counts are tied to those same pinned fields, so the counts
+`readProof?` reads by are the pinned constraint system's — the agreements `Verifier/Key.lean`
+names.
+
+Not read here, because the verifier consumes no pinned counterpart: `blindingFactors`, `delta`,
+and `chunkLen`, halo2 constants of the constraint system's degree that stay the named key
+agreements of `Verifier/Key.lean`; and the keygen-only `extended_k`, `num_selectors`, `constants`,
+and `minimum_degree`, pinned as deployment literals in `Fixtures/PinnedKey.lean`. -/
+def Describes {shape : CircuitShape} (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
+  ((descriptionValue s).field? "base_modulus" >>= quotedHexNat?) = some PALLAS_SCALAR_CARD ∧
+  ((descriptionValue s).field? "scalar_modulus" >>= quotedHexNat?) = some PALLAS_BASE_CARD ∧
+  ((descriptionDomain s).field? "k" >>= nat?) = some shape.k ∧
+  vk.n = 2 ^ shape.k ∧
+  ((descriptionDomain s).field? "omega" >>= fp?) = some vk.omega ∧
+  ((descriptionCs s).field? "num_advice_columns" >>= nat?) = some shape.numAdviceColumns ∧
+  ((descriptionCs s).field? "num_instance_columns" >>= nat?) = some shape.numInstanceColumns ∧
+  ((descriptionCs s).field? "gates" >>= listOf? (expr? (descriptionFuel s))) = some vk.gates ∧
+  ((descriptionCs s).field? "advice_queries" >>= listOf? query?) = some vk.adviceQueryLayout ∧
+  ((descriptionCs s).field? "instance_queries" >>= listOf? query?) = some vk.instanceQueryLayout ∧
+  ((descriptionCs s).field? "fixed_queries" >>= listOf? query?) = some vk.fixedQueryLayout ∧
+  vk.adviceQueryLayout.length = shape.numAdviceQueries ∧
+  vk.instanceQueryLayout.length = shape.numInstanceQueries ∧
+  vk.fixedQueryLayout.length = shape.numFixedQueries ∧
+  ((((descriptionCs s).field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
+      >>= fun l => l.mapM (toQuerySpace vk))
+    = some (vk.permutationChunks.flatten.map Prod.fst) ∧
+  vk.permutationChunks.length = shape.numPermutationSets ∧
+  ((descriptionCs s).field? "lookups" >>= listOf? (lookup? (descriptionFuel s)))
+    = some (List.ofFn fun l : Fin shape.numLookups =>
+        (vk.lookupInputExprs l, vk.lookupTableExprs l)) ∧
+  ((descriptionCs s).field? "num_fixed_columns" >>= nat?) ≠ none ∧
+  ((descriptionValue s).field? "fixed_commitments" >>= listOf? point?)
+    = ((descriptionCs s).field? "num_fixed_columns" >>= nat?).map
+        (fun n => (List.range n).map vk.fixedCommitment) ∧
+  (((descriptionValue s).field? "permutation" >>= (·.field? "commitments")) >>= listOf? point?)
+    = some (List.ofFn vk.permutationCommonCommitment)
+
+/-- `Describes` is a finite conjunction of decidable equations, so a capture discharges it by
+evaluation. -/
+instance decidableDescribes {shape : CircuitShape} (s : String)
+    (vk : VerifyingKey shape Fp VestaG) : Decidable (Describes s vk) := by
+  unfold Describes
+  infer_instance
 
 end Zcash.Snark

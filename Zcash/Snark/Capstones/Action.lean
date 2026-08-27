@@ -72,19 +72,24 @@ rather than proved, with its known strengthening named where one exists:
   `challenge255_weightedBias_le`, and `challenge255_joint_eventBias_le` composes it through an
   adaptive deduplicated query tree (`Soundness/Oracle/Challenge255.lean`). The byte layer beneath
   the schedule — halo2's transcript encoding and BLAKE2b itself — is modeled and checked against
-  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform remains external.
+  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform, and
+  `blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, remain
+  external.
 * *DLOG hardness* — each profile takes a caller-supplied advantage bound for its exact relation
   finder (`AdaptiveStatementDlogProfile`, `CertifiedAdaptiveStatementDlogProfile`); relating that
   bound to a standard resource-bounded DLOG game and a concrete security estimate is external.
 * *Key digest* — `vkHash` is opaque: one canonical key per basis, no cross-key binding claimed
   (`AdaptiveStatementModel.lean`, *Intended instantiation*). At the captures the digest scalar is
   recomputed from the exact exporter-emitted preimage: each family's `Transcript.lean` hashes that
-  string, and `Fixtures/PinnedKey.lean` checks its fields against the captured key, which is
-  certified equal to the derived key. The
-  fixture inputs remain trusted; cross-key binding would need BLAKE2b's collision resistance.
+  string, `Describes` reads its fields against the captured key, which is certified equal to the
+  derived key, and `Fixtures/PinnedKey.lean` states that reading field by field. The fixture
+  inputs remain trusted; cross-key binding would need collision resistance of the reduced digest
+  `keyDigest` — BLAKE2b's output modulo `p`, which bare BLAKE2b collision resistance does not give
+  (`challengeOfDigest_eq_iff_modEq`).
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
-  challenge schedule into it. Both honest captures witness this byte-level predicate. Universal
+  challenge schedule into it, under `Describes` and halo2's refusal of identity instance
+  commitments. Both honest captures witness this byte-level predicate. Universal
   refinement of Rust's reader to the Lean decoder and halo2's optional `BatchVerifier` remain
   outside the formalized verifier (`Fingerprint/Match.lean`, *What remains external*). The
   deployment record pins the

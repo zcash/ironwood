@@ -118,8 +118,10 @@ The tag bytes are halo2's `BLAKE2B_PREFIX_CHALLENGE = 0`, `BLAKE2B_PREFIX_POINT 
 
 /-- The transcript bytes of an absorbed point: the point tag, then the uncompressed affine
 coordinates. The deployed verifier refuses to absorb the identity (`cannot write points at infinity
-to the transcript`); this total function encodes the `(0, 0)` sentinel as zero coordinates, which
-no accepting transcript contains. -/
+to the transcript`); this total function encodes the `(0, 0)` sentinel as zero coordinates instead.
+Nothing accepted reaches that branch: `readProof?` rejects identity proof points, and
+`DeployedAcceptsBytes` excludes identity instance commitments as a conjunct, so the deployed refusal
+is a premise of the byte-level predicate rather than a case of this encoding. -/
 def pointBytes (P : VestaG) : List UInt8 :=
   1 :: ((coordRepr P.x).toList ++ (coordRepr P.y).toList)
 

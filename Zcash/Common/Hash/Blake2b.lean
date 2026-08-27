@@ -8,7 +8,9 @@ An executable BLAKE2b (RFC 7693) over `UInt64` words, in the one parameter confi
 Fiat–Shamir transcript uses: the full 64-byte digest, a 16-byte personalization, no key, no salt,
 and the sequential (fanout 1, depth 1) mode. The deployed transcript hashes with `blake2b_simd`; this module
 lets Lean recompute those digests, so the byte layer beneath the typed challenge schedule can be
-checked against the captured runs instead of idealized away.
+checked against the captured runs instead of idealized away. That check is pointwise: that
+`blake2b_simd` agrees with this module beyond the captured transcripts and the known-answer
+vectors below is trusted, not proved.
 
 Everything here is a total function on lists and fixed-length vectors — no `IO`, no `extern`, no
 `implemented_by` — so the kernel and compiled evaluation compute the same definitions. The

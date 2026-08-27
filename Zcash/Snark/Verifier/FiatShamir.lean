@@ -79,7 +79,9 @@ def absorbLookup {F G : Type*} (e : LookupEval F) : List (TranscriptElt F G) :=
   [.scalar e.productEval, .scalar e.productNextEval, .scalar e.permutedInputEval,
    .scalar e.permutedInputInvEval, .scalar e.permutedTableEval]
 
-/-- Public-instance commitments in Halo2's deployed proof-major, column-major absorb order. -/
+/-- Public-instance commitments in Halo2's deployed proof-major, column-major absorb order.
+Halo2's `common_point` errors on an identity commitment; this total encoding does not, so
+`DeployedAcceptsBytes` carries that exclusion as a conjunct. -/
 def absorbInstanceCommitments {shape : Shape} {F G : Type*}
     (instanceCommitment : Fin shape.numProofs → ℕ → G) : List (TranscriptElt F G) :=
   (List.ofFn fun p : Fin shape.numProofs =>

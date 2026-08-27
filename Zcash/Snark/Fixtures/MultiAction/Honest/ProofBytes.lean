@@ -29,13 +29,28 @@ theorem capturedProofBytes_decodes :
 theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProofBytes := by
   exact serializeProof_eq_of_readProof?_eq_some capturedProofBytes_decodes
 
-/-- **The accepting Rust capture reaches the byte-level predicate.** Parsing is exact, the key
-digest comes from the exporter-emitted pinned key description, challenges come from the deployed BLAKE2b
-transcript, and the resulting typed proof satisfies `DeployedAccepts`. -/
+/-- The exporter-emitted pinned key description describes the captured key and shape
+(`Describes`, `Verifier/KeyDigest.lean`): its fields read back to `vk`'s and `shape`'s, and the
+counts `readProof?` reads by are the pinned constraint system's. `Fixtures/PinnedKey.lean` states
+the same reading field by field. -/
+theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk := by
+  native_decide
+
+/-- No derived instance commitment is the identity, which the deployed transcript refuses to
+absorb. -/
+theorem derivedInstanceCommitment_ne_zero :
+    ∀ p (column : Fin shape.numInstanceColumns), derivedInstanceCommitment p column ≠ 0 := by
+  native_decide
+
+/-- **The accepting Rust capture reaches the byte-level predicate.** The pinned key description
+describes the captured key, no instance commitment is the identity, parsing is exact, the key
+digest comes from that description, challenges come from the deployed BLAKE2b transcript, and the
+resulting typed proof satisfies `DeployedAccepts`. -/
 theorem capture_deployedAcceptsBytes :
     DeployedAcceptsBytes shape capturedURS rfl vk capturedPinnedKeyDescription
       derivedInstanceCommitment capturedProofBytes := by
-  refine ⟨ps, capturedProofBytes_decodes, ?_⟩
+  refine ⟨capturedPinnedKeyDescription_describes, derivedInstanceCommitment_ne_zero, ps,
+    capturedProofBytes_decodes, ?_⟩
   have harg : deriveChallengesForStatement halo2Transcript
       (keyDigest capturedPinnedKeyDescription) derivedInstanceCommitment ps = ch := by
     rw [keyDigest_eq_capturedVkTranscriptRepr]

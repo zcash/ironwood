@@ -49,20 +49,25 @@ def DeployedAccepts [DecidableEq G] [Inhabited G] (shape : Shape) (urs : URS G)
   | some m => (hk ▸ m : Msm urs.k Fp G).eval urs = 0
   | none => False
 
-/-- **Byte-level deployed acceptance.** The whole proof byte string parses canonically and with no
-unread suffix, then the existing typed `DeployedAccepts` predicate holds at challenges derived by
-the deployed BLAKE2b transcript. The transcript opens with `keyDigest pinnedVkDescription`, so the
-description-to-key identification is an explicit caller obligation; the fixture lane discharges it
-field by field for the pinned Action key.
+/-- **Byte-level deployed acceptance.** The pinned description describes the key the proof is
+checked against (`Describes`); no absorbed instance commitment is the identity, which halo2's
+`common_point` refuses where the total `pointBytes` would encode it as `(0, 0)`; the whole proof
+byte string parses canonically and with no unread suffix; and the existing typed `DeployedAccepts`
+predicate holds at challenges derived by the deployed BLAKE2b transcript, opened with
+`keyDigest pinnedVkDescription`.
 
-This definition composes the modeled layers. Identifying Rust's reader with `readProof?` for every
-input remains a refinement boundary; the exact honest and random capture bytes exercise that
-boundary concretely. -/
+`Describes` ties the description to `vk` and to the counts `readProof?` reads by, so the transcript
+hashed here is one Rust constructs for this key; `blindingFactors`, `delta`, and `chunkLen` stay
+the named key agreements of `Verifier/Key.lean`. This definition composes the modeled layers.
+Identifying Rust's reader with `readProof?` for every input remains a refinement boundary; the
+exact honest and random capture bytes exercise that boundary concretely. -/
 def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
     (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp VestaG) (pinnedVkDescription : String)
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (proofBytes : List UInt8) : Prop :=
+  Describes pinnedVkDescription vk ∧
+  (∀ p (column : Fin shape.numInstanceColumns), instanceCommitment p column ≠ 0) ∧
   ∃ ps,
     (readProof? shape).run proofBytes = some (ps, []) ∧
     DeployedAccepts shape urs hk vk instanceCommitment ps
@@ -70,20 +75,22 @@ def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
         instanceCommitment ps)
 
 /-- Byte-level acceptance exposes the unique parsed proof and its canonical serialization before
-entering typed `DeployedAccepts`. -/
+entering typed `DeployedAccepts`, alongside the key identification and the identity exclusion. -/
 theorem deployedAcceptsBytes_canonical [Inhabited VestaG] {shape : Shape} {urs : URS VestaG}
     {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp VestaG}
     {pinnedVkDescription : String}
     {instanceCommitment : Fin shape.numProofs → ℕ → VestaG} {proofBytes : List UInt8}
     (h : DeployedAcceptsBytes shape urs hk vk pinnedVkDescription instanceCommitment proofBytes) :
+    Describes pinnedVkDescription vk ∧
+    (∀ p (column : Fin shape.numInstanceColumns), instanceCommitment p column ≠ 0) ∧
     ∃ ps,
       (readProof? shape).run proofBytes = some (ps, []) ∧
       serializeProof ps = proofBytes ∧
       DeployedAccepts shape urs hk vk instanceCommitment ps
         (deriveChallengesForStatement halo2Transcript (keyDigest pinnedVkDescription)
           instanceCommitment ps) := by
-  rcases h with ⟨ps, hread, haccepts⟩
-  exact ⟨ps, hread, serializeProof_eq_of_readProof?_eq_some hread, haccepts⟩
+  rcases h with ⟨hdesc, hne, ps, hread, haccepts⟩
+  exact ⟨hdesc, hne, ps, hread, serializeProof_eq_of_readProof?_eq_some hread, haccepts⟩
 
 /-- Transport MSM evaluation across the equality `shape.k = urs.k`. -/
 theorem eval_cast {shape : Shape} {urs : URS G} (hk : shape.k = urs.k) (m : Msm shape.k Fp G) :
