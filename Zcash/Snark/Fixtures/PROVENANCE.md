@@ -142,6 +142,28 @@ The current 0.15.5 regeneration pin predates this additional assertion; advancin
 the follow-up is released will bring the Rust-side negative checks into Ironwood's regeneration
 run without changing the committed proof bytes.
 
+### Rejection coverage at the release pin
+
+The current Lean and released-Rust checks cover different boundaries; neither should be described
+as a captured end-to-end equivalence theorem:
+
+| Case | Lean proof-byte fixture | Orchard 0.15.5 deployed run |
+|---|---|---|
+| exact captured random proof | parses to the captured `ProofString`; serialization is checked | the random driver fabricates and replays it through `Blake2bRead` |
+| final scalar truncated by one byte | rejected by `readProof?` | not this exact edit; the rejection driver truncates a multiopen scalar in an honest two-action proof |
+| scalar encoded as value plus modulus | rejected by `readProof?` | not exercised |
+| identity compressed point | rejected by `readProof?` | not exercised |
+| coordinate equal to the base-field modulus | rejected by `readProof?` | not exercised |
+| non-residue compressed `x` | rejected by `readProof?` | not exercised |
+| flipped point-sign bit | decodes to the negated point | not exercised |
+
+Separately, `fingerprint_rejected_capture_two_actions` changes a well-formed advice evaluation and
+observes final semantic rejection, truncates a multiopen stream, and skips a permutation scalar so
+later reads desynchronize. Those are useful deployed rejection paths, but the run exports no Lean
+fixture and does not establish the malformed-element cases above. The proof-byte follow-up
+described in the preceding subsection adds the missing exact deployed-reader assertions; until the
+regeneration pin advances to it, they remain source evidence rather than checks run by this tree.
+
 ### The pinned key description
 
 `circuit_description_post_nu6_3` is orchard's committed pinned verifying-key description at the
