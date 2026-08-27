@@ -51,7 +51,7 @@ theorem capturedProofBytes_decodes :
 
 /-- Serializing the captured typed proof recovers the captured bytes. -/
 theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProofBytes := by
-  native_decide
+  exact serializeProof_eq_of_readProof?_eq_some capturedProofBytes_decodes
 
 /-! ## Byte-level negatives
 
@@ -77,7 +77,8 @@ theorem non_canonical_scalar_rejected :
 def identityFirstPoint : List UInt8 := List.replicate 32 0 ++ capturedProofBytes.drop 32
 
 theorem identity_point_rejected : (readProof? shape).run identityFirstPoint = none := by
-  native_decide
+  apply readProof?_eq_none_of_first_point (m := 1) (n := 9) rfl rfl
+  exact pointReader_eq_none_of_prefix (by simp) decodePoint32_zero_eq_none
 
 /-- The first advice commitment replaced by `x = q` with the sign bit clear: a non-canonical
 coordinate. -/
@@ -87,14 +88,16 @@ def outOfRangeFirstPoint : List UInt8 :=
 
 theorem out_of_range_coordinate_rejected :
     (readProof? shape).run outOfRangeFirstPoint = none := by
-  native_decide
+  apply readProof?_eq_none_of_first_point (m := 1) (n := 9) rfl rfl
+  exact pointReader_eq_none_of_prefix (by simp) decodePoint32_baseModulus_eq_none
 
 /-- The first advice commitment replaced by `x = 2`, whose radicand `2³ + 5 = 13` is a non-residue
 in the Vesta base field: no point has this `x`. -/
 def nonResidueFirstPoint : List UInt8 := (2 :: List.replicate 31 0) ++ capturedProofBytes.drop 32
 
 theorem non_residue_x_rejected : (readProof? shape).run nonResidueFirstPoint = none := by
-  native_decide
+  apply readProof?_eq_none_of_first_point (m := 1) (n := 9) rfl rfl
+  exact pointReader_eq_none_of_prefix (by simp) decodePoint32_two_eq_none
 
 /-- The first advice commitment with its sign bit flipped. -/
 def flippedSignFirstPoint : List UInt8 :=
