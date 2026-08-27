@@ -2198,7 +2198,9 @@ assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(CompElliptic.Fi
 assert_axioms Zcash.Snark.deriveChallenges_congr_of_agree_on_cone
 assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
 assert_axioms Zcash.Snark.preTheta_cones_disjoint
+assert_axioms Zcash.Snark.preTheta_prefixFree_of_numProofs_ne
 assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
+assert_axioms Zcash.Snark.encodeTranscript_prefixFree_of_numProofs_ne
 assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
 
 -- The verifying-key digest (`Verifier/KeyDigest.lean`): `transcript_repr` recomputed from the
