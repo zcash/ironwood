@@ -2169,14 +2169,19 @@ assert_axioms Zcash.Snark.LEOS2IP_digest_lt
 
 -- The proof-string byte layer (`Verifier/ProofBytes.lean`): canonical decoding of scalars and
 -- points in both directions, lifted through compound readers to the theorem that every successful
--- whole-proof parse reconstructs exactly the consumed serialization. Point decoding runs
+-- whole-proof parse reconstructs exactly the consumed serialization, and the byte accounting
+-- that fixes every parse's consumed count at `proofLength` — from which truncation and
+-- non-canonical-final-scalar rejection are theorems. Point decoding runs
 -- Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream compiler trust.
 assert_computable Zcash.Snark.decodeScalar32 +choice
 assert_computable Zcash.Snark.decodePoint32 +choice +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_computable Zcash.Snark.readProof? +choice +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_computable Zcash.Snark.serializeProof +choice
+assert_computable Zcash.Snark.proofLength
 assert_axioms Zcash.Snark.decodeScalar32_eq_some_iff
 assert_axioms Zcash.Snark.decodePoint32_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.decodePoint32_eq_none_of_x_ge +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.decodePoint32_eq_none_of_sqrt_none +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.decodePoint32_zero_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.decodePoint32_baseModulus_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.decodePoint32_two_eq_none +native(CompElliptic.Fields.Pasta.vestaBase)
@@ -2184,14 +2189,21 @@ assert_axioms Zcash.Snark.scalarReader_eq_some_iff
 assert_axioms Zcash.Snark.pointReader_eq_some_iff +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.readVec_serializeVec
 assert_axioms Zcash.Snark.readVec_eq_some
+assert_axioms Zcash.Snark.readVec_length
 assert_axioms Zcash.Snark.readProof?_eq_none_of_first_point +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.readProof?_eq_some_serialize +native(CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms Zcash.Snark.serializeProof_eq_of_readProof?_eq_some +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.readProof?_length +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.readProof?_none_of_truncated +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.readProof?_none_of_noncanonical_final_scalar +native(
+  CompElliptic.Fields.Pasta.vestaBase)
 
 -- The byte-level acceptance wrapper parses the whole proof, derives the pinned-key digest and
 -- BLAKE2b Fiat–Shamir challenges, and then enters the existing typed `DeployedAccepts` predicate.
-assert_computable Zcash.Snark.DeployedAcceptsBytes +choice +native(CompElliptic.Fields.Pasta.vestaBase)
-assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(CompElliptic.Fields.Pasta.vestaBase)
+assert_computable Zcash.Snark.DeployedAcceptsBytes +choice +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
 -- oracle locality, the disjointness of the pre-`θ` cones at different counts — typed and
@@ -2220,6 +2232,6 @@ assert_axioms Zcash.Snark.TagMutation.tagged_separates_marker
 -- capture; the preimage string and captured key remain fixture inputs.
 assert_computable Zcash.Snark.keyDigest +choice
 assert_computable Zcash.Snark.DebugValue.parse? +choice
-assert_computable Zcash.Snark.DebugValue.renderCompact +choice
+assert_computable Zcash.Snark.DebugValue.renderCompact
 assert_computable Zcash.Snark.DebugValue.expr? +choice
 assert_computable Zcash.Snark.DebugValue.point? +choice
