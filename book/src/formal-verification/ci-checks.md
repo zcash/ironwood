@@ -72,11 +72,6 @@ Lean-relevant change. All of them can be run locally from the repository root.
   its recorded digest and provenance entry in `Zcash/Snark/Fixtures/MANIFEST.tsv`.
   This binds the committed artifacts to their provenance on every run, with no Rust
   toolchain needed.
-* **`render-pinned-key-description.py --check`** — `PinnedKeyDescription.lean`, the
-  compact text halo2 hashes into the verifying-key digest, re-renders identically from
-  the vendored pinned description, so the digest Lean derives is over the pinned upstream
-  key.
-
 ## Fixture regeneration
 
 **`scripts/regenerate-fingerprint-fixtures.sh`** proves the committed captures

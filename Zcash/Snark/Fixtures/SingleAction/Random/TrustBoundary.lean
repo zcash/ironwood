@@ -419,8 +419,8 @@ assert_axioms Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated +native(
   Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated,
   CompElliptic.Fields.Pasta.vestaBase)
 
--- The key digest opening the transcript, derived from the pinned key description
--- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
 assert_axioms Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)
 assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_keyDigest +native(

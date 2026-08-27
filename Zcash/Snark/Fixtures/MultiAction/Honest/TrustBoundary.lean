@@ -761,8 +761,8 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_bla
   Zcash.Snark.Fixture2.fingerprint_matches,
   Zcash.Snark.Fixture2.instance_commitments_derived)
 
--- The key digest opening the transcript, derived from the pinned key description
--- (`Fixtures/PinnedKey.lean`) instead of taken from the capture.
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
 assert_axioms Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr)
 
