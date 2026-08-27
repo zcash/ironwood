@@ -160,12 +160,14 @@ match and its ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headlin
 `Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed
 Rust↔Lean boundary. The byte layer beneath it is modeled and checked against the captures: every
 captured challenge is recomputed from halo2's transcript encoding through a Lean BLAKE2b
-(`Snark/Verifier/Transcript.lean`), and the random captures' raw proof bytes decode to their typed
-proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`). BLAKE2b's idealization as a
-random oracle remains external; the verifying-key digest that opens the transcript is itself
-recomputed from the pinned key description (`Snark/Fixtures/PinnedKey.lean`).
-`Snark/Fingerprint/Match.lean` enumerates the boundary. The concrete byte-layer instantiation and
-its landing status are tracked in [#66](https://github.com/zcash/ironwood/issues/66).
+(`Snark/Verifier/Transcript.lean`), and all four captures' generated proof bytes decode to their
+typed proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`).
+`DeployedAcceptsBytes` composes that exact parser, the key digest derived from the pinned
+description, and the BLAKE2b schedule into typed `DeployedAccepts`; both honest captures witness
+the composition. BLAKE2b's idealization as a random oracle and universal refinement of Rust's
+reader to the Lean decoder remain external. `Snark/Fingerprint/Match.lean` enumerates the boundary;
+the deployment identification and landing status are tracked in
+[#66](https://github.com/zcash/ironwood/issues/66).
 
 **The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
 `CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off
