@@ -170,15 +170,13 @@ the exact malformed-element assertions above run inside both pinned random captu
 
 ### The pinned key description
 
-`circuit_description_post_nu6_3` is orchard's committed pinned verifying-key description at the
-pinned Orchard commit — the pretty `{:#?}` rendering of `VerifyingKey::pinned()` — taken by
-`git show` (the regeneration script diffs it, and it carries a manifest row). What
-halo2 hashes into `transcript_repr` is the compact `{:?}` rendering of the same value;
-`scripts/render-pinned-key-description.py` writes that into `PinnedKeyDescription.lean`, CI
-re-renders and diffs it, and `PinnedKey.lean` pins the conversion by hashing the result to the
-captured digest. The pinned #933 exporter now also emits that compact text as each fixture's
-`capturedPinnedKeyDescription`; the vendored pretty-to-compact path stays as an independently
-reproducible source route rather than being silently replaced in this integration commit.
+The pinned #933 exporter computes `format!("{:?}", self.pinned())`, the exact compact text Halo2
+hashes into `transcript_repr`. Before emitting it as `capturedPinnedKeyDescription`, the exporter
+repeats the `Halo2-Verify-Key` hash and checks that it reproduces the scalar. Each family's
+`Transcript.lean` independently repeats that hash. `PinnedKey.lean` additionally parses the honest
+single-action string and compares its fields with the captured key; the keygen certificate connects
+that captured key to the Lean-derived verifier key. Thus the captured scalar is checked rather than
+trusted, while the description string and captured key remain fixture inputs.
 
 ### Reproducing
 
