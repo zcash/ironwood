@@ -82,13 +82,14 @@ def skipWs : List Char → List Char
 
 /-- Read a bare token up to the next delimiter. -/
 def takeTok : List Char → List Char → String × List Char
-  | acc, c :: cs => if isDelim c then (String.mk acc.reverse, c :: cs) else takeTok (c :: acc) cs
-  | acc, [] => (String.mk acc.reverse, [])
+  | acc, c :: cs =>
+      if isDelim c then (String.ofList acc.reverse, c :: cs) else takeTok (c :: acc) cs
+  | acc, [] => (String.ofList acc.reverse, [])
 
 /-- Read a quoted string literal, quotes included, honouring `\` escapes; `none` if unterminated. -/
 def takeStringLit : List Char → List Char → Option (String × List Char)
   | acc, '\\' :: c :: cs => takeStringLit (c :: '\\' :: acc) cs
-  | acc, '"' :: cs => some (String.mk ('"' :: acc).reverse, cs)
+  | acc, '"' :: cs => some (String.ofList ('"' :: acc).reverse, cs)
   | acc, c :: cs => takeStringLit (c :: acc) cs
   | _, [] => none
 
@@ -221,7 +222,7 @@ def decNat? (s : String) : Option ℕ :=
 /-- A decimal integer, `-` allowed. -/
 def decInt? (s : String) : Option ℤ :=
   match s.toList with
-  | '-' :: ds => (decNat? (String.mk ds)).map fun n => -(n : ℤ)
+  | '-' :: ds => (decNat? (String.ofList ds)).map fun n => -(n : ℤ)
   | _ => (decNat? s).map fun n => (n : ℤ)
 
 /-- A natural-number atom. -/
@@ -239,7 +240,7 @@ def quotedHexNat? (v : DebugValue) : Option ℕ := do
   let s ← v.atom?
   let cs := s.toList
   match cs with
-  | '"' :: rest => hexNat? (String.mk (rest.dropLast))
+  | '"' :: rest => hexNat? (String.ofList (rest.dropLast))
   | _ => none
 
 /-- `Rotation(r)`. -/
