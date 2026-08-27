@@ -2,7 +2,7 @@
 # Check the per-artifact provenance manifest of the machine-generated fingerprint captures.
 #
 # `scripts/regenerate-fingerprint-fixtures.sh` proves the committed captures regenerate
-# byte-for-byte from the pinned Orchard release, but only when a regeneration actually runs.
+# byte-for-byte from the pinned Orchard commit, but only when a regeneration actually runs.
 # This check binds each committed artifact to its recorded provenance on every CI run, with no
 # toolchain: every manifest entry (`Zcash/Snark/Fixtures/MANIFEST.tsv` — path, sha256,
 # generator, source, invocation) must name an existing file whose digest matches, and — the
@@ -13,7 +13,7 @@
 # "Generated-looking" mirrors the regeneration script's own set check: a `.lean` file under
 # `Zcash/Snark/Fixtures/` whose first line is the exporter header, any `.hex` file there, and
 # the vendored pinned-key description `circuit_description_post_nu6_3` (an orchard source file
-# at the pinned release, not exporter output, but bound to that release the same way).
+# at the pinned Orchard commit, not exporter output, but bound to that commit the same way).
 # Keep `EXPORTER_HEADER_RE` in sync between the two scripts. Run from the repository root;
 # exits non-zero on violation.
 set -euo pipefail

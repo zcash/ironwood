@@ -174,7 +174,7 @@ captures they have no regenerate-and-diff pipeline: CI pins their bytes (`SHA256
 set-equality check so an unpinned dump cannot be added), and those pins live in the same
 repository they guard. Independent anchoring exists at verifying-key granularity —
 `Keygen/Certificate.lean` checks the key derived from the ported circuit against the
-release-regenerated capture — but the row-level layout content below the key, and the
+upstream-regenerated capture — but the row-level layout content below the key, and the
 base-circuit dump (`actionBaseLayout.json`), which has no capture-side anchor at all, rest on the
 pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
 are recorded in `Zcash/Circuits/Fixtures/PROVENANCE.md`.

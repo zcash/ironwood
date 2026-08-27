@@ -12,7 +12,7 @@ and emits the transcript representation below from that same verified key object
 
 The hand-pinned scalar here makes fixture drift visible in this repository, while the Rust
 regeneration assertion binds it to the full canonical pinned key. `Fixtures/PinnedKey.lean` goes
-further: it hashes the pinned description itself (vendored at the pinned release) with halo2's
+further: it hashes the pinned description itself (vendored at the pinned Orchard commit) with halo2's
 `Halo2-Verify-Key` BLAKE2b and reads its fields back against the captured key, so the scalar is
 derived rather than only pinned.
 

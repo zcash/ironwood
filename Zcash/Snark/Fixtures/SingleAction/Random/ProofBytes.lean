@@ -1,13 +1,12 @@
 import Zcash.Snark.Fixtures.SingleAction.Random.Fixture
-import Zcash.Snark.Fixtures.SingleAction.Random.ProofHex
 import Zcash.Snark.Fixtures.Shared.Hex
 import Zcash.Snark.Verifier.ProofBytes
 
 /-!
 # Proof-string byte check for the random single-action capture
 
-`Fixture.lean` carries the typed proof `ps` the deployed verifier parsed in this capture;
-`ProofHex.lean` carries the raw bytes it parsed it from. This module runs Lean's proof-string
+`Fixture.lean` carries both the typed proof `ps` and `capturedProofHex`, the raw bytes the deployed
+verifier parsed it from. This module runs Lean's proof-string
 decoder over those bytes and checks that it reads back exactly `ps`, consuming the string
 exactly (`capturedProofBytes_decodes`), and that serializing `ps` writes those bytes back
 (`serializeProof_eq_capturedProofBytes`). Together they check `read_point`/`read_scalar` — the
@@ -17,13 +16,12 @@ random proof string, whose elements are random canonical values rather than a pr
 The negatives tamper with the bytes rather than the typed data: a truncated string, a
 non-canonical scalar, the identity encoding, an out-of-range coordinate, and a non-residue `x`
 are all rejected, and flipping a sign bit decodes to the negated point. They exercise Lean's
-decoder; that the deployed one rejects the same strings rests on `decodePoint32_eq_some_iff` and
-`decodeScalar32_eq_some_iff` together with a reading of `pasta_curves`' `from_bytes` and
-`from_repr`, not on a capture of these exact edits at the current release pin. Orchard's Rust-only
-`fingerprint_rejected_capture_two_actions` supplies a related truncation run, plus a skipped-scalar
-desynchronization and a well-formed evaluation tamper; it does not exercise the non-canonical
-scalar, identity, out-of-range coordinate, non-residue, or sign-bit cases. Exact deployed-reader
-checks for those edits are the pending capture-side counterpart.
+decoder independently. At the pinned Orchard #544 commit, the random capture driver applies these
+same six edits to this deterministic proof before export and checks them through deployed
+`Blake2bRead`: the first five reject and the sign-bit edit decodes to the negated point.
+`decodePoint32_eq_some_iff` and `decodeScalar32_eq_some_iff` state why the two readers agree for
+every individual canonical encoding; the capture supplies concrete end-to-end regression coverage
+for these exact bytes.
 -/
 
 namespace Zcash.Snark.FixtureRandom
