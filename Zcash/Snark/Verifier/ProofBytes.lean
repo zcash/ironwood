@@ -968,4 +968,642 @@ theorem serializeProof_eq_of_readProof?_eq_some {shape : Shape} {bs : List UInt8
     serializeProof ps = bs := by
   simpa using (readProof?_eq_some_serialize hread).symm
 
+/-! ## Byte accounting
+
+Every element `readProof?` reads is exactly 32 bytes, and the element counts are shape
+constants, so a successful parse consumed a byte count fixed by the shape alone —
+`proofLength`. `readProof?_length` states that accounting. It is what ties a captured proof
+string's length to the consensus proof size (ZIP 225: `2720 + 2272 · nActionsOrchard`), and it
+rejects any parse of a truncated proof by arithmetic, with no evaluation of the decoder over
+the truncated bytes. -/
+
+/-- Any successful 32-byte element read consumed exactly 32 bytes. -/
+theorem read32_length {α : Type} {decode : List UInt8 → Option α} {bs rest : List UInt8} {x : α}
+    (h : (read32 decode).run bs = some (x, rest)) : bs.length = 32 + rest.length := by
+  unfold read32 at h
+  simp only [StateT.run] at h
+  split_ifs at h with h32
+  obtain ⟨y, hy, hxy⟩ := Option.map_eq_some_iff.mp h
+  simp only [Prod.mk.injEq] at hxy
+  obtain ⟨rfl, rfl⟩ := hxy
+  simp only [List.length_drop]
+  omega
+
+/-- A successful vector read consumed the sum of its element reads' costs. -/
+theorem readVec_length {α : Type} :
+    ∀ (n : ℕ) (r : Fin n → ProofReader α) (c : Fin n → ℕ),
+      (∀ i x bs rest, (r i).run bs = some (x, rest) → bs.length = c i + rest.length) →
+      ∀ {bs rest : List UInt8} {f : Fin n → α},
+        (readVec n r).run bs = some (f, rest) → bs.length = (List.ofFn c).sum + rest.length
+  | 0, _, _, _, bs, rest, _, h => by
+      simp only [readVec, StateT.run_pure, Option.pure_def, Option.some.injEq,
+        Prod.mk.injEq] at h
+      simp [h.2]
+  | n + 1, r, c, hc, bs, rest, f, h => by
+      simp only [readVec, StateT.run_bind, Option.bind_eq_bind] at h
+      obtain ⟨⟨x, bs₁⟩, hx, h⟩ := Option.bind_eq_some_iff.mp h
+      obtain ⟨⟨g, bs₂⟩, hg, hpure⟩ := Option.bind_eq_some_iff.mp h
+      simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+      obtain ⟨rfl, rfl⟩ := hpure
+      have hg' : (readVec n fun i => r i.succ).run bs₁ = some (g, bs₂) := hg
+      have h1 := hc 0 x bs bs₁ hx
+      have h2 := readVec_length n (fun i => r i.succ) (fun i => c i.succ)
+        (fun i x bs rest hr => hc i.succ x bs rest hr) hg'
+      have hsum : (List.ofFn c).sum = c 0 + (List.ofFn fun i => c i.succ).sum := by
+        rw [List.ofFn_succ, List.sum_cons]
+      omega
+
+/-- The sum of `n` copies of one cost. -/
+private theorem sum_replicate_nat (n c : ℕ) : (List.replicate n c).sum = n * c := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      rw [List.replicate_succ, List.sum_cons, ih, Nat.succ_mul]
+      omega
+
+/-- A vector of same-cost element reads consumed `n · c` bytes. -/
+theorem readVec_length_const {α : Type} {n : ℕ} {r : Fin n → ProofReader α} {c : ℕ}
+    (hc : ∀ i x bs rest, (r i).run bs = some (x, rest) → bs.length = c + rest.length)
+    {bs rest : List UInt8} {f : Fin n → α}
+    (h : (readVec n r).run bs = some (f, rest)) : bs.length = n * c + rest.length := by
+  have := readVec_length n r (fun _ => c) hc h
+  rwa [List.ofFn_const, sum_replicate_nat] at this
+
+/-- A successful grid read of same-cost elements consumed `m · (n · c)` bytes. -/
+theorem readGrid_length {α : Type} {m n : ℕ} {r : ProofReader α} {c : ℕ}
+    (hc : ∀ x bs rest, r.run bs = some (x, rest) → bs.length = c + rest.length)
+    {bs rest : List UInt8} {f : Fin m → Fin n → α}
+    (h : (readGrid m n r).run bs = some (f, rest)) : bs.length = m * (n * c) + rest.length :=
+  readVec_length_const
+    (fun _ _ _ _ hg =>
+      readVec_length_const (fun _ x bs rest hx => hc x bs rest hx) hg) h
+
+/-- A successful point-pair read consumed 64 bytes. -/
+theorem pointPairReader_length {bs rest : List UInt8} {pq : VestaG × VestaG}
+    (h : pointPairReader.run bs = some (pq, rest)) : bs.length = 64 + rest.length := by
+  simp only [pointPairReader, StateT.run_bind, Option.bind_eq_bind] at h
+  obtain ⟨⟨first, bs₁⟩, hfirst, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨second, bs₂⟩, hsecond, hpure⟩ := Option.bind_eq_some_iff.mp h
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change pointReader.run bs₁ = some (second, bs₂) at hsecond
+  have h1 := read32_length hfirst
+  have h2 := read32_length hsecond
+  omega
+
+/-- A successful permutation-set read consumed 96 bytes with a `lastEval`, 64 without. -/
+theorem permSetReader_length {hasLast : Bool} {bs rest : List UInt8} {e : PermSetEval Fp}
+    (h : (permSetReader hasLast).run bs = some (e, rest)) :
+    bs.length = (if hasLast then 96 else 64) + rest.length := by
+  cases hasLast with
+  | false =>
+      simp only [permSetReader, StateT.run_bind, Option.bind_eq_bind, Bool.false_eq_true,
+        if_false] at h
+      obtain ⟨⟨eval, bs₁⟩, heval, h⟩ := Option.bind_eq_some_iff.mp h
+      obtain ⟨⟨nextEval, bs₂⟩, hnext, hpure⟩ := Option.bind_eq_some_iff.mp h
+      simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+      obtain ⟨rfl, rfl⟩ := hpure
+      change scalarReader.run bs₁ = some (nextEval, bs₂) at hnext
+      have h1 := read32_length heval
+      have h2 := read32_length hnext
+      simp only [Bool.false_eq_true, if_false]
+      omega
+  | true =>
+      simp only [permSetReader, StateT.run_bind, Option.bind_eq_bind, if_true] at h
+      obtain ⟨⟨eval, bs₁⟩, heval, h⟩ := Option.bind_eq_some_iff.mp h
+      obtain ⟨⟨nextEval, bs₂⟩, hnext, h⟩ := Option.bind_eq_some_iff.mp h
+      obtain ⟨⟨lastEval, bs₃⟩, hlast, hpure⟩ := Option.bind_eq_some_iff.mp h
+      simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+      obtain ⟨rfl, rfl⟩ := hpure
+      change scalarReader.run bs₁ = some (nextEval, bs₂) at hnext
+      change scalarReader.run bs₂ = some (lastEval, bs₃) at hlast
+      have h1 := read32_length heval
+      have h2 := read32_length hnext
+      have h3 := read32_length hlast
+      simp only [if_true]
+      omega
+
+/-- A successful lookup-evaluation read consumed 160 bytes. -/
+theorem lookupReader_length {bs rest : List UInt8} {e : LookupEval Fp}
+    (h : lookupReader.run bs = some (e, rest)) : bs.length = 160 + rest.length := by
+  simp only [lookupReader, StateT.run_bind, Option.bind_eq_bind] at h
+  obtain ⟨⟨productEval, bs₁⟩, h1, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨productNextEval, bs₂⟩, h2, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨permutedInputEval, bs₃⟩, h3, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨permutedInputInvEval, bs₄⟩, h4, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨permutedTableEval, bs₅⟩, h5, hpure⟩ := Option.bind_eq_some_iff.mp h
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change scalarReader.run bs₁ = some (productNextEval, bs₂) at h2
+  change scalarReader.run bs₂ = some (permutedInputEval, bs₃) at h3
+  change scalarReader.run bs₃ = some (permutedInputInvEval, bs₄) at h4
+  change scalarReader.run bs₄ = some (permutedTableEval, bs₅) at h5
+  have l1 := read32_length h1
+  have l2 := read32_length h2
+  have l3 := read32_length h3
+  have l4 := read32_length h4
+  have l5 := read32_length h5
+  omega
+
+/-- The exact byte count `readProof?` accepts for a shape: 32 bytes per element, with the
+element counts read off the shape, and each permutation set contributing its shape-selected
+two or three scalars. At the deployed Orchard shape this is the consensus proof size
+(ZIP 225: `2720 + 2272 · nActionsOrchard`). -/
+def proofLength (shape : Shape) : ℕ :=
+  shape.numProofs * (shape.numAdviceColumns * 32)
+    + shape.numProofs * (shape.numLookups * 64)
+    + shape.numProofs * (shape.numPermutationSets * 32)
+    + shape.numProofs * (shape.numLookups * 32)
+    + 32
+    + shape.numQuotientPieces * 32
+    + shape.numProofs * (shape.numInstanceQueries * 32)
+    + shape.numProofs * (shape.numAdviceQueries * 32)
+    + shape.numFixedQueries * 32
+    + 32
+    + shape.numPermutationColumns * 32
+    + shape.numProofs * (List.ofFn fun s : Fin shape.numPermutationSets =>
+        if s.val + 1 < shape.numPermutationSets then (96 : ℕ) else 64).sum
+    + shape.numProofs * (shape.numLookups * 160)
+    + 32
+    + shape.numPointSets * 32
+    + 32
+    + shape.k * 64
+    + 64
+
+/-- **Byte accounting.** A successful deployed-order parse consumed exactly `proofLength shape`
+bytes ahead of its unread suffix. -/
+theorem readProof?_length {shape : Shape} {bs rest : List UInt8}
+    {ps : ProofString shape Fp VestaG}
+    (hread : (readProof? shape).run bs = some (ps, rest)) :
+    bs.length = proofLength shape + rest.length := by
+  unfold readProof? at hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceCommitments, bs₁⟩, hadviceCommitments, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupPermuted, bs₂⟩, hlookupPermuted, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationProduct, bs₃⟩, hpermutationProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupProduct, bs₄⟩, hlookupProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandom, bs₅⟩, hvanishingRandom, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨hPieces, bs₆⟩, hhPieces, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨instanceEvals, bs₇⟩, hinstanceEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceEvals, bs₈⟩, hadviceEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨fixedEvals, bs₉⟩, hfixedEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandomEval, bs₁₀⟩, hvanishingRandomEval, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationCommonEvals, bs₁₁⟩, hpermutationCommonEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationSetEvals, bs₁₂⟩, hpermutationSetEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupEvals, bs₁₃⟩, hlookupEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenQPrime, bs₁₄⟩, hmultiopenQPrime, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenU, bs₁₅⟩, hmultiopenU, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaS, bs₁₆⟩, hipaS, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaRounds, bs₁₇⟩, hipaRounds, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaC, bs₁₈⟩, hipaC, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaF, bs₁₉⟩, hipaF, hpure⟩ := Option.bind_eq_some_iff.mp hread
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change (readGrid shape.numProofs shape.numLookups pointPairReader).run bs₁ =
+    some (lookupPermuted, bs₂) at hlookupPermuted
+  change (readGrid shape.numProofs shape.numPermutationSets pointReader).run bs₂ =
+    some (permutationProduct, bs₃) at hpermutationProduct
+  change (readGrid shape.numProofs shape.numLookups pointReader).run bs₃ =
+    some (lookupProduct, bs₄) at hlookupProduct
+  change pointReader.run bs₄ = some (vanishingRandom, bs₅) at hvanishingRandom
+  change (readVec shape.numQuotientPieces fun _ => pointReader).run bs₅ =
+    some (hPieces, bs₆) at hhPieces
+  change (readGrid shape.numProofs shape.numInstanceQueries scalarReader).run bs₆ =
+    some (instanceEvals, bs₇) at hinstanceEvals
+  change (readGrid shape.numProofs shape.numAdviceQueries scalarReader).run bs₇ =
+    some (adviceEvals, bs₈) at hadviceEvals
+  change (readVec shape.numFixedQueries fun _ => scalarReader).run bs₈ =
+    some (fixedEvals, bs₉) at hfixedEvals
+  change scalarReader.run bs₉ = some (vanishingRandomEval, bs₁₀) at hvanishingRandomEval
+  change (readVec shape.numPermutationColumns fun _ => scalarReader).run bs₁₀ =
+    some (permutationCommonEvals, bs₁₁) at hpermutationCommonEvals
+  change (readVec shape.numProofs fun _ =>
+    readVec shape.numPermutationSets fun s =>
+      permSetReader (decide (s.val + 1 < shape.numPermutationSets))).run bs₁₁ =
+    some (permutationSetEvals, bs₁₂) at hpermutationSetEvals
+  change (readGrid shape.numProofs shape.numLookups lookupReader).run bs₁₂ =
+    some (lookupEvals, bs₁₃) at hlookupEvals
+  change pointReader.run bs₁₃ = some (multiopenQPrime, bs₁₄) at hmultiopenQPrime
+  change (readVec shape.numPointSets fun _ => scalarReader).run bs₁₄ =
+    some (multiopenU, bs₁₅) at hmultiopenU
+  change pointReader.run bs₁₅ = some (ipaS, bs₁₆) at hipaS
+  change (readVec shape.k fun _ => pointPairReader).run bs₁₆ =
+    some (ipaRounds, bs₁₇) at hipaRounds
+  change scalarReader.run bs₁₇ = some (ipaC, bs₁₈) at hipaC
+  change scalarReader.run bs₁₈ = some (ipaF, bs₁₉) at hipaF
+  have l1 := readGrid_length (fun x bs rest hx => read32_length hx) hadviceCommitments
+  have l2 := readGrid_length (fun x bs rest hx => pointPairReader_length hx) hlookupPermuted
+  have l3 := readGrid_length (fun x bs rest hx => read32_length hx) hpermutationProduct
+  have l4 := readGrid_length (fun x bs rest hx => read32_length hx) hlookupProduct
+  have l5 := read32_length hvanishingRandom
+  have l6 := readVec_length_const (fun _ x bs rest hx => read32_length hx) hhPieces
+  have l7 := readGrid_length (fun x bs rest hx => read32_length hx) hinstanceEvals
+  have l8 := readGrid_length (fun x bs rest hx => read32_length hx) hadviceEvals
+  have l9 := readVec_length_const (fun _ x bs rest hx => read32_length hx) hfixedEvals
+  have l10 := read32_length hvanishingRandomEval
+  have l11 := readVec_length_const (fun _ x bs rest hx => read32_length hx)
+    hpermutationCommonEvals
+  have l12 := readVec_length_const
+    (fun _ g bs rest hg =>
+      readVec_length shape.numPermutationSets
+        (fun s => permSetReader (decide (s.val + 1 < shape.numPermutationSets)))
+        (fun s => if s.val + 1 < shape.numPermutationSets then (96 : ℕ) else 64)
+        (fun s x bs rest hx => by
+          have := permSetReader_length hx
+          simpa [decide_eq_true_eq] using this) hg)
+    hpermutationSetEvals
+  have l13 := readGrid_length (fun x bs rest hx => lookupReader_length hx) hlookupEvals
+  have l14 := read32_length hmultiopenQPrime
+  have l15 := readVec_length_const (fun _ x bs rest hx => read32_length hx) hmultiopenU
+  have l16 := read32_length hipaS
+  have l17 := readVec_length_const (fun _ x bs rest hx => pointPairReader_length hx) hipaRounds
+  have l18 := read32_length hipaC
+  have l19 := read32_length hipaF
+  unfold proofLength
+  omega
+
+/-- Every accepted proof carries at least its two final IPA scalars. -/
+theorem proofLength_ge_64 (shape : Shape) : 64 ≤ proofLength shape := by
+  unfold proofLength
+  omega
+
+/-- **Truncation is rejected, by accounting.** No strict prefix of an exactly-parsed proof
+string parses: a parse of the prefix would consume `proofLength shape` bytes the prefix does
+not have. Nothing is evaluated over the truncated bytes. -/
+theorem readProof?_none_of_truncated {shape : Shape} {bs : List UInt8} {n : ℕ}
+    {ps : ProofString shape Fp VestaG}
+    (hread : (readProof? shape).run bs = some (ps, [])) (hn : n < bs.length) :
+    (readProof? shape).run (bs.take n) = none := by
+  cases h : (readProof? shape).run (bs.take n) with
+  | none => rfl
+  | some pr =>
+      exfalso
+      obtain ⟨ps', rest'⟩ := pr
+      have h1 := readProof?_length hread
+      have h2 := readProof?_length h
+      have h3 : (bs.take n).length = n := by
+        rw [List.length_take]
+        omega
+      simp only [List.length_nil] at h1
+      omega
+
+/-- **A non-canonical final scalar is rejected.** Replacing the last 32 bytes of an
+exactly-parsed proof string with any 32 bytes reading at or above `p` fails the parse: by
+whole-proof canonicality a successful parse would end in the `to_repr` bytes of its own final
+scalar, whose little-endian value is canonical. -/
+theorem readProof?_none_of_noncanonical_final_scalar {shape : Shape} {bs V : List UInt8}
+    {ps : ProofString shape Fp VestaG}
+    (hread : (readProof? shape).run bs = some (ps, []))
+    (hVlen : V.length = 32) (hVge : scalarFieldOrder ≤ leInt V) :
+    (readProof? shape).run (bs.take (bs.length - 32) ++ V) = none := by
+  cases h : (readProof? shape).run (bs.take (bs.length - 32) ++ V) with
+  | none => rfl
+  | some pr =>
+      exfalso
+      obtain ⟨ps', rest'⟩ := pr
+      have hL := readProof?_length hread
+      simp only [List.length_nil] at hL
+      have h64 := proofLength_ge_64 shape
+      have hAlen : (bs.take (bs.length - 32)).length = bs.length - 32 := by
+        rw [List.length_take]
+        omega
+      have hinlen : (bs.take (bs.length - 32) ++ V).length = bs.length := by
+        rw [List.length_append, hAlen, hVlen]
+        omega
+      have hlen := readProof?_length h
+      have hrest : rest' = [] := by
+        have : rest'.length = 0 := by omega
+        exact List.eq_nil_of_length_eq_zero this
+      subst hrest
+      have hser := readProof?_eq_some_serialize h
+      rw [List.append_nil] at hser
+      obtain ⟨Y, hY⟩ : ∃ Y, serializeProof ps' = Y ++ (scalarRepr ps'.ipaF).toList := ⟨_, rfl⟩
+      have hYlen : Y.length = bs.length - 32 := by
+        have h1 : (serializeProof ps').length = bs.length := by rw [← hser]; exact hinlen
+        rw [hY, List.length_append] at h1
+        simp only [Vector.length_toList] at h1
+        omega
+      have hsuffix : (scalarRepr ps'.ipaF).toList = V := by
+        have heq : bs.take (bs.length - 32) ++ V = Y ++ (scalarRepr ps'.ipaF).toList := by
+          rw [← hY, ← hser]
+        exact (List.append_inj_right heq (by rw [hAlen, hYlen])).symm
+      have hlhs : leInt (scalarRepr ps'.ipaF).toList = ps'.ipaF.val := by
+        rw [leInt_toList, LEOS2IP_scalarRepr]
+      rw [hsuffix] at hlhs
+      have hcan : ps'.ipaF.val < scalarFieldOrder := ZMod.val_lt _
+      omega
+
+/-! ## The sign bit
+
+Bit 255 of a compressed encoding is the parity of `y`; the low 255 bits are `x`. Negation fixes
+`x` and flips the parity over an odd-order field, so flipping the top bit of a non-identity
+point's encoding is exactly the negated point's encoding, and a proof string with its leading
+point's sign bit flipped parses to the same proof with that one commitment negated. -/
+
+/-- The bytes of `a` followed by the bytes of `b` read as `leInt a + 256^|a| · leInt b`. -/
+theorem leInt_append (a b : List UInt8) :
+    leInt (a ++ b) = leInt a + 256 ^ a.length * leInt b := by
+  simp [leInt, List.map_append, Nat.ofDigits_append, List.length_map]
+
+/-- A single byte reads as its value. -/
+theorem leInt_singleton (b : UInt8) : leInt [b] = b.toNat := by
+  rw [leInt_cons]
+  simp [leInt]
+
+/-- 32-byte strings are determined by the integer they read as: the bytes are its digits. -/
+theorem leInt_inj_32 {a b : List UInt8} (ha : a.length = 32) (hb : b.length = 32)
+    (h : leInt a = leInt b) : a = b := by
+  rw [← ofFn_leInt ha rfl, ← ofFn_leInt hb rfl, h]
+
+/-- The first `n` bytes read as the integer's low `n` digits. -/
+theorem leInt_take (bs : List UInt8) (n : ℕ) (hn : n ≤ bs.length) :
+    leInt (bs.take n) = leInt bs % 256 ^ n := by
+  conv_rhs => rw [← List.take_append_drop n bs]
+  rw [leInt_append, List.length_take, Nat.min_eq_left hn, Nat.add_mul_mod_self_left]
+  exact (Nat.mod_eq_of_lt (by
+    have := leInt_lt (bs.take n)
+    rwa [List.length_take, Nat.min_eq_left hn] at this)).symm
+
+/-- **The sign bit is the parity of `y`.** Flipping the top bit of a non-identity point's
+compressed encoding gives exactly the negated point's encoding. -/
+theorem toBytes_neg_flip {P : VestaG} (hP : P ≠ 0) :
+    (toBytes P).toList.take 31 ++ [(toBytes P).toList.getD 31 0 ^^^ 0x80]
+      = (toBytes (-P)).toList := by
+  have hy0 : P.y ≠ 0 := fun hy => Vesta.no_onCurve_y_zero P.x (hy ▸ onCurve_of_ne_zero hP)
+  have hs2 : P.y.val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+  have hs' : (-P).y.val % 2 = 1 - P.y.val % 2 := by
+    have hne : (-P.y).val % 2 ≠ P.y.val % 2 := neg_val_parity_ne hy0
+    have h1 : (-P.y).val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+    rw [SWPoint.neg_y]
+    omega
+  have hNP : leInt (toBytes P).toList = P.x.val + P.y.val % 2 * signBit := by
+    rw [leInt_toList, toBytes, LEOS2IP_I2LEOSP_256, signBit_eq]
+  have hNQ : leInt (toBytes (-P)).toList = P.x.val + (1 - P.y.val % 2) * signBit := by
+    have hNQ0 : leInt (toBytes (-P)).toList = (-P).x.val + (-P).y.val % 2 * signBit := by
+      rw [leInt_toList, toBytes, LEOS2IP_I2LEOSP_256, signBit_eq]
+    rw [hNQ0, hs', SWPoint.neg_x]
+  have hxlt : P.x.val < signBit := lt_trans (ZMod.val_lt P.x) vestaBase_card_lt_signBit
+  have hsig : signBit = 256 ^ 31 * 128 := by rw [signBit_eq]; norm_num
+  have hxdiv : P.x.val / 256 ^ 31 < 128 := by
+    apply Nat.div_lt_of_lt_mul
+    omega
+  have hlen : (toBytes P).toList.length = 32 := by simp
+  have hsplit : ∀ t : ℕ, t < 2 → (P.x.val + t * signBit) / 256 ^ 31 % 256
+      = P.x.val / 256 ^ 31 + t * 128 := by
+    intro t ht
+    have h4 : P.x.val + t * signBit = P.x.val + t * 128 * 256 ^ 31 := by rw [hsig]; ring
+    rw [h4, Nat.add_mul_div_right _ _ (by positivity : (0:ℕ) < 256 ^ 31)]
+    exact Nat.mod_eq_of_lt (by omega)
+  have hb31 : (toBytes P).toList[31].toNat = P.x.val / 256 ^ 31 + P.y.val % 2 * 128 := by
+    rw [← leInt_div_pow_mod (toBytes P).toList 31 (by simp [hlen]), hNP, hsplit _ hs2]
+  have hxor : ∀ (a : Fin 128) (t : Fin 2),
+      (a.val + t.val * 128) ^^^ 128 = a.val + (1 - t.val) * 128 := by decide +kernel
+  have hc : ((toBytes P).toList.getD 31 0 ^^^ 0x80).toNat
+      = P.x.val / 256 ^ 31 + (1 - P.y.val % 2) * 128 := by
+    rw [List.getD_eq_getElem _ _ (by simp [hlen]), UInt8.toNat_xor, hb31]
+    exact hxor ⟨_, hxdiv⟩ ⟨_, hs2⟩
+  have htklen : ((toBytes P).toList.take 31).length = 31 := by
+    rw [List.length_take, hlen]
+    omega
+  have htake : leInt ((toBytes P).toList.take 31) = leInt (toBytes P).toList % 256 ^ 31 :=
+    leInt_take _ 31 (by omega)
+  have h256 : (256 : ℕ) ^ 31 = 452312848583266388373324160190187140051835877600158453279131187530910662656 := by norm_num
+  apply leInt_inj_32 (by rw [List.length_append, htklen]; rfl) (by simp)
+  rw [leInt_append, htklen, leInt_singleton, hc, hNQ, htake, hNP, hsig, h256]
+  omega
+
+/-- A successful vector read with its first element's bytes replaced by bytes its reader reads
+back as `x'`, leaving the same remainder, succeeds with only the first slot changed: the later
+element reads run on the same suffix. -/
+theorem readVec_run_replace_head {α : Type} {n : ℕ} {r : Fin (n + 1) → ProofReader α}
+    {bs bs' rest : List UInt8} {f : Fin (n + 1) → α} {x' : α}
+    (h : (readVec (n + 1) r).run bs = some (f, rest))
+    (hx' : ∀ mid, (r 0).run bs = some (f 0, mid) → (r 0).run bs' = some (x', mid)) :
+    (readVec (n + 1) r).run bs' = some (Fin.cons x' (fun i => f i.succ), rest) := by
+  simp only [readVec, StateT.run_bind, Option.bind_eq_bind] at h ⊢
+  obtain ⟨⟨x, bs₁⟩, hx, h⟩ := Option.bind_eq_some_iff.mp h
+  obtain ⟨⟨g, bs₂⟩, hg, hpure⟩ := Option.bind_eq_some_iff.mp h
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨hf, rfl⟩ := hpure
+  have hg' : (readVec n fun i => r i.succ).run bs₁ = some (g, bs₂) := hg
+  have hx0 : (r 0).run bs = some (f 0, bs₁) := by
+    rw [← hf, Fin.cons_zero]
+    exact hx
+  have hgf : g = fun i => f i.succ := by
+    funext i
+    rw [← hf, Fin.cons_succ]
+  rw [hx' bs₁ hx0]
+  simp only [Option.bind_some, hg', StateT.run_pure, Option.pure_def, hgf]
+
+/-- The grid form of head replacement, at counts only known nonzero: the replacement lands at
+grid position `(0, 0)` and every other slot survives. -/
+theorem readGrid_run_replace_head {α : Type} {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)
+    {r : ProofReader α} {bs bs' rest : List UInt8} {f : Fin m → Fin n → α} {x' : α}
+    (h : (readGrid m n r).run bs = some (f, rest))
+    (hx' : ∀ mid,
+      r.run bs = some (f ⟨0, Nat.pos_of_ne_zero hm⟩ ⟨0, Nat.pos_of_ne_zero hn⟩, mid) →
+      r.run bs' = some (x', mid)) :
+    ∃ f', (readGrid m n r).run bs' = some (f', rest)
+      ∧ f' ⟨0, Nat.pos_of_ne_zero hm⟩ ⟨0, Nat.pos_of_ne_zero hn⟩ = x' := by
+  obtain ⟨m', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
+  obtain ⟨n', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  have hrow : ∀ mid,
+      (readVec (n' + 1) fun _ => r).run bs = some (f 0, mid) →
+      (readVec (n' + 1) fun _ => r).run bs'
+        = some (Fin.cons x' (fun i => f 0 i.succ), mid) := by
+    intro mid hmid
+    refine readVec_run_replace_head hmid fun mid₂ hmid₂ => hx' mid₂ ?_
+    simpa using hmid₂
+  refine ⟨Fin.cons (Fin.cons x' (fun i => f 0 i.succ)) (fun i => f i.succ),
+    readVec_run_replace_head (r := fun _ => readVec (n' + 1) fun _ => r) h hrow, ?_⟩
+  simp [Fin.cons_zero]
+
+/-- **Sign-of-first-commitment locality.** Replacing the leading compressed point of a parsed
+proof string with bytes that read back as another point `Q` still parses, with the same unread
+suffix, and the replacement lands in the first advice commitment. The continuation of the read
+depends only on the suffix bytes, which the replacement leaves alone. -/
+theorem readProof?_run_replace_first_advice {shape : Shape} {bs bs' rest : List UInt8}
+    {ps : ProofString shape Fp VestaG} {Q : VestaG}
+    (hm : shape.numProofs ≠ 0) (hn : shape.numAdviceColumns ≠ 0)
+    (hread : (readProof? shape).run bs = some (ps, rest))
+    (hx' : ∀ mid, pointReader.run bs = some
+        (ps.adviceCommitments ⟨0, Nat.pos_of_ne_zero hm⟩ ⟨0, Nat.pos_of_ne_zero hn⟩, mid) →
+      pointReader.run bs' = some (Q, mid)) :
+    ∃ ps' : ProofString shape Fp VestaG,
+      (readProof? shape).run bs' = some (ps', rest)
+      ∧ ps'.adviceCommitments ⟨0, Nat.pos_of_ne_zero hm⟩ ⟨0, Nat.pos_of_ne_zero hn⟩ = Q := by
+  unfold readProof? at hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceCommitments, bs₁⟩, hadviceCommitments, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupPermuted, bs₂⟩, hlookupPermuted, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationProduct, bs₃⟩, hpermutationProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupProduct, bs₄⟩, hlookupProduct, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandom, bs₅⟩, hvanishingRandom, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨hPieces, bs₆⟩, hhPieces, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨instanceEvals, bs₇⟩, hinstanceEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨adviceEvals, bs₈⟩, hadviceEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨fixedEvals, bs₉⟩, hfixedEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨vanishingRandomEval, bs₁₀⟩, hvanishingRandomEval, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationCommonEvals, bs₁₁⟩, hpermutationCommonEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨permutationSetEvals, bs₁₂⟩, hpermutationSetEvals, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨lookupEvals, bs₁₃⟩, hlookupEvals, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenQPrime, bs₁₄⟩, hmultiopenQPrime, hread⟩ :=
+    Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨multiopenU, bs₁₅⟩, hmultiopenU, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaS, bs₁₆⟩, hipaS, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaRounds, bs₁₇⟩, hipaRounds, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaC, bs₁₈⟩, hipaC, hread⟩ := Option.bind_eq_some_iff.mp hread
+  rw [StateT.run_bind] at hread
+  obtain ⟨⟨ipaF, bs₁₉⟩, hipaF, hpure⟩ := Option.bind_eq_some_iff.mp hread
+  simp only [StateT.run_pure, Option.pure_def, Option.some.injEq, Prod.mk.injEq] at hpure
+  obtain ⟨rfl, rfl⟩ := hpure
+  change (readGrid shape.numProofs shape.numLookups pointPairReader).run bs₁ =
+    some (lookupPermuted, bs₂) at hlookupPermuted
+  change (readGrid shape.numProofs shape.numPermutationSets pointReader).run bs₂ =
+    some (permutationProduct, bs₃) at hpermutationProduct
+  change (readGrid shape.numProofs shape.numLookups pointReader).run bs₃ =
+    some (lookupProduct, bs₄) at hlookupProduct
+  change pointReader.run bs₄ = some (vanishingRandom, bs₅) at hvanishingRandom
+  change (readVec shape.numQuotientPieces fun _ => pointReader).run bs₅ =
+    some (hPieces, bs₆) at hhPieces
+  change (readGrid shape.numProofs shape.numInstanceQueries scalarReader).run bs₆ =
+    some (instanceEvals, bs₇) at hinstanceEvals
+  change (readGrid shape.numProofs shape.numAdviceQueries scalarReader).run bs₇ =
+    some (adviceEvals, bs₈) at hadviceEvals
+  change (readVec shape.numFixedQueries fun _ => scalarReader).run bs₈ =
+    some (fixedEvals, bs₉) at hfixedEvals
+  change scalarReader.run bs₉ = some (vanishingRandomEval, bs₁₀) at hvanishingRandomEval
+  change (readVec shape.numPermutationColumns fun _ => scalarReader).run bs₁₀ =
+    some (permutationCommonEvals, bs₁₁) at hpermutationCommonEvals
+  change (readVec shape.numProofs fun _ =>
+    readVec shape.numPermutationSets fun s =>
+      permSetReader (decide (s.val + 1 < shape.numPermutationSets))).run bs₁₁ =
+    some (permutationSetEvals, bs₁₂) at hpermutationSetEvals
+  change (readGrid shape.numProofs shape.numLookups lookupReader).run bs₁₂ =
+    some (lookupEvals, bs₁₃) at hlookupEvals
+  change pointReader.run bs₁₃ = some (multiopenQPrime, bs₁₄) at hmultiopenQPrime
+  change (readVec shape.numPointSets fun _ => scalarReader).run bs₁₄ =
+    some (multiopenU, bs₁₅) at hmultiopenU
+  change pointReader.run bs₁₅ = some (ipaS, bs₁₆) at hipaS
+  change (readVec shape.k fun _ => pointPairReader).run bs₁₆ =
+    some (ipaRounds, bs₁₇) at hipaRounds
+  change scalarReader.run bs₁₇ = some (ipaC, bs₁₈) at hipaC
+  change scalarReader.run bs₁₈ = some (ipaF, bs₁₉) at hipaF
+  obtain ⟨g', hg', hg'0⟩ := readGrid_run_replace_head hm hn hadviceCommitments hx'
+  refine ⟨{
+    adviceCommitments := g'
+    lookupPermutedInput := fun p l => (lookupPermuted p l).1
+    lookupPermutedTable := fun p l => (lookupPermuted p l).2
+    permutationProduct
+    lookupProduct
+    vanishingRandom
+    hPieces
+    instanceEvals
+    adviceEvals
+    fixedEvals
+    vanishingRandomEval
+    permutationCommonEvals
+    permutationSetEvals
+    lookupEvals
+    multiopenQPrime
+    multiopenU
+    ipaS
+    ipaRounds
+    ipaC
+    ipaF }, ?_, hg'0⟩
+  unfold readProof?
+  rw [StateT.run_bind, hg']
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hlookupPermuted]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hpermutationProduct]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hlookupProduct]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hvanishingRandom]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hhPieces]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hinstanceEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hadviceEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hfixedEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hvanishingRandomEval]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hpermutationCommonEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hpermutationSetEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hlookupEvals]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hmultiopenQPrime]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hmultiopenU]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hipaS]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hipaRounds]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hipaC]
+  simp only [Option.bind_eq_bind, Option.bind_some]
+  rw [StateT.run_bind, hipaF]
+  simp only [Option.bind_eq_bind, Option.bind_some, StateT.run_pure]
+  rfl
+
 end Zcash.Snark
