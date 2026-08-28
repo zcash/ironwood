@@ -66,6 +66,15 @@ and this project adheres to Rust's notion of
   with halo2's domain tags deleted, the encoding collides a point with two scalars and a
   transcript with its pre-squeeze extension, so its injectivity fails; the deployed tags separate
   the same witnesses.
+- Adaptive action counts at the reduction layer (`Zcash/Snark/Soundness/Action/
+  AdaptiveCountModel.lean`, `AdaptiveCountReduction.lean`): one online-AGM adversary over a
+  transcript domain covering every permitted action count, with the count part of its output, so
+  that it may depend on earlier oracle answers and one query budget bounds the whole run. The
+  selected count's output is narrowed into the existing fixed-count reduction stages, giving one
+  relation finder and one knowledge extractor for whatever count was selected. The ledger shell
+  (`Zcash/Security/Ledger/AdaptiveActionReduction.lean`, `AdaptiveActionBundleBridge.lean`) runs
+  all `k` chain positions in one such execution and combines every position's relation into one
+  finder, which a single textbook discrete-log hypothesis prices.
 
 ### Removed
 - The deployment record's `deployedVkDigest` and `vkDigestAgreesOnCanonical` fields, which were
@@ -73,6 +82,15 @@ and this project adheres to Rust's notion of
   `deployedAcceptsRawBytes_to_bytes`, a restatement of `DeployedAcceptsRawBytes`'s definition.
 
 ### Changed
+- The Orchard extraction experiment (`Zcash/Security/Ledger/OrchardExtractionExperiment.lean`)
+  takes its proofs from one shared adaptive-count Action execution instead of one fixed-count
+  family per chain position and bundle size. The Fiat–Shamir oracle is one table over a domain
+  covering every action count, so the per-size tables and the modelling caveat on their
+  presentation are gone (#224), and the Action discrete-log term is charged once, for the combined
+  relation finder, so that neither `k` nor `maxActions` multiplies it (#214). The `_of_dlogProfiles`
+  endpoints are replaced by the `_combinedDLR` endpoints, which carry every ledger-side relation
+  arm in `combinedDLRAdvantage` and take the bound on the selected count's statistical surfaces
+  as a hypothesis.
 - `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
   `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
 - `Describes` takes the designated canonical key and the verifier-used key, and

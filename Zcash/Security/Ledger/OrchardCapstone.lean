@@ -11,17 +11,18 @@ import Zcash.Security.Ledger.MerkleDLR
 /-!
 # The Orchard instantiation: every Balance-subset arm computes a discrete-log relation
 
-The fully composed Orchard Balance capstones — for a proof-emitting adversary, with
-the knowledge hypotheses discharged — are the `_of_dlogProfiles` endpoints of
-`Zcash.Security.Ledger.OrchardExtractionExperiment`, not here.
+The fully composed Orchard Balance capstones —for a proof-emitting adversary, with the
+Action discrete-log term charged once and every ledger-side relation arm in one term—
+are the `_combinedDLR` endpoints of `Zcash.Security.Ledger.OrchardExtractionExperiment`,
+not here.
 
 These are the instantiations that use the Orchard-protocol bases and parameters. At
-them, each of the three Balance-subset break arms reduces to a nontrivial discrete-log
-relation among the fixed Sinsemilla bases. Each reducer is a total, hypothesis-free
-function from the arm's break to its relation, so it needs no random-oracle model.
-`orchardBalanceSubsetOrRelation` runs all three: from a valid Orchard ledger it
-computes either the Balance-subset containment or a nontrivial relation among the
-fixed bases.
+these instantiations, each of the three Balance-subset break arms reduces to a
+nontrivial discrete-log relation among the fixed Sinsemilla bases. Each reducer is a
+total, hypothesis-free function from the arm's break to its relation, so it needs no
+random-oracle model. `orchardBalanceSubsetOrRelation` runs all three: from a valid
+Orchard ledger it computes either the Balance-subset containment or a nontrivial
+relation among the fixed bases.
 
 The probability layer names the relation event — the samples on which the reduction
 computes a relation — and bounds every capstone violation by it. One ε suffices where

@@ -84,11 +84,12 @@ not an issue for Balance properties; the adversary merely has to exhibit an unba
 consensus-valid ledger). All the important pieces have been completed, and the ledger
 security arguments are now tied into the Action circuit knowledge soundness proof: the
 composed extraction experiment annotates the ledger games' chains with the witnesses
-that the circuit's extractor computes, at the deployed value bases. What remains on that
-route is quantitative — per-bundle-size knowledge-soundness terms at a k·maxActions
-factor ([#214](https://github.com/zcash/ironwood/issues/214)) — while the Spendability
-and Spend Authority games still consume annotations directly
-([#155](https://github.com/zcash/ironwood/issues/155)). Additional caveats are stated on
+that the circuit's extractor computes, at the deployed value bases, with the proofs of
+every chain position coming from one shared adaptive-count execution, so that the Action
+discrete-log term is charged once. What remains on that route is the bound on the
+selected count's statistical surfaces, which the composed endpoints take as a
+hypothesis, while the Spendability and Spend Authority games still consume annotations
+directly ([#155](https://github.com/zcash/ironwood/issues/155)). Additional caveats are stated on
 the [Ledger Security Games](ledger-security-games.md) page.
 
 For tractability, the modeled ledger also abstracts away from the real protocol in
