@@ -521,6 +521,7 @@ assert_axioms Zcash.Snark.Capstone.adaptiveStatementKnowledgeFailure_le_at_2pow1
 -- transport: the rung leaves the charge symbolic, the endpoint states the closed number.
 assert_axioms Zcash.Snark.Capstone.adaptiveStatementDeployedKnowledgeFailure_le_jointCharge +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
   Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
@@ -528,6 +529,7 @@ assert_axioms Zcash.Snark.Capstone.adaptiveStatementDeployedKnowledgeFailure_le_
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
   Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
