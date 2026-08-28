@@ -45,9 +45,10 @@ and this project adheres to Rust's notion of
   one-way `rustAcceptsRefinesLeanRaw` refinement assumption, and the AGM edge
   `rustAcceptedProofRepresented`, consumed by `rustAccepts_halo2Coins_implies_familyAccepts`.
 - The description parser is hardened: exact struct names and field sequences
-  (`hasStructFields`), canonical in-range 64-digit field literals (`canonicalFieldNat?`), typed
-  query column kinds, query metadata cross-checked against the layouts, and no tolerance for a
-  missing separator, each with a kernel-checked regression.
+  (`hasStructFields`), canonical in-range 64-digit field literals (`canonicalFieldNat?`),
+  canonical decimal literals (no leading zeros, no `-0`) and the exact quoted 66-character moduli,
+  typed query column kinds, query metadata cross-checked against the layouts, and no tolerance
+  for a missing separator, each with a kernel-checked regression.
 - BLAKE2b carries its full 128-bit byte counter (`counterLow`/`counterHigh` into words 12 and
   13), with a kernel-checked compression vector at `t = 2^64` that a low-word-only
   implementation fails.

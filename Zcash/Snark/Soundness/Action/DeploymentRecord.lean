@@ -123,7 +123,7 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
       family.Coins → Fin pp.numProofs → List (List Fp)
   /-- Every action's supplied raw instance is exactly the full ten-row column serializing its
   typed public inputs (`actionCircuit_publicInputRows_zero`).  This pins the instance
-  construction behind the typed boundary `acceptsFaithful` prices: Halo2's Lagrange commitment
+  construction behind the typed boundary `idealizedAcceptsFaithful` prices: Halo2's Lagrange commitment
   zero-pads columns, so a shorter column commits — and verifies — identically to its zero-padding
   (`commitInstance_append_replicate_zero`, `assembleNonInteractiveInstances?_padColumns`); in
   particular a nine-row column aliases the ten-row column ending in `disableCrossAddress = 0`.
