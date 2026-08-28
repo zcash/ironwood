@@ -380,7 +380,8 @@ assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derive
 
 -- The proof-string byte layer (`ProofBytes.lean`). Native execution is confined to the one
 -- fact that anchors the generated raw artifact: its exact typed parse. Hex validity, the
--- consensus length, serialization, and the truncation and non-canonical-scalar rejections are
+-- ZIP-specified canonical length, serialization, and the truncation and non-canonical-scalar
+-- rejections are
 -- theorems derived from that parse through the byte-accounting and canonicality lemmas; the
 -- three malformed leading-point cases lift generic decoder proofs. Point-decoder statements
 -- still name the upstream native validity certificate carried by `vestaBase`.

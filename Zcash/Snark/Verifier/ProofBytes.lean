@@ -759,9 +759,11 @@ theorem readProof?_eq_none_of_first_point {shape : Shape} {bs : List UInt8}
   rfl
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
-order. The deployed verifier ignores trailing bytes; the consensus rules fix the proof length
-(ZIP 225: `2720 + 2272 · nActionsOrchard`), so a proof of the right length either parses exactly or
-is rejected, which is the form the capture checks state. -/
+order. Halo2's reader itself ignores trailing bytes. The production transaction/bundle boundary
+modeled here separately enforces the ZIP-specified canonical total length
+(`2720 + 2272 · nActionsOrchard`), while the Lean byte predicate additionally requires this reader
+to consume that string exactly. The latter is a Rust-to-Lean refinement obligation, concretely
+checked at each capture, not a property of Halo2's reader alone. -/
 def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UInt8 :=
   serializeGrid shape.numProofs shape.numAdviceColumns pointBytesCompressed ps.adviceCommitments
     ++ serializeGrid shape.numProofs shape.numLookups serializePointPair
@@ -974,9 +976,9 @@ theorem serializeProof_eq_of_readProof?_eq_some {shape : Shape} {bs : List UInt8
 Every element `readProof?` reads is exactly 32 bytes, and the element counts are shape
 constants, so a successful parse consumed a byte count fixed by the shape alone —
 `proofLength`. `readProof?_length` states that accounting. It is what ties a captured proof
-string's length to the consensus proof size (ZIP 225: `2720 + 2272 · nActionsOrchard`), and it
-rejects any parse of a truncated proof by arithmetic, with no evaluation of the decoder over
-the truncated bytes. -/
+string's length to ZIP 225's specified canonical proof size
+(`2720 + 2272 · nActionsOrchard`), and it rejects any parse of a truncated proof by arithmetic,
+with no evaluation of the decoder over the truncated bytes. -/
 
 /-- Any successful 32-byte element read consumed exactly 32 bytes. -/
 theorem read32_length {α : Type} {decode : List UInt8 → Option α} {bs rest : List UInt8} {x : α}
@@ -1106,11 +1108,12 @@ theorem lookupReader_length {bs rest : List UInt8} {e : LookupEval Fp}
   have l5 := read32_length h5
   omega
 
-/-- The exact byte count `readProof?` accepts for a shape: 32 bytes per element, with the
+/-- The exact byte count `readProof?` consumes for a shape: 32 bytes per element, with the
 element counts read off the shape, and each permutation set contributing its shape-selected
-two or three scalars. At the deployed Orchard shape this is the consensus proof size
-(ZIP 225: `2720 + 2272 · nActionsOrchard`), kernel-checked at the captured action counts by
-each family's length theorem. -/
+two or three scalars. At the captured one- and two-Action Orchard shapes this equals ZIP 225's
+specified canonical proof size (`2720 + 2272 · nActionsOrchard`), kernel-checked by each family's
+length theorem. The deployment boundary enforces total length outside Halo2's suffix-tolerant
+reader. -/
 def proofLength (shape : Shape) : ℕ :=
   shape.numProofs * (shape.numAdviceColumns * 32)
     + shape.numProofs * (shape.numLookups * 64)
