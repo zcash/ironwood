@@ -146,6 +146,143 @@ theorem BatchWitnessV.acceptedPolynomial_eq_online_of_query {pp : ProofParams}
   rw [hroute]
   exact hmember
 
+/-- View-level form of `adaptiveStatementActive_point_mem_stage`.  The statement,
+proof, and challenges may come from a caller-supplied shared execution rather
+than from this fixed-count family's own adversary.  This is the deterministic
+bridge used when an outer adversary chooses the Action count adaptively. -/
+theorem adaptiveStatementActive_point_mem_stageV {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis) (n : Fin 5) (id : CommitmentId)
+    (hactive : adaptiveActionCommitmentActive (AdaptiveActionStatementShape pp)
+      (adaptiveActionStatementVk pp basis) id)
+    (havailable : adaptiveActionCommitmentAvailable n id) :
+    ∃ P,
+      assembledCommitment (adaptiveActionStatementVk pp basis)
+          (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+          view.output.toAlgebraicWfProof.proof.1
+          (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) id =
+            .point P ∧
+        ∃ ap ∈ semanticRepresentationTarget view.output n ++
+            family.fixedRepresentations basis,
+          ap.point = P := by
+  let output := view.output
+  let data := output.proofData
+  let ic := adaptiveActionStatementInstanceCommitment pp basis output.inputs
+  cases id with
+  | instanceCol p column =>
+      rcases hactive with ⟨hp, rotation, hlayout⟩
+      have hcolumn := adaptiveStatementInstanceLayout_column_lt
+        (pp := pp) basis column rotation hlayout
+      let columnFin : Fin (AdaptiveActionStatementShape pp).numInstanceColumns :=
+        ⟨column, hcolumn⟩
+      let ap := output.instanceRepresentations ⟨p, hp⟩ columnFin
+      refine ⟨ic ⟨p, hp⟩ column, ?_, ap, ?_, ?_⟩
+      · rw [assembledCommitment, dif_pos hp]
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inr
+        unfold adaptiveStatementInstanceRepresentationList
+        apply List.mem_flatten.mpr
+        refine ⟨List.ofFn (output.instanceRepresentations ⟨p, hp⟩), ?_, ?_⟩
+        · exact List.mem_ofFn.mpr ⟨⟨p, hp⟩, rfl⟩
+        · exact List.mem_ofFn.mpr ⟨columnFin, rfl⟩
+      · exact output.instanceRepresented ⟨p, hp⟩ columnFin
+  | adviceCol p column =>
+      rcases hactive with ⟨hp, hcolumn, rotation, hlayout⟩
+      let ap := data.algebraicProof.adviceCommitments ⟨p, hp⟩ ⟨column, hcolumn⟩
+      refine ⟨ap.point, ?_, ap, ?_, rfl⟩
+      · rw [assembledCommitment, dif_pos hp]
+        rw [finFnG, dif_pos hcolumn]
+        simp only [ap, data, output]
+        rfl
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inl
+        exact data.algebraicProof.adviceCommitment_mem_actionRepresentationsBefore
+          n ⟨p, hp⟩ ⟨column, hcolumn⟩
+  | fixedCol column =>
+      rcases hactive with ⟨rotation, hlayout⟩
+      obtain ⟨ap, hap, hpoint⟩ := family.fixedRepresented basis column ⟨rotation, hlayout⟩
+      refine ⟨(adaptiveActionStatementVk pp basis).fixedCommitment column, rfl,
+        ap, List.mem_append.mpr (Or.inr hap), hpoint⟩
+  | permProduct p s =>
+      rcases hactive with ⟨hp, hs⟩
+      let ap := data.algebraicProof.permutationProduct ⟨p, hp⟩ ⟨s, hs⟩
+      refine ⟨ap.point, ?_, ap, ?_, rfl⟩
+      · rw [assembledCommitment, dif_pos hp]
+        rw [finFnG, dif_pos hs]
+        simp only [ap, data, output]
+        rfl
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inl
+        exact data.algebraicProof.permutationProduct_mem_actionRepresentationsBefore
+          n ⟨p, hp⟩ ⟨s, hs⟩
+          (by simpa [adaptiveActionCommitmentAvailable] using havailable)
+  | lookupProduct p l =>
+      rcases hactive with ⟨hp, hl⟩
+      let ap := data.algebraicProof.lookupProduct ⟨p, hp⟩ ⟨l, hl⟩
+      refine ⟨ap.point, ?_, ap, ?_, rfl⟩
+      · rw [assembledCommitment, dif_pos hp]
+        rw [finFnG, dif_pos hl]
+        simp only [ap, data, output]
+        rfl
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inl
+        exact data.algebraicProof.lookupProduct_mem_actionRepresentationsBefore
+          n ⟨p, hp⟩ ⟨l, hl⟩
+          (by simpa [adaptiveActionCommitmentAvailable] using havailable)
+  | lookupPermInput p l =>
+      rcases hactive with ⟨hp, hl⟩
+      let ap := data.algebraicProof.lookupPermutedInput ⟨p, hp⟩ ⟨l, hl⟩
+      refine ⟨ap.point, ?_, ap, ?_, rfl⟩
+      · rw [assembledCommitment, dif_pos hp]
+        rw [finFnG, dif_pos hl]
+        simp only [ap, data, output]
+        rfl
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inl
+        exact data.algebraicProof.lookupPermutedInput_mem_actionRepresentationsBefore
+          n ⟨p, hp⟩ ⟨l, hl⟩
+          (by simpa [adaptiveActionCommitmentAvailable] using havailable)
+  | lookupPermTable p l =>
+      rcases hactive with ⟨hp, hl⟩
+      let ap := data.algebraicProof.lookupPermutedTable ⟨p, hp⟩ ⟨l, hl⟩
+      refine ⟨ap.point, ?_, ap, ?_, rfl⟩
+      · rw [assembledCommitment, dif_pos hp]
+        rw [finFnG, dif_pos hl]
+        simp only [ap, data, output]
+        rfl
+      · apply List.mem_append.mpr
+        apply Or.inl
+        unfold semanticRepresentationTarget
+        apply List.mem_append.mpr
+        apply Or.inl
+        exact data.algebraicProof.lookupPermutedTable_mem_actionRepresentationsBefore
+          n ⟨p, hp⟩ ⟨l, hl⟩
+          (by simpa [adaptiveActionCommitmentAvailable] using havailable)
+  | permCommon c =>
+      have hc : c < actionCircuit.permutationColumnCount := hactive
+      obtain ⟨ap, hap, hpoint⟩ := family.permutationCommonRepresented basis ⟨c, hc⟩
+      refine ⟨(adaptiveActionStatementVk pp basis).permutationCommonCommitment ⟨c, hc⟩,
+        ?_, ap, List.mem_append.mpr (Or.inr hap), hpoint⟩
+      simp [assembledCommitment, finFnG, hc]
+  | vanishingH => exact False.elim hactive
+  | randomPoly => exact False.elim hactive
+
 /-- An active selected-statement commitment available at stage `n` has an explicit point in the
 selected semantic source. -/
 theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
@@ -308,6 +445,63 @@ structure SemanticStageFacts {pp : ProofParams}
       onlinePointPolynomial
         (semanticRepresentationTarget view.output n ++
           family.fixedRepresentations basis) P
+
+/-- An empty retained-output source finder means every one of its five source
+comparisons is empty. -/
+theorem semanticSourceMismatchRelationFinderOfOutput_none_at {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis output = none)
+    (n : Fin 5) :
+    family.semanticSourceMismatchAtOfOutput? basis output n = none := by
+  have hall := (ComputedAdaptiveOnlineAGMFSFamily.firstAdaptiveRelation?_eq_none_iff _).1 hnone
+  apply hall
+  exact List.mem_ofFn.mpr ⟨n, rfl⟩
+
+/-- Outside the retained output's source-collision finder, the complete source
+and each semantic-stage source define the same polynomial at every stage point. -/
+theorem semanticStagePolynomialV_eq_full {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis view.output = none)
+    (n : Fin 5) (P : VestaG)
+    (hP : ∃ ap ∈ semanticRepresentationTarget view.output n ++
+      family.fixedRepresentations basis, ap.point = P) :
+    onlinePointPolynomial
+        (view.output.proofData.algebraicProof.preX1AssemblySource
+          (adaptiveStatementInstanceRepresentationList
+              view.output.instanceRepresentations ++
+            family.fixedRepresentations basis)) P =
+      onlinePointPolynomial
+        (semanticRepresentationTarget view.output n ++
+          family.fixedRepresentations basis) P := by
+  apply onlinePointPolynomial_eq_of_sourceMismatch_none
+  · intro ap hap
+    rw [semanticRepresentationTarget, List.append_assoc] at hap
+    exact AlgebraicProofString.actionStageSource_subset_preX1AssemblySource
+      view.output.proofData.algebraicProof
+      (adaptiveStatementInstanceRepresentationList
+          view.output.instanceRepresentations ++ family.fixedRepresentations basis)
+      n ap hap
+  · exact family.semanticSourceMismatchRelationFinderOfOutput_none_at
+      basis view.output hnone n
+  · exact hP
+
+/-- A source-finder verdict on an arbitrary shared run view supplies the same
+semantic-stage facts as the original table-indexed execution. -/
+theorem semanticStageFacts_of_sourceFinderV_none {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis view.output = none) :
+    family.SemanticStageFacts basis view := by
+  constructor
+  · intro n id hactive havailable
+    exact family.adaptiveStatementActive_point_mem_stageV basis view n id hactive havailable
+  · intro n P hmem
+    exact family.semanticStagePolynomialV_eq_full basis view hnone n P hmem
 
 /-- An empty source-mismatch finder certifies the stage facts at the selected run's view. -/
 theorem semanticStageFacts_of_sourceFinder_none {pp : ProofParams}

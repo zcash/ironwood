@@ -223,10 +223,11 @@ adversary class of the deployed KS-idealized Balance experiments.
 
 * `LA`: per coin, a labeled challenge-oracle machine from the presented bases to a
   **witness-annotated** ledger — every Action carries the witness for the Action statement,
-  and each transaction its announced binding representation. The annotation is a stated
-  **gap in the proof, not a modelling trade-off**: the composition with Halo 2
-  knowledge soundness —extracting these witnesses from accepting proofs— is unproved
-  (tracked in #147).
+  and each transaction its announced binding representation. This generic type does not
+  itself say where the annotations came from. `OrchardExtractionExperiment` constructs such
+  an adversary from one shared adaptive proof-emitting Action execution and prices extraction
+  failure. Uses outside that modeled proof-emitting class still idealize the annotation
+  boundary (the broader boundary is tracked in #147).
 * `queryBound`: at most `qH` challenge-oracle queries — the random-oracle resource, priced
   in the bounds.
 * `algebraic`: algebraic at the two binding-signature points (`AlgebraicAtBindingPoints`).
@@ -273,15 +274,14 @@ noncomputable def experiment (A : IdealizedKSBalanceAdversary MSG spendAuthVerif
 /-- **The deployed KS-idealized violation event.** The samples on which the adversary's
 output ledger is valid at the sampled primitives and lands in the per-primitives event `E`.
 
-The experiment's idealizations live here. One of them must be called out as a **critical gap**
-in the current development:
+The experiment's idealizations live here. In the generic adversary model:
 
-* validity's `satisfied` conjunct idealizes knowledge soundness of the Action circuit, by
-  reading the witness annotations that the adversary is required to provide.
+* validity's `satisfied` conjunct reads the witness annotations that the adversary provides.
 
-That is, the capstones using this event definition are not yet connected up to the Action
-circuit proof at all. This stands in for the not-yet-formalized knowledge-soundness
-composition, tracked as #147.
+`OrchardExtractionExperiment` discharges this boundary for its explicit proof-emitting
+adversary class: it computes those annotations from the shared adaptive Action run and unions
+the exact extraction-failure event with this violation event. This definition remains
+knowledge-soundness-idealized when used for an arbitrary `IdealizedKSBalanceAdversary`.
 
 The remaining idealizations are accepted as modelling trade-offs:
 
@@ -324,9 +324,10 @@ For every idealized balance adversary against the deployed Orchard protocol — 
 output ledger violates balance integrity at some prefix `i < k` with probability at most
 `ε_sinsemilladlr + (ε_dl + (qH+2)/#F)`.
 
-The experiment's idealizations are described at `IdealizedKSBalanceAdversary.violationEvent`;
-critically, they include idealizing knowledge soundness for the Action circuit verifier.
-Connecting this up to the Action-circuit knowledge-soundness proof is tracked as #147.
+The experiment's idealizations are described at `IdealizedKSBalanceAdversary.violationEvent`.
+This standalone endpoint assumes witness annotations; the proof-emitting composition in
+`OrchardExtractionExperiment` constructs them from the adaptive Action extractor and includes
+its extraction-failure probability in the final bound.
 
 The action cap `maxActions < 2^16` is the dedicated consensus rule on the action count —
 `nActionsOrchard` and `nActionsIronwood` are each less than `2^16` (§7.1.2,
