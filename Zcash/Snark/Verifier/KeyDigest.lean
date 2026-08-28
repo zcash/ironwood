@@ -240,17 +240,21 @@ def hexNat? (s : String) : Option ℕ :=
       else ds.foldl (fun acc c => do let a ← acc; let d ← hexDigitVal? c; pure (16 * a + d)) (some 0)
   | _ => none
 
-/-- A decimal natural. -/
+/-- A decimal natural as Rust's `Debug` prints one: at least one digit, and no leading zero unless
+the literal is exactly `0`. -/
 def decNat? (s : String) : Option ℕ :=
-  if s.isEmpty then none
-  else s.toList.foldl (fun acc c => do
-    let a ← acc
-    if '0' ≤ c ∧ c ≤ '9' then pure (10 * a + (c.toNat - '0'.toNat)) else none) (some 0)
+  match s.toList with
+  | [] => none
+  | '0' :: _ :: _ => none
+  | ds => ds.foldl (fun acc c => do
+      let a ← acc
+      if '0' ≤ c ∧ c ≤ '9' then pure (10 * a + (c.toNat - '0'.toNat)) else none) (some 0)
 
-/-- A decimal integer, `-` allowed. -/
+/-- A decimal integer as Rust's `Debug` prints one: a `-` sign only on a nonzero value. -/
 def decInt? (s : String) : Option ℤ :=
   match s.toList with
-  | '-' :: ds => (decNat? (String.ofList ds)).map fun n => -(n : ℤ)
+  | '-' :: ds =>
+      (decNat? (String.ofList ds)).bind fun n => if n = 0 then none else some (-(n : ℤ))
   | _ => (decNat? s).map fun n => (n : ℤ)
 
 /-- A natural-number atom. -/
@@ -274,12 +278,14 @@ def fp? (v : DebugValue) : Option Fp :=
 def fq? (v : DebugValue) : Option VestaBaseField :=
   (canonicalFieldNat? PALLAS_SCALAR_CARD v).map fun n => (n : VestaBaseField)
 
-/-- A quoted modulus string as the number it names. -/
+/-- A quoted modulus string as the number it names: exactly the quoted 66-character `0x` literal
+`PrimeField::MODULUS` prints, so a re-spelling of the same modulus is rejected. -/
 def quotedHexNat? (v : DebugValue) : Option ℕ := do
   let s ← v.atom?
-  let cs := s.toList
-  match cs with
-  | '"' :: rest => hexNat? (String.ofList (rest.dropLast))
+  match s.toList with
+  | '"' :: rest =>
+      if rest.length = 67 ∧ rest.getLast? = some '"' then hexNat? (String.ofList rest.dropLast)
+      else none
   | _ => none
 
 /-- `Rotation(r)`. -/
@@ -541,9 +547,9 @@ def DescriptionCommitmentsMatch {shape : CircuitShape}
     = some (List.ofFn vk.permutationCommonCommitment)
 
 /-- Every represented verifier field of a designated canonical key is read from an exact compact
-Rust `Debug` description. The grammar checks above reject missing commas, noncanonical field values,
-wrong query column types, inconsistent query metadata, duplicate/unknown top-level fields, and
-trailing text. Keygen-only fields remain part of the exact hashed string but have no verifier-side
+Rust `Debug` description. The grammar checks above reject missing commas, noncanonical field values
+and numerals, wrong query column types, inconsistent query metadata, duplicate/unknown top-level
+fields, and trailing text. Keygen-only fields remain part of the exact hashed string but have no verifier-side
 counterpart; concrete deployment pins their values and the exporter-emitted string separately.
 Thus this predicate validates *a* description of the key; it does not compute Rust's unique
 description from the key. -/
@@ -640,6 +646,25 @@ example : canonicalFieldNat? PALLAS_BASE_CARD
 
 example : fq?
     (.atom "0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001") = none := by
+  decide +kernel
+
+example : decNat? "0" = some 0 := by decide +kernel
+
+example : decNat? "011" = none := by decide +kernel
+
+example : decInt? "-0" = none := by decide +kernel
+
+example : quotedHexNat?
+    (.atom "\"0x040000000000000000000000000000000224698fc094cf91b992d30ed00000001\"") = none := by
+  decide +kernel
+
+example : expr? [] [] [(4, 0)] 5
+    (.struct "Fixed" [("query_index", .atom "0"), ("column_index", .atom "3"),
+      ("rotation", .tuple "Rotation" [.atom "0"])]) = none := by
+  decide +kernel
+
+example : ¬ hasStructFields (.struct "Column" [("index", .atom "0"), ("index", .atom "1")])
+    "Column" ["index", "column_type"] := by
   decide +kernel
 
 end Zcash.Snark
