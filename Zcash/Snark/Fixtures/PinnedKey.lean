@@ -33,10 +33,9 @@ resistance of the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, wh
 `p`-congruent digests defeat without a BLAKE2b collision (`challengeOfDigest_eq_iff_modEq`) —
 idealized like BLAKE2b's randomness (`Capstones/Action.lean`, *Key digest*).
 
-`field?` reads the first occurrence of a field name. A description that repeated a field with a
-divergent second copy could pass these reads while hashing the divergent text; that shape cannot
-arise here because `pinned_renderCompact` pins the exact hashed string and Rust's derived `Debug`
-never emits a duplicate field.
+`DescriptionSyntaxCanonical` now requires the exact compact derived-`Debug` struct names and field
+sequences before `field?` is used, so duplicated, reordered, or unknown fields are rejected rather
+than justified only by fixture provenance.
 -/
 
 namespace Zcash.Snark.PinnedKey
@@ -117,23 +116,29 @@ the verifier sees the key. -/
 theorem num_selectors_eq : (cs.field? "num_selectors" >>= nat?) = some 56 := by
   native_decide
 
-/-- The pinned gates, read as `Expr`, are the captured key's gates. -/
-theorem gates_eq : (cs.field? "gates" >>= listOf? (expr? fuel)) = some Fixture.vk.gates := by
+/-- The pinned gates, including every query's redundant column and rotation metadata, are the
+captured key's gates. -/
+theorem gates_eq :
+    (cs.field? "gates" >>= listOf? (expr? Fixture.vk.instanceQueryLayout
+      Fixture.vk.adviceQueryLayout Fixture.vk.fixedQueryLayout fuel)) = some Fixture.vk.gates := by
   native_decide
 
 /-- The pinned advice queries are the captured advice query layout. -/
 theorem advice_queries_eq :
-    (cs.field? "advice_queries" >>= listOf? query?) = some Fixture.vk.adviceQueryLayout := by
+    (cs.field? "advice_queries" >>= listOf? (query? "Advice")) =
+      some Fixture.vk.adviceQueryLayout := by
   native_decide
 
 /-- The pinned instance queries are the captured instance query layout. -/
 theorem instance_queries_eq :
-    (cs.field? "instance_queries" >>= listOf? query?) = some Fixture.vk.instanceQueryLayout := by
+    (cs.field? "instance_queries" >>= listOf? (query? "Instance")) =
+      some Fixture.vk.instanceQueryLayout := by
   native_decide
 
 /-- The pinned fixed queries are the captured fixed query layout. -/
 theorem fixed_queries_eq :
-    (cs.field? "fixed_queries" >>= listOf? query?) = some Fixture.vk.fixedQueryLayout := by
+    (cs.field? "fixed_queries" >>= listOf? (query? "Fixed")) =
+      some Fixture.vk.fixedQueryLayout := by
   native_decide
 
 /-- The permutation argument's columns are the captured chunks' columns, in order. The pinned
@@ -150,7 +155,8 @@ theorem permutation_columns_eq :
 
 /-- The pinned lookups' input and table expressions are the captured key's. -/
 theorem lookups_eq :
-    (cs.field? "lookups" >>= listOf? (lookup? fuel))
+    (cs.field? "lookups" >>= listOf? (lookup? Fixture.vk.instanceQueryLayout
+      Fixture.vk.adviceQueryLayout Fixture.vk.fixedQueryLayout fuel))
       = some (List.ofFn fun l : Fin Fixture.shape.numLookups =>
           (Fixture.vk.lookupInputExprs l, Fixture.vk.lookupTableExprs l)) := by
   native_decide
