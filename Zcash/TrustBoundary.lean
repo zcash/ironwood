@@ -1025,6 +1025,42 @@ assert_axioms Zcash.Snark.ActionDeploymentInstantiation +native(
   CompElliptic.Fields.Pasta.vestaBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+-- Byte acceptance for the adaptive Action family (`Soundness.Action.ByteAcceptance`): the exact
+-- raw public columns and Lagrange commitment operation of an adaptive-statement output, halo2's
+-- column-count and usable-row validation of them, the concrete BLAKE2b table `halo2Coins` at
+-- which the family's challenge record is the deployed schedule, and the bridge from Lean raw-byte
+-- acceptance into the family's typed acceptance.
+assert_computable Zcash.Snark.adaptiveActionStatementRawInstances +choice +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.adaptiveActionStatementCommitColumn +choice +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.adaptiveActionStatementRawInstances_have_expected_column_count +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.adaptiveActionStatementRawInstances_columns_fit +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.adaptiveActionStatementValidatedInstances +choice +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.validate_adaptiveActionStatementRawInstances +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.adaptiveActionStatementValidatedInstances_commitments +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.halo2Coins +choice +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.runRecord_halo2Coins +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.acceptsBytes +choice +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.accepts_of_acceptsBytes +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+-- Production Rust acceptance at that table is contained in the family's typed acceptance. The
+-- theorem consumes the record's one-way `rustAcceptsRefinesLeanRaw` refinement and its
+-- `rustAcceptedProofRepresented` AGM edge rather than proving them, and it is not an input to the
+-- deployed knowledge-failure bound, which is stated over the record's idealized observer.
+assert_axioms Zcash.Snark.ActionDeploymentInstantiation.rustAccepts_halo2Coins_implies_familyAccepts +native(
+  CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Fields.Pasta.vestaBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The record's certified query ceiling at its profile's work limit; it reaches the circuit
 -- certificates only through the record's type, as the record itself does.
 assert_axioms Zcash.Snark.ActionDeploymentInstantiation.challengeQueryBound_le_workLimit +native(
@@ -2200,13 +2236,31 @@ assert_axioms Zcash.Snark.readProof?_none_of_truncated +native(CompElliptic.Fiel
 assert_axioms Zcash.Snark.readProof?_none_of_noncanonical_final_scalar +native(
   CompElliptic.Fields.Pasta.vestaBase)
 
--- The byte-level acceptance wrapper requires the pinned description to describe the key
+-- The byte-level acceptance wrapper requires the pinned description to describe a designated
+-- canonical key that the verifier's key agrees with on every verifier-reachable field
 -- (`Describes`), excludes identity instance commitments as halo2's `common_point` does, parses the
 -- whole proof, derives the pinned-key digest and BLAKE2b Fiat–Shamir challenges, and then enters
--- the existing typed `DeployedAccepts` predicate.
+-- the existing typed `DeployedAccepts` predicate. It is extensional over the configured
+-- commitments and the key's instance-query layout. The raw entry point `DeployedAcceptsRawBytes`
+-- runs halo2's column-count and usable-row checks on the public columns first, derives their
+-- commitments internally, and only then parses the proof bytes; its two rejection paths and its
+-- canonical unpacking are theorems.
 assert_computable Zcash.Snark.DeployedAcceptsBytes +choice +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.deployedAcceptsBytes_canonical +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAccepts_congr_instanceCommitment
+assert_axioms Zcash.Snark.deployedAcceptsBytes_congr_instanceCommitment +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_computable Zcash.Snark.DeployedAcceptsRawBytes +choice +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAcceptsRawBytes_to_bytes +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAcceptsRawBytes_canonical +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAcceptsRawBytes_not_of_wrong_column_count +native(
+  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.deployedAcceptsRawBytes_not_of_oversized_column +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
@@ -2239,9 +2293,28 @@ assert_computable Zcash.Snark.DebugValue.parse? +choice
 assert_computable Zcash.Snark.DebugValue.renderCompact
 assert_computable Zcash.Snark.DebugValue.expr? +choice
 assert_computable Zcash.Snark.DebugValue.point? +choice
--- `Describes` reads a description back against the key and shape it claims to describe — the
--- identification `DeployedAcceptsBytes` carries; its decidability is what each honest capture
--- evaluates.
+-- `Describes` relates a description to a designated canonical key and to the key the verifier
+-- uses — the relation `DeployedAcceptsBytes` carries. The description must be one exact compact
+-- derived-`Debug` value (`DescriptionSyntaxCanonical`: struct names and field sequences pinned,
+-- so duplicated, reordered, and unknown fields are rejected) whose represented fields read back to
+-- the canonical key under canonical in-range field literals (`canonicalFieldNat?`); the used key
+-- must agree with the canonical one on every verifier-reachable field (`VerifyingKeyAgrees`),
+-- which is what makes the fields halo2's description omits — `blindingFactors`, `delta`,
+-- `chunkLen`, the permutation partition — load-bearing (`Describes.*_eq`). Its decidability is
+-- what each honest capture evaluates.
 assert_computable Zcash.Snark.toQuerySpace +choice
+assert_computable Zcash.Snark.DebugValue.hasStructFields
+assert_computable Zcash.Snark.DebugValue.canonicalFieldNat? +choice
+assert_computable Zcash.Snark.VerifyingKeyAgrees +choice
+assert_axioms Zcash.Snark.verifyingKeyAgrees_refl
+assert_computable Zcash.Snark.DescriptionSyntaxCanonical +choice
+assert_computable Zcash.Snark.DescriptionCoreFieldsMatch +choice
+assert_computable Zcash.Snark.DescriptionArgumentFieldsMatch +choice
+assert_computable Zcash.Snark.DescriptionCommitmentsMatch +choice
+assert_computable Zcash.Snark.DescriptionFieldsMatch +choice
 assert_computable Zcash.Snark.Describes +choice
 assert_computable Zcash.Snark.decidableDescribes +choice
+assert_axioms Zcash.Snark.Describes.blindingFactors_eq
+assert_axioms Zcash.Snark.Describes.delta_eq
+assert_axioms Zcash.Snark.Describes.chunkLen_eq
+assert_axioms Zcash.Snark.Describes.permutationChunks_eq

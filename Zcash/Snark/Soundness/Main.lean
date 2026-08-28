@@ -87,9 +87,12 @@ chunk count while regular chunking is a separate circuit/key agreement. Exact pa
 includes those deployment-shape identifications rather than proving them from the description.
 
 The empty suffix is intentional. Halo2's reader itself ignores unread bytes; the production
-transaction/bundle boundary modeled here separately checks the ZIP-specified canonical total
-length. Thus this predicate models the exact canonical-byte path, and a Rust acceptance relation
-must include that outer check before it can refine this predicate.
+transaction/bundle boundary modeled here separately checks the canonical total length
+`2720 + 2272 · nActionsOrchard` — ZIP 225's format value, a consensus rule from NU6.2 onward
+(ZIP 257), which `zcash_primitives` enforces for NU6.2-and-later bundles and leaves unenforced
+for earlier epochs. Thus this predicate models the exact canonical-byte path of the fixed
+circuit's epoch, and a Rust acceptance relation must include that outer check before it can refine
+this predicate.
 
 Identifying Rust's reader with `readProof?` for every input remains a refinement boundary; the
 exact honest and random capture bytes exercise that boundary concretely. -/
