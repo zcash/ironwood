@@ -29,10 +29,12 @@ theorem capturedProofBytes_decodes :
 theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProofBytes := by
   exact serializeProof_eq_of_readProof?_eq_some capturedProofBytes_decodes
 
-/-- The exporter-emitted pinned key description describes the captured key and shape
-(`Describes`, `Verifier/KeyDigest.lean`): its fields read back to `vk`'s and `shape`'s, and the
-counts `readProof?` reads by are the pinned constraint system's. `Fixtures/PinnedKey.lean` states
-the same reading field by field. -/
+/-- The exporter-emitted pinned key description is an exact description of the captured key
+(`Describes`, `Verifier/KeyDigest.lean`). Represented fields read back to `vk`; verifier-active
+fields omitted by Rust's description agree through the circuit-derived key. The reader-only
+quotient-piece and point-set counts come from the captured `shape`, not from `Describes`; the exact
+parse above checks them at this fixture. `Fixtures/PinnedKey.lean` separately pins the printed
+keygen-only fields. -/
 theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk vk := by
   native_decide
 

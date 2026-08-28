@@ -1022,12 +1022,14 @@ assert_axioms Zcash.Snark.deployedAccepts_of_assembles_of_zeroBases
 -- bridge a deployment interpretation supplies, one identification field per model floor.
 assert_axioms Zcash.Snark.ActionDeploymentInstantiation +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The record's certified query ceiling at its profile's work limit; it reaches the circuit
 -- certificates only through the record's type, as the record itself does.
 assert_axioms Zcash.Snark.ActionDeploymentInstantiation.challengeQueryBound_le_workLimit +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- Deterministic verifier routing used by the rewind-free deployed constraint decoder.
