@@ -762,8 +762,8 @@ assert_axioms Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr +native
 
 -- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
 -- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
--- identification with the captured key and shape (`Describes`) and the identity exclusion on the
--- derived instance commitments, both evaluated here.
+-- relation to the captured key (`Describes`, with the captured key as both its canonical and its
+-- used key) and the identity exclusion on the derived instance commitments, both evaluated here.
 assert_axioms Zcash.Snark.Fixture2.capturedProofBytes_decodes +native(
   Zcash.Snark.Fixture2.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
@@ -786,6 +786,21 @@ assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsBytes +native(
   Zcash.Snark.Fixture2.valid_capture_assembles,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
   CompElliptic.Fields.Pasta.vestaBase)
+-- The same capture through the raw entry point: public columns validated, commitments derived
+-- internally, then the exact parse — finite evidence for the deployment record's raw refinement,
+-- not a universal claim.
+assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsRawBytes +native(
+  CompElliptic.Fields.Pasta.vestaBase,
+  Zcash.Snark.Fixture2.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes,
+  Zcash.Snark.Fixture2.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture2.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_keyDigest +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
