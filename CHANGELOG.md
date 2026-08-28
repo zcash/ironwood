@@ -26,10 +26,31 @@ and this project adheres to Rust's notion of
   reproduces every capture's `transcript_repr`, the description's fields are read back against
   the captured key, and each family's statement of record opens the transcript with the derived
   digest. Each generated fixture carries the exact compact description the pinned exporter hashed.
-- `DeployedAcceptsBytes` requires the pinned description to describe the key and shape
-  (`Describes`, read back field by field from the description's constraint system) and, as halo2's
-  `common_point` does, refuses identity instance commitments; each honest capture discharges both
-  by evaluation.
+- `DeployedAcceptsBytes` requires the pinned description to describe the key (`Describes`, a
+  relation between the description, a designated canonical key, and the key the verifier uses:
+  the represented fields read back to the canonical key under an exact compact derived-`Debug`
+  syntax, and the used key agrees with it on every verifier-reachable field — `blindingFactors`,
+  `delta`, `chunkLen`, and the permutation partition included) and, as halo2's `common_point`
+  does, refuses identity instance commitments; each honest capture discharges both by evaluation,
+  and mutation witnesses show a key differing on an omitted field is rejected.
+- `DeployedAcceptsRawBytes` (`Zcash/Snark/Soundness/Main.lean`): the raw entry point — halo2's
+  instance column-count and usable-row checks first, commitments derived internally, then the
+  exact parse — with its rejection paths as theorems; both honest captures reach it
+  (`capture_deployedAcceptsRawBytes`).
+- Byte acceptance for the adaptive Action family (`Zcash/Snark/Soundness/Action/
+  ByteAcceptance.lean`): the concrete BLAKE2b table `halo2Coins`, at which the family's challenge
+  record is the deployed schedule, and `accepts_of_acceptsBytes`, the bridge from Lean raw-byte
+  acceptance into the family's typed acceptance. `ActionDeploymentInstantiation` gains the
+  Rust-facing fields `pinnedVkDescription`, `deployedProofBytes`, and `deployedRustAccepts`, the
+  one-way `rustAcceptsRefinesLeanRaw` refinement assumption, and the AGM edge
+  `rustAcceptedProofRepresented`, consumed by `rustAccepts_halo2Coins_implies_familyAccepts`.
+- The description parser is hardened: exact struct names and field sequences
+  (`hasStructFields`), canonical in-range 64-digit field literals (`canonicalFieldNat?`), typed
+  query column kinds, query metadata cross-checked against the layouts, and no tolerance for a
+  missing separator, each with a kernel-checked regression.
+- BLAKE2b carries its full 128-bit byte counter (`counterLow`/`counterHigh` into words 12 and
+  13), with a kernel-checked compression vector at `t = 2^64` that a low-word-only
+  implementation fails.
 - A mutation test for the transcript tags (`Zcash/Snark/Soundness/FiatShamir/TagMutation.lean`):
   with halo2's domain tags deleted, the encoding collides a point with two scalars and a
   transcript with its pre-squeeze extension, so its injectivity fails; the deployed tags separate
@@ -38,3 +59,8 @@ and this project adheres to Rust's notion of
 ### Changed
 - `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
   `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
+- `Describes` takes the designated canonical key and the verifier-used key, and
+  `DeployedAcceptsBytes` takes both keys.
+- `ActionDeploymentInstantiation` renames `deployedTypedAccepts` and `acceptsFaithful` to
+  `deployedIdealizedAccepts` and `idealizedAcceptsFaithful`: they identify the injectable-oracle
+  observer's typed core, not Rust acceptance.
