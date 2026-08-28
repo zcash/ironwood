@@ -33,7 +33,7 @@ theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProof
 (`Describes`, `Verifier/KeyDigest.lean`): its fields read back to `vk`'s and `shape`'s, and the
 counts `readProof?` reads by are the pinned constraint system's. `Fixtures/PinnedKey.lean` states
 the same reading field by field. -/
-theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk := by
+theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk vk := by
   native_decide
 
 /-- No derived instance commitment is the identity, which the deployed transcript refuses to
@@ -47,7 +47,7 @@ describes the captured key, no instance commitment is the identity, parsing is e
 digest comes from that description, challenges come from the deployed BLAKE2b transcript, and the
 resulting typed proof satisfies `DeployedAccepts`. -/
 theorem capture_deployedAcceptsBytes :
-    DeployedAcceptsBytes shape capturedURS rfl vk capturedPinnedKeyDescription
+    DeployedAcceptsBytes shape capturedURS rfl vk vk capturedPinnedKeyDescription
       derivedInstanceCommitment capturedProofBytes := by
   refine ⟨capturedPinnedKeyDescription_describes, derivedInstanceCommitment_ne_zero, ps,
     capturedProofBytes_decodes, ?_⟩
@@ -57,5 +57,27 @@ theorem capture_deployedAcceptsBytes :
     exact deriveChallengesForStatement_matches_blake2b
   rw [harg]
   with_reducible exact capture_deployedAccepts
+
+/-- The same accepting capture reaches the complete Lean raw entry point: instance columns are
+validated first, their commitments are derived internally, and only then are the proof bytes
+parsed and checked.  This is finite evidence for deployment refinement, not a universal claim
+about Rust inputs. -/
+theorem capture_deployedAcceptsRawBytes :
+    DeployedAcceptsRawBytes shape capturedURS rfl vk vk capturedPinnedKeyDescription
+      capturedRawInstances commitLagrange capturedProofBytes := by
+  let valid : ValidatedInstances vk :=
+    ⟨capturedRawInstances, capturedRawInstances_have_expected_column_count,
+      capturedRawInstances_columns_fit⟩
+  refine ⟨valid, ?_, ?_⟩
+  · simp [validateInstances?, valid, capturedRawInstances_have_expected_column_count,
+      capturedRawInstances_columns_fit]
+  · apply deployedAcceptsBytes_congr_instanceCommitment
+      (instanceCommitment := derivedInstanceCommitment)
+      (instanceCommitment' := valid.commitments commitLagrange)
+      (h := capture_deployedAcceptsBytes)
+    · intro p column
+      exact (capturedRawInstances_commitments_eq p column).symm
+    · intro p column rotation hmem
+      exact (capturedRawInstances_commitments_eq_on_layout p column rotation hmem).symm
 
 end Zcash.Snark.Fixture2
