@@ -89,11 +89,15 @@ rather than proved, with its known strengthening named where one exists:
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
   challenge schedule into it, under `Describes` and halo2's refusal of identity instance
-  commitments. Both honest captures witness this byte-level predicate. Universal
+  commitments, and `DeployedAcceptsRawBytes` validates the raw public columns first and derives
+  their commitments internally. Both honest captures witness both predicates. Universal
   refinement of Rust's reader to the Lean decoder and halo2's optional `BatchVerifier` remain
-  outside the formalized verifier (`Fingerprint/Match.lean`, *What remains external*). The
-  deployment record pins the
-  call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
+  outside the formalized verifier (`Fingerprint/Match.lean`, *What remains external*); the
+  deployment record names that refinement as its one-way `rustAcceptsRefinesLeanRaw` assumption,
+  consumed only by `rustAccepts_halo2Coins_implies_familyAccepts` — a containment of production
+  acceptance in the family's typed acceptance at the one concrete BLAKE2b table, not an input to
+  the deployed bound below, which is stated over the record's idealized observer. The record also
+  pins the call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
   zero-padding makes a shorter column verify as its zero-padding
   (`assembleNonInteractiveInstances?_padColumns`), aliasing a missing trailing row to
   `disableCrossAddress = 0` — and a positive per-bundle action count
