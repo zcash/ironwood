@@ -6,13 +6,13 @@ protocol **security properties** under `Zcash/Security/`. It covers:
 * the top-level capstones — the *ledger-model security games* of *Balance integrity*, *Spendability*, and *Spend authority*;
 * how each capstone connects, by reduction via intermediate security properties such as
   *binding-signature balance* and *key binding*, to an exhibited break of a cryptographic
-  primitive in a specified adversary model — and where the intended hand-off to *verifier
-  knowledge soundness* remains open.
+  primitive in a specified adversary model — including the proof-emitting Balance hand-off
+  to *verifier knowledge soundness*, and the broader hand-offs that remain open.
 
 Every argument here follows the *breaks as computed data* convention and the three-layer
 stack described in [Security Models](security-models.md).
 
-## One picture, not yet connected
+## One picture, partially connected
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 50, "padding": 6, "diagramPadding": 4, "subGraphTitleMargin": {"top": 4, "bottom": 18}}, "themeCSS": ".cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; } marker { overflow: visible !important; } marker path { transform-box: fill-box !important; transform-origin: center !important; transform: scale(1.25) !important; }"}}%%
@@ -112,7 +112,7 @@ flowchart TD
 
 <p>
 <span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the online-AGM — both endpoint games are <a href="security-models.html#the-algebraic-adversary-restriction">algebraic</a><br/>
-<span style="color:#cf222e; font-weight: 700; font-size: 1.9rem">⇢</span> dashed red edge: an intended hand-off that is not yet formalized — the endpoints share no definition (<a href="https://github.com/zcash/ironwood/issues/147">#147</a>, <a href="https://github.com/zcash/ironwood/issues/155">#155</a>)<br/>
+<span style="color:#cf222e; font-weight: 700; font-size: 1.9rem">⇢</span> dashed red edge: the broader deployed hand-off is not yet formalized for every ledger adversary class (<a href="https://github.com/zcash/ironwood/issues/147">#147</a>, <a href="https://github.com/zcash/ironwood/issues/155">#155</a>); the proof-emitting Balance class is composed separately in <code>OrchardExtractionExperiment</code><br/>
 <span style="font-size: 1.9rem">➝</span> thin edge: depends on (a reduction, assumption, or model)<br/>
 <span style="color:#1a7f37"> ■ </span> fully proven — nothing here yet<br/>
 <span style="color:#0969da"> ■ </span> stated and machine-checked in Lean, over abstract primitives<br/>
@@ -127,12 +127,14 @@ The Balance capstones are stated for a *Knowledge-Soundness-idealized* adversary
 ([`IdealizedKSBalanceAdversary`](https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardIntegrityExperiment.lean)):
 one that outputs a witness-annotated ledger, every Action carrying the witness for the
 Action statement. The annotation is where knowledge soundness of the Action circuit enters:
-nothing yet connects an accepting Halo 2 proof to those witnesses, so the `idealizedks` in
-the capstones' names marks results that are complete over this idealized ledger model but
-not yet composed with the circuit layer. That composition is the dashed red edge above
-([#147](https://github.com/zcash/ironwood/issues/147)); until it lands, the Balance
-integrity node stays amber even though every ledger-side arm is machine-checked. This is an
-incompleteness of the proof, not an accepted modelling trade-off. The capstones' accepted
+the `idealizedks` capstones by themselves assume it. The full proof-emitting Balance
+experiment in [`OrchardExtractionExperiment`](https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardExtractionExperiment.lean)
+now constructs those witnesses from one shared adaptive Action execution, unions the exact
+extraction-failure event with the ledger violation, and proves the composed integrity,
+conservation, and cap bounds. Its Action contribution is
+`DLOG + 1/|Fp| + k × (statistical + bridge escape)`: neither `k` nor `maxActions`
+multiplies DLOG. The broader dashed edge remains for adversary classes and deployed
+refinement boundaries outside this explicit model. The capstones' accepted
 trade-offs —the binding challenge hash as a random oracle, the programmed value and
 binding bases carried to the deployed ones by the reference-string heuristic, elided byte
 encodings— are documented at `IdealizedKSBalanceAdversary.violationEvent`.
@@ -164,19 +166,17 @@ random-oracle node remains a terminal because some error terms genuinely bottom 
 there: they are counting arguments over the oracle table, with no computational
 assumption. The games are the top-level capstones.
 
-As stated above, the KS-idealized ledger model requires the adversary to supply, along
-with any accepting proof, a **witness or replay evidence** for the Action statement
+The generic KS-idealized ledger model requires the adversary to supply, along with any
+accepting proof, a **witness or replay evidence** for the Action statement
 (`ActionSatisfied`) — in the replay case the ledger oracle can produce the previously
 supplied witness. Each component argument consumes the statement's satisfaction
-*on that witness*. Knowledge soundness is what is *intended* to justify that modelling:
-whenever the ledger layer needs a witness, the extractor would compute one —or compute
-break data— from the accepting proof. That hand-off is not yet formalized in any form:
-the games state `ActionSatisfied` over their own abstract types, and no definition is
-shared with the SNARK development. The dashed red edge marks exactly this gap
-([#147](https://github.com/zcash/ironwood/issues/147),
-[#155](https://github.com/zcash/ironwood/issues/155)). Until it lands, the
-witness-supply requirement is a modelling assumption of the ledger games, not a
-consequence of verifier knowledge soundness.
+*on that witness*. For the proof-emitting Balance adversary in
+`OrchardExtractionExperiment`, the Action bundle bridge now computes the ledger witness—or
+explicit break data—from the accepting proof model and feeds the same sampled run into the
+ledger experiment. For the generic ledger games and other adversary classes, witness supply
+remains a modelling assumption; those remaining boundaries are tracked in
+[#147](https://github.com/zcash/ironwood/issues/147) and
+[#155](https://github.com/zcash/ironwood/issues/155).
 
 <style>
 /* "One picture, not yet connected" links: labels keep their ordinary colour at rest

@@ -51,6 +51,17 @@ noncomputable def challengeExperiment {ι : Type u} (p : PMF ι) :
     PMF (ι × ((Q → ZMod r) × (Fin m → ZMod r))) :=
   p.bind fun j => (PMF.uniformOfFintype ((Q → ZMod r) × (Fin m → ZMod r))).map (Prod.mk j)
 
+omit [Inhabited Q] in
+/-- The adversary-coins marginal of the challenge experiment is unchanged. -/
+theorem challengeExperiment_map_fst {ι : Type u} (p : PMF ι) :
+    (challengeExperiment (Q := Q) (r := r) m p).map Prod.fst = p := by
+  rw [challengeExperiment, PMF.map_bind]
+  simp only [PMF.map_comp,
+    show ∀ j : ι, Prod.fst ∘ Prod.mk j =
+      Function.const ((Q → ZMod r) × (Fin m → ZMod r)) j from fun _ => rfl,
+    PMF.map_const]
+  exact PMF.bind_pure p
+
 /-- The sample-space lift of a per-primitives ledger event: the samples on which the
 adversary's output ledger, run at the sampled primitives `kappaPrimitivesAt`, is valid and
 lands in `Event` at those primitives. -/
