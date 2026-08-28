@@ -3,6 +3,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Zcash.Snark.Verifier.Assemble
+import Zcash.Snark.Verifier.Deployed
 import Zcash.Snark.Verifier.KeyDigest
 import Zcash.Snark.Verifier.ProofBytes
 import Zcash.Snark.Soundness.Deployed.Verification
@@ -49,24 +50,42 @@ def DeployedAccepts [DecidableEq G] [Inhabited G] (shape : Shape) (urs : URS G)
   | some m => (hk ▸ m : Msm urs.k Fp G).eval urs = 0
   | none => False
 
-/-- **Byte-level deployed acceptance.** The pinned description describes the key the proof is
-checked against (`Describes`); no absorbed instance commitment is the identity, which halo2's
+/-- Typed acceptance depends on public-instance commitments only at columns actually named by the
+verifying key. -/
+theorem deployedAccepts_congr_instanceCommitment [DecidableEq G] [Inhabited G]
+    {shape : Shape} {urs : URS G} {hk : shape.k = urs.k}
+    {vk : VerifyingKey shape Fp G}
+    {instanceCommitment instanceCommitment' : Fin shape.numProofs → ℕ → G}
+    {ps : ProofString shape Fp G} {ch : Challenges shape.k Fp}
+    (hcommit : ∀ p column rotation, (column, rotation) ∈ vk.instanceQueryLayout →
+      instanceCommitment p column = instanceCommitment' p column)
+    (h : DeployedAccepts shape urs hk vk instanceCommitment ps ch) :
+    DeployedAccepts shape urs hk vk instanceCommitment' ps ch := by
+  unfold DeployedAccepts at h ⊢
+  rw [← assemble?_congr_instanceCommitment vk instanceCommitment instanceCommitment'
+    ps ch hcommit]
+  exact h
+
+/-- **Byte-level deployed acceptance.** The pinned description describes the circuit-derived
+canonical key and the key actually checked agrees with it on every verifier-reachable field
+(`Describes`); no absorbed instance commitment is the identity, which halo2's
 `common_point` refuses where the total `pointBytes` would encode it as `(0, 0)`; the whole proof
 byte string parses canonically and with no unread suffix; and the existing typed `DeployedAccepts`
 predicate holds at challenges derived by the deployed BLAKE2b transcript, opened with
 `keyDigest pinnedVkDescription`.
 
-`Describes` ties the description to `vk` and to the counts `readProof?` reads by, so the transcript
-hashed here is one Rust constructs for this key; `blindingFactors`, `delta`, and `chunkLen` stay
-the named key agreements of `Verifier/Key.lean`. This definition composes the modeled layers.
+The separate `canonicalVk` argument is necessary because Halo2's pinned description omits derived
+runtime fields. `Describes` checks its represented fields against `canonicalVk` and binds every
+verifier-active field of `vk`, including `blindingFactors`, `delta`, `chunkLen`, and common-evaluation
+indices, to that canonical key. This definition composes the modeled layers.
 Identifying Rust's reader with `readProof?` for every input remains a refinement boundary; the
 exact honest and random capture bytes exercise that boundary concretely. -/
 def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
     (hk : shape.k = urs.k)
-    (vk : VerifyingKey shape Fp VestaG) (pinnedVkDescription : String)
+    (canonicalVk vk : VerifyingKey shape Fp VestaG) (pinnedVkDescription : String)
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (proofBytes : List UInt8) : Prop :=
-  Describes pinnedVkDescription vk ∧
+  Describes pinnedVkDescription canonicalVk vk ∧
   (∀ p (column : Fin shape.numInstanceColumns), instanceCommitment p column ≠ 0) ∧
   ∃ ps,
     (readProof? shape).run proofBytes = some (ps, []) ∧
@@ -77,11 +96,12 @@ def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
 /-- Byte-level acceptance exposes the unique parsed proof and its canonical serialization before
 entering typed `DeployedAccepts`, alongside the key identification and the identity exclusion. -/
 theorem deployedAcceptsBytes_canonical [Inhabited VestaG] {shape : Shape} {urs : URS VestaG}
-    {hk : shape.k = urs.k} {vk : VerifyingKey shape Fp VestaG}
+    {hk : shape.k = urs.k} {canonicalVk vk : VerifyingKey shape Fp VestaG}
     {pinnedVkDescription : String}
     {instanceCommitment : Fin shape.numProofs → ℕ → VestaG} {proofBytes : List UInt8}
-    (h : DeployedAcceptsBytes shape urs hk vk pinnedVkDescription instanceCommitment proofBytes) :
-    Describes pinnedVkDescription vk ∧
+    (h : DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instanceCommitment proofBytes) :
+    Describes pinnedVkDescription canonicalVk vk ∧
     (∀ p (column : Fin shape.numInstanceColumns), instanceCommitment p column ≠ 0) ∧
     ∃ ps,
       (readProof? shape).run proofBytes = some (ps, []) ∧
@@ -91,6 +111,117 @@ theorem deployedAcceptsBytes_canonical [Inhabited VestaG] {shape : Shape} {urs :
           instanceCommitment ps) := by
   rcases h with ⟨hdesc, hne, ps, hread, haccepts⟩
   exact ⟨hdesc, hne, ps, hread, serializeProof_eq_of_readProof?_eq_some hread, haccepts⟩
+
+/-- Byte acceptance is extensional over configured commitments for Fiat–Shamir and over the
+verifying key's registered instance-query layout for assembly.  The two hypotheses are separate
+because the internal commitment family is historically represented as a total function on natural
+column indices. -/
+theorem deployedAcceptsBytes_congr_instanceCommitment [Inhabited VestaG]
+    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
+    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
+    {instanceCommitment instanceCommitment' : Fin shape.numProofs → ℕ → VestaG}
+    {proofBytes : List UInt8}
+    (hconfigured : ∀ p (column : Fin shape.numInstanceColumns),
+      instanceCommitment p column = instanceCommitment' p column)
+    (hlayout : ∀ p column rotation, (column, rotation) ∈ vk.instanceQueryLayout →
+      instanceCommitment p column = instanceCommitment' p column)
+    (h : DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instanceCommitment proofBytes) :
+    DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instanceCommitment' proofBytes := by
+  rcases h with ⟨hdesc, hne, ps, hread, haccepts⟩
+  refine ⟨hdesc, ?_, ps, hread, ?_⟩
+  · intro p column
+    rw [← hconfigured p column]
+    exact hne p column
+  · have hch := deriveChallengesForStatement_congr halo2Transcript
+      (keyDigest pinnedVkDescription) instanceCommitment instanceCommitment' ps hconfigured
+    rw [← hch]
+    exact deployedAccepts_congr_instanceCommitment hlayout haccepts
+
+/-- **Raw-instance and proof-byte deployed acceptance.** Public columns must first pass Halo2's
+exact column-count and usable-row checks. Their commitments are then derived from that validated
+value and supplied to `DeployedAcceptsBytes`; callers cannot inject a detached commitment family.
+
+`commitColumn` is the deployment's Lagrange-basis commitment operation. For Action it is
+instantiated by the circuit-derived `commitLagrange`; the caller's exact ten-row serialization is
+the separate wrapper obligation because Halo2 intentionally accepts shorter trailing-zero aliases. -/
+def DeployedAcceptsRawBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)
+    (hk : shape.k = urs.k)
+    (canonicalVk vk : VerifyingKey shape Fp VestaG) (pinnedVkDescription : String)
+    (instances : RawInstances shape Fp) (commitColumn : List Fp → VestaG)
+    (proofBytes : List UInt8) : Prop :=
+  ∃ valid : ValidatedInstances vk,
+    validateInstances? vk instances = some valid ∧
+    DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
+      (valid.commitments commitColumn) proofBytes
+
+/-- Raw acceptance exposes the validated columns and enters the existing byte-level predicate with
+exactly their derived commitments. -/
+theorem deployedAcceptsRawBytes_to_bytes [Inhabited VestaG]
+    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
+    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
+    {instances : RawInstances shape Fp} {commitColumn : List Fp → VestaG}
+    {proofBytes : List UInt8}
+    (h : DeployedAcceptsRawBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instances commitColumn proofBytes) :
+    ∃ valid : ValidatedInstances vk,
+      validateInstances? vk instances = some valid ∧
+      DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
+        (valid.commitments commitColumn) proofBytes :=
+  h
+
+/-- Successful raw acceptance exposes the validated public columns, the unique proof parsed from
+the complete byte string, its canonical serialization, and the typed acceptance judgment reached
+with commitments derived from those columns.  This is the complete Lean raw-to-typed bridge; it
+does not identify an independently implemented Rust reader with `readProof?`. -/
+theorem deployedAcceptsRawBytes_canonical [Inhabited VestaG]
+    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
+    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
+    {instances : RawInstances shape Fp} {commitColumn : List Fp → VestaG}
+    {proofBytes : List UInt8}
+    (h : DeployedAcceptsRawBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instances commitColumn proofBytes) :
+    ∃ valid : ValidatedInstances vk,
+      validateInstances? vk instances = some valid ∧
+      Describes pinnedVkDescription canonicalVk vk ∧
+      (∀ p (column : Fin shape.numInstanceColumns),
+        valid.commitments commitColumn p column ≠ 0) ∧
+      ∃ ps,
+        (readProof? shape).run proofBytes = some (ps, []) ∧
+        serializeProof ps = proofBytes ∧
+        DeployedAccepts shape urs hk vk (valid.commitments commitColumn) ps
+          (deriveChallengesForStatement halo2Transcript (keyDigest pinnedVkDescription)
+            (valid.commitments commitColumn) ps) := by
+  rcases h with ⟨valid, hvalid, hbytes⟩
+  rcases deployedAcceptsBytes_canonical hbytes with
+    ⟨hdesc, hne, ps, hread, hserialize, haccepts⟩
+  exact ⟨valid, hvalid, hdesc, hne, ps, hread, hserialize, haccepts⟩
+
+/-- A wrong number of instance columns is rejected before byte-level acceptance. -/
+theorem deployedAcceptsRawBytes_not_of_wrong_column_count [Inhabited VestaG]
+    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
+    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
+    {instances : RawInstances shape Fp} {commitColumn : List Fp → VestaG}
+    {proofBytes : List UInt8} (hcount : ¬ InstancesHaveExpectedColumnCount instances) :
+    ¬ DeployedAcceptsRawBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instances commitColumn proofBytes := by
+  rintro ⟨valid, hvalid, _⟩
+  rw [validateInstances?_eq_none_of_wrong_column_count vk instances hcount] at hvalid
+  contradiction
+
+/-- An oversized instance column is rejected before byte-level acceptance. -/
+theorem deployedAcceptsRawBytes_not_of_oversized_column [Inhabited VestaG]
+    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
+    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
+    {instances : RawInstances shape Fp} {commitColumn : List Fp → VestaG}
+    {proofBytes : List UInt8} (hcount : InstancesHaveExpectedColumnCount instances)
+    (hfit : ¬ InstanceColumnsFit vk instances) :
+    ¬ DeployedAcceptsRawBytes shape urs hk canonicalVk vk pinnedVkDescription
+      instances commitColumn proofBytes := by
+  rintro ⟨valid, hvalid, _⟩
+  rw [validateInstances?_eq_none_of_oversized_column vk instances hcount hfit] at hvalid
+  contradiction
 
 /-- Transport MSM evaluation across the equality `shape.k = urs.k`. -/
 theorem eval_cast {shape : Shape} {urs : URS G} (hk : shape.k = urs.k) (m : Msm shape.k Fp G) :

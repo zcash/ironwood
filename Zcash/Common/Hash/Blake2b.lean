@@ -84,17 +84,43 @@ def round (m : Vector UInt64 16) (s : Vector (Fin 16) 16) (v : Vector UInt64 16)
   let v := mix v 2 7 8 13 (m.get (s.get 12)) (m.get (s.get 13))
   mix v 3 4 9 14 (m.get (s.get 14)) (m.get (s.get 15))
 
-/-- The compression function `F` (RFC 7693 §3.2): the state `h` and `IV` form the working vector,
-the byte counter `t` and the final-block flag are folded into words 12 and 14, twelve rounds run,
-and the two halves fold back into `h`. Only the low counter word is carried, which is exact below
-`2^64` bytes. -/
-def compress (h : Vector UInt64 8) (m : Vector UInt64 16) (t : UInt64) (last : Bool) :
+/-- The low 64-bit word of BLAKE2b's 128-bit byte counter. -/
+def counterLow (t : ℕ) : UInt64 := UInt64.ofNat t
+
+/-- The high 64-bit word of BLAKE2b's 128-bit byte counter. -/
+def counterHigh (t : ℕ) : UInt64 := UInt64.ofNat (t / 2 ^ 64)
+
+/-- BLAKE2b compression from the two words of its byte counter. -/
+def compressWords (h : Vector UInt64 8) (m : Vector UInt64 16)
+    (tLow tHigh : UInt64) (last : Bool) :
     Vector UInt64 8 :=
   let v : Vector UInt64 16 := h ++ IV
-  let v := upd v 12 (v.get 12 ^^^ t)
+  let v := upd v 12 (v.get 12 ^^^ tLow)
+  let v := upd v 13 (v.get 13 ^^^ tHigh)
   let v := if last then upd v 14 (v.get 14 ^^^ 0xffffffffffffffff) else v
   let v := (List.finRange 12).foldl (fun v r => round m (sigma.get r) v) v
   Vector.ofFn fun i : Fin 8 => h.get i ^^^ v.get ⟨i.val, by omega⟩ ^^^ v.get ⟨i.val + 8, by omega⟩
+
+/-- The compression function `F` (RFC 7693 §3.2): the state `h` and `IV` form the working vector,
+the low and high words of the 128-bit byte counter `t` are folded into words 12 and 13, the
+final-block flag is folded into word 14, twelve rounds run, and the two halves fold back into `h`.
+Keeping `t` as a natural until these two projections avoids silently discarding the high word. -/
+def compress (h : Vector UInt64 8) (m : Vector UInt64 16) (t : ℕ) (last : Bool) :
+    Vector UInt64 8 :=
+  compressWords h m (counterLow t) (counterHigh t) last
+
+/-- The former low-word-only compression behavior, retained only to state the exact range on which
+it agrees with the corrected 128-bit-counter implementation. -/
+def compressLowCounter (h : Vector UInt64 8) (m : Vector UInt64 16)
+    (t : UInt64) (last : Bool) : Vector UInt64 8 :=
+  compressWords h m t 0 last
+
+/-- Below `2^64` bytes, the high counter word is zero and the corrected compression function is
+identical to the former low-word-only implementation. -/
+theorem compress_eq_compressLowCounter_of_lt (h : Vector UInt64 8) (m : Vector UInt64 16)
+    (t : ℕ) (last : Bool) (ht : t < 2 ^ 64) :
+    compress h m t last = compressLowCounter h m (UInt64.ofNat t) last := by
+  simp [compress, compressLowCounter, counterLow, counterHigh, Nat.div_eq_of_lt ht]
 
 /-- The little-endian word held by the first eight bytes of `bs`; missing bytes read as zero. -/
 def wordLE (bs : List UInt8) : UInt64 :=
@@ -110,9 +136,9 @@ Every block but the last is full and not final; the last block — the whole of 
 (RFC 7693 §3.3). -/
 def hashBlocks (h : Vector UInt64 8) (counter : ℕ) (rest : List UInt8) : Vector UInt64 8 :=
   if rest.length ≤ 128 then
-    compress h (loadBlock rest) (UInt64.ofNat (counter + rest.length)) true
+    compress h (loadBlock rest) (counter + rest.length) true
   else
-    hashBlocks (compress h (loadBlock (rest.take 128)) (UInt64.ofNat (counter + 128)) false)
+    hashBlocks (compress h (loadBlock (rest.take 128)) (counter + 128) false)
       (counter + 128) (rest.drop 128)
 termination_by rest.length
 decreasing_by simp only [List.length_drop]; omega
@@ -203,5 +229,20 @@ example : (digest64 halo2Personal (countingBytes 300)).toList =
      0x0d, 0x1e, 0x68, 0x00, 0x93, 0x79, 0x68, 0x90, 0x06, 0xb6, 0x01, 0x25,
      0xfd, 0x4c, 0xf8, 0x72, 0xc0, 0x0d, 0xd1, 0x38, 0xbc, 0x20, 0x2b, 0x96,
      0xd0, 0x36, 0x1b, 0xff] := by decide +kernel
+
+/-- A synthetic compression vector with the high counter word set to one. It was generated
+independently from the RFC 7693 compression pseudocode; a low-word-only implementation aliases
+this case with counter zero and therefore fails the check. -/
+example : (finalBytes
+    (compress (initialState 64 noPersonal) (loadBlock []) (2 ^ 64) true)).toList =
+    [0x03, 0x5a, 0x7d, 0xec, 0x63, 0x76, 0x89, 0x48,
+     0x4b, 0x51, 0xc5, 0xa7, 0x36, 0x74, 0xac, 0x0e,
+     0x91, 0xb0, 0x48, 0x86, 0x65, 0xfe, 0x8e, 0x4f,
+     0x24, 0xe3, 0x74, 0xff, 0x53, 0x72, 0xf5, 0xa7,
+     0x32, 0xf7, 0xbb, 0x53, 0xa5, 0x16, 0x20, 0x34,
+     0x3a, 0x4c, 0x49, 0xea, 0x52, 0xd4, 0x6c, 0x18,
+     0x55, 0x89, 0x05, 0xe1, 0x1f, 0xb7, 0x33, 0x8b,
+     0x7a, 0xb0, 0x28, 0xf8, 0x8a, 0x50, 0x51, 0x5b] := by
+  decide +kernel
 
 end Zcash.Common.Blake2b

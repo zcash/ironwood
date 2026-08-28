@@ -99,11 +99,6 @@ def takeStringLit : List Char → List Char → Option (String × List Char)
   | acc, c :: cs => takeStringLit (c :: acc) cs
   | _, [] => none
 
-/-- Skip one `,` if present. -/
-def skipComma : List Char → List Char
-  | ',' :: cs => cs
-  | cs => cs
-
 mutual
   /-- Parse one value; the fuel bounds recursion and one unit per element or nesting suffices. -/
   def parseValue : ℕ → List Char → Option (DebugValue × List Char)
@@ -134,7 +129,12 @@ mutual
               match parseValue fuel (c :: rest) with
               | none => none
               | some (v, rest') =>
-                  (parseSeq fuel close (skipComma (skipWs rest'))).map fun q => (v :: q.1, q.2)
+                  match skipWs rest' with
+                  | ',' :: rest'' =>
+                      (parseSeq fuel close rest'').map fun q => (v :: q.1, q.2)
+                  | c' :: rest'' =>
+                      if c' == close then some ([v], rest'') else none
+                  | [] => none
 
   /-- Parse `field: value` pairs up to `}`, a trailing comma allowed. -/
   def parseFields : ℕ → List Char → Option (List (String × DebugValue) × List Char)
@@ -152,8 +152,11 @@ mutual
                   match parseValue fuel rest with
                   | none => none
                   | some (v, rest') =>
-                      (parseFields fuel (skipComma (skipWs rest'))).map fun q =>
-                        ((p.1, v) :: q.1, q.2)
+                      match skipWs rest' with
+                      | ',' :: rest'' =>
+                          (parseFields fuel rest'').map fun q => ((p.1, v) :: q.1, q.2)
+                      | '}' :: rest'' => some ([(p.1, v)], rest'')
+                      | _ => none
               | _ => none
 end
 
@@ -192,6 +195,23 @@ def field? (v : DebugValue) (name : String) : Option DebugValue :=
   match v with
   | .struct _ fs => (fs.find? fun p => p.1 == name).map (·.2)
   | _ => none
+
+/-- A structure has exactly the expected Rust type name and field-name sequence. Besides pinning
+derived-`Debug`'s field order, this excludes duplicate and unknown fields before `field?` is used. -/
+def hasStructFields (v : DebugValue) (typeName : String) (fieldNames : List String) : Prop :=
+  match v with
+  | .struct actual fields => actual = typeName ∧ fields.map Prod.fst = fieldNames
+  | _ => False
+
+instance (v : DebugValue) (typeName : String) (fieldNames : List String) :
+    Decidable (hasStructFields v typeName fieldNames) := by
+  cases v with
+  | atom _ => exact isFalse id
+  | tuple _ _ => exact isFalse id
+  | list _ => exact isFalse id
+  | struct actual fields =>
+      simp only [hasStructFields]
+      infer_instance
 
 /-- The text of an atom. -/
 def atom? : DebugValue → Option String
@@ -234,12 +254,23 @@ def decInt? (s : String) : Option ℤ :=
 /-- A natural-number atom. -/
 def nat? (v : DebugValue) : Option ℕ := v.atom? >>= decNat?
 
-/-- A hex field element in `F_p` (Vesta's scalar field). -/
-def fp? (v : DebugValue) : Option Fp := (v.atom? >>= hexNat?).map fun n => (n : Fp)
+/-- A canonical 32-byte field `Debug` literal: exactly 64 lowercase hexadecimal digits and a
+value strictly below `modulus`. This rejects the modulo-reduction aliases that a plain cast to
+`ZMod` would otherwise accept. -/
+def canonicalFieldNat? (modulus : ℕ) (v : DebugValue) : Option ℕ := do
+  let s ← v.atom?
+  if s.length = 66 then
+    let n ← hexNat? s
+    if n < modulus then some n else none
+  else none
 
-/-- A hex field element in `F_q` (Vesta's base field). -/
+/-- A canonical hex field element in `F_p` (Vesta's scalar field). -/
+def fp? (v : DebugValue) : Option Fp :=
+  (canonicalFieldNat? PALLAS_BASE_CARD v).map fun n => (n : Fp)
+
+/-- A canonical hex field element in `F_q` (Vesta's base field). -/
 def fq? (v : DebugValue) : Option VestaBaseField :=
-  (v.atom? >>= hexNat?).map fun n => (n : VestaBaseField)
+  (canonicalFieldNat? PALLAS_SCALAR_CARD v).map fun n => (n : VestaBaseField)
 
 /-- A quoted modulus string as the number it names. -/
 def quotedHexNat? (v : DebugValue) : Option ℕ := do
@@ -256,20 +287,30 @@ def rotation? (v : DebugValue) : Option ℤ :=
   | _ => none
 
 /-- `Column { index: i, column_type: Advice | Fixed | Instance }` as a `ColumnRef`. -/
-def columnRef? (v : DebugValue) : Option ColumnRef := do
-  let i ← (v.field? "index") >>= nat?
-  let t ← (v.field? "column_type") >>= atom?
-  match t with
-  | "Advice" => pure (.advice i)
-  | "Fixed" => pure (.fixed i)
-  | "Instance" => pure (.instance i)
+def columnRef? (v : DebugValue) : Option ColumnRef :=
+  match v with
+  | .struct "Column" [("index", i), ("column_type", t)] => do
+      let i ← nat? i
+      let t ← atom? t
+      match t with
+      | "Advice" => pure (.advice i)
+      | "Fixed" => pure (.fixed i)
+      | "Instance" => pure (.instance i)
+      | _ => none
   | _ => none
 
-/-- A query `(Column { index: i, … }, Rotation(r))` as the verifier's `(column, rotation)`. -/
-def query? (v : DebugValue) : Option (ℕ × ℤ) :=
+/-- A query `(Column { index: i, column_type: expected }, Rotation(r))` as the verifier's
+`(column, rotation)`. Requiring the expected column type prevents one query family from being
+accepted under another family's layout. -/
+def query? (expected : String) (v : DebugValue) : Option (ℕ × ℤ) :=
   match v with
   | .tuple "" [c, r] => do
-      let i ← (c.field? "index") >>= nat?
+      let cr ← columnRef? c
+      let i ← match expected, cr with
+        | "Advice", .advice i => some i
+        | "Fixed", .fixed i => some i
+        | "Instance", .instance i => some i
+        | _, _ => none
       let rot ← rotation? r
       pure (i, rot)
   | _ => none
@@ -284,20 +325,58 @@ def point? (v : DebugValue) : Option VestaG :=
       if h : OnCurve Vesta.a Vesta.b (xv, yv) then pure ⟨xv, yv, Or.inl h⟩ else none
   | _ => none
 
-/-- A gate expression as halo2's `Expression` `Debug` prints it, in the verifier's `Expr`: the
-`query_index` of a column query is what `Expr` carries. -/
-def expr? : ℕ → DebugValue → Option (Expr Fp)
+/-- A gate expression as halo2's `Expression` `Debug` prints it, in the verifier's `Expr`. For a
+column query, the redundant printed `column_index` and `rotation` must agree with the layout entry
+selected by `query_index`; accepting only the latter would leave hashed key data unchecked. -/
+def expr? (instanceLayout adviceLayout fixedLayout : List (ℕ × ℤ)) :
+    ℕ → DebugValue → Option (Expr Fp)
   | 0, _ => none
   | fuel + 1, v =>
       match v with
       | .tuple "Constant" [c] => (fp? c).map Expr.constant
-      | .tuple "Negated" [e] => (expr? fuel e).map Expr.negated
-      | .tuple "Sum" [a, b] => do pure (Expr.sum (← expr? fuel a) (← expr? fuel b))
-      | .tuple "Product" [a, b] => do pure (Expr.product (← expr? fuel a) (← expr? fuel b))
-      | .tuple "Scaled" [e, c] => do pure (Expr.scaled (← expr? fuel e) (← fp? c))
-      | .struct "Fixed" _ => ((v.field? "query_index") >>= nat?).map Expr.fixed
-      | .struct "Advice" _ => ((v.field? "query_index") >>= nat?).map Expr.advice
-      | .struct "Instance" _ => ((v.field? "query_index") >>= nat?).map Expr.instance
+      | .tuple "Negated" [e] =>
+          (expr? instanceLayout adviceLayout fixedLayout fuel e).map Expr.negated
+      | .tuple "Sum" [a, b] => do
+          pure (Expr.sum
+            (← expr? instanceLayout adviceLayout fixedLayout fuel a)
+            (← expr? instanceLayout adviceLayout fixedLayout fuel b))
+      | .tuple "Product" [a, b] => do
+          pure (Expr.product
+            (← expr? instanceLayout adviceLayout fixedLayout fuel a)
+            (← expr? instanceLayout adviceLayout fixedLayout fuel b))
+      | .tuple "Scaled" [e, c] => do
+          pure (Expr.scaled
+            (← expr? instanceLayout adviceLayout fixedLayout fuel e) (← fp? c))
+      | .struct "Fixed"
+          [("query_index", qi), ("column_index", column), ("rotation", rotation)] => do
+          let qi ← nat? qi
+          let q := (← columnRef? (.struct "Column"
+            [("index", column), ("column_type", .atom "Fixed")]))
+          let rot ← rotation? rotation
+          match q with
+          | .fixed column =>
+              if fixedLayout[qi]? = some (column, rot) then some (.fixed qi) else none
+          | _ => none
+      | .struct "Advice"
+          [("query_index", qi), ("column_index", column), ("rotation", rotation)] => do
+          let qi ← nat? qi
+          let q := (← columnRef? (.struct "Column"
+            [("index", column), ("column_type", .atom "Advice")]))
+          let rot ← rotation? rotation
+          match q with
+          | .advice column =>
+              if adviceLayout[qi]? = some (column, rot) then some (.advice qi) else none
+          | _ => none
+      | .struct "Instance"
+          [("query_index", qi), ("column_index", column), ("rotation", rotation)] => do
+          let qi ← nat? qi
+          let q := (← columnRef? (.struct "Column"
+            [("index", column), ("column_type", .atom "Instance")]))
+          let rot ← rotation? rotation
+          match q with
+          | .instance column =>
+              if instanceLayout[qi]? = some (column, rot) then some (.instance qi) else none
+          | _ => none
       | _ => none
 
 /-- Map a parser over a list value. -/
@@ -306,19 +385,27 @@ def listOf? {α : Type} (f : DebugValue → Option α) (v : DebugValue) : Option
 
 /-- `Argument { input_expressions: [...], table_expressions: [...] }` as the verifier's lookup
 expression lists. -/
-def lookup? (fuel : ℕ) (v : DebugValue) : Option (List (Expr Fp) × List (Expr Fp)) := do
-  let inputs ← (v.field? "input_expressions") >>= listOf? (expr? fuel)
-  let tables ← (v.field? "table_expressions") >>= listOf? (expr? fuel)
-  pure (inputs, tables)
+def lookup? (instanceLayout adviceLayout fixedLayout : List (ℕ × ℤ))
+    (fuel : ℕ) (v : DebugValue) : Option (List (Expr Fp) × List (Expr Fp)) :=
+  match v with
+  | .struct "Argument"
+      [("input_expressions", inputs), ("table_expressions", tables)] => do
+      let inputs ← listOf? (expr? instanceLayout adviceLayout fixedLayout fuel) inputs
+      let tables ← listOf? (expr? instanceLayout adviceLayout fixedLayout fuel) tables
+      pure (inputs, tables)
+  | _ => none
 
 end DebugValue
 
-/-! ## The description against a key
+/-! ## The description against a canonical and verifier-used key
 
-`Describes` is the identification `DeployedAcceptsBytes` requires between the description whose
-digest opens the transcript and the key the proof is checked against: the description's
-constraint system is the key's, and the counts `readProof?` reads by are that constraint
-system's. -/
+Halo2's `PinnedVerificationKey` description intentionally omits verifier-active values that it
+reconstructs from the constraint system, including the blinding count, permutation delta, chunk
+width, and common-evaluation indices. Consequently no predicate over only the description and an
+arbitrary `VerifyingKey` can identify those fields. `Describes` therefore takes two keys: the
+canonical key derived from the circuit and the key actually used by the verifier. It checks the
+description against every represented canonical field and separately requires behavioral
+agreement of every field the Lean verifier consumes. -/
 
 open DebugValue
 
@@ -350,20 +437,57 @@ def toQuerySpace {shape : CircuitShape} (vk : VerifyingKey shape Fp VestaG) :
   | .fixed c => (queryIndexAt vk.fixedQueryLayout c).map .fixed
   | .instance c => (queryIndexAt vk.instanceQueryLayout c).map .instance
 
-/-- **The description describes the key.** Every pinned field with a counterpart in the verifier's
-key or shape reads back to it: the moduli name Vesta's fields; the domain's `k` and `ω` are the
-shape's and the key's, with `n` the domain size `2 ^ k`; the column counts are the shape's; the
-gates, query layouts, permutation columns (through `toQuerySpace`), and lookups are the key's; and
-both commitment vectors are the key's, the fixed one over the pinned column count. The shape's
-query, permutation-set, and lookup counts are tied to those same pinned fields, so the counts
-`readProof?` reads by are the pinned constraint system's — the agreements `Verifier/Key.lean`
-names.
+/-- **Behavioral equality of verifier keys.** Every field consumed by `validateInstances?`,
+`deriveChallengesForStatement`, or `assemble?` agrees. Function-valued commitment fields are
+compared over exactly the finite layouts the verifier can reach. This is stronger than comparing
+only fields printed by `PinnedVerificationKey`: in particular it binds `blindingFactors`, `delta`,
+`chunkLen`, the permutation chunk partition, and every common-evaluation index. -/
+def VerifyingKeyAgrees {shape : CircuitShape}
+    (canonical used : VerifyingKey shape Fp VestaG) : Prop :=
+  canonical.omega = used.omega ∧
+  canonical.n = used.n ∧
+  canonical.blindingFactors = used.blindingFactors ∧
+  canonical.delta = used.delta ∧
+  canonical.chunkLen = used.chunkLen ∧
+  canonical.gates = used.gates ∧
+  canonical.instanceQueryLayout = used.instanceQueryLayout ∧
+  canonical.adviceQueryLayout = used.adviceQueryLayout ∧
+  canonical.fixedQueryLayout = used.fixedQueryLayout ∧
+  canonical.fixedQueryLayout.map (fun q => canonical.fixedCommitment q.1) =
+    used.fixedQueryLayout.map (fun q => used.fixedCommitment q.1) ∧
+  List.ofFn canonical.permutationCommonCommitment =
+    List.ofFn used.permutationCommonCommitment ∧
+  canonical.permutationChunks = used.permutationChunks ∧
+  (List.ofFn fun l : Fin shape.numLookups =>
+      (canonical.lookupInputExprs l, canonical.lookupTableExprs l)) =
+    (List.ofFn fun l : Fin shape.numLookups =>
+      (used.lookupInputExprs l, used.lookupTableExprs l))
 
-Not read here, because the verifier consumes no pinned counterpart: `blindingFactors`, `delta`,
-and `chunkLen`, halo2 constants of the constraint system's degree that stay the named key
-agreements of `Verifier/Key.lean`; and the keygen-only `extended_k`, `num_selectors`, `constants`,
-and `minimum_degree`, pinned as deployment literals in `Fixtures/PinnedKey.lean`. -/
-def Describes {shape : CircuitShape} (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
+/-- Behavioral key agreement is reflexive. -/
+theorem verifyingKeyAgrees_refl {shape : CircuitShape}
+    (vk : VerifyingKey shape Fp VestaG) : VerifyingKeyAgrees vk vk := by
+  simp [VerifyingKeyAgrees]
+
+/-- The description is one exact compact derived-`Debug` value with the expected nested struct
+names and field sequences. -/
+def DescriptionSyntaxCanonical (s : String) : Prop :=
+  (parse? s).isSome = true ∧
+  renderCompact (descriptionValue s) = s ∧
+  hasStructFields (descriptionValue s) "PinnedVerificationKey"
+    ["base_modulus", "scalar_modulus", "domain", "cs", "fixed_commitments", "permutation"] ∧
+  hasStructFields (descriptionDomain s) "PinnedEvaluationDomain" ["k", "extended_k", "omega"] ∧
+  hasStructFields (descriptionCs s) "PinnedConstraintSystem"
+    ["num_fixed_columns", "num_advice_columns", "num_instance_columns", "num_selectors", "gates",
+      "advice_queries", "instance_queries", "fixed_queries", "permutation", "lookups",
+      "constants", "minimum_degree"] ∧
+  hasStructFields (((descriptionCs s).field? "permutation").getD (.atom ""))
+    "Argument" ["columns"] ∧
+  hasStructFields (((descriptionValue s).field? "permutation").getD (.atom ""))
+    "VerifyingKey" ["commitments"]
+
+/-- Moduli, domain, shape, gates, and typed query layouts represented by the description. -/
+def DescriptionCoreFieldsMatch {shape : CircuitShape}
+    (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   ((descriptionValue s).field? "base_modulus" >>= quotedHexNat?) = some PALLAS_SCALAR_CARD ∧
   ((descriptionValue s).field? "scalar_modulus" >>= quotedHexNat?) = some PALLAS_BASE_CARD ∧
   ((descriptionDomain s).field? "k" >>= nat?) = some shape.k ∧
@@ -371,20 +495,35 @@ def Describes {shape : CircuitShape} (s : String) (vk : VerifyingKey shape Fp Ve
   ((descriptionDomain s).field? "omega" >>= fp?) = some vk.omega ∧
   ((descriptionCs s).field? "num_advice_columns" >>= nat?) = some shape.numAdviceColumns ∧
   ((descriptionCs s).field? "num_instance_columns" >>= nat?) = some shape.numInstanceColumns ∧
-  ((descriptionCs s).field? "gates" >>= listOf? (expr? (descriptionFuel s))) = some vk.gates ∧
-  ((descriptionCs s).field? "advice_queries" >>= listOf? query?) = some vk.adviceQueryLayout ∧
-  ((descriptionCs s).field? "instance_queries" >>= listOf? query?) = some vk.instanceQueryLayout ∧
-  ((descriptionCs s).field? "fixed_queries" >>= listOf? query?) = some vk.fixedQueryLayout ∧
+  ((descriptionCs s).field? "gates" >>= listOf?
+      (expr? vk.instanceQueryLayout vk.adviceQueryLayout vk.fixedQueryLayout
+        (descriptionFuel s))) = some vk.gates ∧
+  ((descriptionCs s).field? "advice_queries" >>= listOf? (query? "Advice")) =
+    some vk.adviceQueryLayout ∧
+  ((descriptionCs s).field? "instance_queries" >>= listOf? (query? "Instance")) =
+    some vk.instanceQueryLayout ∧
+  ((descriptionCs s).field? "fixed_queries" >>= listOf? (query? "Fixed")) =
+    some vk.fixedQueryLayout ∧
   vk.adviceQueryLayout.length = shape.numAdviceQueries ∧
   vk.instanceQueryLayout.length = shape.numInstanceQueries ∧
-  vk.fixedQueryLayout.length = shape.numFixedQueries ∧
+  vk.fixedQueryLayout.length = shape.numFixedQueries
+
+/-- Permutation columns and lookup expressions represented by the description. -/
+def DescriptionArgumentFieldsMatch {shape : CircuitShape}
+    (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   ((((descriptionCs s).field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
       >>= fun l => l.mapM (toQuerySpace vk))
     = some (vk.permutationChunks.flatten.map Prod.fst) ∧
   vk.permutationChunks.length = shape.numPermutationSets ∧
-  ((descriptionCs s).field? "lookups" >>= listOf? (lookup? (descriptionFuel s)))
+  ((descriptionCs s).field? "lookups" >>= listOf?
+      (lookup? vk.instanceQueryLayout vk.adviceQueryLayout vk.fixedQueryLayout
+        (descriptionFuel s)))
     = some (List.ofFn fun l : Fin shape.numLookups =>
-        (vk.lookupInputExprs l, vk.lookupTableExprs l)) ∧
+        (vk.lookupInputExprs l, vk.lookupTableExprs l))
+
+/-- Fixed and permutation commitment vectors represented by the description. -/
+def DescriptionCommitmentsMatch {shape : CircuitShape}
+    (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   ((descriptionCs s).field? "num_fixed_columns" >>= nat?) ≠ none ∧
   ((descriptionValue s).field? "fixed_commitments" >>= listOf? point?)
     = ((descriptionCs s).field? "num_fixed_columns" >>= nat?).map
@@ -392,11 +531,99 @@ def Describes {shape : CircuitShape} (s : String) (vk : VerifyingKey shape Fp Ve
   (((descriptionValue s).field? "permutation" >>= (·.field? "commitments")) >>= listOf? point?)
     = some (List.ofFn vk.permutationCommonCommitment)
 
-/-- `Describes` is a finite conjunction of decidable equations, so a capture discharges it by
-evaluation. -/
+/-- Every verifier-represented field of a canonical key is read from the exact compact Rust
+`Debug` description. The grammar checks above reject missing commas, noncanonical field values,
+wrong query column types, inconsistent query metadata, duplicate/unknown top-level fields, and
+trailing text. Keygen-only fields remain part of the exact hashed string but have no verifier-side
+counterpart; concrete deployment pins them separately. -/
+def DescriptionFieldsMatch {shape : CircuitShape}
+    (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
+  DescriptionSyntaxCanonical s ∧
+  DescriptionCoreFieldsMatch s vk ∧
+  DescriptionArgumentFieldsMatch s vk ∧
+  DescriptionCommitmentsMatch s vk
+
+/-- **The description and verifier-used key identify one canonical key.** The description matches
+the circuit-derived canonical key, while the actual key agrees with that canonical key on every
+verifier-reachable field. The explicit canonical argument is necessary because Halo2 omits several
+reconstructed runtime fields from `PinnedVerificationKey`. -/
+def Describes {shape : CircuitShape} (s : String)
+    (canonical used : VerifyingKey shape Fp VestaG) : Prop :=
+  DescriptionFieldsMatch s canonical ∧ VerifyingKeyAgrees canonical used
+
+/-- `Describes` is a finite conjunction of decidable equations, so captures and key mutations can
+be checked by evaluation. -/
+instance decidableVerifyingKeyAgrees {shape : CircuitShape}
+    (canonical used : VerifyingKey shape Fp VestaG) :
+    Decidable (VerifyingKeyAgrees canonical used) := by
+  unfold VerifyingKeyAgrees
+  infer_instance
+
+instance decidableDescriptionSyntaxCanonical (s : String) :
+    Decidable (DescriptionSyntaxCanonical s) := by
+  unfold DescriptionSyntaxCanonical
+  infer_instance
+
+instance decidableDescriptionCoreFieldsMatch {shape : CircuitShape} (s : String)
+    (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionCoreFieldsMatch s vk) := by
+  unfold DescriptionCoreFieldsMatch
+  infer_instance
+
+instance decidableDescriptionArgumentFieldsMatch {shape : CircuitShape} (s : String)
+    (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionArgumentFieldsMatch s vk) := by
+  unfold DescriptionArgumentFieldsMatch
+  infer_instance
+
+instance decidableDescriptionCommitmentsMatch {shape : CircuitShape} (s : String)
+    (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionCommitmentsMatch s vk) := by
+  unfold DescriptionCommitmentsMatch
+  infer_instance
+
+instance decidableDescriptionFieldsMatch {shape : CircuitShape} (s : String)
+    (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionFieldsMatch s vk) := by
+  unfold DescriptionFieldsMatch
+  infer_instance
+
 instance decidableDescribes {shape : CircuitShape} (s : String)
-    (vk : VerifyingKey shape Fp VestaG) : Decidable (Describes s vk) := by
+    (canonical used : VerifyingKey shape Fp VestaG) : Decidable (Describes s canonical used) := by
   unfold Describes
   infer_instance
+
+/-- A described verifier uses the canonical blinding count. -/
+theorem Describes.blindingFactors_eq {shape : CircuitShape} {s : String}
+    {canonical used : VerifyingKey shape Fp VestaG} (h : Describes s canonical used) :
+    canonical.blindingFactors = used.blindingFactors :=
+  h.2.2.2.1
+
+/-- A described verifier uses the canonical permutation delta. -/
+theorem Describes.delta_eq {shape : CircuitShape} {s : String}
+    {canonical used : VerifyingKey shape Fp VestaG} (h : Describes s canonical used) :
+    canonical.delta = used.delta :=
+  h.2.2.2.2.1
+
+/-- A described verifier uses the canonical permutation chunk width. -/
+theorem Describes.chunkLen_eq {shape : CircuitShape} {s : String}
+    {canonical used : VerifyingKey shape Fp VestaG} (h : Describes s canonical used) :
+    canonical.chunkLen = used.chunkLen :=
+  h.2.2.2.2.2.1
+
+/-- A described verifier uses the canonical chunk partition and common-evaluation indices. -/
+theorem Describes.permutationChunks_eq {shape : CircuitShape} {s : String}
+    {canonical used : VerifyingKey shape Fp VestaG} (h : Describes s canonical used) :
+    canonical.permutationChunks = used.permutationChunks :=
+  h.2.2.2.2.2.2.2.2.2.2.2.2.1
+
+/-! Parser hardening regressions. -/
+
+example : parse? "Pair(1 2)" = none := by decide +kernel
+
+example : query? "Advice"
+    (.tuple "" [.struct "Column" [("index", .atom "0"), ("column_type", .atom "Fixed")],
+      .tuple "Rotation" [.atom "0"]]) = none := by
+  decide +kernel
+
+example : canonicalFieldNat? PALLAS_BASE_CARD
+    (.atom "0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001") = none := by
+  decide +kernel
 
 end Zcash.Snark
