@@ -133,7 +133,7 @@ of it, see [Ledger Security Games](ledger-security-games.md).
 
 ## The claim
 
-> If the deployed verifier accepts a proof, then whoever produced that proof could have
+> If the verifier modeled here accepts a proof, then whoever produced that proof could have
 > handed you the secret data it is a proof *about* — unless they solved a problem that
 > most cryptographers believe has been infeasibly difficult (although quantum computers
 > could change this in a few years), or hit an event the theorem shows is vanishingly unlikely.
@@ -144,10 +144,13 @@ Two phrases are worth pinning down.
 amounts to a legitimate Orchard action — well-formed note, balanced value, correctly derived
 nullifier, authorized spend — is itself proven.
 
-*The deployed verifier* means the verifier as Lean models it: checked against a circuit
-description Lean derives itself and compares against a captured copy, reading a proof already
-decoded from bytes into points and numbers. That the captured copy is what Zcash ships, and
-that the bytes on the wire decode to what the model is handed, are checked outside Lean.
+*The verifier modeled here* checks a circuit description Lean derives itself against a captured
+copy, validates the raw public-input columns, decodes the complete canonical proof byte string,
+and reconstructs the transcript bytes and challenges before entering the typed verifier. Captures
+check those implementation-facing identifications on concrete executions; they do not prove
+universal Rust-to-Lean refinement. The formal probability endpoint measures the typed oracle
+observer, not Rust acceptance. The separate Rust-containment theorem is for one non-batched proof
+bundle at the concrete BLAKE2b table.
 
 ## What you need to know first
 
@@ -330,6 +333,10 @@ proved equal to Lean's BLAKE2b on every input; Rust's transcript reader is not p
 unique string emitted by Rust remains deployment provenance. The captures check all three
 implementation-facing identifications on their concrete executions, but finite captures do not
 establish them for arbitrary inputs.
+
+The formalized verifier prices one proof bundle. Halo2's optional randomized `BatchVerifier`
+aggregation of separate proof blobs is outside the model and is not included in the probability
+endpoint.
 
 ### Facts checked by running code, not by the kernel
 

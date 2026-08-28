@@ -18,17 +18,17 @@ size. Four endpoints state them:
 * `orchard_action_adaptiveStatement_certified_2pow125_knowledge_finite_security` — the certified
   formula evaluated at `Q ≤ 2^123` queries and `2^125` adversary group work:
   `Adv_DLOG(2^124, 2^126) + 2^-83`.
-* `orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security` — the deployed
-  form: an `ActionDeploymentInstantiation` identifies each model floor with its deployed
-  counterpart, and the declared-profile formula at the `2^123` work factor is transported to that
-  record's failure observer with the Challenge255 conversion priced:
+* `orchard_action_adaptiveStatement_modeled_2pow123_knowledge_finite_security` — the
+  deployment-record model: an `ActionDeploymentInstantiation` identifies the typed model floors,
+  and the declared-profile formula at the `2^123` work factor is transported to that record's
+  idealized failure observer with the Challenge255 conversion priced:
   `Adv_DLOG(2^126, 2^126) + 2^-83 + 2^-136`.
 
 The declared-profile formula's own `2^123` evaluation,
-`adaptiveStatementKnowledgeFailure_le_at_2pow123`, is the rung the deployed endpoint transports
+`adaptiveStatementKnowledgeFailure_le_at_2pow123`, is the rung the modeled endpoint transports
 and the source of the number the knowledge contract quotes; it is not advertised separately.  The
 other rungs here are the pair-count bound the endpoints are stated under, the direct-decode
-budgets, the parametric certified endpoint, and the deployed bound with its Challenge255 charge
+budgets, the parametric certified endpoint, and the modeled bound with its Challenge255 charge
 left symbolic.
 
 All four are stated in the generator random-oracle model, over the URS that
@@ -96,7 +96,7 @@ rather than proved, with its known strengthening named where one exists:
   deployment record names that refinement as its one-way `rustAcceptsRefinesLeanRaw` assumption,
   consumed only by `rustAccepts_halo2Coins_implies_familyAccepts` — a containment of production
   acceptance in the family's typed acceptance at the one concrete BLAKE2b table, not an input to
-  the deployed bound below, which is stated over the record's idealized observer. The record also
+  the modeled bound below, which is stated over the record's idealized observer. The record also
   pins the call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
   zero-padding makes a shorter column verify as its zero-padding
   (`assembleNonInteractiveInstances?_padColumns`), aliasing a missing trailing row to
@@ -104,10 +104,14 @@ rather than proved, with its known strengthening named where one exists:
   (`instanceColumnsExact`, `numProofs_pos`).
 
 The bounds these endpoints prove are exact inside that model. The machine-readable shape for a
-deployed interpretation is `ActionDeploymentInstantiation`
-(`Soundness/Action/DeploymentRecord.lean`), one identification field per floor; the deployed
-endpoint below consumes it, charges the joint Challenge255 bias once for the whole adaptive
-transcript, and prices that charge at `2^-136` against the record's certified query ceiling.
+deployment interpretation is `ActionDeploymentInstantiation`
+(`Soundness/Action/DeploymentRecord.lean`), one identification field per floor; the modeled
+endpoint below consumes its typed observer, charges the joint Challenge255 bias once for the whole
+adaptive transcript, and prices that charge at `2^-136` against the record's certified query
+ceiling. It does not measure Rust acceptance. The separate
+`rustAccepts_halo2Coins_implies_familyAccepts` theorem consumes the one-way Rust-to-Lean assumptions
+for one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized batching of
+separate proof blobs remains outside the formalization.
 
 Each is censused directly in `Fixtures/MultiAction/Honest/TrustBoundary.lean`.
 -/
@@ -286,13 +290,13 @@ theorem orchard_action_adaptiveStatement_certified_knowledge_error_bound
           (adaptiveStatement_pairCount_lt numProofs family) B epsilon
             profile.finderAdvantageLE_current hsurface)
 
-/-- The declared-profile formula at the `2^123` work factor, the input the deployed endpoint
+/-- The declared-profile formula at the `2^123` work factor, the input the modeled endpoint
 transports.  At `Q ≤ 2^123`, joint statement/proof selection, the executable witness projection,
 and the shared relation finder fit a `2^126` random-oracle/group-work envelope and `2^-83`
 statistical remainder; the finder and the extractor consult the table only inside the certified
 read set.  Complete adversary and reduction group work are explicit profile premises; the
 separately costed assembly/basis component fits its derived formula at every table.  The final
-conjunct also records a generic whole-distribution `εBias` transport.  The deployed endpoint
+conjunct also records a generic whole-distribution `εBias` transport.  The modeled endpoint
 instead consumes the first conjunct and proves its dedicated joint Challenge255 observer hybrid
 below. -/
 theorem adaptiveStatementKnowledgeFailure_le_at_2pow123
@@ -405,21 +409,22 @@ theorem adaptiveStatementKnowledgeFailure_le_at_2pow123
   intro actual εBias hbias
   exact event_measure_le_of_bias hbias _ hprob
 
-/-- The deployed knowledge-failure bound with the joint Challenge255 charge left symbolic.  A
+/-- The modeled knowledge-failure bound with the joint Challenge255 charge left symbolic. A
 complete deployment record instantiates the basis, typed verifier, concrete DLOG profile, and a
-deduplicated finite failure observer.  The proved joint Challenge255 hybrid transports the ideal
-`2^123` work-factor bound to that observer, charging `challengeQueryBound * challenge255Bias`
+deduplicated finite typed failure observer. The proved joint Challenge255 hybrid transports the
+ideal `2^123` work-factor bound to that observer, charging
+`challengeQueryBound * challenge255Bias`
 once for the whole adaptive transcript rather than assuming an unjustified one-squeeze event
 bound.  The charge is a free multiple of the record's budget here — `OracleComp.QueryBound` is
 upward-closed, so nothing in this statement keeps it small; the endpoint below prices it. -/
-theorem adaptiveStatementDeployedKnowledgeFailure_le_jointCharge
+theorem adaptiveStatementModeledKnowledgeFailure_le_jointCharge
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex actionCircuit.n → T)
     (family : ComputedAdaptiveActionStatementFSFamily (actionProofParamsFor numProofs))
     (deployment : ActionDeploymentInstantiation (actionProofParamsFor numProofs) family query
       (adaptiveStatement_pairCount_lt numProofs family) (2 ^ 123)) :
-    deployment.deployedFailurePMF.toOuterMeasure {true} ≤
+    deployment.modeledFailurePMF.toOuterMeasure {true} ≤
       (deployment.dlogAdvantage (2 ^ 126) (2 ^ 126) + 1 / (2 ^ 83 : ENNReal)) +
         deployment.challengeQueryBound * challenge255Bias := by
   have hcapstone :=
@@ -448,11 +453,11 @@ theorem adaptiveStatementDeployedKnowledgeFailure_le_jointCharge
     ((orchardGeneratorROSetup query).map (orchardGeneratorROBasis query)).bind fun basis ↦
       (OracleComp.dedup [] (deployment.failureObserver basis)).runFreshPMF uniformChallenge
   have hjoint :
-      PMFEventBiasLE deployment.deployedFailurePMF
+      PMFEventBiasLE deployment.modeledFailurePMF
         idealObserver
         (deployment.challengeQueryBound * challenge255Bias) := by
     unfold idealObserver
-    unfold ActionDeploymentInstantiation.deployedFailurePMF
+    unfold ActionDeploymentInstantiation.modeledFailurePMF
     rw [deployment.basisIsGeneratorRO]
     exact PMFEventBiasLE.bind_same hpointwise
   have hidealObserver :
@@ -464,26 +469,26 @@ theorem adaptiveStatementDeployedKnowledgeFailure_le_jointCharge
   rw [deployment.dlogAdvantageAgrees]
   exact event_measure_le_of_bias hjoint {true} hidealObserver
 
-/-- **Deployed adaptive-statement knowledge capstone.** The joint Challenge255 charge of
-`adaptiveStatementDeployedKnowledgeFailure_le_jointCharge`, priced: the record certifies its
+/-- **Modeled adaptive-statement knowledge capstone.** The joint Challenge255 charge of
+`adaptiveStatementModeledKnowledgeFailure_le_jointCharge`, priced: the record certifies its
 observer's query budget no looser than one adversary run plus the verifier's squeezes
 (`challengeQueryBound_le`), the profile bounds the adversary's budget by `2^123`, and the exact
 bias is below `2^-260` (`challenge255Bias_le`), so the charge is below `2^-136`
-(`challenge255_joint_charge_le_at_2pow123`).  The deployed knowledge-failure probability is
+(`challenge255_joint_charge_le_at_2pow123`). The typed observer's knowledge-failure probability is
 therefore within `2^-136` of the ideal `2^123` work-factor bound — a closed number, not a bound
-that a loose-but-valid budget could push past `1`. -/
-theorem orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security
+that a loose-but-valid budget could push past `1`. This theorem does not measure Rust acceptance. -/
+theorem orchard_action_adaptiveStatement_modeled_2pow123_knowledge_finite_security
     (numProofs : ℕ) (hn : numProofs ≤ orchardConsensusMaxProofs)
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex actionCircuit.n → T)
     (family : ComputedAdaptiveActionStatementFSFamily (actionProofParamsFor numProofs))
     (deployment : ActionDeploymentInstantiation (actionProofParamsFor numProofs) family query
       (adaptiveStatement_pairCount_lt numProofs family) (2 ^ 123)) :
-    deployment.deployedFailurePMF.toOuterMeasure {true} ≤
+    deployment.modeledFailurePMF.toOuterMeasure {true} ≤
       deployment.dlogAdvantage (2 ^ 126) (2 ^ 126) + 1 / (2 ^ 83 : ENNReal) +
         1 / (2 ^ 136 : ENNReal) := by
   refine le_trans
-    (adaptiveStatementDeployedKnowledgeFailure_le_jointCharge numProofs hn query family
+    (adaptiveStatementModeledKnowledgeFailure_le_jointCharge numProofs hn query family
       deployment)
     (add_le_add le_rfl ?_)
   refine challenge255_joint_charge_le_at_2pow123 deployment.profile.queryBound ?_

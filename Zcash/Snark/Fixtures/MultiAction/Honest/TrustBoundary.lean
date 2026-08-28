@@ -506,9 +506,9 @@ assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_certified_kn
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- The same bound priced at the `2^123` work-factor target, with the extractor's random-oracle and
--- group-work envelopes and the finder's certified read set discharged alongside it.  A rung, not
--- an endpoint: the deployed endpoint transports it, and it is pinned directly so that transport
--- cannot silently widen its base.
+-- group-work envelopes and the finder's certified read set discharged alongside it. A rung, not
+-- an endpoint: the modeled observer endpoint transports it, and it is pinned directly so that
+-- transport cannot silently widen its base.
 assert_axioms Zcash.Snark.Capstone.adaptiveStatementKnowledgeFailure_le_at_2pow123 +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
@@ -516,10 +516,10 @@ assert_axioms Zcash.Snark.Capstone.adaptiveStatementKnowledgeFailure_le_at_2pow1
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
--- The deployment-record consumers add the kernel-checked joint Challenge255 hybrid and its
+-- The deployment-record model consumers add the kernel-checked joint Challenge255 hybrid and its
 -- `2^-136` pricing, and no new trusted axiom owner beyond the ideal work-factor capstone they
 -- transport: the rung leaves the charge symbolic, the endpoint states the closed number.
-assert_axioms Zcash.Snark.Capstone.adaptiveStatementDeployedKnowledgeFailure_le_jointCharge +native(
+assert_axioms Zcash.Snark.Capstone.adaptiveStatementModeledKnowledgeFailure_le_jointCharge +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
@@ -527,7 +527,7 @@ assert_axioms Zcash.Snark.Capstone.adaptiveStatementDeployedKnowledgeFailure_le_
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security +native(
+assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_modeled_2pow123_knowledge_finite_security +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
