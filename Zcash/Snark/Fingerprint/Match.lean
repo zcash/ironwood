@@ -55,10 +55,9 @@ per-capture headliners with their literal ε live beside the random fixtures
 (`Fixtures/*/Random/Epsilon.lean`). Only that direction
 (deployed-accepts ⊆ model-accepts) is soundness-relevant *here*, which scopes this comparison
 rather than stating a position on completeness: completeness is a goal of the development,
-pursued for the Lean model, where it yields witness existence. The
-boundary artifact is per-proof: halo2's optional `BatchVerifier` — random-linear-combination
-batching of separate proof blobs — sits outside the single-bundle verifier formalized here, and
-any batching layer prices on top of the per-proof artifact without adding transcription surface.
+pursued for the Lean model, where it yields witness existence. The boundary artifact is per-proof:
+halo2's optional `BatchVerifier` — random-linear-combination batching of separate proof blobs —
+sits outside the single-bundle verifier formalized here.
 
 ## The boundary at the derived key
 
@@ -160,7 +159,7 @@ Twelve premises remain trusted rather than fixture-checked:
   by the four pointwise matches;
 * positional frame stability — the base re-indexing that makes the `Perm` match positional stays
   fixed across the good event (`Fingerprint/Epsilon.lean`);
-* container-merge exclusion — the exporter rejects captures where Halo2 would merge equal-x terms
+* container-merge exclusion — the exporter rejects captures where Halo2 would merge same-base terms
   or drop identity bases. That these transforms preserve evaluation follows from code inspection,
   not a Lean theorem;
 * exporter determinism — the regenerate-and-diff pipeline above;
