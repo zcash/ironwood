@@ -27,8 +27,8 @@ explicitly. `rustAcceptedProofRepresented` is the distinct algebraic-group-model
 an accepted decoded proof to the represented proof selected by the family.  The honest captures
 exercise the Lean side on finite examples; they do not prove either universal field. Here
 "production acceptance" means the public transaction/bundle path represented by the record,
-including its canonical proof-length check; a direct call to Halo2's reader is weaker because it
-permits an unread suffix.
+including its canonical proof-length check (ZIP 257, a consensus rule from NU6.2 onward); a direct
+call to Halo2's reader is weaker because it permits an unread suffix.
 -/
 
 namespace Zcash.Snark
@@ -135,9 +135,9 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → List UInt8
   /-- Actual production Rust acceptance for the selected raw columns and proof bytes. This must be
-  the public transaction/bundle acceptance relation, including its canonical proof-size check, not
-  a direct call to Halo2's suffix-tolerant `Proof::verify`. The record deliberately leaves the
-  relation abstract until a verified Rust semantics supplies it. -/
+  the public transaction/bundle acceptance relation, including its canonical proof-size check
+  (ZIP 257, NU6.2 onward), not a direct call to Halo2's suffix-tolerant `Proof::verify`. The record
+  deliberately leaves the relation abstract until a verified Rust semantics supplies it. -/
   deployedRustAccepts :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → Prop

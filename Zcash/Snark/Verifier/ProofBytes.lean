@@ -760,10 +760,11 @@ theorem readProof?_eq_none_of_first_point {shape : Shape} {bs : List UInt8}
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
 order. Halo2's reader itself ignores trailing bytes. The production transaction/bundle boundary
-modeled here separately enforces the ZIP-specified canonical total length
-(`2720 + 2272 · nActionsOrchard`), while the Lean byte predicate additionally requires this reader
-to consume that string exactly. The latter is a Rust-to-Lean refinement obligation, concretely
-checked at each capture, not a property of Halo2's reader alone. -/
+modeled here separately enforces the canonical total length `2720 + 2272 · nActionsOrchard` —
+ZIP 225's format value, a consensus rule from NU6.2 onward (ZIP 257) — while the Lean byte
+predicate additionally requires this reader to consume that string exactly. The latter is a
+Rust-to-Lean refinement obligation, concretely checked at each capture, not a property of Halo2's
+reader alone. -/
 def serializeProof {shape : Shape} (ps : ProofString shape Fp VestaG) : List UInt8 :=
   serializeGrid shape.numProofs shape.numAdviceColumns pointBytesCompressed ps.adviceCommitments
     ++ serializeGrid shape.numProofs shape.numLookups serializePointPair
@@ -1112,8 +1113,8 @@ theorem lookupReader_length {bs rest : List UInt8} {e : LookupEval Fp}
 element counts read off the shape, and each permutation set contributing its shape-selected
 two or three scalars. At the captured one- and two-Action Orchard shapes this equals ZIP 225's
 specified canonical proof size (`2720 + 2272 · nActionsOrchard`), kernel-checked by each family's
-length theorem. The deployment boundary enforces total length outside Halo2's suffix-tolerant
-reader. -/
+length theorem. The deployment boundary enforces that total length outside Halo2's
+suffix-tolerant reader (ZIP 257, a consensus rule from NU6.2 onward). -/
 def proofLength (shape : Shape) : ℕ :=
   shape.numProofs * (shape.numAdviceColumns * 32)
     + shape.numProofs * (shape.numLookups * 64)
