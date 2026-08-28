@@ -166,11 +166,15 @@ typed proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`).
 description, and the BLAKE2b schedule into typed `DeployedAccepts`, requiring the description to
 describe the key (`Describes`) and excluding identity instance commitments as halo2 does; both
 honest captures witness the composition. BLAKE2b's idealization as a random oracle,
-`blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, and universal
-refinement of Rust's reader to the Lean decoder remain external. `Snark/Fingerprint/Match.lean`
-enumerates the boundary;
-the deployment identification and landing status are tracked in
-[#66](https://github.com/zcash/ironwood/issues/66).
+`blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, universal
+refinement of Rust's reader to the Lean decoder, and identification of the pinned description as
+Rust's exact exporter output remain external. `Snark/Fingerprint/Match.lean` enumerates the
+boundary, while `Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement
+as the explicit `rustAcceptsRefinesLeanRaw` deployment assumption. The byte-layer implementation
+and landing history are recorded in
+[#215](https://github.com/zcash/ironwood/pull/215), which closes the scoped byte-encoding issue
+[#66](https://github.com/zcash/ironwood/issues/66). Neither claims to discharge the universal
+Rust-refinement assumption, which remains the explicit deployment boundary named above.
 
 **The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
 `CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off

@@ -25,7 +25,10 @@ Production acceptance, proof bytes, and raw instance columns are named below, an
 `rustAcceptsRefinesLeanRaw` field states the universal Rust-to-Lean deployment assumption
 explicitly. `rustAcceptedProofRepresented` is the distinct algebraic-group-model edge connecting
 an accepted decoded proof to the represented proof selected by the family.  The honest captures
-exercise the Lean side on finite examples; they do not prove either universal field.
+exercise the Lean side on finite examples; they do not prove either universal field. Here
+"production acceptance" means the public transaction/bundle path represented by the record,
+including its canonical proof-length check; a direct call to Halo2's reader is weaker because it
+permits an unread suffix.
 -/
 
 namespace Zcash.Snark
@@ -52,7 +55,10 @@ groundwork.  `vkDigestAgreesOnCanonical` binds the family's opaque digest to the
 the canonical key only — the capstones claim no cross-key binding. `idealizedAcceptsFaithful`
 identifies only the injectable-oracle observer's typed core; it is not a Rust-reader claim.
 `rustAcceptsRefinesLeanRaw` names that production claim separately, in the soundness direction
-actually required. `instanceColumnsExact` and `numProofs_pos` pin the shape of each deployed call:
+actually required. It also carries the proof-reader shape agreement not derivable from the pinned
+description: the quotient-piece and multiopen point-set counts, and the permutation partition used
+by Rust, must be those in `AdaptiveActionStatementShape pp`. `instanceColumnsExact` and
+`numProofs_pos` pin the remaining call shape:
 exact ten-row instance columns
 (excluding the trailing-zero commitment alias) and one invocation per present bundle carrying
 its positive action count. `dlogAdvantageAgrees` prevents the record from
@@ -128,14 +134,18 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   deployedProofBytes :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → List UInt8
-  /-- Actual production Rust acceptance for the selected raw columns and proof bytes.  The record
-  deliberately leaves this relation abstract until a verified Rust semantics supplies it. -/
+  /-- Actual production Rust acceptance for the selected raw columns and proof bytes. This must be
+  the public transaction/bundle acceptance relation, including its canonical proof-size check, not
+  a direct call to Halo2's suffix-tolerant `Proof::verify`. The record deliberately leaves the
+  relation abstract until a verified Rust semantics supplies it. -/
   deployedRustAccepts :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → Prop
   /-- **Explicit production refinement assumption.** For every input represented by this
-  deployment record, Rust acceptance implies the complete Lean raw-byte predicate.  The direction
-  is one-way because soundness needs event inclusion, not full implementation equivalence. -/
+  deployment record, Rust acceptance implies the complete Lean raw-byte predicate. This includes
+  agreement on every `readProof?` count and consumption of the entire canonical proof string;
+  neither follows from `Describes` alone. The direction is one-way because soundness needs event
+  inclusion, not full implementation equivalence. -/
   rustAcceptsRefinesLeanRaw : ∀ basis O,
     deployedRustAccepts basis O →
       DeployedAcceptsRawBytes (AdaptiveActionStatementShape pp)
