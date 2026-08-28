@@ -6,7 +6,8 @@ import Mathlib.Util.AssertNoSorry
 /-!
 # The trust boundary at the Lean-derived key
 
-The statement of record for the single-action capture: the deployed verifier's fingerprint
+The boundary ladder for the single-action capture starts by showing that the deployed verifier's
+fingerprint
 — `assemble` at the challenges Lean's Fiat–Shamir schedule model derives from the captured
 oracle — matches the captured MSM, with the verifying key spelled as its end-to-end
 derivation from the ported `configure`/keygen at the captured URS, and, in the strongest
@@ -17,14 +18,15 @@ challenges are derived rather than taken as given.
 Both theorems rewrite certificate equalities into the captured match — stating the boundary
 at derived artifacts costs no new evaluation.
 
-The byte-level form, `nonInteractiveFingerprint_matches_derived_blake2b`, is the statement of
-record: it replaces the captured oracle table with the deployed hash itself, deriving every
+The byte-level intermediate, `nonInteractiveFingerprint_matches_derived_blake2b`, replaces the
+captured oracle table with the deployed hash itself, deriving every
 challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
 `deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
 separates a schedule error from an encoding or hash error.
-`nonInteractiveFingerprint_matches_derived_keyDigest` goes one step further: the key digest that
-opens the transcript is recomputed from the exact pinned-key string emitted by the exporter,
-rather than accepting the captured digest scalar. The preimage string remains capture data.
+The strongest statement of record, `nonInteractiveFingerprint_matches_derived_keyDigest`, goes
+one step further: the key digest that opens the transcript is recomputed from the exact pinned-key
+string emitted by the exporter, rather than accepting the captured digest scalar. The preimage
+string remains capture data.
 -/
 
 namespace Zcash.Snark.Fixture
@@ -78,9 +80,9 @@ theorem nonInteractiveFingerprint_matches_derived_blake2b :
   rw [← h]
   exact nonInteractiveFingerprint_matches_blake2b
 
-/-- **The strongest form**: derived key, derived instance commitments, and challenges from
-transcript bytes. Nothing on the Lean side of the comparison is a dump entry or a captured
-oracle value. -/
+/-- **The strongest form before deriving the key digest**: derived key, derived instance
+commitments, and challenges from transcript bytes. The key-digest scalar is still the captured
+`capturedVkTranscriptRepr`; the theorem below derives it from the pinned description. -/
 theorem nonInteractiveFingerprint_matches_derived_inputs_blake2b :
     MsmMatch
       (nonInteractiveFingerprintForStatement halo2Transcript (fun _ => capturedVkTranscriptRepr)

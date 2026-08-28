@@ -6,7 +6,7 @@ import Mathlib.Util.AssertNoSorry
 /-!
 # The trust boundary at the Lean-derived key (random two-action)
 
-The statement of record for the random two-action capture: the deployed verifier's
+The boundary ladder for the random two-action capture starts by showing that the deployed verifier's
 fingerprint — `assemble` at the challenges Lean's Fiat–Shamir schedule model derives from the
 captured oracle — matches the captured MSM, with the verifying key spelled as its end-to-end
 derivation from the ported `configure`/keygen at the captured URS (`VkCertificate.lean`). The
@@ -25,14 +25,15 @@ commitment of the captured public inputs, pinned to the captured points by
 `instance_commitments_derived` — since only the honest single-action capture has a
 `Keygen/InstanceCapture.lean` analogue.
 
-The byte-level form, `nonInteractiveFingerprint_matches_derived_blake2b`, is the statement of
-record: it replaces the captured oracle table with the deployed hash itself, deriving every
+The byte-level intermediate, `nonInteractiveFingerprint_matches_derived_blake2b`, replaces the
+captured oracle table with the deployed hash itself, deriving every
 challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
 `deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
 separates a schedule error from an encoding or hash error.
-`nonInteractiveFingerprint_matches_derived_keyDigest` goes one step further: the key digest that
-opens the transcript is recomputed from the exact pinned-key string emitted by the exporter,
-rather than accepting the captured digest scalar. The preimage string remains capture data.
+The strongest statement of record, `nonInteractiveFingerprint_matches_derived_keyDigest`, goes
+one step further: the key digest that opens the transcript is recomputed from the exact pinned-key
+string emitted by the exporter, rather than accepting the captured digest scalar. The preimage
+string remains capture data.
 -/
 
 namespace Zcash.Snark.FixtureRandom2
