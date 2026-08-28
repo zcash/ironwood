@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-0760a570.js";
+            window.path_to_searchindex_js = "../searchindex-910cf725.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -358,9 +358,10 @@ build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the ca
 to the ones derived end to end from the ported <code>configure</code> as a standalone diagnostic, not a
 soundness or fixture-trust input. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
-schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — its <code>2^123</code>
-work-factor instantiation and the conditionally staged-certified <code>2^123</code> and <code>2^125</code> adversary-work
-ones — data-coupled programmed-basis and verifier-commitment accounting, explicit adversary and
+schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
+conditionally staged-certified <code>2^125</code> adversary-work one and the deployed <code>2^123</code> one, with the
+declared-profile <code>2^123</code> instantiation pinned as the latter's rung — data-coupled programmed-basis
+and verifier-commitment accounting, explicit adversary and
 complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
 bound derived from a required family invariant, and a separate oracle-query budget, and
 <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
@@ -405,8 +406,10 @@ decode to the concrete Action statement and carry a failure as explicit relation
 <code>Action/AdaptiveStatement*</code> is the adaptive-statement stack, the strongest Action notion: one
 online-AGM adversary returns the public inputs and proof together. <code>DeploymentRecord</code> states the
 machine-readable deployment-instantiation record — one identification field per model floor
-(challenge law, basis law, key digest, typed acceptance, discrete-log advantage) — that a
-deployed interpretation of the capstones supplies. <code>AdaptiveStatementModel</code>
+(challenge law, basis law, key digest, typed acceptance, discrete-log advantage), plus a
+certified ceiling on the failure observer's query budget, without which the joint Challenge255
+charge would be a free multiple — that a deployed interpretation of the capstones supplies.
+<code>AdaptiveStatementModel</code>
 defines the game and binds the verifying key and selected instance commitments before <code>theta</code>;
 <code>Accounting</code>, <code>Terminal</code>, and <code>Surfaces</code> decode arbitrary statement prefixes and price the
 root, IPA, and semantic surfaces under the single <code>(Q + 1)</code> query factor; <code>Provenance</code>,
@@ -530,10 +533,11 @@ semantic handoff to the formal circuit.</li>
 <h3 id="capstones--the-advertised-endpoints"><a class="header" href="#capstones--the-advertised-endpoints"><code>Capstones/</code> — the advertised endpoints</a></h3>
 <p>Where the deployed Action circuit's own statements are stated. <code>Action.lean</code> states the
 endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
-error-formula form, in resource-accounted finite-security form at the <code>2^123</code> work factor, in
-the staged-certified forms carrying their group-work accounting at <code>2^123</code> and <code>2^125</code> adversary
-work, and in the deployed form that consumes an <code>ActionDeploymentInstantiation</code> and charges the
-joint Challenge255 bias explicitly. Knowledge soundness is the only property advertised: it implies
+error-formula form with declared and with staged-certified group-work accounting, in the
+staged-certified finite-security form at <code>2^125</code> adversary work, and in
+the deployed form that consumes an <code>ActionDeploymentInstantiation</code>, charges the
+joint Challenge255 bias once for the whole transcript, and prices that charge at <code>2^-136</code> against
+the record's certified query ceiling. Knowledge soundness is the only property advertised: it implies
 the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
 and their events are retired.</p>
 <p><code>Action.lean</code> is the only endpoint file here. The <code>Action/</code> subdirectory below it holds what
