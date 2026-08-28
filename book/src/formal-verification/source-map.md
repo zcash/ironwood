@@ -385,13 +385,14 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `Action.lean` states the
+Where the modeled Action circuit's own statements are stated. `Action.lean` states the
 endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
 error-formula form with declared and with staged-certified group-work accounting, in the
 staged-certified finite-security form at `2^125` adversary work, and in
-the deployed form that consumes an `ActionDeploymentInstantiation`, charges the
+the deployment-record model that consumes an `ActionDeploymentInstantiation`, charges the
 joint Challenge255 bias once for the whole transcript, and prices that charge at `2^-136` against
-the record's certified query ceiling. Knowledge soundness is the only property advertised: it implies
+the record's certified query ceiling. This endpoint measures the record's typed oracle observer,
+not Rust acceptance. Knowledge soundness is the only property advertised: it implies
 the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
 and their events are retired.
 

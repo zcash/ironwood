@@ -33,7 +33,7 @@ open CompElliptic.Fields.Pasta
 /-- The captured proof bytes, decoded from the rendered hex string. -/
 def capturedProofBytes : List UInt8 := (hexDecode? capturedProofHex).getD []
 
-/-- **The deployed verifier's parse is Lean's parse.** `readProof?` on the captured bytes returns
+/-- **The captured proof bytes use Lean's parse.** `readProof?` on the captured bytes returns
 exactly the captured typed proof and consumes the string exactly. This is the family's one
 native anchor at the byte layer; the hex well-formedness, length, truncation, and
 non-canonical-scalar facts below are derived from it. -/
