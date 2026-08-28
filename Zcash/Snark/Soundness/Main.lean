@@ -66,8 +66,8 @@ theorem deployedAccepts_congr_instanceCommitment [DecidableEq G] [Inhabited G]
     ps ch hcommit]
   exact h
 
-/-- **Byte-level deployed acceptance.** The pinned description describes the circuit-derived
-canonical key and the key actually checked agrees with it on every verifier-reachable field
+/-- **Byte-level deployed acceptance.** The pinned description describes the designated canonical
+key and the key actually checked agrees with it on every verifier-reachable field
 (`Describes`); no absorbed instance commitment is the identity, which halo2's
 `common_point` refuses where the total `pointBytes` would encode it as `(0, 0)`; the whole proof
 byte string parses canonically and with no unread suffix; and the existing typed `DeployedAccepts`
@@ -76,8 +76,21 @@ predicate holds at challenges derived by the deployed BLAKE2b transcript, opened
 
 The separate `canonicalVk` argument is necessary because Halo2's pinned description omits derived
 runtime fields. `Describes` checks its represented fields against `canonicalVk` and binds every
-verifier-active field of `vk`, including `blindingFactors`, `delta`, `chunkLen`, and common-evaluation
-indices, to that canonical key. This definition composes the modeled layers.
+verifier-active field of `vk`, including `blindingFactors`, `delta`, `chunkLen`, the permutation
+partition, and common-evaluation indices, to that key. It remains a relation: the Action caller
+supplies the circuit-derived key and separately pins the exact exporter-emitted description.
+
+Nor does `Describes` derive every reader count. The caller's `Shape` supplies
+`numQuotientPieces` and `numPointSets`; the Action instantiation obtains the former from circuit
+derivation and the latter from proof parameters. `numPermutationSets` is checked against the key's
+chunk count while regular chunking is a separate circuit/key agreement. Exact parsing therefore
+includes those deployment-shape identifications rather than proving them from the description.
+
+The empty suffix is intentional. Halo2's reader itself ignores unread bytes; the production
+transaction/bundle boundary modeled here separately checks the ZIP-specified canonical total
+length. Thus this predicate models the exact canonical-byte path, and a Rust acceptance relation
+must include that outer check before it can refine this predicate.
+
 Identifying Rust's reader with `readProof?` for every input remains a refinement boundary; the
 exact honest and random capture bytes exercise that boundary concretely. -/
 def DeployedAcceptsBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG)

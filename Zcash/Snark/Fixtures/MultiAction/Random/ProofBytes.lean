@@ -55,7 +55,7 @@ theorem capturedProofHex_decodes : (hexDecode? capturedProofHex).isSome = true :
     simp at hd
   · rfl
 
-/-- The captured proof string has the consensus length for two Actions (ZIP 225:
+/-- The captured proof string has ZIP 225's specified canonical length for two Actions:
 `2720 + 2272 · 2`): the byte accounting of its successful parse at this family's shape. -/
 theorem capturedProofBytes_length : capturedProofBytes.length = 7264 := by
   have h := readProof?_length capturedProofBytes_decodes

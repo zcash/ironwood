@@ -7,7 +7,7 @@ import Zcash.Snark.Verifier.KeyDigest
 The transcript's first element is the verifying key's digest, `transcript_repr`. The pinned
 Halo2 exporter emits the exact compact `Debug` string it hashed as
 `Fixture.capturedPinnedKeyDescription`. This module reads that string back through `DebugValue`
-and checks that the description's fields are the captured key's fields — the domain,
+and checks that its represented verifier fields are the captured key's fields — the domain,
 column counts, gates, query layouts, permutation columns, lookups, and both commitment vectors —
 with the moduli, `extended_k`, `num_selectors`, `constants`, and `minimum_degree` checked against
 the literals the deployed circuit has, since the verifier's key carries no counterpart for them.
@@ -20,8 +20,8 @@ trust in the captured digest scalar; the string and captured key remain capture 
 captured key is the derived key (`Keygen/Certificate.lean`), so every comparison below transports
 to `derivedVk`.
 
-The reading below is the one `Describes` (`Verifier/KeyDigest.lean`) makes of any description
-against any key, stated here field by field: `pinned`, `cs`, and `domain` are its
+The reading below is the relation `Describes` (`Verifier/KeyDigest.lean`) checks between a
+description and a designated key, stated here field by field: `pinned`, `cs`, and `domain` are its
 `descriptionValue`, `descriptionCs`, and `descriptionDomain`, and the permutation columns pass
 through its `toQuerySpace`. Each honest family discharges `Describes` for its own emitted string —
 the two families emit the same one — as the key-identification conjunct of `DeployedAcceptsBytes`
@@ -34,8 +34,9 @@ resistance of the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, wh
 idealized like BLAKE2b's randomness (`Capstones/Action.lean`, *Key digest*).
 
 `DescriptionSyntaxCanonical` now requires the exact compact derived-`Debug` struct names and field
-sequences before `field?` is used, so duplicated, reordered, or unknown fields are rejected rather
-than justified only by fixture provenance.
+sequences before `field?` is used, and field decoders require canonical lowercase, in-range
+32-byte encodings. Thus duplicated, reordered, or unknown fields and modular aliases are rejected
+rather than justified only by fixture provenance.
 -/
 
 namespace Zcash.Snark.PinnedKey

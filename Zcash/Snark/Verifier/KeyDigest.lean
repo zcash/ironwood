@@ -22,11 +22,13 @@ these shapes: `Name { f: v, g: w }`, `Name(a, b)`, `[a, b]`, and a bare `Name` f
 field-less struct or argument-less tuple. The extractors at the end turn the pinned fields into
 `Expr`, `ColumnRef`, query layouts, and Vesta points — the shapes `VerifyingKey` carries.
 
-Nothing here is trusted: the fixture checks that hashing the description reproduces the captured
-digest, and `Describes` below reads the description's fields back against the key and shape it
-claims to describe — the conjunct `DeployedAcceptsBytes` carries, discharged at each honest
-capture and restated field by field in `Fixtures/PinnedKey.lean`. What the digest cannot give is
-cross-key binding — that no other key hashes to it. That is collision resistance of the *reduced*
+The parser and digest computation are checked, but the exporter-emitted string remains a deployment
+input: the fixture checks that hashing that exact string reproduces the captured digest, and
+`Describes` below relates its represented fields to a designated canonical key and the key used by
+the verifier. It does not reconstruct Rust's unique `Debug` output from a key. In particular,
+proof-reader dimensions and printed keygen-only values have separate provenance, stated below
+and checked for the capture in `Fixtures/PinnedKey.lean`. What the digest cannot give is cross-key
+binding — that no other key hashes to it. That is collision resistance of the *reduced*
 digest `keyDigest`, BLAKE2b's 512-bit output taken modulo `p`: two descriptions whose digests are
 merely congruent modulo `p` share a key digest with no BLAKE2b collision
 (`challengeOfDigest_eq_iff_modEq`), so bare BLAKE2b collision resistance does not imply it. Under
@@ -397,15 +399,22 @@ def lookup? (instanceLayout adviceLayout fixedLayout : List (ℕ × ℤ))
 
 end DebugValue
 
-/-! ## The description against a canonical and verifier-used key
+/-! ## The description against a designated canonical and verifier-used key
 
 Halo2's `PinnedVerificationKey` description intentionally omits verifier-active values that it
 reconstructs from the constraint system, including the blinding count, permutation delta, chunk
 width, and common-evaluation indices. Consequently no predicate over only the description and an
-arbitrary `VerifyingKey` can identify those fields. `Describes` therefore takes two keys: the
-canonical key derived from the circuit and the key actually used by the verifier. It checks the
-description against every represented canonical field and separately requires behavioral
-agreement of every field the Lean verifier consumes. -/
+arbitrary `VerifyingKey` can identify those fields. `Describes` therefore takes two keys: the key
+designated canonical by its caller and the key actually used by the verifier. It checks the
+description against every represented field of the first and separately requires behavioral
+agreement of every field the Lean verifier consumes. The Action instantiation supplies its first
+key from the circuit-derived keygen pipeline.
+
+This relation does not derive every `readProof?` dimension from the description. In particular,
+`numQuotientPieces` and the invocation-specific `numPointSets` come from `Shape` rather than a
+printed field. `numPermutationSets` is checked against `permutationChunks.length`, while the
+chunk width and partition regularity come from the circuit-derived key. Those are named deployment
+shape agreements, not consequences of parsing the description. -/
 
 open DebugValue
 
@@ -531,11 +540,13 @@ def DescriptionCommitmentsMatch {shape : CircuitShape}
   (((descriptionValue s).field? "permutation" >>= (·.field? "commitments")) >>= listOf? point?)
     = some (List.ofFn vk.permutationCommonCommitment)
 
-/-- Every verifier-represented field of a canonical key is read from the exact compact Rust
-`Debug` description. The grammar checks above reject missing commas, noncanonical field values,
+/-- Every represented verifier field of a designated canonical key is read from an exact compact
+Rust `Debug` description. The grammar checks above reject missing commas, noncanonical field values,
 wrong query column types, inconsistent query metadata, duplicate/unknown top-level fields, and
 trailing text. Keygen-only fields remain part of the exact hashed string but have no verifier-side
-counterpart; concrete deployment pins them separately. -/
+counterpart; concrete deployment pins their values and the exporter-emitted string separately.
+Thus this predicate validates *a* description of the key; it does not compute Rust's unique
+description from the key. -/
 def DescriptionFieldsMatch {shape : CircuitShape}
     (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   DescriptionSyntaxCanonical s ∧
@@ -543,10 +554,11 @@ def DescriptionFieldsMatch {shape : CircuitShape}
   DescriptionArgumentFieldsMatch s vk ∧
   DescriptionCommitmentsMatch s vk
 
-/-- **The description and verifier-used key identify one canonical key.** The description matches
-the circuit-derived canonical key, while the actual key agrees with that canonical key on every
-verifier-reachable field. The explicit canonical argument is necessary because Halo2 omits several
-reconstructed runtime fields from `PinnedVerificationKey`. -/
+/-- **Relate a description, a designated canonical key, and the verifier-used key.** The
+description matches every represented field of the designated key, while the actual key agrees
+with that key on every verifier-reachable field. The explicit canonical argument is necessary
+because Halo2 omits several reconstructed runtime fields from `PinnedVerificationKey`; its
+circuit-derived provenance and the exact exporter string are separate deployment facts. -/
 def Describes {shape : CircuitShape} (s : String)
     (canonical used : VerifyingKey shape Fp VestaG) : Prop :=
   DescriptionFieldsMatch s canonical ∧ VerifyingKeyAgrees canonical used
@@ -624,6 +636,10 @@ example : query? "Advice"
 
 example : canonicalFieldNat? PALLAS_BASE_CARD
     (.atom "0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001") = none := by
+  decide +kernel
+
+example : fq?
+    (.atom "0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001") = none := by
   decide +kernel
 
 end Zcash.Snark

@@ -7,8 +7,8 @@
 # capture tooling. The base match-only pipeline is released in halo2_proofs 0.3.5 and orchard
 # 0.15.5; the proof-byte exporter and deployed decoder checks are pinned to zcash/halo2#933 and
 # zcash/orchard#544 below. Both commits are fetched through the canonical zcash repositories,
-# and Orchard #544's temporary Cargo pin of halo2_proofs is asserted to resolve exactly the
-# #933 snapshot through the canonical URL. Every cargo invocation runs --locked. CI runs this
+# and Orchard #544's Cargo.lock entry for halo2_proofs is asserted to resolve exactly the #933
+# snapshot through the canonical URL. Every Cargo invocation runs --locked. CI runs this
 # script (fixtures.yml), enforcing all four families byte-for-byte at those reviewed snapshots.
 #
 # Sources are cloned from the canonical public repository; set ORCHARD_SRC to a local checkout
