@@ -5,17 +5,18 @@ import Zcash.Snark.Soundness.Oracle.Challenge255
 /-!
 # The deployment-instantiation record
 
-The Action capstones are exact inside their stated model; interpreting them as claims about the
-deployed verifier requires identifying each modeled ingredient with its deployed counterpart.
-`ActionDeploymentInstantiation` is that bridge as one machine-readable surface: a field per
-floor, each stating the identification against the development's own definitions, with the
-deployed objects carried as record data.  Its finite failure observer is deduplicated before the
-proved Challenge255 hybrid is applied, so one record supplies a *joint* deployed experiment rather
-than an insufficient per-squeeze event bound, and its query budget is certified tight, so the
-hybrid's per-query charge totals a closed number rather than a free multiple.
-`Capstones/Action.lean` consumes the record and derives the deployed knowledge-failure bound.  No
-term is constructed here, and fields whose floors are intentionally permanent say so in their
-docstrings.
+The Action capstones are exact inside their stated model. `ActionDeploymentInstantiation` collects
+the typed observer's model identifications and, separately, the production Rust objects and
+one-way containment assumptions. Its finite failure observer is
+deduplicated before the proved Challenge255 hybrid is applied, so one record supplies a *joint*
+modeled experiment rather than an insufficient per-squeeze event bound, and its query budget is
+certified tight, so the hybrid's per-query charge totals a closed number rather than a free
+multiple.
+`Capstones/Action.lean` consumes the record and derives a knowledge-failure bound for the record's
+typed oracle observer. Production Rust acceptance is related separately, at the concrete BLAKE2b
+table, by `rustAccepts_halo2Coins_implies_familyAccepts`; it is not the event measured by that
+observer bound. No term is constructed here, and fields whose floors are intentionally permanent
+say so in their docstrings.
 
 The adversary-class restriction — deployed provers are modeled as represented online-AGM
 programs — is carried by `ComputedAdaptiveActionStatementFSFamily` itself, the type the record
@@ -26,9 +27,11 @@ Production acceptance, proof bytes, and raw instance columns are named below, an
 explicitly. `rustAcceptedProofRepresented` is the distinct algebraic-group-model edge connecting
 an accepted decoded proof to the represented proof selected by the family.  The honest captures
 exercise the Lean side on finite examples; they do not prove either universal field. Here
-"production acceptance" means the public transaction/bundle path represented by the record,
-including its canonical proof-length check (ZIP 257, a consensus rule from NU6.2 onward); a direct
-call to Halo2's reader is weaker because it permits an unread suffix.
+"production acceptance" means one non-batched proof-bundle verification represented by the
+record, including its canonical proof-length check (ZIP 257, a consensus rule from NU6.2 onward).
+A direct call to Halo2's reader is weaker because it permits an unread suffix. Halo2's optional
+randomized `BatchVerifier` aggregation of separate proof blobs is outside this record and every
+probability endpoint built from it.
 -/
 
 namespace Zcash.Snark
@@ -134,10 +137,11 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   deployedProofBytes :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → List UInt8
-  /-- Actual production Rust acceptance for the selected raw columns and proof bytes. This must be
-  the public transaction/bundle acceptance relation, including its canonical proof-size check
-  (ZIP 257, NU6.2 onward), not a direct call to Halo2's suffix-tolerant `Proof::verify`. The record
-  deliberately leaves the relation abstract until a verified Rust semantics supplies it. -/
+  /-- Rust acceptance for one selected proof bundle, raw columns, and proof bytes, including the
+  public canonical proof-size check (ZIP 257, NU6.2 onward), not a direct call to Halo2's
+  suffix-tolerant `Proof::verify`. This relation excludes randomized aggregation of separate proof
+  blobs by Halo2's optional `BatchVerifier`. The record deliberately leaves the relation abstract
+  until a verified Rust semantics supplies it. -/
   deployedRustAccepts :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       family.Coins → Prop
@@ -174,7 +178,7 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   failureObserver :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) →
       OracleComp (AdaptiveActionStatementTranscript pp) Fp Bool
-  /-- The observer really decides the typed deployed knowledge-failure predicate under lookup-table
+  /-- The observer really decides the typed modeled knowledge-failure predicate under lookup-table
   semantics. -/
   failureObserverTrue_iff : ∀ basis O,
     (failureObserver basis).run O = true ↔
@@ -189,7 +193,7 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   `relationFinderReads_card_le` certifies for one retained traversal.  `OracleComp.QueryBound` is
   upward-closed, so `failureObserverQueryBound` alone is only a floor on `challengeQueryBound`,
   and the capstone's joint charge `challengeQueryBound * challenge255Bias` could be padded past
-  `1`; this ceiling is what prices that charge at the closed `2^-136` the deployed endpoint
+  `1`; this ceiling is what prices that charge at the closed `2^-136` the modeled endpoint
   states. -/
   challengeQueryBound_le :
     challengeQueryBound ≤ family.Q + (11 + (AdaptiveActionStatementShape pp).k)
@@ -222,9 +226,9 @@ variable {T : Type*} [DecidableEq T] {pp : ProofParams}
       Zcash.Arithmetic.scalarFieldOrder}
   {workLimit : ℕ}
 
-/-- The joint deployed failure law: sample the deployed basis, then run the deduplicated complete
-observer with Challenge255 answers. -/
-noncomputable def deployedFailurePMF
+/-- The joint modeled failure law: sample the deployment record's basis law, then run its
+deduplicated typed observer with Challenge255 answers. This is not a law of Rust acceptance. -/
+noncomputable def modeledFailurePMF
     (deployment : ActionDeploymentInstantiation pp family query hchar workLimit) : PMF Bool :=
   deployment.deployedBasisLaw.bind fun basis ↦
     (OracleComp.dedup [] (deployment.failureObserver basis)).runFreshPMF
@@ -271,7 +275,7 @@ theorem rustAccepts_halo2Coins_implies_familyAccepts
   rw [← hinstances]
   exact hraw
 
-/-- The exact observer used by `deployedFailurePMF` still decides the modeled knowledge-failure
+/-- The exact observer used by `modeledFailurePMF` still decides the modeled knowledge-failure
 event: deduplication changes repeated-query scheduling but preserves lookup-table execution. -/
 theorem dedupFailureObserver_true_iff_model
     (deployment : ActionDeploymentInstantiation pp family query hchar workLimit)

@@ -170,7 +170,10 @@ honest captures witness the composition. BLAKE2b's idealization as a random orac
 refinement of Rust's reader to the Lean decoder, and identification of the pinned description as
 Rust's exact exporter output remain external. `Snark/Fingerprint/Match.lean` enumerates the
 boundary, while `Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement
-as the explicit `rustAcceptsRefinesLeanRaw` deployment assumption. The byte-layer implementation
+as the explicit `rustAcceptsRefinesLeanRaw` deployment assumption. The probability endpoint bounds
+the record's typed oracle observer rather than Rust acceptance; the Rust-containment theorem is
+separate and covers one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized
+aggregation of separate proof blobs is outside the formalization. The byte-layer implementation
 and landing history are recorded in
 [#215](https://github.com/zcash/ironwood/pull/215), which closes the scoped byte-encoding issue
 [#66](https://github.com/zcash/ironwood/issues/66). Neither claims to discharge the universal

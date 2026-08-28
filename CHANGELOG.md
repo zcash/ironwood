@@ -64,3 +64,8 @@ and this project adheres to Rust's notion of
 - `ActionDeploymentInstantiation` renames `deployedTypedAccepts` and `acceptsFaithful` to
   `deployedIdealizedAccepts` and `idealizedAcceptsFaithful`: they identify the injectable-oracle
   observer's typed core, not Rust acceptance.
+- The deployment-record probability surface is named `modeledFailurePMF`, and its capstones use
+  `Modeled`/`modeled`: they bound the record's typed oracle observer, not Rust acceptance. The
+  separate `rustAccepts_halo2Coins_implies_familyAccepts` theorem is scoped to one non-batched
+  proof bundle at the concrete BLAKE2b table; optional randomized `BatchVerifier` aggregation is
+  outside the formalization.
