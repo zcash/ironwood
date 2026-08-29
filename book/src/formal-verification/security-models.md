@@ -13,7 +13,7 @@ Every argument has the same shape, the development-wide
 > a discrete-log relation, a hash collision, or a commitment-opening collision. Hardness
 > assumptions are consumed only at the computational layer, against the exhibited break.
 
-So each definition sits on a three-layer stack:
+So each definition sits on a layered stack:
 
 - **Layer A — vocabulary.** The break events, as structures carrying their data
   (`RandomOracle.Collision`, `NontrivialRelation`, `NoteCommitBreak`). Deterministic; no
@@ -21,9 +21,13 @@ So each definition sits on a three-layer stack:
 - **Layer B — reduction.** A computable `def` that turns a property violation into a
   Layer-A break (`NontrivialRelation.ofImbalance`, `Merkle.collisionOfWrongLeaf`,
   `noteCommitBreakOfNe`). Deterministic; no hardness assumption.
-- **Layer C — probability.** The bound that producing the break is hard: the birthday
-  bound $q \cdot (q-1)/\FieldSize$, or the discrete-log advantage. The only layer that
-  consumes an assumption.
+- **Layer C — probability.** The bound that producing the break is hard: the
+  discrete-log advantage, or the birthday bound $q \cdot (q-1)/\FieldSize$.
+- **Layer D — programmed basis.** The optional conversion of an adversary that finds
+  a Layer-A relation into one that finds a plain discrete log:
+  [resample the bases](#the-programmed-basis-reduction) with a challenge embedded,
+  and solve the relation for the challenge. This step is shared by all the target
+  problems rather than being per-definition.
 
 ## How the layers compose
 
@@ -117,15 +121,16 @@ a random oracle, and on the [generator-RO](definitions.md#generator-ro) endpoint
 adversary is restricted to be [algebraic](#the-algebraic-adversary-restriction).
 A theorem of this kind says: an *algebraic adversary in the random-oracle model* that
 wins the protocol game, under the stated conditions, would need to be able to compute
-a nontrivial discrete-log relation —tightly equivalent to computing a discrete log
-(Jaeger–Tessaro,
-[Expected-Time Cryptography: Generic Techniques and Applications to Concrete Soundness](https://eprint.iacr.org/2020/1213),
-Lemma 3)— with an advantage and resource cost that is related in terms of concrete
-efficiency. The same
+a nontrivial discrete-log relation among the deployed fixed bases, with an advantage
+and resource cost that is related in terms of concrete efficiency. The same
 content is sometimes stated as: an adversary that wins the game either exhibits a
 discrete-log break *or* falls outside the modelled class — an inclusive or, since an
 adversary that wins the game by non-algebraic means could potentially do so by breaking
-the underlying problem.
+the underlying problem. Converting the relation into a plain discrete log is a further,
+optional step (tight for sampled bases: Jaeger–Tessaro,
+[Expected-Time Cryptography: Generic Techniques and Applications to Concrete Soundness](https://eprint.iacr.org/2020/1213),
+Lemma 3); it lives in a separate development, described below, and nothing in the main
+reductions depends on it.
 
 What such a theorem does not say is "assuming (among other things) that discrete log is
 hard, the protocol is secure". Discrete-log hardness is not a premiss of the theorem,
@@ -153,7 +158,7 @@ There are two different techniques that can help to overcome this problem in a
 concrete-security development:
 
 1. We can present an explicit computable reduction, with exact resource accounting, from
-   winning the game to an exhibited discrete-log solver.
+   winning the game to an exhibited break (for example a nontrivial discrete-log relation).
 2. We can consider the adversary's advantage against a family of protocols ranging over
    the choices of random bases, modelling hash functions as random oracles where
    necessary. These bases can be on the actual curves, and the random oracles can have
@@ -167,28 +172,93 @@ technically suffice:
   nontrivial relation is a meaningful security argument whether or not a winning
   adversary hard-coded its discrete log.
 
-Our approach is to use 1 for all reductions, and 2 when it allows obtaining a tighter
-reduction. We always use 1 because it is essentially free: in a development where we
-take the effort to make some reductions computable, it is consistent to make all of them
-computable. We sometimes additionally use 2 because, using 1 alone, there is sometimes
-no known way to obtain a tightly efficient reduction: against fixed bases the reduction
-has no randomness into which to embed its discrete-log challenge, so extraction must
-rewind the adversary — the forking route, with the tightness losses that brings.
-Sampling the bases, on the other hand, lets the reduction embed the challenge into the
-basis randomness and extract straight-line, with no multiplicative loss.
+Our approach is to use 1 for the entire main chain of reductions, stated at the deployed
+fixed bases, with the discrete-log **relation** problems as the targets. We use technique
+1 throughout because it is essentially free: in a development where we take the effort to
+make some reductions computable, it is consistent to make all of them computable. And
+with a DLR problem as the target, fixed bases cost nothing: the tightness of the main
+reductions comes from straight-line extraction. The algebraic adversary's
+representations are read at challenge points that the reduction programs — not from any
+randomness in the bases.
 
-Embedding the challenge into the basis randomness is legitimate because it does not
-change the game. Given a discrete-log challenge $(B, C)$ —seeking the $z$ with
-$C = z \,•\, B$— the reduction sets each base to $x \,•\, B + y \,•\, C$ with its own
-fresh uniform pair $(x, y)$ per base. Such bases are exactly uniform: the adversary's
-view is identical to the honestly sampled game, so its success probability is unchanged,
-and the challenge is hidden perfectly rather than computationally. What the reduction
-gains is private knowledge of the pairs. A returned relation among the bases then becomes
-a linear equation in $z$, solvable unless the relation's coefficients land on the single
-$1/\FieldSize$ hyperplane where the $y$ component cancels — the form of reduction the
-definitions page calls [programmed-basis](definitions.md#programmed-basis). The argument
-is Jaeger–Tessaro's proof of their Lemma 3, presented there as a careful use of
-self-reducibility techniques.
+The obstacle that fixed bases do raise applies only to the last conversion from a
+discrete logarithm relation to a plain discrete logarithm. There the reduction must
+embed a challenge into basis randomness that the deployed protocol does not have.
+That is technique 2, and it is quarantined in a separate development to clarify
+their respective dependencies:
+* The main reductions to a DLR problem in layers B and C depend only on the
+  algebraic-adversary restriction and on the challenge hash as a programmable
+  random oracle.
+* The DLR → DL conversion in layer D depends on reprogramming of the basis, the
+  group-hash indifferentiability result, and the named Weil-bound hypothesis that
+  the latter relies on. Since the group hash would be an adversary-queryable
+  oracle in every game (this is not yet implemented and is tracked as
+  [#188](https://github.com/zcash/ironwood/issues/188)), the conversion is
+  stated in the AGM+RO throughout. This layer does not depend on anything about
+  the protocol other than the group hash.
+
+### The programmed-basis reduction
+
+The [programmed-basis](definitions.md#programmed-basis) tactic used in layer D is
+legitimate because it does not change the game. Given a discrete-log challenge
+$(B, C)$ —seeking the $z$ with $C = z \,•\, B$— the reduction sets each base to
+$x \,•\, B + y \,•\, C$ with its own fresh uniform pair $(x, y)$ per base.
+Such bases are exactly uniform: the adversary's view is identical to the honestly
+sampled game, so its success probability is unchanged, and the challenge is hidden
+perfectly rather than computationally. What the reduction gains is private knowledge
+of the pairs. A returned relation among the bases then becomes a linear equation in
+$z$, solvable unless the relation's coefficients land on the single $1/\FieldSize$
+hyperplane where the $y$ component cancels.
+
+The argument is classical.
+Chaum–van Heijst–Pfitzmann proved the $n$-tuple case by induction on $n$ (Lemma 2 of
+[Cryptographically strong undeniable signatures, unconditionally secure for the signer](https://link.springer.com/content/pdf/10.1007/3-540-46766-1_38.pdf), <!--
+alternative link: https://chaum.com/wp-content/uploads/2022/01/Chaum-1992-Chapter-Cryptographically-Strong-Undeniable-Signatures.pdf -->
+CRYPTO '91), and Bellare–Goldreich–Goldwasser gave a direct embedding (Appendix A of
+[Incremental cryptography: the case of hashing and signing](https://cseweb.ucsd.edu/~mihir/papers/inc1.pdf),
+CRYPTO '94), at a factor-$2$ loss from embedding the challenge into a random subset
+of the bases. [Jaeger–Tessaro](https://eprint.iacr.org/2020/1213)'s Lemma 3 dots the
+i's and crosses the t's: the affine per-base embedding, losing only the $1/\FieldSize$
+hyperplane, is presented there as a careful use of self-reducibility techniques.
+
+### The layered organization
+
+The division of labour above is reflected in how the development is organized (the
+reorganization is in progress; new code is written to this shape). Layers B and C
+cover reductions in the main chain and their probability bounds. The former are
+computable reductions from the security games to the *main target problems* — a
+discrete-log relation over the fixed Pallas bases, a discrete-log relation over the
+fixed Vesta bases, and, for Spend authority, the same kind of relation with the
+honestly sampled spend-authorization keys joining the basis. These reductions are
+stated for algebraic adversaries in the challenge-oracle model; for each of them,
+only reductions with both of those model ingredients are known to be tight.
+
+The Balance games need no honest parties —every transaction is the adversary's own—
+so their targets are currently relations over the fixed bases alone. Spend authority
+has honest parties, and each group element their oracles emit joins the adversary's
+basis as an element held without a representation. Only the sampled keys need to stay
+in the basis: the reduction simulates the signing oracle by programming the challenge
+oracle, so signatures carry representations that the reduction knows. The Pallas
+target is stated in its family form —no exhibitable nontrivial relation among any
+tuple of group-hash outputs— because the adversary would be able to query the group
+hash at any time; the named fixed bases are particular group-hash outputs, and
+`DiversifyHash` is the honest protocol's own use of the same access. As discussed
+below under [Modelling the group hash](#modelling-the-group-hash), the adversary's
+access to the group hash is not yet implemented.
+
+Layer D, kept in its own subdirectory and book subsection, shows that a discrete-log
+relation reduces to a plain discrete log in the AGM+RO, by the
+[programmed-basis argument](#the-programmed-basis-reduction) above together with the
+[group-hash indifferentiability](group-hash-indifferentiability.md) result and its
+named Weil-bound hypothesis. Nothing in layers A, B, or C depends on layer D. That
+is a necessary restriction because the programmed basis is inconsistent with the
+deployed one, and so an experiment that assumed such consistency would be vacuous.
+Keeping the layers physically separate makes that confusion structurally impossible,
+improves modularity of the development, and clarifies that layer D is not required
+if we are prepared to accept the DLR itself (for bases output by the group hash) as
+the target hard problem.
+
+### Cryptographic difficulty
 
 The judgement that the exhibited solver is beyond reach is a statement about the current
 state of cryptanalytic knowledge, supplied by the reader rather than by the mathematics —
@@ -252,7 +322,7 @@ An algebraic adversary is one that, whenever it outputs a group element, also su
 a representation: coefficients expressing that element over the elements it has
 received (Fuchsbauer–Kiltz–Loss,
 [The Algebraic Group Model and its Applications](https://eprint.iacr.org/2017/620),
-Crypto 2018). Only the provenance of output group elements is restricted. The
+CRYPTO 2018). Only the provenance of output group elements is restricted. The
 computation deciding the coefficients is unrestricted — the adversary may inspect
 encodings, branch on bits, and use any structure it can see. In this development the
 restriction is part of the adversary's *type* in the online-AGM layer, not a named
@@ -302,34 +372,35 @@ issue.
 
 ## Fixed bases, the group hash, and the reference string
 
-Several reductions bottom out at discrete log by treating a set of group elements as
-*independent* — for example the value-commitment bases $\mathcal{V}$ and $\mathcal{R}$,
-the Sinsemilla generators, and the proof system's inner-product reference string.
-Independence is what turns "find a nontrivial relation among these elements" into the
-discrete-log game: the reduction models each base as a random multiple of one generator
+The main target problems treat a set of group elements as *independent* — for example
+the value-commitment bases $\mathcal{V}$ and $\mathcal{R}$, the Sinsemilla generators,
+and the proof system's inner-product reference string. Independence —no party holds a
+known relation among them— is what makes "find a nontrivial relation among these
+elements" a plausible hard problem, and it is also what the DLR → DL conversion
+consumes: there the reduction models each base as a random multiple of one generator
 and embeds its discrete-log challenge into that randomness.
 
 In the deployed protocol, though, these bases are *fixed*. Each is produced once, by
 hashing public strings to the curve with `GroupHash` (spec
 [§5.4.9.8](https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta)),
 and the resulting outputs are baked into the protocol as a Uniform Reference String.
-The gap between the two is the standard gap for protocols with a URS. We prove security
-for the family of protocols that sample the bases at random, over the distribution of
-that randomness. Then we argue heuristically that the deployed protocol, which fixes
-them via the group hash, inherits it — provided that the group hash scheme admits no
-attack more efficient than the algebraic ones bounded by the proven reductions. The
-[group-hash indifferentiability development](group-hash-indifferentiability.md)
-supplies the formal half of that judgement: the deployed group hash is indifferentiable
-from a random oracle into the group, under a named Weil-bound hypothesis, with the
-simulator exhibited as an algorithm.
+The main chain does not bridge that gap by sampling. Its reductions stop at
+discrete-log relations over the deployed bases themselves, and the hardness judgement
+a reader supplies is about exactly those long-lived targets. The sampled-bases
+argument lives in the separate DLR → DL development (layer D): there the bases are
+sampled and the reduction programs them. The
+[group-hash indifferentiability result](group-hash-indifferentiability.md) —that the
+deployed group hash is indifferentiable from a random oracle into the group, under a
+named Weil-bound hypothesis, with the simulator exhibited as an algorithm— is what
+licenses treating the deployed group-hash outputs as that experiment's samples.
 
-No Lean theorem instantiates the soundness endpoints at the deployed bases;
-identifying Halo2's group hash outputs with the sampled basis is a heuristic step
-(`Zcash/TrustBoundary.lean` records this scope). The same heuristic underlies every
-fixed-base use of the group hash here, including the value and note commitments, the
-Merkle hash, and the proof system's reference string. The same primitive also produces
-bases on demand: `DiversifyHash` derives each diversified address base from `GroupHash`
-at key generation.
+The reorganization towards this shape is in progress. Today the Vesta-side
+knowledge-soundness endpoints still sample their basis through the generator RO, so
+identifying Halo2's group hash outputs with the sampled basis remains a heuristic step
+there (`Zcash/TrustBoundary.lean` records this scope); the ledger-side value arms are
+being restated at the deployed bases first. The same primitive also produces bases on
+demand: `DiversifyHash` derives each diversified address base from `GroupHash` at key
+generation.
 
 This heuristic comes with an important caveat: an adversary has the protocol's *entire
 lifetime* to attack that one specific reference string — for example, to search for a
@@ -340,8 +411,14 @@ an attack tuned to the deployed bases, and the cost of finding one is amortized 
 every transaction ever made against them. The caveat is not speculative: a rational
 adversary would certainly prefer this strategy, since it dominates all others based on
 breaking discrete logs — it does not provide free precomputation, but it gives the
-adversary more time over which to pay the cost. That is a known, acknowledged limitation
-of this development.
+adversary more time over which to pay the cost.
+
+Stating the main target problems at the fixed bases is what turns this from a limitation
+described alongside the theorems, into the content of the hardness judgement: the
+advantage a reader supplies is an estimate for exactly the long-lived problem the
+adversary faces, precomputation and lifetime included. A bound that is proved only for
+sampled bases quietly excludes that adversary; a DLR target at the deployed bases avoids
+baking in that idealization and sweeps nothing under the carpet.
 
 This sharpens the potential threat from quantum computers or other discrete-log attacks:
 a single discrete-log computation is catastrophic to the protocol as a whole, rather than
@@ -354,6 +431,8 @@ concern, not a per-transaction one. See
 [ZIP 2005](https://zips.z.cash/zip-2005#effectsofdiscrete-logarithm-breakingattacksbeforetheswitchtotherecoveryprotocol)
 for further discussion.
 
+### Modelling the group hash
+
 What makes a group-hash output a good base is that it comes with no known
 representation over previously received elements. The same property cuts the other way
 for the adversary model. A realistic adversary can evaluate `GroupHash` directly on
@@ -363,10 +442,28 @@ over any fixed finite basis.
 
 The faithful modelling makes the group hash itself an oracle of the game: the adversary
 may query it, each fresh output joins the AGM basis as a new independent element, and
-the reduction may embed its challenge in programmed outputs. The development does not
-currently model that access. Each game fixes an enumerated basis of the generators its
-honest algorithms use, and its theorems quantify over adversaries algebraic over that
-basis. Two consequences should be stated plainly:
+the reduction may embed its challenge in programmed outputs. Either of two interfaces
+for that oracle can be sound. The simpler form is the black-box group hash in the
+plain AGM: each answer is a fresh high-entropy sample, so adjoining it to the basis
+unrepresented is sound. An alternative that is less restrictive on the adversary is
+to give it `hash_to_field` instead, with `map_to_curve` computed locally — this needs
+the AGM with oblivious sampling (Lipmaa–Parisella–Siim,
+[Algebraic Group Model with Oblivious Sampling](https://eprint.iacr.org/2023/1504),
+TCC 2023; the type-safe presentation in
+[their CRYPTO 2025 paper](https://eprint.iacr.org/2024/994) is nicer to formalize
+against). A model that admitted locally computed images of *chosen* field elements
+as unrepresented basis elements would let the adversary adjoin an element whose
+representation it secretly knows (`map_to_curve` is efficiently invertible on its
+image), and win any relation game trivially. AGMOS blocks exactly this, by making a
+new assumption called TOFR (Tensor Oracle Find-Rep), which is typically satisfied by
+requiring obliviously sampled elements to come from a distribution of sufficiently
+high min-entropy. Whether the AGMOS form is a strict generalization of the black-box
+form is open.
+
+The development does not currently model *any* access to the group hash. Each game
+fixes an enumerated basis of the generators its honest algorithms use, and its
+theorems quantify over adversaries algebraic over that basis. Two consequences should
+be stated plainly:
 
 * For games whose honest parties themselves call `DiversifyHash` —Spendability and
   Spend Authority, where key generation derives the diversified base— the modelled
