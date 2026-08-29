@@ -17,8 +17,10 @@ each family's `Transcript.lean` hashes the exporter-emitted description with Hal
 fields back against the captured key, so the scalar is checked rather than only pinned.
 
 The point-level equalities below identify the two captures' URS and verifying-key commitment
-points; the multi-action verifying-key certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`)
-is transported from the single-action one along them.
+points, and `captures_use_same_pinnedKeyDescription` identifies their exporter-emitted pinned key
+descriptions; the multi-action verifying-key certificate
+(`Fixtures/MultiAction/Honest/VkCertificate.lean`) is transported from the single-action one along
+the point equalities.
 -/
 
 namespace Zcash.Snark.PostNu63Fixture
@@ -116,6 +118,12 @@ theorem captures_use_same_permutationCommonCommitments :
     Fixture2.capturedPermutationCommonCommitments
       = Fixture.capturedPermutationCommonCommitments := by
   native_decide
+
+/-- The two captures carry the same exporter-emitted pinned key description, so the field-by-field
+reading in `Fixtures/PinnedKey.lean`, stated over the single-action string, reads the multi-action
+capture's string as well. The two literals are compared by the kernel. -/
+theorem captures_use_same_pinnedKeyDescription :
+    Fixture2.capturedPinnedKeyDescription = Fixture.capturedPinnedKeyDescription := rfl
 
 /-- The two captures carry one and the same URS record; the multi-action verifying-key
 certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`) rewrites along this equality. -/
