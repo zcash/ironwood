@@ -307,7 +307,7 @@
         "Ideal-oracle bounds transport to the deployed challenge conversion through an explicit statistical-distance premiss (PMFEventBiasLE)."
       ],
       "residuals": [
-        "Blake2b's digest is idealized as uniform; the transcript encoding beneath the schedule is modeled and proved injective and prefix-free, and every captured challenge is recomputed through Lean's BLAKE2b.",
+        "Blake2b's digest is idealized as uniform; the transcript encoding beneath the schedule is modeled, injective, and proved to preserve and reflect prefixes, and every captured challenge is recomputed through Lean's BLAKE2b.",
         "The bound is over the modeled oracle table, not over the deployed hash's actual outputs."
       ],
       "durationMs": 9500

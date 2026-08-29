@@ -31,36 +31,58 @@ theorem serializeProof_eq_capturedProofBytes : serializeProof ps = capturedProof
 
 /-- The exporter-emitted pinned key description is an exact description of the captured key
 (`Describes`, `Verifier/KeyDigest.lean`). Represented fields read back to `vk`; verifier-active
-fields omitted by Rust's description agree through the circuit-derived key. The reader-only
-quotient-piece and point-set counts come from the captured `shape`, not from `Describes`; the exact
-parse above checks them at this fixture. `Fixtures/PinnedKey.lean` separately pins the printed
-keygen-only fields. -/
+fields omitted by Rust's description agree between the separately designated and used keys.
+Printed column counts cover every query layout, and permutation column and commitment arities
+agree. The reader-only quotient-piece and point-set counts come from the captured `shape`, not
+from `Describes`; the exact parse above checks them at this fixture. `Fixtures/PinnedKey.lean`
+separately pins the printed keygen-only fields. -/
 theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk vk := by
   native_decide
 
-/-! The canonical-key half of `Describes` makes verifier-active fields omitted from Rust's pinned
-description load-bearing rather than silently mutable. -/
+private def replaceStructField (fieldName : String) (replacement : DebugValue) :
+    DebugValue → DebugValue
+  | .struct name fields => .struct name (fields.map fun field =>
+      if field.1 == fieldName then (field.1, replacement) else field)
+  | value => value
 
-theorem capturedPinnedKeyDescription_rejects_changed_blindingFactors :
+/-- A previously accepted non-Rust-emittable mutation: declare zero fixed columns and commitments
+while retaining the captured fixed-query layout. -/
+private def omittedFixedCoverageDescription : String :=
+  let cs := replaceStructField "num_fixed_columns" (.atom "0")
+    (descriptionCs capturedPinnedKeyDescription)
+  let pinned := replaceStructField "cs" cs (descriptionValue capturedPinnedKeyDescription)
+  DebugValue.renderCompact (replaceStructField "fixed_commitments" (.list []) pinned)
+
+/-- Every fixed query must now fall below the printed fixed-column count, so the description
+cannot leave a verifier-reachable fixed commitment unconstrained. -/
+theorem capturedPinnedKeyDescription_rejects_omitted_fixed_coverage :
+    ¬ Describes omittedFixedCoverageDescription vk vk := by
+  native_decide
+
+/-! These are two-key coherence checks. The description is checked against the unchanged
+canonical `vk`; `VerifyingKeyAgrees` then rejects a different verifier-used key. They do not claim
+that fields omitted from Rust's pinned description are reconstructed from its text. -/
+
+theorem capturedPinnedKeyDescription_rejects_changed_used_blindingFactors :
     ¬ Describes capturedPinnedKeyDescription vk
       { vk with blindingFactors := vk.blindingFactors + 1 } := by
   intro h
   have hEq := h.blindingFactors_eq
   simp at hEq
 
-theorem capturedPinnedKeyDescription_rejects_changed_delta :
+theorem capturedPinnedKeyDescription_rejects_changed_used_delta :
     ¬ Describes capturedPinnedKeyDescription vk { vk with delta := vk.delta + 1 } := by
   intro h
   have hEq := h.delta_eq
   simp at hEq
 
-theorem capturedPinnedKeyDescription_rejects_changed_chunkLen :
+theorem capturedPinnedKeyDescription_rejects_changed_used_chunkLen :
     ¬ Describes capturedPinnedKeyDescription vk { vk with chunkLen := vk.chunkLen + 1 } := by
   intro h
   have hEq := h.chunkLen_eq
   simp at hEq
 
-theorem capturedPinnedKeyDescription_rejects_changed_permutationChunks :
+theorem capturedPinnedKeyDescription_rejects_changed_used_permutationChunks :
     ¬ Describes capturedPinnedKeyDescription vk { vk with permutationChunks := [] } := by
   intro h
   have hEq := h.permutationChunks_eq
