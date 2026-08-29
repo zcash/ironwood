@@ -83,9 +83,10 @@ rather than proved, with its known strengthening named where one exists:
   recomputed from the exact exporter-emitted preimage: each family's `Transcript.lean` hashes that
   string, `Describes` reads its fields against the captured key, which is certified equal to the
   derived key, and `Fixtures/PinnedKey.lean` states that reading field by field. The fixture
-  inputs remain trusted; cross-key binding would need collision resistance of the reduced digest
-  `keyDigest` — BLAKE2b's output modulo `p`, which bare BLAKE2b collision resistance does not give
-  (`challengeOfDigest_eq_iff_modEq`).
+  inputs remain trusted. `Describes` is a deployment-record coherence obligation, not a premise
+  consumed by the modeled probability bound. Cross-key binding would need collision resistance of
+  the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, which bare BLAKE2b collision
+  resistance does not give (`challengeOfDigest_eq_iff_modEq`).
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
   challenge schedule into it, under `Describes` and halo2's refusal of identity instance
