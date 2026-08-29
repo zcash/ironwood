@@ -36,6 +36,11 @@ The PR refs are movable; the SHAs above are the reproducibility boundary, and a 
 has moved past is fetched by SHA rather than through the ref. Advancing either pin is an explicit
 review change. No personal-fork URL appears anywhere in the pipeline.
 
+Both feature pins are currently unmerged PR snapshots. A force-push followed by repository
+garbage collection could make an orphaned object unavailable even to the SHA fallback, in which
+case regeneration fails loudly. After those changes merge or ship, re-pin this pipeline and its
+manifest provenance to reachable merge or release commits.
+
 ### The capture changes
 
 `halo2_proofs` 0.3.5 carries the following reviewed source changes (zcash/halo2#924 and its

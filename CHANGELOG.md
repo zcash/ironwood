@@ -11,7 +11,8 @@ and this project adheres to Rust's notion of
 - The Fiat–Shamir byte layer: an executable BLAKE2b (`Zcash/Common/Hash/Blake2b.lean`), halo2's
   transcript encoding and the concrete oracle `halo2Transcript` (`Zcash/Snark/Verifier/
   Transcript.lean`), and per-family checks that recompute every captured challenge from bytes
-  (`Fixtures/*/*/Transcript.lean`), with the encoding proved injective and prefix-free.
+  (`Fixtures/*/*/Transcript.lean`), with the encoding proved injective and shown to preserve and
+  reflect prefixes.
 - The proof-string byte layer: canonical `read_point`/`read_scalar` decoders and the reader and
   serializer in the verifier's read order (`Zcash/Snark/Verifier/ProofBytes.lean`), checked
   against the exporters' exact consumed proof bytes (`Fixtures/*/*/ProofBytes.lean`), plus
@@ -34,7 +35,9 @@ and this project adheres to Rust's notion of
   syntax, and the used key agrees with it on every verifier-reachable field — `blindingFactors`,
   `delta`, `chunkLen`, and the permutation partition included) and, as halo2's `common_point`
   does, refuses identity instance commitments; each honest capture discharges both by evaluation,
-  and mutation witnesses show a key differing on an omitted field is rejected.
+  a range-slack mutation is rejected from the description itself, and two-key coherence witnesses
+  show that a used key differing from the designated canonical key is rejected. `Describes`
+  constrains the deployment record; the current modeled probability bound does not consume it.
 - `DeployedAcceptsRawBytes` (`Zcash/Snark/Soundness/Main.lean`): the raw entry point — halo2's
   instance column-count and usable-row checks first, commitments derived internally, then the
   exact parse — with its rejection paths as theorems; both honest captures reach it
@@ -49,8 +52,9 @@ and this project adheres to Rust's notion of
 - The description parser is hardened: exact struct names and field sequences
   (`hasStructFields`), canonical in-range 64-digit field literals (`canonicalFieldNat?`),
   canonical decimal literals (no leading zeros, no `-0`) and the exact quoted 66-character moduli,
-  typed query column kinds, query metadata cross-checked against the layouts, and no tolerance
-  for a missing separator, each with a kernel-checked regression.
+  typed query column kinds, query metadata cross-checked against the layouts, query columns below
+  their printed column counts, equal permutation-column and commitment arities, and no tolerance
+  for a missing separator, with focused regressions.
 - BLAKE2b carries its full 128-bit byte counter (`counterLow`/`counterHigh` into words 12 and
   13), with a kernel-checked compression vector at `t = 2^64` that a low-word-only
   implementation fails.

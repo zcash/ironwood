@@ -455,9 +455,10 @@ assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsBytes +native(
   CompElliptic.Fields.Pasta.vestaBase)
 -- The same capture through the raw entry point: public columns validated, commitments derived
 -- internally, then the exact parse — finite evidence for the deployment record's raw refinement,
--- not a universal claim. The mutation witnesses show the canonical-key half of `Describes` rejects
--- a verifier key that differs from the described one on a field halo2's description omits; three
--- are kernel-checked, the chunk-partition witness runs one native comparison of its own.
+-- not a universal claim. The fixed-coverage mutation is rejected by a field read from the text.
+-- The remaining mutations are two-key coherence witnesses: the description still checks against
+-- canonical `vk`, while `VerifyingKeyAgrees` rejects a different verifier-used key. Three are
+-- kernel-checked; the fixed-coverage and chunk-partition witnesses each run a native comparison.
 assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsRawBytes +native(
   CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
@@ -470,11 +471,13 @@ assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsRawBytes +native(
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr,
   Zcash.Snark.Fixture.valid_capture_assembles,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_blindingFactors
-assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_delta
-assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_chunkLen
-assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_permutationChunks +native(
-  Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_permutationChunks)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_omitted_fixed_coverage +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_omitted_fixed_coverage)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_blindingFactors
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_delta
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_chunkLen
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyDigest +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,

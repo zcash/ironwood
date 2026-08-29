@@ -78,7 +78,10 @@ The separate `canonicalVk` argument is necessary because Halo2's pinned descript
 runtime fields. `Describes` checks its represented fields against `canonicalVk` and binds every
 verifier-active field of `vk`, including `blindingFactors`, `delta`, `chunkLen`, the permutation
 partition, and common-evaluation indices, to that key. It remains a relation: the Action caller
-supplies the circuit-derived key and separately pins the exact exporter-emitted description.
+passes the same circuit-derived key in both key positions and separately pins the exact
+exporter-emitted description. `Describes` remains a conjunct of this byte predicate. At that
+capstone it constrains the deployment record; the bridge into the modeled family acceptance
+projects it away and the probability bound does not consume it.
 
 Nor does `Describes` derive every reader count. The caller's `Shape` supplies
 `numQuotientPieces` and `numPointSets`; the Action instantiation obtains the former from circuit
@@ -89,10 +92,11 @@ includes those deployment-shape identifications rather than proving them from th
 The empty suffix is intentional. Halo2's reader itself ignores unread bytes; the production
 transaction/bundle boundary modeled here separately checks the canonical total length
 `2720 + 2272 · nActionsOrchard` — ZIP 225's format value, a consensus rule from NU6.2 onward
-(ZIP 257), which `zcash_primitives` enforces for NU6.2-and-later bundles and leaves unenforced
-for earlier epochs. Thus this predicate models the exact canonical-byte path of the fixed
-circuit's epoch, and a Rust acceptance relation must include that outer check before it can refine
-this predicate.
+(ZIP 257). The auditable check is `orchard::Bundle::try_from_parts`, gated by
+`BundleVersion::enforces_canonical_proof_size`; `zcash_primitives`' `read_bundle` reaches that
+constructor. Earlier bundle versions leave the length unenforced. Thus this predicate models the
+exact canonical-byte path of the fixed circuit's epoch, and a Rust acceptance relation must
+include that outer check before it can refine this predicate.
 
 Identifying Rust's reader with `readProof?` for every input remains a refinement boundary; the
 exact honest and random capture bytes exercise that boundary concretely. -/

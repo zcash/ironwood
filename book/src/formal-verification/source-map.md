@@ -121,7 +121,8 @@ The pure function that assembles the fingerprint MSM in the exact order of halo2
 - `FiatShamir` models halo2's challenge schedule over an abstract `squeeze`.
 - `Transcript` is the byte layer beneath it: halo2's tagged transcript encoding, an executable
   BLAKE2b (`Common/Hash/Blake2b`), and the concrete oracle `halo2Transcript` every capture family
-  runs the schedule through, with the encoding proved injective and prefix-free.
+  runs the schedule through, with the encoding proved injective and shown to preserve and reflect
+  prefixes.
 - `ProofBytes` is the proof-string codec: canonical `read_point`/`read_scalar` decoders (a read
   succeeds exactly on the element's own encoding), the reader in the verifier's read order, and
   the serializer, checked against the random captures' raw bytes.

@@ -321,13 +321,13 @@ proves this of its own model, and captured fixtures check that model against rea
 
 The byte layer beneath is modelled too: how each absorbed element becomes bytes, the running
 BLAKE2b state, and the reduction of the digest to a field element are executable Lean, and every
-captured challenge is recomputed from bytes. The encoding is proved injective and prefix-free, so
-distinct typed transcripts are distinct hash inputs. Even the verifying-key digest that opens
-the transcript is recomputed, from a pinned key description whose represented fields are checked
-against the derived key.
+captured challenge is recomputed from bytes. The encoding is injective and preserves and reflects
+prefixes, so distinct typed transcripts are distinct hash inputs. Even the verifying-key digest
+that opens the transcript is recomputed, from a pinned key description whose represented fields
+are checked against the derived key.
 
 Four boundaries remain outside the universal proof. The security argument idealizes the
-BLAKE2b digest as uniform (and uses collision resistance for key binding); `blake2b_simd` is not
+BLAKE2b digest as uniform; `blake2b_simd` is not
 proved equal to Lean's BLAKE2b on every input; Rust's transcript reader is not proved equal to
 `readProof?` on every proof byte string; and the pinned description's identification with the
 unique string emitted by Rust remains deployment provenance. The captures check all three

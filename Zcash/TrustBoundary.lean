@@ -2194,7 +2194,8 @@ assert_axioms Zcash.Circuits.Action.Separation.crossAddressBinding_nontrivial
 
 -- The Fiat–Shamir byte layer (`Verifier/Transcript.lean`): halo2's transcript encoding, an
 -- executable BLAKE2b (`Common/Hash/Blake2b.lean`), and the concrete oracle `halo2Transcript` the
--- capture families run the schedule through, with the encoding's injectivity and prefix-freeness.
+-- capture families run the schedule through, with the encoding's injectivity and prefix
+-- reflection/preservation.
 assert_computable Zcash.Common.Blake2b.digest64
 assert_computable Zcash.Snark.encodeTranscript +choice
 assert_computable Zcash.Snark.halo2Transcript +choice
@@ -2297,12 +2298,14 @@ assert_computable Zcash.Snark.DebugValue.point? +choice
 -- uses — the relation `DeployedAcceptsBytes` carries. The description must be one exact compact
 -- derived-`Debug` value (`DescriptionSyntaxCanonical`: struct names and field sequences pinned,
 -- so duplicated, reordered, and unknown fields are rejected) whose represented fields read back to
--- the canonical key under canonical in-range field literals (`canonicalFieldNat?`); the used key
--- must agree with the canonical one on every verifier-reachable field (`VerifyingKeyAgrees`),
--- which is what makes the fields halo2's description omits — `blindingFactors`, `delta`,
--- `chunkLen`, the permutation partition — load-bearing (`Describes.*_eq`). Its decidability is
--- what each honest capture evaluates.
+-- the canonical key under canonical in-range field literals (`canonicalFieldNat?`), query-column
+-- bounds, and equal permutation column/commitment arities. The used key must separately agree with
+-- the canonical one on every verifier-reachable field (`VerifyingKeyAgrees`), including fields
+-- halo2's description omits: `blindingFactors`, `delta`, `chunkLen`, and the permutation partition.
+-- This constrains the deployment record; it is not consumed by the modeled probability bound.
+-- Its decidability is what each honest capture evaluates.
 assert_computable Zcash.Snark.toQuerySpace +choice
+assert_computable Zcash.Snark.queryLayoutColumnsInRange
 assert_computable Zcash.Snark.DebugValue.hasStructFields
 assert_computable Zcash.Snark.DebugValue.canonicalFieldNat? +choice
 assert_computable Zcash.Snark.VerifyingKeyAgrees +choice

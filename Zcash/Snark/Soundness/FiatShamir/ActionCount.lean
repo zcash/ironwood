@@ -17,7 +17,7 @@ at the byte level beneath it.
   still absorbing a point. `preTheta_prefixFree_of_numProofs_ne` states both directions explicitly,
   and the two cones are therefore disjoint (`preTheta_cones_disjoint`).
 * `encodeTranscript_prefixFree_of_numProofs_ne` and `encodeTranscript_cones_disjoint` — the same
-  statements for the byte strings the deployed hash sees, by prefix-freeness of the transcript
+  statements for the byte strings the deployed hash sees, by prefix reflection of the transcript
   encoding.
 * `deriveChallenges_reprogram_other_count` — reprogramming the oracle anywhere on the `m`-action
   cone leaves every `n`-action challenge unchanged, for `n ≠ m`.

@@ -413,8 +413,9 @@ width, and common-evaluation indices. Consequently no predicate over only the de
 arbitrary `VerifyingKey` can identify those fields. `Describes` therefore takes two keys: the key
 designated canonical by its caller and the key actually used by the verifier. It checks the
 description against every represented field of the first and separately requires behavioral
-agreement of every field the Lean verifier consumes. The Action instantiation supplies its first
-key from the circuit-derived keygen pipeline.
+agreement of every field the Lean verifier consumes. The current Action instantiation passes the
+same circuit-derived key in both positions. Thus the omitted-field equations are deployment-record
+coherence checks, not values reconstructed from the description text.
 
 This relation does not derive every `readProof?` dimension from the description. In particular,
 `numQuotientPieces` and the invocation-specific `numPointSets` come from `Shape` rather than a
@@ -437,6 +438,12 @@ def descriptionDomain (s : String) : DebugValue :=
 
 /-- Recursion budget for reading expressions: one unit per character bounds every nesting. -/
 def descriptionFuel (s : String) : ℕ := s.length
+
+/-- Every raw column index named by a query layout is below the column count printed for that
+column kind. This rules out verifier-reachable commitments that the pinned description's declared
+column vectors cannot cover. -/
+def queryLayoutColumnsInRange (numColumns : ℕ) (layout : List (ℕ × ℤ)) : Bool :=
+  layout.all fun query => decide (query.1 < numColumns)
 
 /-- The first query of raw column `c` at rotation 0 in the layout `l` — halo2's
 `get_any_query_index(column, Rotation::cur())`, which is how `permutation::verifier` locates
@@ -500,7 +507,8 @@ def DescriptionSyntaxCanonical (s : String) : Prop :=
   hasStructFields (((descriptionValue s).field? "permutation").getD (.atom ""))
     "VerifyingKey" ["commitments"]
 
-/-- Moduli, domain, shape, gates, and typed query layouts represented by the description. -/
+/-- Moduli, domain, shape, gates, and typed, in-range query layouts represented by the
+description. -/
 def DescriptionCoreFieldsMatch {shape : CircuitShape}
     (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   ((descriptionValue s).field? "base_modulus" >>= quotedHexNat?) = some PALLAS_SCALAR_CARD ∧
@@ -510,6 +518,10 @@ def DescriptionCoreFieldsMatch {shape : CircuitShape}
   ((descriptionDomain s).field? "omega" >>= fp?) = some vk.omega ∧
   ((descriptionCs s).field? "num_advice_columns" >>= nat?) = some shape.numAdviceColumns ∧
   ((descriptionCs s).field? "num_instance_columns" >>= nat?) = some shape.numInstanceColumns ∧
+  queryLayoutColumnsInRange shape.numAdviceColumns vk.adviceQueryLayout = true ∧
+  queryLayoutColumnsInRange shape.numInstanceColumns vk.instanceQueryLayout = true ∧
+  (((descriptionCs s).field? "num_fixed_columns" >>= nat?).map fun n =>
+      queryLayoutColumnsInRange n vk.fixedQueryLayout) = some true ∧
   ((descriptionCs s).field? "gates" >>= listOf?
       (expr? vk.instanceQueryLayout vk.adviceQueryLayout vk.fixedQueryLayout
         (descriptionFuel s))) = some vk.gates ∧
@@ -536,21 +548,27 @@ def DescriptionArgumentFieldsMatch {shape : CircuitShape}
     = some (List.ofFn fun l : Fin shape.numLookups =>
         (vk.lookupInputExprs l, vk.lookupTableExprs l))
 
-/-- Fixed and permutation commitment vectors represented by the description. -/
+/-- Fixed and permutation commitment vectors represented by the description, including equality
+of the printed permutation column and commitment arities. -/
 def DescriptionCommitmentsMatch {shape : CircuitShape}
     (s : String) (vk : VerifyingKey shape Fp VestaG) : Prop :=
   ((descriptionCs s).field? "num_fixed_columns" >>= nat?) ≠ none ∧
   ((descriptionValue s).field? "fixed_commitments" >>= listOf? point?)
     = ((descriptionCs s).field? "num_fixed_columns" >>= nat?).map
         (fun n => (List.range n).map vk.fixedCommitment) ∧
+  ((((descriptionCs s).field? "permutation" >>= (·.field? "columns"))
+      >>= listOf? columnRef?).map List.length) =
+    ((((descriptionValue s).field? "permutation" >>= (·.field? "commitments"))
+      >>= listOf? point?).map List.length) ∧
   (((descriptionValue s).field? "permutation" >>= (·.field? "commitments")) >>= listOf? point?)
     = some (List.ofFn vk.permutationCommonCommitment)
 
 /-- Every represented verifier field of a designated canonical key is read from an exact compact
 Rust `Debug` description. The grammar checks above reject missing commas, noncanonical field values
-and numerals, wrong query column types, inconsistent query metadata, duplicate/unknown top-level
-fields, and trailing text. Keygen-only fields remain part of the exact hashed string but have no verifier-side
-counterpart; concrete deployment pins their values and the exporter-emitted string separately.
+and numerals, wrong or out-of-range query columns, inconsistent query metadata and permutation
+arities, duplicate/unknown top-level fields, and trailing text. Keygen-only fields remain part of
+the exact hashed string but have no verifier-side counterpart; concrete deployment pins their
+values and the exporter-emitted string separately.
 Thus this predicate validates *a* description of the key; it does not compute Rust's unique
 description from the key. -/
 def DescriptionFieldsMatch {shape : CircuitShape}
