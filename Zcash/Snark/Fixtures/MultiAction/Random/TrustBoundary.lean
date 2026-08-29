@@ -93,6 +93,8 @@ assert_axioms Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_fixedCommitments
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_fixedCommitments)
 assert_axioms Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_permutationCommonCommitments +native(
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_permutationCommonCommitments)
+-- The shared pinned key description, compared by the kernel: no native trust.
+assert_axioms Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_pinnedKeyDescription
 assert_axioms Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_urs +native(
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu)

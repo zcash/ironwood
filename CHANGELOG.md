@@ -25,7 +25,9 @@ and this project adheres to Rust's notion of
   `Fixtures/PinnedKey.lean`): halo2's `Halo2-Verify-Key` BLAKE2b over the pinned key description
   reproduces every capture's `transcript_repr`, the description's fields are read back against
   the captured key, and each family's statement of record opens the transcript with the derived
-  digest. Each generated fixture carries the exact compact description the pinned exporter hashed.
+  digest. Each generated fixture carries the exact compact description the pinned exporter hashed;
+  all four carry the same one, compared by the kernel
+  (`PostNu63Fixture.captures_use_same_pinnedKeyDescription` and its random counterparts).
 - `DeployedAcceptsBytes` requires the pinned description to describe the key (`Describes`, a
   relation between the description, a designated canonical key, and the key the verifier uses:
   the represented fields read back to the canonical key under an exact compact derived-`Debug`

@@ -24,7 +24,8 @@ The reading below is the relation `Describes` (`Verifier/KeyDigest.lean`) checks
 description and a designated key, stated here field by field: `pinned`, `cs`, and `domain` are its
 `descriptionValue`, `descriptionCs`, and `descriptionDomain`, and the permutation columns pass
 through its `toQuerySpace`. Each honest family discharges `Describes` for its own emitted string —
-the two families emit the same one — as the key-identification conjunct of `DeployedAcceptsBytes`
+the two families emit the same one (`PostNu63Fixture.captures_use_same_pinnedKeyDescription`) — as
+the key-identification conjunct of `DeployedAcceptsBytes`
 (`Fixtures/*/Honest/ProofBytes.lean`); the keygen-only literals checked here have no key
 counterpart and stay fixture pins.
 
