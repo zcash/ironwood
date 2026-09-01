@@ -118,7 +118,18 @@ The pure function that assembles the fingerprint MSM in the exact order of halo2
   query back to the canonical group element it references.
 - `Expressions` recomputes the vanishing argument's `expected_h_eval`.
 - `Ipa` is the inner-product-argument opening (`compute_s` / `compute_b`).
-- `FiatShamir` models halo2's BLAKE2b challenge schedule as an abstract `squeeze`.
+- `FiatShamir` models halo2's challenge schedule over an abstract `squeeze`.
+- `Transcript` is the byte layer beneath it: halo2's tagged transcript encoding, an executable
+  BLAKE2b (`Common/Hash/Blake2b`), and the concrete oracle `halo2Transcript` every capture family
+  runs the schedule through, with the encoding proved injective and shown to preserve and reflect
+  prefixes.
+- `ProofBytes` is the proof-string codec: canonical `read_point`/`read_scalar` decoders (a read
+  succeeds exactly on the element's own encoding), the reader in the verifier's read order, and
+  the serializer, checked against the random captures' raw bytes.
+- `KeyDigest` recomputes halo2's verifying-key digest — `Halo2-Verify-Key` BLAKE2b over the
+  length-prefixed pinned description, reduced modulo `p` — and reads that description back in
+  Rust's derived-`Debug` value language; `Describes` relates a description to a designated
+  canonical key and to the key the verifier uses.
 - `AssembleSpec` says what the rejecting `assemble?` returns when it does not reject — exactly
   the total assembly's value — the operational interface both the fingerprint walk and the
   deployed soundness layer consume.
@@ -183,7 +194,9 @@ Concrete Orchard captures that exercise the assembly end-to-end and make the Rus
 less silent. This subtree is the `FixtureCheck` lake target, kept out of `lake build Zcash` (the
 captures are large, generated, and slow) but built by CI.
 `Shared/ScheduleMarker` re-encodes captured Fiat–Shamir schedules into the model's marker form;
-`Shared/TamperSweep` is the shared mutation vocabulary of the per-slot negative sweeps; `PostNu63` pins
+`Shared/TamperSweep` is the shared mutation vocabulary of the per-slot negative sweeps;
+`Shared/Hex` decodes the generated proof hex; `PinnedKey` reads the exporter-emitted pinned key
+description back against the captured key field by field; `PostNu63` pins
 the canonical post-NU6.3 verifying key and URS so fixture drift is visible here, and
 `PostNu63Random` extends the same point equalities to the random captures — kept separate so the
 honest lane does not depend on compiling the random data modules. (The join between the captured
@@ -191,15 +204,17 @@ instance commitments and the circuit-derived family lives in `Keygen/InstanceCap
 
 `SingleAction/Honest/` and `MultiAction/Honest/` hold the captured honest single- and
 multi-action proofs, each
-with its **Fiat–Shamir** schedule check, its `Boundary` statement of record at the Lean-derived
-key and schedule, its per-slot tamper sweep (`Negative/Sweep`), and its checked `TrustBoundary`
+with its **Fiat–Shamir** schedule check, its `Transcript` recomputation of every captured
+challenge from transcript bytes, its `ProofBytes` exact parse of the generated proof bytes into
+`DeployedAcceptsBytes` and `DeployedAcceptsRawBytes`, its `Boundary` statement of record at the
+Lean-derived key and schedule, its per-slot tamper sweep (`Negative/Sweep`), and its checked `TrustBoundary`
 turning the fingerprint match into
 build-time obligations; `SingleAction/Honest/VkMatch` computes the capture's constraint-system fields equal
 to the ones derived end to end from the ported `configure` as a standalone diagnostic, not a
 soundness or fixture-trust input. The multi-action capture additionally
 carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree,
 schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
-conditionally staged-certified `2^125` adversary-work one and the deployed `2^123` one, with the
+conditionally staged-certified `2^125` adversary-work one and the modeled `2^123` one, with the
 declared-profile `2^123` instantiation pinned as the latter's rung — data-coupled programmed-basis
 and verifier-commitment accounting, explicit adversary and
 complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
@@ -209,7 +224,8 @@ captured key's own scalar data, so the staged IPA trace carries eleven live roun
 
 Each family's `Random/` subfolder holds the random match-only
 captures — the deployed verifier run on random proof strings, deliberately non-accepting. Each has
-the same schedule checks and `Faithfulness`, a `VkCertificate` transporting the single-action
+the same schedule checks, `Transcript` and `ProofBytes` lanes — the latter carrying the byte-level
+negatives — and `Faithfulness`, a `VkCertificate` transporting the single-action
 keygen certificate along `PostNu63Random`'s point equalities, its `Boundary` statement of record,
 aliveness guards in `Negative` (the model assembles at the random point, the capture is genuinely
 non-accepting, and one tamper canary), and its own `TrustBoundary` census. What the four families
@@ -252,6 +268,9 @@ machine-readable deployment-instantiation record — one identification field pe
 (challenge law, basis law, key digest, typed acceptance, discrete-log advantage), plus a
 certified ceiling on the failure observer's query budget, without which the joint Challenge255
 charge would be a free multiple — that a deployed interpretation of the capstones supplies.
+`ByteAcceptance` is the family's raw-byte entry: validated raw columns, the concrete BLAKE2b table
+`halo2Coins`, and the bridge from `DeployedAcceptsRawBytes` into the family's typed acceptance,
+which `DeploymentRecord`'s separate Rust-containment theorem consumes.
 `AdaptiveStatementModel`
 defines the game and binds the verifying key and selected instance commitments before `theta`;
 `Accounting`, `Terminal`, and `Surfaces` decode arbitrary statement prefixes and price the
@@ -356,7 +375,12 @@ Six subtrees carry the heavier machinery:
   adaptive adversary model (`OracleComp`), the Fiat–Shamir-to-AGM handoff (`Algebraic`),
   oracle-domain reduction to finite support (`DomainReduction`), and the adaptive interface and
   pre-IPA query accounting (`Adaptive`, `PreIpa`, `Provenance`). These components use the bounded
-  querying-adversary model to price straight-line pinned-root events.
+  querying-adversary model to price straight-line pinned-root events. `ActionCount` proves the
+  schedule's oracle locality and that the pre-`θ` cones of different action counts are disjoint —
+  typed and byte-level — so reprogramming the oracle on one count's cone changes no challenge of
+  another. `TagMutation` deletes halo2's transcript domain tags and exhibits the collisions that
+  appear — a point with two scalars, a transcript with its pre-squeeze extension — so the tags'
+  role is checked rather than asserted.
 - **`Oracle/`** — the squeeze idealization and its deployed gap. `ChallengeUniform` gives the
   exactly-uniform challenge law over `Fp`; `Challenge255` prices the deployed conversion against
   that ideal — a uniform 512-bit digest reduced modulo `p` overshoots uniform by exactly
@@ -376,13 +400,14 @@ Six subtrees carry the heavier machinery:
 
 ### `Capstones/` — the advertised endpoints
 
-Where the deployed Action circuit's own statements are stated. `Action.lean` states the
+Where the modeled Action circuit's own statements are stated. `Action.lean` states the
 endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
 error-formula form with declared and with staged-certified group-work accounting, in the
 staged-certified finite-security form at `2^125` adversary work, and in
-the deployed form that consumes an `ActionDeploymentInstantiation`, charges the
+the deployment-record model that consumes an `ActionDeploymentInstantiation`, charges the
 joint Challenge255 bias once for the whole transcript, and prices that charge at `2^-136` against
-the record's certified query ceiling. Knowledge soundness is the only property advertised: it implies
+the record's certified query ceiling. This endpoint measures the record's typed oracle observer,
+not Rust acceptance. Knowledge soundness is the only property advertised: it implies
 the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
 and their events are retired.
 

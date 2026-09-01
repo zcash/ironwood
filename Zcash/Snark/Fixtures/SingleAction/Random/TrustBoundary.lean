@@ -4,6 +4,8 @@ import Zcash.Snark.Fixtures.SingleAction.Random.Negative
 import Zcash.Snark.Fixtures.SingleAction.Random.Boundary
 import Zcash.Snark.Fixtures.SingleAction.Random.Epsilon
 import Zcash.Snark.Fixtures.PostNu63Random
+import Zcash.Snark.Fixtures.SingleAction.Random.Transcript
+import Zcash.Snark.Fixtures.SingleAction.Random.ProofBytes
 import Zcash.Meta.AxiomCheck
 
 /-!
@@ -91,6 +93,8 @@ assert_axioms Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitment
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitments)
 assert_axioms Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments +native(
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments)
+-- The shared pinned key description, compared by the kernel: no native trust.
+assert_axioms Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_pinnedKeyDescription
 assert_axioms Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_urs +native(
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu)
@@ -347,3 +351,85 @@ Zcash.Snark.FixtureRandom.otherLen_eq._native.native_decide.ax_1_1,
 Zcash.Snark.FixtureRandom.valid_capture_assembles._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.FixtureRandom.fingerprint_matches_positional
+
+-- The byte layer beneath the schedule (`Transcript.lean`): every captured challenge recomputed
+-- from halo2's transcript encoding through BLAKE2b, and the fingerprint match restated on it.
+-- `deriveChallenges_matches_blake2b` is the only new compiler-trust element; the derived-key
+-- statement of record inherits it in place of the captured-table schedule check.
+assert_axioms Zcash.Snark.FixtureRandom.markerSchedule_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.markerSchedule_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.deriveChallengesForStatement_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_blake2b +native(
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches)
+
+-- The proof-string byte layer (`ProofBytes.lean`). Native execution is confined to the one
+-- fact that anchors the generated raw artifact: its exact typed parse. Hex validity, the
+-- ZIP-specified canonical length, serialization, and the truncation and non-canonical-scalar
+-- rejections are
+-- theorems derived from that parse through the byte-accounting and canonicality lemmas; the
+-- three malformed leading-point cases lift generic decoder proofs. Point-decoder statements
+-- still name the upstream native validity certificate carried by `vestaBase`.
+assert_computable Zcash.Snark.hexDecode? +choice
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofHex_decodes +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofBytes_length +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.serializeProof_eq_capturedProofBytes +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.capturedProofBytes_decodes +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.truncated_proof_rejected +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.non_canonical_scalar_rejected +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.identity_point_rejected +native(
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.out_of_range_coordinate_rejected +native(
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.non_residue_x_rejected +native(
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated +native(
+  Zcash.Snark.FixtureRandom.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
+assert_axioms Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.FixtureRandom.instance_commitments_derived,
+  Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
+  Zcash.Snark.FixtureRandom.fingerprint_matches,
+  Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)

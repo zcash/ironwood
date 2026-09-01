@@ -15,16 +15,13 @@ name: Fixtures
 # is platform-independent, so regeneration is bit-reproducible -- a diff means the
 # fixtures genuinely drifted from the pinned upstream, not run-to-run noise.
 #
-# Pins: single-sourced in `scripts/regenerate-fingerprint-fixtures.sh`, and there is exactly
-# one -- the `zcash/orchard` 0.15.5 release tag, which the script asserts is the tag rather
-# than a commit merely descended from it. No forks and no unreleased branches: the capture
-# tooling is upstream and released, the match-only exporter and `numInstanceColumns` shape
-# emission in `halo2_proofs` 0.3.5 (zcash/halo2#924) and the fabricate->replay random-capture
-# drivers in orchard 0.15.5 (zcash/orchard#541). Orchard's own published `Cargo.lock`
-# resolves `halo2_proofs` 0.3.5 from crates.io by checksum, which the script also asserts,
-# so no `[patch.crates-io]` override is involved and every cargo invocation runs `--locked`
-# against published crates. All four families -- honest pair included -- regenerate from
-# released sources alone.
+# Pins are single-sourced in `scripts/regenerate-fingerprint-fixtures.sh`: exact snapshots of
+# zcash/orchard#544 and zcash/halo2#933. The script fetches Orchard through the canonical PR ref
+# and asserts its Cargo.lock entry resolves the pinned zcash/halo2 commit through the canonical
+# URL before running Cargo `--locked`. The
+# base capture tooling remains the released halo2_proofs 0.3.5 / orchard 0.15.5 pipeline; these
+# draft follow-ups add direct proof-byte export, pinned-key preimage export, and deployed decoder
+# checks. All four families -- honest pair included -- regenerate from those exact snapshots.
 
 # Always triggers, so the `Fixtures CI` gate always reports (a workflow skipped by
 # `on.paths` would leave a required check pending). The heavy regeneration is instead
@@ -118,13 +115,12 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
-      # The script clones the pinned Orchard release, asserts the commit is the release
-      # tag and that its published lockfile resolves halo2_proofs 0.3.5 from crates.io by
-      # checksum, installs Orchard's pinned toolchain (`rustup show` against its
-      # `rust-toolchain.toml`), regenerates all four families plus the proof-byte
-      # siblings, and diffs every committed artifact byte-for-byte, exiting non-zero on
-      # any mismatch. Uncached: the job only runs when the path filter above fires.
-      - name: Regenerate every fixture family from the pinned Orchard release
+      # The script checks out pinned Orchard and Halo2 PR snapshots through canonical URLs,
+      # installs Orchard's pinned toolchain (`rustup show` against its `rust-toolchain.toml`),
+      # regenerates all four families plus the proof-byte siblings, and diffs every committed
+      # artifact byte-for-byte, exiting non-zero on any mismatch. Uncached: the job only runs
+      # when the path filter above fires.
+      - name: Regenerate every fixture family from the pinned upstream snapshots
         run: ./scripts/regenerate-fingerprint-fixtures.sh
 
   fixtures-ci:
