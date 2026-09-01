@@ -46,6 +46,7 @@ theorem topLevelResolverPermutationCell_card
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     {numProofs : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (poly : CommitmentId → CPoly)
     (p : Fin numProofs) (m : ℕ) :
     Fintype.card

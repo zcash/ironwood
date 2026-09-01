@@ -1,6 +1,7 @@
 import Zcash.Snark.Fixtures.SingleAction.Honest.Fixture
 import Zcash.Arithmetic.Domain
 import Zcash.Snark.Keygen.Pipeline
+import Zcash.Circuits.Action.Shape
 import Zcash.Circuits.Action.Shape.PlannerTrace
 import Zcash.Circuits.Action.TopLevel
 import Clean.Halo2.TopLevel
