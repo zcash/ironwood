@@ -218,6 +218,7 @@ finite property directly.
 -/
 def EnabledLookup.InputSelectorLeafRowsExact
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (rows : ℕ → List Fp) (lookup : EnabledLookup Fp) : Prop :=
   lookup.argument.inputs.Forall fun expression =>
     ExpressionSelectorLeavesSatisfy (fun selector =>
@@ -250,6 +251,7 @@ private theorem selReplacement_eval_of_singleton
 placement supply the exact dense selector valuation used by lookup projection. -/
 theorem EnabledLookup.inputSelectorLeafRowsExact
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (anchor : ℕ → FloorPlanner.RegionColumn)
     (hanchor : SelectorAnchorRequirementsSatisfied
       top.lookupSelectorAnchorRequirements anchor)
@@ -283,6 +285,7 @@ theorem EnabledLookup.inputSelectorLeafRowsExact
 
 instance EnabledLookup.inputSelectorLeafRowsExactDecidable
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (rows : ℕ → List Fp) (lookup : EnabledLookup Fp) :
     Decidable (lookup.InputSelectorLeafRowsExact top rows) := by
   let predicate : Selector → Prop := fun selector =>
@@ -331,6 +334,7 @@ expression-level selector boundary consumed by lookup projection.
 -/
 def EnabledLookup.inputSelectorValuesRealized_or_bad
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     (poly : CommitmentId → CPoly)
     (rows : ℕ → List Fp)

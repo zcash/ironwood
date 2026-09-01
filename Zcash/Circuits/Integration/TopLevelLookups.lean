@@ -29,11 +29,13 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
 
 /-- A synthesis-enabled lookup routed to its configured lookup index. -/
 structure EnabledLookup.TopLevelRoute
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (lookup : EnabledLookup Fp) where
   index : Fin top.lookupCount
   argument : top.lookupAt index = lookup.argument
@@ -63,6 +65,7 @@ def EnabledLookup.topLevelRoute
   · unfold TopLevelCircuit.lookupAt
     exact hget
 
+omit [TopLevelShape top] in
 /--
 Every extracted lookup activation lies inside the top-level circuit's keygen row
 footprint.
@@ -102,6 +105,7 @@ coverage by the circuit-derived compression map.
 -/
 theorem topLevelLookupInputs_selectorsCovered
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (argument : LookupArgument Fp)
     (hargument : argument ∈ top.constraintSystem.lookups)
     (expression : Expression Fp Query)
@@ -146,6 +150,7 @@ field structurally because Halo 2 tables are selector-free.
 -/
 structure EnabledLookup.SelectorProjection
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (environment : Environment Fp) (lookup : EnabledLookup Fp) : Prop where
   input :
     lookup.argument.inputs.map
@@ -205,6 +210,7 @@ without occurring in this lookup's inputs.
 -/
 def EnabledLookup.InputSelectorValuesRealized
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (environment : Environment Fp) (lookup : EnabledLookup Fp) : Prop :=
   ∀ expression ∈ lookup.argument.inputs,
     expression.eval
@@ -706,6 +712,7 @@ challenge-dependent facts.
 structure WitnessConditions
     {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
@@ -739,6 +746,7 @@ list is shared by all proofs, while the resolver environment is proof-indexed.
 -/
 abbrev ActivationIndex
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) :=
   Fin pp.numProofs ×
     Fin (operationEnabledLookups (top.operations) 0).length
@@ -750,6 +758,7 @@ so the event must be unioned across both indices.
 -/
 def thetaBadSet
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly) : Finset Fp :=
   enabledLookupThetaBadSetFamily
@@ -765,6 +774,7 @@ def thetaBadSet
 /-- The row-by-arity root budget for the top-level bundle's `θ` surface. -/
 def thetaBudget
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly) : ℕ :=
   ∑ index : ActivationIndex top pp,
@@ -807,6 +817,7 @@ realization.
 structure ChallengeExclusions
     {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly) : Prop where
@@ -829,6 +840,7 @@ activations and their usable rows. -/
 def topLevelLookupChallengeExclusions?
     {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly) :
@@ -864,6 +876,7 @@ def topLevelLookupChallengeExclusions?
 theorem topLevelLookupChallengeExclusions?_isSome_of
     {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)

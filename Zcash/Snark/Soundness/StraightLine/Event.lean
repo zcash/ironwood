@@ -21,6 +21,7 @@ abbrev topLevelRunModel
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
     (static : DeployedConstraintStaticChecks family.toRootFamily)
@@ -62,6 +63,7 @@ abbrev topLevelRunPolynomial
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
     (static : DeployedConstraintStaticChecks family.toRootFamily)
@@ -102,6 +104,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
     (static : DeployedConstraintStaticChecks family.toRootFamily)
@@ -225,6 +228,7 @@ def topLevelTerminalRelationFinderCovers
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
     (static : DeployedConstraintStaticChecks family.toRootFamily)
@@ -265,6 +269,7 @@ def topLevelBundleStatementDecoded
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
     (inputs : Fin pp.numProofs → PublicInput Fp) :

@@ -30,7 +30,8 @@ is supplied by the caller. -/
 structure TopLevelConstraintBounds
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput) : Prop where
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] : Prop where
   domainExponent_lt : top.domainExponent < 33
   selectorDegree :
     csDegree top.constraintSystem < scalarFieldOrder
@@ -42,6 +43,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
 
 /--

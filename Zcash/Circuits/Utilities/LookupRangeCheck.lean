@@ -370,7 +370,7 @@ Packaging decision: a plain `def load … : Circuit Fp Unit` emitting the single
 op, plus a standalone table-contents theorem proven from its `Constraints`. We do NOT wrap
 it in a `FormalCircuit` (the design sketch's suggestion): the layouter-level formal-circuit
 `call`/forward-lemma machinery is not yet ported (only `FormalRegionCircuit` proofs exist
-in the ironwood tree, and `FormalCircuit` has no `_iff` helpers landed), and the loader's
+in the Ironwood tree, and `FormalCircuit` has no `_iff` helpers landed), and the loader's
 sole content IS the table-contents fact, which the theorem below states directly from the
 `loadTable` `Constraints`. This keeps the loader usable by consumers today with no
 dependence on unported layouter-level formal-circuit plumbing. -/
@@ -405,7 +405,7 @@ def TableLoaded (K : ℕ) (cfg : Config K) (env : Environment Fp) : Prop :=
   (∀ r : ℕ, r < env.usableRows → (env.fixed cfg.tableIdx.inner (r : ℤ)).val < 2 ^ K) ∧
   (∀ r : ℕ, r < 2 ^ K → env.fixed cfg.tableIdx.inner (r : ℤ) = (r : Fp))
 
-/-- **Membership-consumption helper**. Turn a lookup-membership existential (the
+/-- **Membership-consumption helper** (C2a #5). Turn a lookup-membership existential (the
 `enableLookup` constraint's `∃ tableRow < usableRows, value = env.fixed tableIdx tableRow`) plus
 the `TableLoaded` usable-rows bound (`TableLoaded`'s second conjunct — `hTableLt`) into the value
 bound `value.val < 2^K`, in one application. This is the "two `obtain`s + application, same shape
@@ -571,13 +571,14 @@ def invTwoPowS (numBits : ℕ) : Fp := (2 ^ numBits : Fp)⁻¹
 /-- Exact reduced footprint of a positional short range check. -/
 def shortRangeCheckSynthesisSummary {K : ℕ} (cfg : Config K)
     (offset : ℕ) : FloorPlanner.RegionSynthesisSummary :=
-  (FloorPlanner.RegionSynthesisSummary.ofColumns
+  .ofColumns
     [.selector cfg.qLookup.index, .column .advice cfg.runningSum.index,
       .selector cfg.qLookup.index, .column .advice cfg.runningSum.index,
       .selector cfg.qBitshift.index]
-    (offset + 3) 1 (lookupActivationCount := 2)).withSelectorActivations
-      [(cfg.qLookup.index, offset), (cfg.qLookup.index, offset + 1),
-        (cfg.qBitshift.index, offset + 1)]
+    (offset + 3) 1
+    [(cfg.qLookup.index, offset), (cfg.qLookup.index, offset + 1),
+      (cfg.qBitshift.index, offset + 1)]
+    (lookupActivationCount := 2)
 
 @[synthesis_summary_norm]
 theorem shortRangeCheckSynthesisSummary_lookupActivationCount {K : ℕ}
@@ -596,8 +597,7 @@ theorem shortRangeCheckSynthesisSummary_hasNoFixedColumns {K : ℕ}
     (cfg : Config K) (offset : ℕ) :
     (shortRangeCheckSynthesisSummary cfg offset).HasNoFixedColumns := by
   unfold shortRangeCheckSynthesisSummary
-  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_withSelectorActivations,
-    FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
+  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
   simp
 
 /-- Rust `short_range_check` (`lookup_range_check.rs:455-490`), POSITIONAL: the element
@@ -1058,11 +1058,12 @@ theorem rangeCheckRound_synthesisSummary (K : ℕ) (cfg : Config K)
     (element : AssignedCell Fp) (idx row : ℕ) (self : RegionIndex) :
     FloorPlanner.regionSynthesisSummary
         ((rangeCheckRound K cfg element idx row).operations self) =
-      (FloorPlanner.RegionSynthesisSummary.ofColumns
+      .ofColumns
         [.selector cfg.qLookup.index, .selector cfg.qRunning.index,
           .column .advice cfg.runningSum.index]
-        (row + 2) 0 (lookupActivationCount := 1)).withSelectorActivations
-          [(cfg.qLookup.index, row), (cfg.qRunning.index, row)] := by
+        (row + 2) 0
+        [(cfg.qLookup.index, row), (cfg.qRunning.index, row)]
+        (lookupActivationCount := 1) := by
   apply FloorPlanner.RegionSynthesisSummary.ext
   · rw [FloorPlanner.regionSynthesisSummary_columns_eq_unionColumns]
     simp only [rangeCheckRound, circuit_norm, List.flatMap_cons,
@@ -1185,12 +1186,13 @@ theorem rangeCheckLoop_synthesisSummary (K : ℕ) (cfg : Config K)
         ((rangeCheckRound K cfg element i.val
           (offset + i.val * 1)).operations self)) =
       List.ofFn fun i : Fin numWords =>
-        (FloorPlanner.RegionSynthesisSummary.ofColumns
+        .ofColumns
           [.selector cfg.qLookup.index, .selector cfg.qRunning.index,
             .column .advice cfg.runningSum.index]
-          (offset + i.val + 2) 0 (lookupActivationCount := 1)).withSelectorActivations
-            [(cfg.qLookup.index, offset + i.val),
-              (cfg.qRunning.index, offset + i.val)] by
+          (offset + i.val + 2) 0
+          [(cfg.qLookup.index, offset + i.val),
+            (cfg.qRunning.index, offset + i.val)]
+          (lookupActivationCount := 1) by
       apply congrArg List.ofFn
       funext i
       simpa only [Nat.mul_one] using
@@ -1327,15 +1329,15 @@ theorem rangeCheck_loop_constraints_complete (K : ℕ) (cfg : Config K) (element
 /-- Exact reduced footprint of a copied-in word-wise range check. -/
 def rangeCheckSynthesisSummary (K numWords : ℕ) (strict : Bool)
     (cfg : Config K) (offset : ℕ) : FloorPlanner.RegionSynthesisSummary :=
-  (FloorPlanner.RegionSynthesisSummary.ofColumns
+  .ofColumns
     ([.column .advice cfg.runningSum.index] ++
       if numWords = 0 then [] else
         [.selector cfg.qLookup.index, .selector cfg.qRunning.index,
           .column .advice cfg.runningSum.index])
     (offset + numWords + 1) (if strict then 1 else 0)
-    (lookupActivationCount := numWords)).withSelectorActivations
-      (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
-        [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
+      [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (lookupActivationCount := numWords)
 
 @[synthesis_summary_norm]
 theorem rangeCheckSynthesisSummary_lookupActivationCount
@@ -1355,8 +1357,7 @@ theorem rangeCheckSynthesisSummary_hasNoFixedColumns
     (K numWords : ℕ) (strict : Bool) (cfg : Config K) (offset : ℕ) :
     (rangeCheckSynthesisSummary K numWords strict cfg offset).HasNoFixedColumns := by
   unfold rangeCheckSynthesisSummary
-  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_withSelectorActivations,
-    FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
+  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
   simp
 
 /-- Copied-in word-wise range-check synthesis, factored so its reduced elaboration and
@@ -1639,15 +1640,15 @@ theorem rangeCheck_elaborated_synthesisSummary_eq
 /-- Exact reduced footprint of a positional word-wise range check. -/
 def rangeCheckAtSynthesisSummary (K numWords : ℕ) (strict : Bool)
     (cfg : Config K) (offset : ℕ) : FloorPlanner.RegionSynthesisSummary :=
-  (FloorPlanner.RegionSynthesisSummary.ofColumns
+  .ofColumns
     (if numWords = 0 then [] else
       [.selector cfg.qLookup.index, .selector cfg.qRunning.index,
         .column .advice cfg.runningSum.index])
     (if numWords = 0 then 0 else offset + numWords + 1)
     (if strict then 1 else 0)
-    (lookupActivationCount := numWords)).withSelectorActivations
-      (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
-        [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
+      [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (lookupActivationCount := numWords)
 
 @[synthesis_summary_norm]
 theorem rangeCheckAtSynthesisSummary_lookupActivationCount
@@ -1661,8 +1662,7 @@ theorem rangeCheckAtSynthesisSummary_hasNoFixedColumns
     (K numWords : ℕ) (strict : Bool) (cfg : Config K) (offset : ℕ) :
     (rangeCheckAtSynthesisSummary K numWords strict cfg offset).HasNoFixedColumns := by
   unfold rangeCheckAtSynthesisSummary
-  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_withSelectorActivations,
-    FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
+  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
   simp
 
 def rangeCheckAtBody (K numWords : ℕ) (strict : Bool) (cfg : Config K)
@@ -1931,12 +1931,13 @@ deriving ProvableStruct
 /-- Exact reduced footprint of a strict positional check exposing interior words. -/
 def rangeCheckAtDecomposedSynthesisSummary (numWords : ℕ)
     (cfg : Config 10) (offset : ℕ) : FloorPlanner.RegionSynthesisSummary :=
-  (FloorPlanner.RegionSynthesisSummary.ofColumns
+  .ofColumns
     [.selector cfg.qLookup.index, .selector cfg.qRunning.index,
       .column .advice cfg.runningSum.index]
-    (offset + numWords + 1) 1 (lookupActivationCount := numWords)).withSelectorActivations
-      (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
-        [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (offset + numWords + 1) 1
+    (FloorPlanner.RegionSynthesisSummary.repeatedSelectorPattern
+      [(cfg.qLookup.index, 0), (cfg.qRunning.index, 0)] offset 1 numWords)
+    (lookupActivationCount := numWords)
 
 @[synthesis_summary_norm]
 theorem rangeCheckAtDecomposedSynthesisSummary_lookupActivationCount
@@ -1956,8 +1957,7 @@ theorem rangeCheckAtDecomposedSynthesisSummary_hasNoFixedColumns
     (numWords : ℕ) (cfg : Config 10) (offset : ℕ) :
     (rangeCheckAtDecomposedSynthesisSummary numWords cfg offset).HasNoFixedColumns := by
   unfold rangeCheckAtDecomposedSynthesisSummary
-  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_withSelectorActivations,
-    FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
+  rw [FloorPlanner.RegionSynthesisSummary.hasNoFixedColumns_ofColumns]
   simp
 
 def rangeCheckAtDecomposedBody (numWords : ℕ) (cfg : Config 10) (offset : ℕ) (_ : Unit) :

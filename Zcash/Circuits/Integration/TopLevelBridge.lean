@@ -24,6 +24,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     {cell : Type} [DecidableEq cell] [Fintype cell]
     {Bad : Type}
@@ -103,6 +104,7 @@ not inspect the circuit statement and introduces no encoding predicate of its ow
 -/
 def bundleTopLevelSoundness_or_bad
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {numProofs : ℕ}
     (assignment : Fin numProofs → ProofAssignment Fp)
     (bridge : ∀ proofIndex,

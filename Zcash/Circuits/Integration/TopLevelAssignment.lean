@@ -59,6 +59,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {numProofs : ℕ} {proofIndex : Fin numProofs}
 
 /-- The circuit-derived domain generator has exact order `2^k`. -/
@@ -190,13 +191,18 @@ theorem resolverEnvironment_eq_environment
     | «instance» =>
         simp only [top.toVerifierKey_omega, proofAssignment,
           resolverAssignment_instance]
-  · rfl
+  · simp only [TopLevelCircuit.usableRowsAt]
+    rw [top.domainExponent_eq_compiled]
+    rfl
 
 @[simp] theorem environment_usableRows
     (assignment : TopLevelAssignment top numProofs proofIndex) :
     assignment.environment.usableRows =
       top.usableRowsAt top.domainExponent :=
-  rfl
+  by
+    simp only [environment, TopLevelCircuit.environment_usableRows,
+      TopLevelCircuit.usableRowsAt]
+    rw [top.domainExponent_eq_compiled]
 
 @[simp] theorem environment_fixed
     (assignment : TopLevelAssignment top numProofs proofIndex)

@@ -32,6 +32,7 @@ basis polynomial.
 -/
 def instanceCommitmentKey
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) :
     LagrangeCommitmentKey urs (top.toVerifierKey urs).omega where
   generators := fun i =>
@@ -48,6 +49,7 @@ layout. It supports arbitrary proof multiplicity and any number of instance colu
 -/
 def instanceCommitment
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) {numProofs : ℕ}
     (inputs : Fin numProofs → PublicInput Fp) :
     Fin numProofs → ℕ → G :=
@@ -58,6 +60,7 @@ def instanceCommitment
 omit [DecidableEq G] in
 @[simp] theorem instanceCommitment_column
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (proofIndex : Fin pp.numProofs) (column : Column .instance) :
@@ -76,6 +79,7 @@ layout-derived row polynomial, with Halo 2's default blind.
 -/
 theorem instanceCommitment_column_eq_commit
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (proofIndex : Fin pp.numProofs) (column : Column .instance) :
@@ -105,6 +109,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)

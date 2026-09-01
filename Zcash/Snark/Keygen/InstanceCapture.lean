@@ -1,7 +1,7 @@
 import Zcash.Snark.Keygen.Certificate
 import Zcash.Snark.Keygen.Lagrange
 import Zcash.Circuits.Integration.TopLevelInstanceCommitment
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape.PlannerTrace
 import Mathlib.Util.AssertNoSorry
 
 /-!

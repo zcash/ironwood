@@ -1,5 +1,5 @@
 import Clean.Halo2.Keygen.FloorPlanner.SelectorConflicts
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape.PlannerTrace
 
 /-!
 # Exceptional Action selector placements

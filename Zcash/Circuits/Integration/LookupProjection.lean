@@ -133,6 +133,7 @@ theorem _root_.Halo2.TopLevelCircuit.lookup_eval
     {F : Type} [FiniteField F]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top]
     (fixed advice instanceFeed : ℕ → F) (valuation : Query → F)
     (lookup : Fin top.lookupCount)
     (hinputCoverage :

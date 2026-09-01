@@ -42,6 +42,7 @@ def topLevelPermutationRows
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (column : ℕ) : List Fp :=
   (Keygen.permPolysOf top.domainExponent top.constraintSystem
     (top.operations)).getD column []
@@ -53,6 +54,7 @@ def topLevelPermutationCommitment
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (column : ℕ) : G :=
   (top.permutationCommitments urs).getD column 0
 
@@ -134,6 +136,7 @@ theorem commitment_ofKeygen
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (setup : LagrangePrefixSetup urs)

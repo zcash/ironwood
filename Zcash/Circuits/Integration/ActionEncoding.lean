@@ -1,4 +1,5 @@
 import Zcash.Circuits.Action.TopLevel
+import Zcash.Circuits.Action.Shape.Anchors
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.InstanceColumns
@@ -9,7 +10,6 @@ import Zcash.Circuits.Integration.TopLevelCircuit
 import Zcash.Circuits.Integration.TopLevelGates
 import Zcash.Circuits.Integration.TopLevelCorrectness
 import Zcash.Circuits.Integration.ActionCopyReplay
-import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Integration.ActionConstraintBounds
 import Zcash.Snark.Keygen.Pipeline
 import Mathlib.Util.AssertNoSorry

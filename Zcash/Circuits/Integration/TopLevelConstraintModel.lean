@@ -32,6 +32,7 @@ argument: domain fitting follows from the `TopLevelCircuit` compilation.
 -/
 def constraintModel {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     ConstraintPolyModel pp.numProofs :=
@@ -52,6 +53,7 @@ def constraintModel {k : ℕ}
 verification key without requiring consumers to unfold circuit compilation. -/
 theorem constraintModel_eq_constraintModelOfResolver
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     let selectors := canonicalLagrangePolynomials top.omega
@@ -75,6 +77,7 @@ theorem constraintModel_eq_constraintModelOfResolver
 canonical model of its derived verification key. -/
 theorem constraintModel_eq_toVerifierKey_constraintModel
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges top.domainExponent Fp) (poly : CommitmentId → CPoly) :
     top.constraintModel pp urs ch poly =
@@ -88,6 +91,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
 
 @[simp] theorem constraintModel_l0
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).l0 =
@@ -98,6 +102,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
 
 @[simp] theorem constraintModel_lLast
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lLast =
@@ -108,6 +113,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
 
 @[simp] theorem constraintModel_lBlind
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lBlind =
@@ -121,6 +127,7 @@ projections. This is the canonical form for consumers that pair satisfaction
 with a domain law stated over those same projections. -/
 theorem constraintModel_eq_constraintModelOfResolver_projections
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     top.constraintModel pp urs ch poly =
@@ -144,6 +151,7 @@ theorem constraintModel_eq_constraintModelOfResolver_projections
 circuit-derived permutation chunk. -/
 theorem resolverPermutationPairs_length
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {numProofs : ℕ} (urs : URS G) (poly : CommitmentId → CPoly)
     (proofIndex : Fin numProofs)
     (chunk : Fin top.permutationSetCount) :
@@ -162,6 +170,7 @@ permutation-domain interface. Only support for the circuit's evaluation-domain
 exponent is external; chunking and blinding bounds follow from compilation. -/
 theorem resolverPermutationDomain
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges top.domainExponent Fp)
     (poly : CommitmentId → CPoly)
@@ -188,6 +197,7 @@ permutation while keeping circuit-owned domain and chunk constants in their
 canonical spelling. -/
 def resolverPermutationCycleOfKeygenColumns
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {numProofs : ℕ} (urs : URS G)
     (poly : CommitmentId → CPoly) (p : Fin numProofs)
     {activeRows : ℕ} (hactive : activeRows ≤ top.n)
@@ -250,6 +260,7 @@ def resolverPermutationCycleOfKeygenColumns
 canonical negative blinding rotation. -/
 theorem toVerifierKey_lastUsableRowRotation
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hdomainExponent : top.domainExponent < 33) :
     (top.toVerifierKey urs).omega ^

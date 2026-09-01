@@ -1,5 +1,5 @@
 import Zcash.Snark.Capstones.Action.Base
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape.PlannerTrace
 
 /-!
 # The captured checks, scalars, and schedule at the derived key
