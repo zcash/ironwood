@@ -32,6 +32,7 @@ argument: domain fitting follows from the `TopLevelCircuit` compilation.
 -/
 def constraintModel {k : ℕ}
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     ConstraintPolyModel pp.numProofs :=
@@ -52,6 +53,7 @@ def constraintModel {k : ℕ}
 verification key without requiring consumers to unfold circuit compilation. -/
 theorem constraintModel_eq_constraintModelOfResolver
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     let selectors := canonicalLagrangePolynomials top.omega
@@ -68,14 +70,16 @@ theorem constraintModel_eq_constraintModelOfResolver
           (shape := top.shape.withProofParams pp)
           (top.toVerifierKey urs) poly)
         selectors.1 selectors.2.1 selectors.2.2 := by
-  rfl
+  unfold constraintModel
+  simp only [top.toVerifierKey_omega, constraintModelOfResolver]
 
 /-- For challenges indexed by the circuit domain, the top-level model is the
 canonical model of its derived verification key. -/
 theorem constraintModel_eq_toVerifierKey_constraintModel
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
-    (ch : Challenges top.shape.k Fp) (poly : CommitmentId → CPoly) :
+    (ch : Challenges top.domainExponent Fp) (poly : CommitmentId → CPoly) :
     top.constraintModel pp urs ch poly =
       (top.toVerifierKey urs).constraintModel
         (numProofs := pp.numProofs) ch poly
@@ -87,38 +91,70 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
 
 @[simp] theorem constraintModel_l0
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).l0 =
       (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).1 := by
-  rfl
+  unfold constraintModel
+  simp only [top.toVerifierKey_omega, constraintModelOfResolver]
 
 @[simp] theorem constraintModel_lLast
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lLast =
       (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.1 := by
-  rfl
+  unfold constraintModel
+  simp only [top.toVerifierKey_omega, constraintModelOfResolver]
 
 @[simp] theorem constraintModel_lBlind
     {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lBlind =
       (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.2 := by
-  rfl
+  unfold constraintModel
+  simp only [top.toVerifierKey_omega, constraintModelOfResolver]
+
+/-- The resolver presentation can use the top-level model's own selector
+projections. This is the canonical form for consumers that pair satisfaction
+with a domain law stated over those same projections. -/
+theorem constraintModel_eq_constraintModelOfResolver_projections
+    {k : ℕ} (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
+    (pp : ProofParams) (urs : URS G)
+    (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
+    top.constraintModel pp urs ch poly =
+      constraintModelOfResolver
+        (numProofs := pp.numProofs)
+        (k := k)
+        (top.toVerifierKey urs) ch poly
+        (permutationSetsOfResolver
+          (shape := top.shape.withProofParams pp)
+          (top.toVerifierKey urs) poly)
+        (permutationChunksOfResolver
+          (shape := top.shape.withProofParams pp)
+          (top.toVerifierKey urs) poly)
+        (top.constraintModel pp urs ch poly).l0
+        (top.constraintModel pp urs ch poly).lLast
+        (top.constraintModel pp urs ch poly).lBlind := by
+  rw [top.constraintModel_eq_constraintModelOfResolver]
+  simp only [constraintModelOfResolver]
 
 /-- Resolver pairing preserves the compiler-prescribed width of every
 circuit-derived permutation chunk. -/
 theorem resolverPermutationPairs_length
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {numProofs : ℕ} (urs : URS G) (poly : CommitmentId → CPoly)
     (proofIndex : Fin numProofs)
-    (chunk : Fin top.shape.numPermutationSets) :
+    (chunk : Fin top.permutationSetCount) :
     (ResolverPermutationPairs
         (top.toVerifierKey urs) poly proofIndex chunk).length =
       min top.chunkLen
@@ -134,8 +170,9 @@ permutation-domain interface. Only support for the circuit's evaluation-domain
 exponent is external; chunking and blinding bounds follow from compilation. -/
 theorem resolverPermutationDomain
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
-    (ch : Challenges top.shape.k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (poly : CommitmentId → CPoly)
     (hdomainExponent : top.domainExponent < 33) :
     ResolverPermutationDomain (top.toVerifierKey urs)
@@ -160,6 +197,7 @@ permutation while keeping circuit-owned domain and chunk constants in their
 canonical spelling. -/
 def resolverPermutationCycleOfKeygenColumns
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {numProofs : ℕ} (urs : URS G)
     (poly : CommitmentId → CPoly) (p : Fin numProofs)
     {activeRows : ℕ} (hactive : activeRows ≤ top.n)
@@ -169,7 +207,7 @@ def resolverPermutationCycleOfKeygenColumns
       (ResolverPermutationCell (top.toVerifierKey urs) poly p activeRows))
     (hdomainExponent : top.domainExponent < 33)
     (hcolumns : ∀
-      (chunk : Fin top.shape.numPermutationSets)
+      (chunk : Fin top.permutationSetCount)
       (column : Fin
         (ResolverPermutationPairs
           (top.toVerifierKey urs) poly p chunk).length),
@@ -189,20 +227,40 @@ def resolverPermutationCycleOfKeygenColumns
         top.chunkLen c.1 c.2.1 c.2.2) :
     ResolverPermutationCycle
       (top.toVerifierKey urs) poly p activeRows := by
-  simpa only [top.toVerifierKey_n,
-    top.toVerifierKey_omega,
-    top.toVerifierKey_delta,
-    top.toVerifierKey_chunkLen] using
-    ResolverPermutationCycle.ofKeygenColumns
-      (top.toVerifierKey urs) poly p hactive fullSigma sigma
-        (TopLevelAssignment.domainRowsInjective
-          (top := top) hdomainExponent)
-        hcolumns hrestrict hnames
+  have hcolumns' : ∀
+      (chunk : Fin top.permutationSetCount)
+      (column : Fin
+        (ResolverPermutationPairs
+          (top.toVerifierKey urs) poly p chunk).length),
+      (ResolverPermutationPairs
+          (top.toVerifierKey urs) poly p chunk)[column].2 =
+        keygenSigmaColumn (top.toVerifierKey urs).omega
+          (top.toVerifierKey urs).delta
+          (top.toVerifierKey urs).chunkLen fullSigma chunk column := by
+    simpa only [top.toVerifierKey_omega, top.toVerifierKey_delta,
+      top.toVerifierKey_chunkLen] using hcolumns
+  have hnames' : Function.Injective fun c :
+      ResolverPermutationCell
+        (top.toVerifierKey urs) poly p activeRows =>
+    chunkRowName (top.toVerifierKey urs).omega
+      (top.toVerifierKey urs).delta
+      (top.toVerifierKey urs).chunkLen c.1 c.2.1 c.2.2 := by
+    simpa only [top.toVerifierKey_omega, top.toVerifierKey_delta,
+      top.toVerifierKey_chunkLen] using hnames
+  have hrows : Function.Injective fun i : Fin top.n =>
+      (top.toVerifierKey urs).omega ^ (i : ℕ) := by
+    simpa only [top.toVerifierKey_omega] using
+      TopLevelAssignment.domainRowsInjective
+        (top := top) hdomainExponent
+  exact ResolverPermutationCycle.ofKeygenColumns
+    (top.toVerifierKey urs) poly p hactive fullSigma sigma
+      hrows hcolumns' hrestrict hnames'
 
 /-- The last usable row of a circuit-derived verifier domain is the verifier's
 canonical negative blinding rotation. -/
 theorem toVerifierKey_lastUsableRowRotation
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hdomainExponent : top.domainExponent < 33) :
     (top.toVerifierKey urs).omega ^

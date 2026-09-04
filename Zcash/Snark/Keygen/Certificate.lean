@@ -1,5 +1,5 @@
 import Zcash.Snark.Keygen.Pipeline
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape
 import Zcash.Arithmetic.CommitLagrange
 import Zcash.Snark.Fixtures.SingleAction.Honest.Fixture
 import Mathlib.Util.AssertNoSorry
@@ -32,7 +32,7 @@ open Zcash.Arithmetic (commitInvDftNatWith commitInvDftNatWith_eq commitNatPre d
 open Zcash.Snark
 open Zcash.Snark.Fixture
 open Halo2
-open Zcash.Circuits.Action (actionCircuit)
+open Zcash.Circuits.Action (actionCircuit actionCircuit_shape_eq)
 open CompElliptic.Curves.Pasta
 open CompElliptic.Curves.Pasta.Fast.NatKernel (P3)
 open CompElliptic.Curves.Pasta.Fast.Projective.PVes (ofAffine)
@@ -122,8 +122,7 @@ private instance bundleDecEq : DecidableEq (List G × List G × List G ×
     List (Expr Fp) ×
     (List (ℕ × ℤ) × List (ℕ × ℤ) × List (ℕ × ℤ)) ×
     List (List (Snark.ColumnRef × ℕ)) ×
-    (List (List (Expr Fp)) × List (List (Expr Fp))) ×
-    Shape) := by
+    (List (List (Expr Fp)) × List (List (Expr Fp)))) := by
   repeat' first
     | refine @instDecidableEqProd _ _ ?_ ?_
     | infer_instance
@@ -194,8 +193,7 @@ private theorem verifyingKey_eq_cast_of_fields
 and all 44 commitment MSMs) evaluates exactly once. Components, in order: the Lagrange
 URS 10-generator prefix; the 29 fixed-column and 15 permutation commitments; the
 domain/permutation scalars; the gates; the three query layouts; the permutation
-chunks; the two lookup-expression families; and the circuit shape combined with the
-fixture's proof parameters. -/
+chunks; and the two lookup-expression families. -/
 theorem certificate :
     (lagrangeBasis.take capturedUrsGLagrange.length,
       fixedCommitmentsSeqWith commitProj
@@ -218,8 +216,7 @@ theorem certificate :
             RichExpression.toExpr,
        List.ofFn fun lookup : Fin shape.numLookups =>
           (actionPinned.lookupTableExprs.getD lookup.val []).map
-            RichExpression.toExpr),
-      actionCircuit.shape.withProofParams actionProofParams)
+            RichExpression.toExpr))
     = (capturedUrsGLagrange,
        capturedFixedCommitments,
        capturedPermutationCommonCommitments,
@@ -227,39 +224,37 @@ theorem certificate :
        vk.gates,
        (vk.instanceQueryLayout, vk.adviceQueryLayout, vk.fixedQueryLayout),
        vk.permutationChunks,
-       (List.ofFn vk.lookupInputExprs, List.ofFn vk.lookupTableExprs),
-       shape) := by
+       (List.ofFn vk.lookupInputExprs, List.ofFn vk.lookupTableExprs)) := by
   native_decide
 
 /-- The fixture's full proof shape is the Action circuit shape combined with the captured
 proof parameters. -/
 theorem actionShape_eq_fixtureShape :
     actionCircuit.shape.withProofParams actionProofParams = shape := by
-  have h := certificate
-  simp only [Prod.mk.injEq] at h
-  exact h.2.2.2.2.2.2.2.2
+  rw [actionCircuit_shape_eq]
+  rfl
 
 /-- Changing the bundle size changes only the `numProofs` field of the captured Action shape.
-This is a definitional transport from the one expensive captured certificate, not a second keygen
-computation. -/
+This follows definitionally from the reduced circuit shape and proof parameters. -/
 theorem actionShapeFor_eq_fixtureShape (numProofs : ℕ) :
     actionCircuit.shape.withProofParams (actionProofParamsFor numProofs) =
       { Zcash.Snark.Fixture.shape with numProofs := numProofs } := by
   rw [← actionShape_eq_fixtureShape]
-  simp only [CircuitShape.withProofParams, actionProofParamsFor, actionProofParams]
+  simp only [Halo2.CircuitShape.withProofParams, actionProofParamsFor, actionProofParams]
 
 /-- The circuit-owned portion of the captured fixture shape is exactly the Action circuit's
 derived shape. -/
 theorem actionCircuitShape_eq_fixtureCircuitShape :
-    actionCircuit.shape = shape.toCircuitShape :=
-  congrArg Shape.toCircuitShape actionShape_eq_fixtureShape
+    actionCircuit.shape = shape.toCircuitShape := by
+  rw [actionCircuit_shape_eq]
+  rfl
 
 /-- The keygen domain exponent the columns are built at is the captured URS's `k`, so the
 column length the commitment families produce is the domain the committer's inverse DFT runs
 over. The circuit side comes from the proved planner trace; the capture merely records `k = 11`. -/
 private theorem domainExponent_eq :
     actionCircuit.domainExponent = capturedURS.k := by
-  rw [Zcash.Circuits.Action.actionCircuit_domainExponent_eq]
+  rw [TopLevelCircuit.domainExponent, actionCircuit_shape_eq]
   rfl
 
 set_option maxRecDepth 1000000 in
@@ -344,7 +339,7 @@ theorem vk_eq_toVerifierKey :
   have h := certificate
   simp only [Prod.mk.injEq] at h
   obtain ⟨-, -, -, ⟨ho, hn, hb, hd, hc⟩, hg,
-    ⟨hiq, haq, hfq⟩, hpch, ⟨hli, hlt⟩, -⟩ := h
+    ⟨hiq, haq, hfq⟩, hpch, ⟨hli, hlt⟩⟩ := h
   symm
   apply verifyingKey_eq_cast_of_fields actionCircuitShape_eq_fixtureCircuitShape
   · simpa only [actionCircuit.toVerifierKey_omega,

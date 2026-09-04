@@ -22,6 +22,7 @@ def TopLevelBundleStatement
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (poly : CommitmentId → CPoly) : Prop :=
   ∀ proofIndex : Fin pp.numProofs,
@@ -36,6 +37,7 @@ def TopLevelBundleWitness
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (poly : CommitmentId → CPoly) : Type :=
   ∀ proofIndex : Fin pp.numProofs,
@@ -65,6 +67,7 @@ theorem of_publicInputEncoding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (poly : CommitmentId → CPoly)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -95,6 +98,7 @@ def of_publicInputEncoding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (poly : CommitmentId → CPoly)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -120,6 +124,7 @@ theorem statement
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams}
     {poly : CommitmentId → CPoly}
     (witness : TopLevelBundleWitness top pp poly) :
@@ -132,6 +137,7 @@ abbrev TopLevelFixedEncoding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs) : Prop :=
@@ -145,6 +151,7 @@ abbrev TopLevelFixed
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs) : Prop :=
@@ -164,6 +171,7 @@ abbrev TopLevelCopies
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
     (cell : Type) [DecidableEq cell] [Fintype cell]
@@ -181,6 +189,7 @@ abbrev TopLevelLookups
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
@@ -200,6 +209,7 @@ def bridgeWitness_of_components
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -301,6 +311,7 @@ structure TopLevelCircuitCorrectness
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     {k : ℕ} (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)

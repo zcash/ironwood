@@ -56,8 +56,8 @@ abbrev AdaptiveActionStatementShape (pp : ProofParams) : Shape :=
 theorem adaptiveActionStatement_numInstanceColumns (pp : ProofParams) :
     (AdaptiveActionStatementShape pp).numInstanceColumns = 1 := by
   rw [actionCircuit.shape.withProofParams_numInstanceColumns pp,
-    actionCircuit.shape_numInstanceColumns]
-  exact actionCircuit_numInstanceColumns_eq
+    actionCircuit_shape_eq]
+  rfl
 
 /-- A zero public-instance column commits only to its blinding generator, for any verifier URS. -/
 theorem adaptiveCommitInstance_of_rows_zero {G : Type*} [AddCommGroup G] [Module Fp G]
@@ -188,6 +188,15 @@ def canonicalAdaptiveStatementInstanceRepresentation (pp : ProofParams)
                 actionCircuit.instanceCommitment urs inputs proofIndex instanceColumn.index
               exact (actionCircuit.instanceCommitment_column_eq_commit
                 pp urs inputs proofIndex instanceColumn).symm } }
+
+@[simp] theorem canonicalAdaptiveStatementInstanceRepresentation_point
+    (pp : ProofParams)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (inputs : Fin pp.numProofs → PublicInputs Fp)
+    (p : Fin (AdaptiveActionStatementShape pp).numProofs)
+    (column : Fin (AdaptiveActionStatementShape pp).numInstanceColumns) :
+    (canonicalAdaptiveStatementInstanceRepresentation pp basis inputs p column).point =
+      adaptiveActionStatementInstanceCommitment pp basis inputs p column := rfl
 
 /-- An online-AGM output that selects both the Action public statement and its proof. -/
 structure AdaptiveActionStatementOutput (pp : ProofParams)

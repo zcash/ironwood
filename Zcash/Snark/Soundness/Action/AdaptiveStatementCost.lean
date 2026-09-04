@@ -49,6 +49,7 @@ certified endpoints.
 namespace Zcash.Snark
 
 open Zcash.Common
+open Zcash.Circuits.Action (actionShape actionCircuit_shape_eq)
 
 open Keygen
 
@@ -326,8 +327,11 @@ def costedAdaptiveStatementBasisCache (pp : ProofParams)
         rcases i with i | j
         · rw [generators.2]
           have hi := i.isLt
-          change i.val < 2 ^ (Zcash.Circuits.Action.actionCircuit).domainExponent at hi
-          simp [List.getD, heval, hi]
+          have hiShape : i.val < 2 ^ actionShape.k := by
+            simpa only [AdaptiveActionStatementShape,
+              Halo2.CircuitShape.withProofParams_k,
+              actionCircuit_shape_eq] using hi
+          simp [List.getD, heval, hiShape]
           apply congrArg expected
           congr 1
         · fin_cases j <;>
@@ -476,26 +480,25 @@ theorem commitment_eq {pp : ProofParams} {family : ComputedAdaptiveActionStateme
   funext p column
   unfold commitment
   rw [cache.values_eq]
-  have hp : p.val < pp.numProofs := by
-    simpa [AdaptiveActionStatementShape] using p.isLt
+  have hp : p.val < (List.ofFn fun p => List.ofFn fun column =>
+      (canonicalAdaptiveStatementInstanceRepresentation
+        pp basis output.inputs p column).point).length := by
+    rw [List.length_ofFn]
+    exact p.isLt
+  rw [List.getD_eq_getElem _ _ hp, List.getElem_ofFn]
   by_cases hcolumn : column < (AdaptiveActionStatementShape pp).numInstanceColumns
-  · simp only [AdaptiveActionStatementShape,
-      CircuitShape.withProofParams_numInstanceColumns,
-      Halo2.TopLevelCircuit.shape_numInstanceColumns] at hcolumn
-    simp [List.getD, hp, hcolumn,
-      canonicalAdaptiveStatementInstanceRepresentation]
-    apply congrArg (fun q =>
-      adaptiveActionStatementInstanceCommitment pp basis output.inputs q column)
-    apply Fin.ext
-    rfl
-  · have hbounded := congrFun
+  · rw [List.getD_eq_getElem _ _ (by
+        rw [List.length_ofFn]
+        exact hcolumn), List.getElem_ofFn,
+      canonicalAdaptiveStatementInstanceRepresentation_point]
+  · rw [List.getD_eq_default _ _ (by
+        rw [List.length_ofFn]
+        exact Nat.le_of_not_gt hcolumn)]
+    have hbounded := congrFun
       (congrFun (adaptiveActionStatementInstanceCommitment_eq_bounded pp basis output.inputs) p)
       column
-    simp only [AdaptiveActionStatementShape,
-      CircuitShape.withProofParams_numInstanceColumns,
-      Halo2.TopLevelCircuit.shape_numInstanceColumns] at hcolumn
     rw [hbounded]
-    simp [boundedAdaptiveStatementInstanceCommitment, List.getD, hp, hcolumn,
+    simp only [boundedAdaptiveStatementInstanceCommitment, if_neg hcolumn,
       ursOfAugmentedBasis]
 
 end AdaptiveStatementCanonicalInstanceCache
@@ -1037,9 +1040,14 @@ theorem adaptiveStatementExtractorReductionProgram_groupWork_le {pp : ProofParam
   have hfinder := adaptiveStatementFinderReductionProgram_groupWork_le
     family basis cache hcharV plan
   simp only [AdaptiveActionStatementShape,
-    CircuitShape.withProofParams_numProofs,
-    CircuitShape.withProofParams_numInstanceColumns,
-    Halo2.TopLevelCircuit.shape_numInstanceColumns] at hfinder ⊢
+    Halo2.CircuitShape.withProofParams_numProofs,
+    Halo2.CircuitShape.withProofParams_numInstanceColumns] at hfinder
+  rw [actionCircuit_shape_eq] at hfinder
+  conv_rhs =>
+    simp only [AdaptiveActionStatementShape,
+      Halo2.CircuitShape.withProofParams_numProofs,
+      Halo2.CircuitShape.withProofParams_numInstanceColumns,
+      actionCircuit_shape_eq]
   cases plan.verdict with
   | found =>
     rw [CostedVestaComp.groupWork_bind]
@@ -1059,7 +1067,7 @@ theorem adaptiveStatementExtractorReductionProgram_groupWork_le {pp : ProofParam
         cache.toRunView.output.toAlgebraicWfProof.proof.1
         (chRecord (k := (AdaptiveActionStatementShape pp).k)
           cache.toRunView.pre cache.toRunView.rounds)
-      simp only [AdaptiveActionStatementShape] at haccept
+      simp only [AdaptiveActionStatementShape, actionCircuit_shape_eq] at haccept
       exact (Nat.add_le_add hfinder haccept).trans (by omega)
 
 /-- Conservative structural envelope for the complete relation finder.  It intentionally retains

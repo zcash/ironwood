@@ -126,7 +126,7 @@ def permutationQueryReference
 stream exactly. -/
 theorem verifierCS_permutationChunks_flatten
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     top.verifierCS.permutationChunks.flatten =
       (top.permutationColumns.map
         (permutationQueryReference top.adviceQueryLayout
@@ -144,6 +144,7 @@ theorem permutationQueryReference_coherent
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) {column : AnyColumn}
     (hcolumn : column ∈ top.permutationColumns) :
     PermutationColumnRef.Coherent (top.toVerifierKey urs)
@@ -160,8 +161,12 @@ theorem permutationQueryReference_coherent
       simp only [permutationQueryReference,
         PermutationColumnRef.Coherent]
       refine ⟨?_, ?_, ?_⟩
-      · simpa only [top.shape_numAdviceQueries,
-          TopLevelCircuit.adviceQueryCount] using hin
+      · have hcount :
+            top.adviceQueryLayout.findIdx (· = (index, 0)) <
+              top.adviceQueryCount := by
+          rw [top.adviceQueryCount_eq_adviceQueryLayout_length]
+          exact hin
+        exact hcount
       · simpa only [top.toVerifierKey_adviceQueryLayout] using hin
       · rw [top.toVerifierKey_adviceQueryLayout,
           getD_findIdx_eq_target top.adviceQueryLayout
@@ -174,8 +179,12 @@ theorem permutationQueryReference_coherent
       simp only [permutationQueryReference,
         PermutationColumnRef.Coherent]
       refine ⟨?_, ?_, ?_⟩
-      · simpa only [top.shape_numFixedQueries,
-          TopLevelCircuit.fixedQueryCount] using hin
+      · have hcount :
+            top.fixedQueryLayout.findIdx (· = (index, 0)) <
+              top.fixedQueryCount := by
+          rw [top.fixedQueryCount_eq_fixedQueryLayout_length]
+          exact hin
+        exact hcount
       · simpa only [top.toVerifierKey_fixedQueryLayout] using hin
       · rw [top.toVerifierKey_fixedQueryLayout,
           getD_findIdx_eq_target top.fixedQueryLayout
@@ -188,8 +197,12 @@ theorem permutationQueryReference_coherent
       simp only [permutationQueryReference,
         PermutationColumnRef.Coherent]
       refine ⟨?_, ?_, ?_⟩
-      · simpa only [top.shape_numInstanceQueries,
-          TopLevelCircuit.instanceQueryCount] using hin
+      · have hcount :
+            top.instanceQueryLayout.findIdx (· = (index, 0)) <
+              top.instanceQueryCount := by
+          rw [top.instanceQueryCount_eq_instanceQueryLayout_length]
+          exact hin
+        exact hcount
       · simpa only [top.toVerifierKey_instanceQueryLayout] using hin
       · rw [top.toVerifierKey_instanceQueryLayout,
           getD_findIdx_eq_target top.instanceQueryLayout
@@ -201,6 +214,7 @@ theorem _root_.Halo2.TopLevelCircuit.permutationChunkRoutingCoherent
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) :
     PermutationChunkRoutingCoherent (top.toVerifierKey urs) := by
   intro chunk hchunk ref href
@@ -217,8 +231,9 @@ theorem _root_.Halo2.TopLevelCircuit.permutationChunkRoutingCoherent
   constructor
   · exact permutationQueryReference_coherent top urs
       (List.getElem_mem hcolumnIndex)
-  · simpa only [top.shape_numPermutationColumns,
-      TopLevelCircuit.permutationColumnCount] using hcolumnIndex
+  · rw [← top.permutationColumnCount_eq_permutationColumns_length]
+      at hcolumnIndex
+    exact hcolumnIndex
 
 /-- Halo2's permutation chunk width is positive for every constraint system:
 `csDegree` is at least the permutation argument's baseline degree three. -/
@@ -232,14 +247,17 @@ theorem constraintSystem_chunkLen_pos (cs : ConstraintSystem Fp) :
 /-- The verifier CS emits exactly the circuit-owned ceiling number of chunks. -/
 theorem verifierCS_permutationChunks_length
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     top.verifierCS.permutationChunks.length =
       top.permutationSetCount := by
-  unfold TopLevelCircuit.verifierCS TopLevelCircuit.permutationSetCount
-    TopLevelCircuit.permutationColumnCount TopLevelCircuit.chunkLen
+  simp only [TopLevelCircuit.verifierCS]
+  have hchunkLen : 0 < top.chunkLen :=
+    constraintSystem_chunkLen_pos top.constraintSystem
   rw [listToChunks_length _ _
-    (constraintSystem_chunkLen_pos top.constraintSystem)]
-  simp
+    hchunkLen]
+  simp only [List.length_zipIdx, List.length_map]
+  rw [top.permutationSetCount_eq,
+    top.permutationColumnCount_eq_permutationColumns_length]
 
 /-- A circuit-derived verifying key has exactly the circuit-owned number of
 permutation sets. -/
@@ -247,17 +265,18 @@ permutation sets. -/
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) :
     (top.toVerifierKey urs).permutationChunks.length =
-      top.shape.numPermutationSets := by
-  rw [top.toVerifierKey_permutationChunks,
-    top.shape_numPermutationSets]
+      top.permutationSetCount := by
+  rw [top.toVerifierKey_permutationChunks]
   exact verifierCS_permutationChunks_length top
 
 /-- Each compiler chunk has the standard full-or-final-remainder width. -/
 theorem verifierCS_permutationChunks_getD_length
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (i : ℕ) (hi : i < top.verifierCS.permutationChunks.length) :
     (top.verifierCS.permutationChunks.getD i []).length =
       min top.chunkLen
@@ -266,15 +285,15 @@ theorem verifierCS_permutationChunks_getD_length
   have hchunkLen : 0 < top.chunkLen := by
     exact constraintSystem_chunkLen_pos top.constraintSystem
   rw [listToChunks_getD_length top.chunkLen _ hchunkLen i hi]
-  simp only [List.length_zipIdx, List.length_map,
-    TopLevelCircuit.permutationColumnCount,
-    TopLevelCircuit.chunkLen]
+  simp only [List.length_zipIdx, List.length_map]
+  rw [top.permutationColumnCount_eq_permutationColumns_length]
 
 /-- Every circuit-derived verifier chunk has the compiler-prescribed width. -/
 theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_getD_length
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (i : ℕ)
     (hi : i < (top.toVerifierKey urs).permutationChunks.length) :
     ((top.toVerifierKey urs).permutationChunks.getD i []).length =
@@ -288,6 +307,7 @@ permutation columns. -/
 theorem verifierCS_permutationChunks_take_flatten_length
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (i : ℕ) (hi : i < top.verifierCS.permutationChunks.length) :
     (top.verifierCS.permutationChunks.take i).flatten.length =
       i * top.chunkLen := by
@@ -303,6 +323,7 @@ theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_take_flatte
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (i : ℕ) (hi : i < (top.toVerifierKey urs).permutationChunks.length) :
     (((top.toVerifierKey urs).permutationChunks.take i).flatten.length) =
@@ -315,7 +336,7 @@ theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_take_flatte
 column, without requiring the family itself to be nonempty. -/
 theorem permutationColumns_length_le_chunks_mul
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     top.permutationColumnCount ≤
       top.verifierCS.permutationChunks.length * top.chunkLen := by
   let source :=
@@ -342,8 +363,8 @@ theorem permutationColumns_length_le_chunks_mul
     rcases column with ⟨kind, index⟩
     cases kind <;> rfl
   rw [hchunks]
-  simpa only [source, List.length_zipIdx, List.length_map,
-    TopLevelCircuit.permutationColumnCount] using hbound
+  rw [top.permutationColumnCount_eq_permutationColumns_length]
+  simpa only [source, List.length_zipIdx, List.length_map] using hbound
 
 /-- A coherent compiled query reference decodes to the concrete column from
 which the compiler created it. -/
@@ -392,6 +413,7 @@ theorem topLevelPermutationColumnAddresses_eq
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) :
     top.verifierCS.permutationChunks.flatten.map
           (fun reference =>

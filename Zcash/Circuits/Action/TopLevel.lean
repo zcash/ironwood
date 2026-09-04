@@ -1,5 +1,5 @@
 import Clean.Halo2.TopLevel
-import Zcash.Circuits.Action.PublicInput
+import Zcash.Circuits.Action.ConfigureCertificates
 import Zcash.Circuits.Action.Spec
 
 /-!
@@ -10,10 +10,6 @@ namespace Zcash.Circuits.Action
 
 open Halo2
 open Circuit
-
-/-- The closed configure output used by the Action top-level circuit. -/
-def actionConfig : Config :=
-  (configure Specs.Sinsemilla.orchardGenerators {}).1
 
 theorem initialGeneratorTableIdx_mem
     (cfg : Config) (i : RegionIndex) :
@@ -139,9 +135,14 @@ private theorem actionSelectorRequirements :
     Circuit.elaboratedPost, Circuit.configureElaborated]
   trivial
 
-private theorem actionQueryRequirements :
-    (circuit Specs.Sinsemilla.orchardGenerators orchardBases).queryRequirements
-      () {} := by
+/-- The closed Action circuit borrows no key-generation resources from a caller. -/
+def actionNoCallerRequirements :
+    (circuit Specs.Sinsemilla.orchardGenerators orchardBases).keygenRequirements.EmptyAt () := by
+  exact ⟨(), rfl, rfl, rfl, rfl, rfl, fun _ => rfl⟩
+
+/-- Action's closed configure run borrows no queryable columns from a caller. -/
+theorem actionQueryRequirements :
+    (circuit Specs.Sinsemilla.orchardGenerators orchardBases).queryRequirements () {} := by
   dsimp only [FormalCircuit.queryRequirements, Circuit.circuit,
     Circuit.elaboratedPost, Circuit.configureElaborated]
   trivial
@@ -149,7 +150,7 @@ private theorem actionQueryRequirements :
 def Internal.actionCircuitImpl : TopLevelCircuit Fp Config PublicInputs where
   formalCircuit :=
     circuit Specs.Sinsemilla.orchardGenerators orchardBases
-  noCallerRequirements := ⟨(), rfl, rfl, rfl, rfl, rfl, fun _ => rfl⟩
+  noCallerRequirements := actionNoCallerRequirements
   selectorRequirements := actionSelectorRequirements
   queryRequirements := actionQueryRequirements
   exists_rotation_mem_fixedQueries_of_lt := by
@@ -222,15 +223,6 @@ theorem Internal.actionCircuit_eq_impl :
     actionCircuit = Internal.actionCircuitImpl :=
   actionCircuitPacked.property
 
-/-- Action's reduced lookup-selector anchor equations are exactly those of its
-top-level range-check configuration. -/
-theorem actionCircuit_lookupSelectorAnchorRequirements_eq :
-    actionCircuit.lookupSelectorAnchorRequirements =
-      LookupRangeCheck.lookupSelectorAnchorRequirements
-        actionConfig.lookupConfig := by
-  rw [Internal.actionCircuit_eq_impl]
-  rfl
-
 /-- Action's configured primary column witnesses that its permutation family is
 nonempty. -/
 theorem actionCircuit_permutationColumns_nonempty :
@@ -283,19 +275,6 @@ theorem actionCircuit_numInstanceColumns_eq :
   simpa only [Internal.actionCircuitImpl, TopLevelCircuit.constraintSystem,
     TopLevelCompilation.constraintSystem, Circuit.circuit] using
       Circuit.configure_finalCounts_numInstanceColumns
-        Specs.Sinsemilla.orchardGenerators
-
-/-- Action's closed configure run equality-enables fifteen distinct columns. -/
-theorem actionCircuit_permutationColumnCount_eq :
-    actionCircuit.permutationColumnCount = 15 := by
-  rw [Internal.actionCircuit_eq_impl]
-  simpa only [Internal.actionCircuitImpl,
-    TopLevelCircuit.permutationColumnCount,
-    TopLevelCircuit.permutationColumns,
-    TopLevelCircuit.constraintSystem,
-    TopLevelCompilation.constraintSystem,
-    Circuit.circuit] using
-      Circuit.configure_permutationColumns_length
         Specs.Sinsemilla.orchardGenerators
 
 /-- Every lookup in the Action constraint system has at most four inputs. -/

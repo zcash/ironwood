@@ -26,7 +26,7 @@ The circuit-owned verifier constraint system: Clean's pinned circuit data
 translated once into ironwood's expression and column-reference types.
 -/
 def verifierCS
-    (top : TopLevelCircuit F Config PublicInput) :
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] :
     VerifierCS top.lookupCount F :=
   let pinned := top.pinnedCS
   let permutationReference : AnyColumn → ColumnRef := fun column =>
@@ -53,7 +53,7 @@ def verifierCS
 
 /-- The verifier CS translates the circuit-owned pinned gates. -/
 @[simp] theorem verifierCS_gates
-    (top : TopLevelCircuit F Config PublicInput) :
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] :
   top.verifierCS.gates =
       top.pinnedCS.gates.map RichExpression.toExpr := by
   simp only [verifierCS]
@@ -61,6 +61,7 @@ def verifierCS
 /-- The verifier CS translates one circuit-owned lookup input. -/
 @[simp] theorem verifierCS_lookupInputExprs
     (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top]
     (lookup : Fin top.lookupCount) :
     top.verifierCS.lookupInputExprs lookup =
       (top.pinnedCS.lookupInputExprs.getD lookup.val []).map
@@ -70,6 +71,7 @@ def verifierCS
 /-- The verifier CS translates one circuit-owned lookup table. -/
 @[simp] theorem verifierCS_lookupTableExprs
     (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top]
     (lookup : Fin top.lookupCount) :
     top.verifierCS.lookupTableExprs lookup =
       (top.pinnedCS.lookupTableExprs.getD lookup.val []).map
@@ -82,6 +84,7 @@ gates under the circuit-owned selector map.
 -/
 theorem verifierCS_gates_eval
     (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top]
     (fixed advice instanceFeed : ℕ → F) (valuation : Query → F)
     (hcoverage : ∀ expression ∈ flatGates top.constraintSystem,
       expression.selectorsCovered
@@ -116,7 +119,7 @@ theorem verifierCS_gates_eval
 
 /-- Selector compression preserves the number of flattened circuit gates. -/
 @[simp] theorem verifierCS_gates_length
-    (top : TopLevelCircuit F Config PublicInput) :
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] :
     top.verifierCS.gates.length =
       (flatGates top.constraintSystem).length := by
   rw [top.verifierCS_gates, List.length_map]

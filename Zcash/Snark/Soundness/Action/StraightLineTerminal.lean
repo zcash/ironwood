@@ -262,6 +262,103 @@ def action_bundleWitness_or_relation_of_decode_circuitSat
       (fun i hi => decode.toMemberDecode hchar i hi) haccepts hpoly hsatisfied hgoodY
       permutationExclusions lookupExclusions)
 
+/-- Run the finite Action-terminal exclusions for an already decoded accepting
+execution. Keeping the URS and its basis abstract here prevents executable
+specialization from expanding the concrete generator domain. -/
+def actionDecodedTerminal?
+    (pp : ProofParams) (urs : URS VestaG)
+    (hk : (actionCircuit.shape.withProofParams pp).k = urs.k)
+    (basis : AugmentedIndex (2 ^ urs.k) → VestaG)
+    (hbasis : augmentedBasis urs.g urs.u urs.w = basis)
+    (inputs : Fin pp.numProofs → PublicInputs Fp)
+    (ps : ProofString (actionCircuit.shape.withProofParams pp) Fp VestaG)
+    (ch : Challenges (actionCircuit.shape.withProofParams pp).k Fp)
+    (pU pW : Fp) (a : Fin (2 ^ urs.k) → Fp)
+    (decode : DeployedAlgebraicDecode (actionCircuit.shape.withProofParams pp) urs hk
+      (actionCircuit.toVerifierKey urs)
+      (actionCircuit.instanceCommitment urs inputs) ps ch a pU pW)
+    (hchar : deployedX4PairCount
+      (shape := actionCircuit.shape.withProofParams pp)
+      (actionCircuit.toVerifierKey urs)
+      (actionCircuit.instanceCommitment urs inputs) ps ch < scalarFieldOrder)
+    (haccepts : DeployedAccepts (actionCircuit.shape.withProofParams pp) urs hk
+      (actionCircuit.toVerifierKey urs)
+      (actionCircuit.instanceCommitment urs inputs) ps ch) :
+    Option (ActionBundleWitness inputs ⊕
+      AlgebraicRelationWitness (F := Fp) basis) :=
+  let model := CanonicalMemberConstraintRelation.acceptedModel
+    (memberDecode := fun i hi => decode.toMemberDecode hchar i hi)
+    (hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs) haccepts
+  let polynomial := CanonicalMemberConstraintRelation.acceptedPolynomial
+    (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts
+  match hxgood : szBadSetAvoidance?
+      (combineConstraints model.fixedCols model.adviceCols model.instanceCols model.gates
+          model.sets model.chunks model.lookups model.beta model.gamma model.delta model.theta
+          ch.y model.chunkLen model.l0 model.lLast model.lBlind
+        - polynomial CommitmentId.vanishingH * (X ^ actionCircuit.n - 1)) ch.x with
+  | some hxgoodProof =>
+      let hn : actionCircuit.n ≠ 0 := actionCircuit.n_ne_zero
+      match hgoodY : foldSplitAvoidance? model.constraints actionCircuit.n hn ch.y with
+      | some hgoodYProof =>
+          match hpermutation : resolverPermutationChallengeExclusions?
+              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial actionActiveRows with
+          | some hpermutationProof =>
+              match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
+                  actionCircuit pp urs ch polynomial with
+              | some hlookupProof =>
+                  let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
+                  let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
+                    TopLevelAssignment.domainSizeCastNeZero
+                      ActionConstraintBounds.domainExponent_lt
+                  let terminal :=
+                    acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
+                      (R := AlgebraicRelationWitness (F := Fp) basis)
+                      urs hk (actionCircuit.toVerifierKey urs)
+                      (actionCircuit.instanceCommitment urs inputs) ps ch
+                  let outcome := terminal
+                    (fun i hi => decode.toMemberDecode hchar i hi)
+                  let terminal := outcome haccepts hblinding
+                  let outcome := terminal (polynomial .vanishingH) rfl
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
+                      actionCircuit.toVerifierKey_fixedQueryCount urs)
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
+                      actionCircuit.toVerifierKey_adviceQueryCount urs)
+                    (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
+                      actionCircuit.toVerifierKey_instanceQueryCount urs)
+                  let terminal := outcome
+                    (fun slot point hpoint =>
+                      PSum.inl (decode.memberBinding hchar slot point hpoint))
+                    (actionCircuit.permutationChunkRoutingCoherent urs)
+                  let outcome := terminal
+                    (TopLevelAssignment.toVerifierKey_domainRowsInjective
+                      urs ActionConstraintBounds.domainExponent_lt)
+                  let outcome := outcome
+                    (TopLevelAssignment.toVerifierKey_domainRoot
+                      urs ActionConstraintBounds.domainExponent_lt)
+                  let outcome := outcome
+                    (by simpa only [actionCircuit.toVerifierKey_n] using hnFp)
+                  let outcome := outcome
+                    (by simpa only [actionCircuit.toVerifierKey_n] using hxgoodProof.down)
+                  match outcome with
+                  | PSum.inr relation => some (Sum.inr relation)
+                  | PSum.inl hsatisfied =>
+                      let terminal :=
+                        action_bundleWitness_or_relation_of_decode_circuitSat
+                          pp urs hk inputs ps ch pU pW a
+                      let outcome := terminal decode hchar haccepts
+                        (polynomial .vanishingH)
+                      let outcome := outcome
+                        (by simpa only [actionCircuit.toVerifierKey_n] using hsatisfied)
+                        hgoodYProof.down
+                      match outcome hpermutationProof.down hlookupProof.down with
+                      | PSum.inl witness => some (Sum.inl witness)
+                      | PSum.inr relation => some (Sum.inr (hbasis ▸
+                          AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+              | none => none
+          | none => none
+      | none => none
+  | none => none
+
 /-- The run's decode at the Action circuit's artifacts: extracted from the event, re-rounded to
 the run's complete challenge record, and transported along the key and instance identifications. -/
 def actionRunDecode
@@ -370,6 +467,14 @@ def action_bundleStatement_or_relation_of_straightLineDecoded
 
 /-- Checks terminal exclusions and returns private witnesses or explicit relation coefficients
 from the reconstructed run. -/
+@[noinline] private def algebraicRelationWitnessOfAugmentedBasis
+    {n : Nat} (basis : AugmentedIndex n → VestaG)
+    {g : Fin n → VestaG} {u w : VestaG}
+    (hbasis : augmentedBasis g u w = basis)
+    (relation : AugmentedRelationWitness (F := Fp) g u w) :
+    AlgebraicRelationWitness (F := Fp) basis :=
+  hbasis ▸ relation.toAlgebraicRelationWitness
+
 def actionTerminalWitnessOrRelationFinder
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (actionCircuit.shape.withProofParams pp))
@@ -399,88 +504,28 @@ def actionTerminalWitnessOrRelationFinder
     let pnu := (wrappedAdversary family.toFamily basis).run O
     let urs := ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis
     let ch := chRecord (wrappedPreIpaReads pnu) (runRounds family.toFamily basis O)
-    match family.straightLineConstraintOutcome? static basis O with
+    match hout : family.straightLineConstraintOutcome? static basis O with
     | none => none
     | some (PSum.inr relation) =>
-        some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-          (actionCircuit.shape.withProofParams pp).k basis ▸
-            relation.toAlgebraicRelationWitness))
+        some (Sum.inr (algebraicRelationWitnessOfAugmentedBasis basis
+          (augmentedBasis_ursOfAugmentedBasis
+            (actionCircuit.shape.withProofParams pp).k basis) relation))
     | some (PSum.inl success) =>
-        let decode : DeployedAlgebraicDecode (actionCircuit.shape.withProofParams pp) urs rfl
-            (actionCircuit.toVerifierKey urs)
-            (actionCircuit.instanceCommitment urs inputs) pnu.1.proof.1 ch
-            (pnu.1.aMulti (wrappedPreIpaReads pnu))
-            (pnu.1.multiU (wrappedPreIpaReads pnu))
-            (pnu.1.multiBlind (wrappedPreIpaReads pnu)) := hI basis ▸ hvk basis ▸
-          success.witness.decode.reRound (runRounds family.toFamily basis O)
-        let haccepts : DeployedAccepts (actionCircuit.shape.withProofParams pp) urs rfl
-            (actionCircuit.toVerifierKey urs)
-            (actionCircuit.instanceCommitment urs inputs) pnu.1.proof.1 ch :=
-          hI basis ▸ hvk basis ▸ success.accepts
-        let model := CanonicalMemberConstraintRelation.acceptedModel
-          (memberDecode := fun i hi => decode.toMemberDecode (hchar basis O) i hi)
-          (hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs) haccepts
-        let polynomial := CanonicalMemberConstraintRelation.acceptedPolynomial
-          (memberDecode := fun i hi => decode.toMemberDecode (hchar basis O) i hi) haccepts
-        match hxgood : szBadSetAvoidance?
-            (combineConstraints model.fixedCols model.adviceCols model.instanceCols model.gates
-                model.sets model.chunks model.lookups model.beta model.gamma model.delta model.theta
-                ch.y model.chunkLen model.l0 model.lLast model.lBlind
-              - polynomial CommitmentId.vanishingH
-                  * (X ^ actionCircuit.n - 1)) ch.x with
-        | some hxgoodProof =>
-          let hn : actionCircuit.n ≠ 0 := actionCircuit.n_ne_zero
-          match hgoodY : foldSplitAvoidance? model.constraints
-              actionCircuit.n hn ch.y with
-          | some hgoodYProof =>
-            match hpermutation : resolverPermutationChallengeExclusions?
-                pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial actionActiveRows with
-            | some hpermutationProof =>
-              match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
-                actionCircuit pp urs ch polynomial with
-              | some hlookupProof =>
-                let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
-                let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
-                  TopLevelAssignment.domainSizeCastNeZero
-                    ActionConstraintBounds.domainExponent_lt
-                match acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
-                    urs rfl (actionCircuit.toVerifierKey urs)
-                    (actionCircuit.instanceCommitment urs inputs) pnu.1.proof.1 ch
-                    (fun i hi => decode.toMemberDecode (hchar basis O) i hi) haccepts hblinding
-                    (polynomial .vanishingH) rfl
-                    (actionCircuit.toVerifierKey_fixedQueryCount urs)
-                    (actionCircuit.toVerifierKey_adviceQueryCount urs)
-                    (actionCircuit.toVerifierKey_instanceQueryCount urs)
-                    (fun slot point hpoint =>
-                      PSum.inl (decode.memberBinding (hchar basis O) slot point hpoint))
-                    (actionCircuit.permutationChunkRoutingCoherent urs)
-                    (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                      urs ActionConstraintBounds.domainExponent_lt)
-                    (TopLevelAssignment.toVerifierKey_domainRoot
-                      urs ActionConstraintBounds.domainExponent_lt)
-                    hnFp
-                    (by exact hxgoodProof.down) with
-                | PSum.inr relation =>
-                    some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                      (actionCircuit.shape.withProofParams pp).k basis ▸
-                        AugmentedRelationWitness.toAlgebraicRelationWitness relation))
-                | PSum.inl hsatisfied =>
-                    match action_bundleWitness_or_relation_of_decode_circuitSat pp urs rfl
-                        inputs pnu.1.proof.1 ch
-                        (pnu.1.multiU (wrappedPreIpaReads pnu))
-                        (pnu.1.multiBlind (wrappedPreIpaReads pnu))
-                        (pnu.1.aMulti (wrappedPreIpaReads pnu)) decode (hchar basis O) haccepts
-                        (polynomial .vanishingH) hsatisfied hgoodYProof.down
-                        hpermutationProof.down hlookupProof.down with
-                    | PSum.inl witness => some (Sum.inl witness)
-                    | PSum.inr relation =>
-                        some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                          (actionCircuit.shape.withProofParams pp).k basis ▸
-                            AugmentedRelationWitness.toAlgebraicRelationWitness relation))
-              | none => none
-            | none => none
-          | none => none
-        | none => none
+        let hdecoded : family.straightLineConstraintDecoded static basis O := by
+          unfold ComputedStraightLineDeployedFSFamily.straightLineConstraintDecoded
+            ComputedStraightLineDeployedFSFamily.straightLineConstraintSuccess?
+          simp only [hout, Option.isSome_some]
+        let decode := actionRunDecode pp family static basis O inputs
+          (hvk basis) (hI basis) hdecoded
+        let haccepts := actionRunAccepts pp family static basis O inputs
+          (hvk basis) (hI basis) hdecoded
+        actionDecodedTerminal? pp urs rfl basis
+          (augmentedBasis_ursOfAugmentedBasis
+            (actionCircuit.shape.withProofParams pp).k basis)
+          inputs pnu.1.proof.1 ch
+          (pnu.1.multiU (wrappedPreIpaReads pnu))
+          (pnu.1.multiBlind (wrappedPreIpaReads pnu))
+          (pnu.1.aMulti (wrappedPreIpaReads pnu)) decode (hchar basis O) haccepts
 
 /-- One executable straight-line outcome shared by the witness extractor and DLOG projection. -/
 def actionKnowledgeOutcome

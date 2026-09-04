@@ -16,6 +16,8 @@ concepts.
 
 namespace Zcash.Snark
 
+universe u
+
 open CompPoly.CPolynomial
 
 set_option maxHeartbeats 20000
@@ -722,11 +724,12 @@ theorem acceptedModel_circuitSat_of_openings
 The canonical quotient terminal directly from accepted member-node binding.
 
 All query evaluations and the quotient carrier are fixed by the accepted
-`CommitmentId` resolver. The only exceptional branch is the existing
-augmented-basis relation produced by node binding.
+`CommitmentId` resolver. The exceptional branch is the computed failure type
+supplied by node binding.
 -/
 def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
     {shape : Shape}
+    {R : Sort u}
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
@@ -776,7 +779,7 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
           deployedMemberClaim
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' R)
     (hpermutationRouting :
       PermutationChunkRoutingCoherent vk)
     (hrows : Function.Injective
@@ -837,7 +840,7 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
         (memberDecode := memberDecode)
         (hblinding := hblinding) haccepts).CircuitSat
           ch.y hpoly vk.n a
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' R := by
   refine bindOrRelationWitness
     (CanonicalMemberConstraintRelation.acceptedPolynomial_opens_or_relation
       (memberDecode := memberDecode) haccepts hbind)

@@ -30,7 +30,8 @@ is supplied by the caller. -/
 structure TopLevelConstraintBounds
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput) : Prop where
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] : Prop where
   domainExponent_lt : top.domainExponent < 33
   selectorDegree :
     csDegree top.constraintSystem < scalarFieldOrder
@@ -42,6 +43,7 @@ variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
 
 /--
@@ -78,7 +80,7 @@ theorem resolverInterpretsGates
   have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
     (fun _ => 0) row
-    homega
+    (by simpa only [top.toVerifierKey_omega] using homega)
     (pinnedQueryState top.pinnedCS)
     (by
       simp only [top.toVerifierKey_adviceQueryLayout,
@@ -93,7 +95,7 @@ theorem resolverInterpretsGates
     (top.toVerifierKey_fixedQueryCount urs)
     (top.toVerifierKey_instanceQueryCount urs)
   rw [top.pinnedQueryState_eq_gateQueryState] at hfinal
-  exact hfinal
+  simpa only [top.toVerifierKey_omega] using hfinal
 
 /-- The circuit-derived selector map has the roots required by gate scaling. -/
 theorem selectorRootsWellFormed
@@ -198,7 +200,8 @@ opaque polynomialWitness
     · exact hfixed
     · exact henabled
     · exact hcompressed
-  exact enabledGatePolynomialWitnessOfResolver
+  simpa only [top.toVerifierKey_omega] using
+    enabledGatePolynomialWitnessOfResolver
     (numProofs := pp.numProofs)
     (k := k)
     (top.toVerifierKey urs)

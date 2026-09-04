@@ -311,24 +311,6 @@ def preXIdentityRelation?V {pp : ProofParams}
   | some (Sum.inr relation) => some relation
   | _ => none
 
-theorem preXIdentityRelationV_isSome_of_outcome {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (view : RunView pp family basis)
-    (hfacts) (witness) (rawDecode) (hbatches) (haccepts) (hchar)
-    (hcomplete : (family.preXIdentityOutcome?V basis view hfacts witness rawDecode
-      hbatches haccepts hchar).isSome)
-    (hfalse : ¬BundleStatement view.output.inputs) :
-    (family.preXIdentityRelation?V basis view hfacts witness rawDecode hbatches
-      haccepts hchar).isSome := by
-  obtain ⟨outcome, houtcome⟩ := Option.isSome_iff_exists.mp hcomplete
-  cases outcome with
-  | inl extracted => exact False.elim (hfalse extracted.statement)
-  | inr relation =>
-      unfold preXIdentityRelation?V
-      rw [houtcome]
-      rfl
-
 theorem preXIdentityOutcomeV_isSome_of {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)

@@ -303,7 +303,6 @@ assert_axioms Zcash.Snark.Keygen.certificate +native(
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Keygen.actionShape_eq_fixtureShape +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Keygen.vk_eq_toVerifierKey +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -332,7 +331,6 @@ assert_axioms Zcash.Snark.Fixture.capturedInit
 assert_axioms Zcash.Snark.deriveChallenges
 assert_axioms Zcash.Snark.nonInteractiveFingerprint
 assert_axioms Zcash.Snark.Fixture.derivedVk +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived +native(
   CompElliptic.Fields.Pasta.pallasBase,

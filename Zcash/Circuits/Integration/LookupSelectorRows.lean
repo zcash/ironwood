@@ -218,6 +218,7 @@ finite property directly.
 -/
 def EnabledLookup.InputSelectorLeafRowsExact
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (rows : ℕ → List Fp) (lookup : EnabledLookup Fp) : Prop :=
   lookup.argument.inputs.Forall fun expression =>
     ExpressionSelectorLeavesSatisfy (fun selector =>
@@ -250,6 +251,7 @@ private theorem selReplacement_eval_of_singleton
 placement supply the exact dense selector valuation used by lookup projection. -/
 theorem EnabledLookup.inputSelectorLeafRowsExact
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (anchor : ℕ → FloorPlanner.RegionColumn)
     (hanchor : SelectorAnchorRequirementsSatisfied
       top.lookupSelectorAnchorRequirements anchor)
@@ -283,6 +285,7 @@ theorem EnabledLookup.inputSelectorLeafRowsExact
 
 instance EnabledLookup.inputSelectorLeafRowsExactDecidable
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (rows : ℕ → List Fp) (lookup : EnabledLookup Fp) :
     Decidable (lookup.InputSelectorLeafRowsExact top rows) := by
   let predicate : Selector → Prop := fun selector =>
@@ -331,6 +334,7 @@ expression-level selector boundary consumed by lookup projection.
 -/
 def EnabledLookup.inputSelectorValuesRealized_or_bad
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     (poly : CommitmentId → CPoly)
     (rows : ℕ → List Fp)
@@ -387,11 +391,21 @@ def EnabledLookup.inputSelectorValuesRealized_or_bad
                 (top.placement lookup.region + lookup.row : ℕ) =
               (rows compressed.packedCol).getD
                 (top.placement lookup.region + lookup.row) 0 := by
+          have hrowsVk : Function.Injective
+              fun i : Fin (2 ^ urs.k) =>
+                (top.toVerifierKey urs).omega ^ (i : ℕ) := by
+            simpa only [top.toVerifierKey_omega] using hrows
+          have hpolynomialVk :
+              poly (.fixedCol compressed.packedCol) =
+                instanceRowPolynomial (2 ^ urs.k)
+                  (top.toVerifierKey urs).omega
+                  (rows compressed.packedCol) := by
+            simpa only [top.toVerifierKey_omega] using hpolynomial
           exact resolverFixedRead_of_rowPolynomial
-            urs (top.toVerifierKey urs) poly rows hrows proofIndex
+            urs (top.toVerifierKey urs) poly rows hrowsVk proofIndex
             (top.usableRowsAt top.domainExponent) compressed.packedCol
             (top.placement lookup.region + lookup.row)
-            hdomainRow hpolynomial
+            hdomainRow hpolynomialVk
         rw [Halo2.substValuation, hcompressed]
         change
           (selReplacement compressed).eval

@@ -1,5 +1,5 @@
 import Zcash.Snark.Capstones.Action.Base
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape.PlannerTrace
 
 /-!
 # The captured checks, scalars, and schedule at the derived key
@@ -44,10 +44,10 @@ private theorem castVk_lookup {s₁ s₂ : CircuitShape} (h : s₁ = s₂)
     (K : VerifyingKey s₁ Fp VestaG) (l : Fin s₁.numLookups) :
     K.lookupInputExprs l =
       (h ▸ K : VerifyingKey s₂ Fp VestaG).lookupInputExprs
-        (Fin.cast (congrArg CircuitShape.numLookups h) l) ∧
+        (Fin.cast (congrArg Halo2.CircuitShape.numLookups h) l) ∧
     K.lookupTableExprs l =
       (h ▸ K : VerifyingKey s₂ Fp VestaG).lookupTableExprs
-        (Fin.cast (congrArg CircuitShape.numLookups h) l) := by
+        (Fin.cast (congrArg Halo2.CircuitShape.numLookups h) l) := by
   cases h
   exact ⟨rfl, rfl⟩
 
@@ -87,16 +87,23 @@ theorem derived_scalars :
 theorem action_numLookups_eq :
     actionCircuit.lookupCount =
       shape.numLookups := by
-  simpa only [actionCircuit.shape_numLookups] using
-    congrArg CircuitShape.numLookups actionCircuitShape_eq_fixtureCircuitShape
+  exact congrArg Halo2.CircuitShape.numLookups
+    actionCircuitShape_eq_fixtureCircuitShape
+
+private theorem actionShape_numLookups_eq :
+    actionCircuit.lookupCount = shape.numLookups :=
+  congrArg Halo2.CircuitShape.numLookups
+    actionCircuitShape_eq_fixtureCircuitShape
 
 /-- The circuit-owned lookup expressions are the captured ones, up to the index cast. -/
 theorem derived_lookups
     (l : Fin actionCircuit.lookupCount) :
-    actionCircuit.verifierCS.lookupInputExprs l =
-      vk.lookupInputExprs (Fin.cast action_numLookups_eq l) ∧
-    actionCircuit.verifierCS.lookupTableExprs l =
-      vk.lookupTableExprs (Fin.cast action_numLookups_eq l) := by
+    actionCircuit.verifierCS.lookupInputExprs
+        l =
+      vk.lookupInputExprs (Fin.cast actionShape_numLookups_eq l) ∧
+    actionCircuit.verifierCS.lookupTableExprs
+        l =
+      vk.lookupTableExprs (Fin.cast actionShape_numLookups_eq l) := by
   have hcast := castVk_lookup actionCircuitShape_eq_fixtureCircuitShape
     (actionCircuit.toVerifierKey capturedURS) l
   simp only [actionCircuit.toVerifierKey_lookupInputExprs,
@@ -104,13 +111,8 @@ theorem derived_lookups
   have hvk : (actionCircuitShape_eq_fixtureCircuitShape ▸
       actionCircuit.toVerifierKey capturedURS :
       VerifyingKey shape Fp VestaG) = vk := vk_eq_toVerifierKey.symm
-  constructor
-  · exact hcast.1.trans (by
-      rw [hvk]
-      exact congrArg vk.lookupInputExprs (Fin.ext (by simp)))
-  · exact hcast.2.trans (by
-      rw [hvk]
-      exact congrArg vk.lookupTableExprs (Fin.ext (by simp)))
+  rw [hvk] at hcast
+  exact hcast
 
 /-! ## The captured checks and schedule at the derived shape -/
 
@@ -126,28 +128,29 @@ private theorem capturedActionDerivedShapeCounts :
     actionCircuit.quotientPieceCount =
       shape.numQuotientPieces :=
   ⟨by
-      rw [Zcash.Circuits.Action.actionCircuit_domainExponent_eq]
-      rfl,
-    by simpa only [CircuitShape.withProofParams_numAdviceQueries,
-        actionCircuit.shape_numAdviceQueries] using
+      exact congrArg Halo2.CircuitShape.k
+        actionCircuitShape_eq_fixtureCircuitShape,
+    by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries,
+        Halo2.TopLevelCircuit.adviceQueryCount] using
       congrArg (fun proofShape : Shape => proofShape.numAdviceQueries)
         actionShape_eq_fixtureShape,
-    by simpa only [CircuitShape.withProofParams_numInstanceQueries,
-        actionCircuit.shape_numInstanceQueries] using
+    by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries,
+        Halo2.TopLevelCircuit.instanceQueryCount] using
       congrArg (fun proofShape : Shape => proofShape.numInstanceQueries)
         actionShape_eq_fixtureShape,
-    by simpa only [CircuitShape.withProofParams_numFixedQueries,
-        actionCircuit.shape_numFixedQueries] using
+    by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries,
+        Halo2.TopLevelCircuit.fixedQueryCount] using
       congrArg (fun proofShape : Shape => proofShape.numFixedQueries)
         actionShape_eq_fixtureShape,
-    by simpa only [CircuitShape.withProofParams_numQuotientPieces,
-        actionCircuit.shape_numQuotientPieces] using
+    by simpa only [Halo2.CircuitShape.withProofParams_numQuotientPieces,
+        Halo2.TopLevelCircuit.quotientPieceCount] using
       congrArg (fun proofShape : Shape => proofShape.numQuotientPieces)
         actionShape_eq_fixtureShape⟩
 
 theorem action_domainExponent_eq :
     actionCircuit.domainExponent = 11 := by
-  exact Zcash.Circuits.Action.actionCircuit_domainExponent_eq
+  rw [Halo2.TopLevelCircuit.domainExponent,
+    actionCircuit_shape_eq, actionShape_k]
 
 /-- **The captured static checks at the derived key**: the concrete specialization
 of `actionStaticChecks`, with the five decided facts transferred through the captured key's scalar
@@ -160,16 +163,16 @@ theorem capturedActionStaticChecks
     DeployedConstraintStaticChecks family.toRootFamily where
   adviceLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_adviceQueryLayout,
-      CircuitShape.withProofParams_numAdviceQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numAdviceQueries]
+    exact le_of_eq actionCircuit.adviceQueryCount_eq_adviceQueryLayout_length
   instanceLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_instanceQueryLayout,
-      CircuitShape.withProofParams_numInstanceQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numInstanceQueries]
+    exact le_of_eq actionCircuit.instanceQueryCount_eq_instanceQueryLayout_length
   fixedLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_fixedQueryLayout,
-      CircuitShape.withProofParams_numFixedQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numFixedQueries]
+    exact le_of_eq actionCircuit.fixedQueryCount_eq_fixedQueryLayout_length
   omegaOrder := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
@@ -193,9 +196,13 @@ def capturedActionXSqueezeSchedule
     rw [actionCircuit.n_eq_two_pow_domainExponent,
       action_domainExponent_eq]
     norm_num
+  have hkShape :
+      2 ^ (actionCircuit.shape.withProofParams actionProofParams).k - 1 = 2047 := by
+    simpa only [Halo2.CircuitShape.withProofParams_k,
+      ← actionCircuit.n_eq_two_pow_domainExponent] using hk
   have h := deployedConstraintXSqueezeSchedule_of_pinned family.toRootFamily
     (B := 2047) (W := 7) (Dc := 8188) (D := 20470) (Dq := 20470)
-    (by norm_num) (le_of_eq hk)
+    (by norm_num) (le_of_eq hkShape)
     (fun basis => by
       rw [hvk basis, actionCircuit.toVerifierKey_n, hk])
     (fun basis => by
@@ -215,10 +222,13 @@ def capturedActionXSqueezeSchedule
         (derived_lookups l).2]
       exact vk_lookup_table_degree_le _)
     (fun basis => by
+      have hquotient :
+          actionCircuit.quotientPieceCount = shape.numQuotientPieces :=
+        capturedActionDerivedShapeCounts.2.2.2.2
+      simp only [Halo2.TopLevelCircuit.quotientPieceCount] at hquotient
       rw [hvk basis, actionCircuit.toVerifierKey_n,
-        CircuitShape.withProofParams_numQuotientPieces,
-        actionCircuit.shape_numQuotientPieces,
-        capturedActionDerivedShapeCounts.2.2.2.2, ← hk,
+        Halo2.CircuitShape.withProofParams_numQuotientPieces,
+        hquotient, ← hk,
         actionCircuit.n_eq_two_pow_domainExponent,
         action_domainExponent_eq]
       exact vk_quotient_tail_le)
@@ -240,19 +250,18 @@ theorem actionDerivedShapeCounts (numProofs : ℕ) :
   have h := actionShapeFor_eq_fixtureShape numProofs
   exact
     ⟨by
-        rw [Zcash.Circuits.Action.actionCircuit_domainExponent_eq]
-        rfl,
-      by simpa only [CircuitShape.withProofParams_numAdviceQueries,
-          actionCircuit.shape_numAdviceQueries] using
+        exact congrArg (fun proofShape : Shape => proofShape.k) h,
+      by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries,
+          Halo2.TopLevelCircuit.adviceQueryCount] using
         congrArg (fun proofShape : Shape => proofShape.numAdviceQueries) h,
-      by simpa only [CircuitShape.withProofParams_numInstanceQueries,
-          actionCircuit.shape_numInstanceQueries] using
+      by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries,
+          Halo2.TopLevelCircuit.instanceQueryCount] using
         congrArg (fun proofShape : Shape => proofShape.numInstanceQueries) h,
-      by simpa only [CircuitShape.withProofParams_numFixedQueries,
-          actionCircuit.shape_numFixedQueries] using
+      by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries,
+          Halo2.TopLevelCircuit.fixedQueryCount] using
         congrArg (fun proofShape : Shape => proofShape.numFixedQueries) h,
-      by simpa only [CircuitShape.withProofParams_numQuotientPieces,
-          actionCircuit.shape_numQuotientPieces] using
+      by simpa only [Halo2.CircuitShape.withProofParams_numQuotientPieces,
+          Halo2.TopLevelCircuit.quotientPieceCount] using
         congrArg (fun proofShape : Shape => proofShape.numQuotientPieces) h⟩
 
 /-- The canonical Action static checks, quantified over arbitrary `numProofs`.  The captured-key
@@ -267,16 +276,16 @@ theorem actionStaticChecks (numProofs : ℕ)
     DeployedConstraintStaticChecks family.toRootFamily where
   adviceLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_adviceQueryLayout,
-      CircuitShape.withProofParams_numAdviceQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numAdviceQueries]
+    exact le_of_eq actionCircuit.adviceQueryCount_eq_adviceQueryLayout_length
   instanceLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_instanceQueryLayout,
-      CircuitShape.withProofParams_numInstanceQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numInstanceQueries]
+    exact le_of_eq actionCircuit.instanceQueryCount_eq_instanceQueryLayout_length
   fixedLength := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_fixedQueryLayout,
-      CircuitShape.withProofParams_numFixedQueries]
-    exact Nat.le_refl _
+      Halo2.CircuitShape.withProofParams_numFixedQueries]
+    exact le_of_eq actionCircuit.fixedQueryCount_eq_fixedQueryLayout_length
   omegaOrder := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
@@ -302,9 +311,14 @@ def actionXSqueezeSchedule (numProofs : ℕ)
     rw [actionCircuit.n_eq_two_pow_domainExponent,
       action_domainExponent_eq]
     norm_num
+  have hkShape :
+      2 ^ (actionCircuit.shape.withProofParams
+          (actionProofParamsFor numProofs)).k - 1 = 2047 := by
+    simpa only [Halo2.CircuitShape.withProofParams_k,
+      ← actionCircuit.n_eq_two_pow_domainExponent] using hk
   have h := deployedConstraintXSqueezeSchedule_of_pinned family.toRootFamily
     (B := 2047) (W := 7) (Dc := 8188) (D := 20470) (Dq := 20470)
-    (by norm_num) (le_of_eq hk)
+    (by norm_num) (le_of_eq hkShape)
     (fun basis => by
       rw [hvk basis, actionCircuit.toVerifierKey_n, hk])
     (fun basis => by
@@ -324,10 +338,13 @@ def actionXSqueezeSchedule (numProofs : ℕ)
         (derived_lookups l).2]
       exact vk_lookup_table_degree_le _)
     (fun basis => by
+      have hquotient :
+          actionCircuit.quotientPieceCount = shape.numQuotientPieces :=
+        (actionDerivedShapeCounts numProofs).2.2.2.2
+      simp only [Halo2.TopLevelCircuit.quotientPieceCount] at hquotient
       rw [hvk basis, actionCircuit.toVerifierKey_n,
-        CircuitShape.withProofParams_numQuotientPieces,
-        actionCircuit.shape_numQuotientPieces,
-        (actionDerivedShapeCounts numProofs).2.2.2.2, ← hk,
+        Halo2.CircuitShape.withProofParams_numQuotientPieces,
+        hquotient, ← hk,
         actionCircuit.n_eq_two_pow_domainExponent,
         action_domainExponent_eq]
       exact vk_quotient_tail_le)

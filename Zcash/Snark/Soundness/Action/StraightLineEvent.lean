@@ -204,8 +204,6 @@ theorem actionKnowledgeOutcome_isSome_of_good
     (actionKnowledgeOutcome pp family static inputs hvk hI hchar basis O).isSome := by
   obtain ⟨success, hout⟩ :=
     family.straightLineConstraintOutcome?_eq_some_of_decoded static basis O hdecoded
-  have hsuccess := family.straightLineConstraintSuccess_eq_of_outcome
-    static basis O hdecoded success hout
   have hxy := not_exists.mp hXY hdecoded
   rw [not_not] at hxy
   have hbeta := not_exists.mp hBeta hdecoded
@@ -214,68 +212,26 @@ theorem actionKnowledgeOutcome_isSome_of_good
   rw [not_not] at hgamma
   have htheta := not_exists.mp hTheta hdecoded
   rw [not_not] at htheta
-  have hdecode : actionRunDecode pp family static basis O inputs (hvk basis) (hI basis) hdecoded =
-      hI basis ▸ hvk basis ▸
-        success.witness.decode.reRound (runRounds family.toFamily basis O) := by
-    simp only [actionRunDecode, straightLineDecode, straightLineConstraintWitness, hsuccess]
-  have haccepts := actionRunAccepts pp family static basis O inputs
-    (hvk basis) (hI basis) hdecoded
-  have hacceptsEq : actionRunAccepts pp family static basis O inputs
-      (hvk basis) (hI basis) hdecoded =
-      hI basis ▸ hvk basis ▸ success.accepts :=
-    Subsingleton.elim _ _
-  let successDecode : DeployedAlgebraicDecode
-      (actionCircuit.shape.withProofParams pp)
-      (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) rfl
-      (actionCircuit.toVerifierKey
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-      (actionCircuit.instanceCommitment (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) inputs)
-      (straightLineRunOutput family basis O).1.proof.1
-      (straightLineRunRecord family basis O)
-      ((straightLineRunOutput family basis O).1.aMulti
-        (wrappedPreIpaReads (straightLineRunOutput family basis O)))
-      ((straightLineRunOutput family basis O).1.multiU
-        (wrappedPreIpaReads (straightLineRunOutput family basis O)))
-      ((straightLineRunOutput family basis O).1.multiBlind
-        (wrappedPreIpaReads (straightLineRunOutput family basis O))) :=
-    hI basis ▸ hvk basis ▸
-      success.witness.decode.reRound (runRounds family.toFamily basis O)
-  let successAccepts : DeployedAccepts
-      (actionCircuit.shape.withProofParams pp)
-      (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) rfl
-      (actionCircuit.toVerifierKey
-        (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-      (actionCircuit.instanceCommitment (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) inputs)
-      (straightLineRunOutput family basis O).1.proof.1
-      (straightLineRunRecord family basis O) :=
-    hI basis ▸ hvk basis ▸ success.accepts
-  have hdecodeEq : actionRunDecode pp family static basis O inputs
-      (hvk basis) (hI basis) hdecoded = successDecode := hdecode
-  have hacceptsEq' : actionRunAccepts pp family static basis O inputs
-      (hvk basis) (hI basis) hdecoded = successAccepts :=
-    Subsingleton.elim _ _
-  have hmodelEq : actionRunModel pp family static inputs hvk hI hchar basis O hdecoded =
-      CanonicalMemberConstraintRelation.acceptedModel
-        (memberDecode := fun i hi =>
-          successDecode.toMemberDecode (hchar basis O) i hi)
-        (hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n
-          (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-        successAccepts := by
-    unfold actionRunModel
-    rw [hdecodeEq]
-  have hpolyEq : actionRunPolynomial pp family static inputs hvk hI hchar basis O hdecoded =
-      CanonicalMemberConstraintRelation.acceptedPolynomial
-        (memberDecode := fun i hi =>
-          successDecode.toMemberDecode (hchar basis O) i hi)
-        successAccepts := by
-    unfold actionRunPolynomial
-    rw [hdecodeEq]
   unfold actionKnowledgeOutcome
   split
   · rfl
   · unfold actionTerminalWitnessOrRelationFinder
-    rw [hout]
+    split
+    · rename_i heq
+      have htag := congrArg (fun outcome => match outcome with
+        | none => 0
+        | some (PSum.inl _) => 1
+        | some (PSum.inr _) => 2) (heq.symm.trans hout)
+      norm_num at htag
+    · rename_i relation heq
+      have htag := congrArg (fun outcome => match outcome with
+        | none => 0
+        | some (PSum.inl _) => 1
+        | some (PSum.inr _) => 2) (heq.symm.trans hout)
+      norm_num at htag
+    rename_i success' heq
     simp only
+    unfold actionDecodedTerminal?
     have hxgood : (straightLineRunRecord family basis O).x ∉ szBadSet
         (combineConstraints
           (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).fixedCols
@@ -297,14 +253,13 @@ theorem actionKnowledgeOutcome_isSome_of_good
           actionRunPolynomial pp family static inputs hvk hI hchar basis O hdecoded
               CommitmentId.vanishingH *
             (X ^ actionCircuit.n - 1)) := hxy.1
-    rw [hmodelEq, hpolyEq] at hxgood
     have hxgoodData := hxgood
     unfold straightLineRunRecord straightLineRunOutput at hxgoodData
     have hxgoodSome := (szBadSetAvoidance?_isSome_iff _ _).2 hxgoodData
+    dsimp only
     split
     · rename_i hxgoodProof _
       have hgoodY' := hxy.2
-      rw [hmodelEq] at hgoodY'
       let hn : actionCircuit.n ≠ 0 := actionCircuit.n_ne_zero
       have hgoodYSome := foldSplitAvoidance?_isSome_of _ _ hn _ hgoodY'
       split
@@ -315,7 +270,6 @@ theorem actionKnowledgeOutcome_isSome_of_good
                 (straightLineRunRecord family basis O)
                 (actionRunPolynomial pp family static inputs hvk hI hchar
                   basis O hdecoded) actionActiveRows := ⟨hgamma.1, hbeta.1⟩
-        rw [hpolyEq] at hpermutation'
         have hpermutationSome := resolverPermutationChallengeExclusions?_isSome_of
           pp.numProofs _ _ _ _ hpermutation'
         split
@@ -325,7 +279,6 @@ theorem actionKnowledgeOutcome_isSome_of_good
                   (straightLineRunRecord family basis O)
                   (actionRunPolynomial pp family static inputs hvk hI hchar
                     basis O hdecoded) := ⟨hgamma.2, hbeta.2, htheta⟩
-          rw [hpolyEq] at hlookup'
           have hlookupSome :=
             TopLevelLookup.topLevelLookupChallengeExclusions?_isSome_of
               actionCircuit pp
@@ -499,7 +452,10 @@ theorem actionRelationFinder_extends_constraint
   intro hsome
   unfold actionRelationFinder
   cases hfinder : family.straightLineConstraintRelationFinder basis O with
-  | none => simp [hfinder] at hsome
+  | none =>
+      have hfalse : false = true := by
+        simpa only [hfinder, Option.isSome_none] using hsome
+      exact (Bool.false_ne_true hfalse).elim
   | some relation =>
       have hout : actionKnowledgeOutcome pp family static inputs hvk hI hchar basis O =
           some (Sum.inr relation) := by

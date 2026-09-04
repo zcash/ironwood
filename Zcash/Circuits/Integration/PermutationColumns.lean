@@ -42,6 +42,7 @@ def topLevelPermutationRows
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (column : ℕ) : List Fp :=
   (Keygen.permPolysOf top.domainExponent top.constraintSystem
     (top.operations)).getD column []
@@ -53,6 +54,7 @@ def topLevelPermutationCommitment
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (column : ℕ) : G :=
   (top.permutationCommitments urs).getD column 0
 
@@ -134,6 +136,7 @@ theorem commitment_ofKeygen
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (setup : LagrangePrefixSetup urs)
@@ -148,8 +151,9 @@ theorem commitment_ofKeygen
   unfold topLevelPermutationCommitment
   have hcolumn' :
       column < (Keygen.permColsOf top.constraintSystem).length := by
-    simpa [TopLevelCircuit.permutationColumnCount,
-      TopLevelCircuit.permutationColumns, Keygen.permColsOf] using hcolumn
+    rw [top.permutationColumnCount_eq_permutationColumns_length] at hcolumn
+    simpa only [TopLevelCircuit.permutationColumns,
+      Keygen.permColsOf, List.length_map] using hcolumn
   have hcommit :=
     Keygen.permutationCommitmentsOf_getD_eq_commitInstance
       urs top.constraintSystem (top.operations)
