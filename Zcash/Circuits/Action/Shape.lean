@@ -147,8 +147,7 @@ instance : TopLevelShape actionCircuit where
 
 /-- The Action circuit publishes its fully reduced circuit shape. -/
 @[simp] theorem actionCircuit_shape_eq :
-    actionCircuit.shape = actionShape :=
-  actionCircuit.shape_eq_published
+    actionCircuit.shape = actionShape := rfl
 
 /-- Action's closed configure run equality-enables fifteen distinct columns. -/
 theorem actionCircuit_permutationColumnCount_eq :

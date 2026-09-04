@@ -500,6 +500,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
   have terminal :=
     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
       (G := G) (shape := top.shape.withProofParams pp)
+      (R := NontrivialRelation (F := Fp) urs.g urs.u urs.w)
       (pU := pU) (pW := pW) (a := a)
       (batchOpenings := batchOpenings)
       urs hk (top.toVerifierKey urs)

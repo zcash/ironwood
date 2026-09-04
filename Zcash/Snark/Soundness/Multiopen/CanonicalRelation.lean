@@ -19,6 +19,8 @@ one constraint identity covers every proof member, with no selected proof index.
 
 namespace Zcash.Snark
 
+universe u
+
 open CompPoly.CPolynomial
 
 set_option maxHeartbeats 20000
@@ -170,12 +172,13 @@ def acceptedPolynomial
 
 /--
 Member-node binding opens every assembled query through the accepting run's
-canonical resolver, or computes the existing augmented-basis relation.
+canonical resolver, or retains the caller's computed failure.
 
 This is the verifier-native source of the uniform opening family used by the
 canonical constraint terminal; no caller-selected route or resolver remains.
 -/
 def acceptedPolynomial_opens_or_relation
+    {R : Sort u}
     (haccepts :
       DeployedAccepts shape urs hk vk instanceCommitment ps ch)
     (hbind : ∀
@@ -191,12 +194,12 @@ def acceptedPolynomial_opens_or_relation
           deployedMemberClaim
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w) :
+        ⊕' R) :
     (∀ query ∈ assembleQueries vk instanceCommitment ps ch,
       (acceptedPolynomial
         (memberDecode := memberDecode) haccepts query.commId).eval
           query.point = query.eval)
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' R := by
   let routing :=
     canonicalRoutingConditions_of_accepts
       urs hk vk instanceCommitment ps ch haccepts

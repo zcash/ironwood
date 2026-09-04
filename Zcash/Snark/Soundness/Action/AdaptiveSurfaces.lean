@@ -649,7 +649,7 @@ theorem adaptiveActionQuery_active_or_terminal
       List.mem_range, List.length_ofFn,
       Halo2.CircuitShape.withProofParams_numPermutationColumns,
       actionCircuit_shape_eq] using this
-  · simp [vanishingQueries] at hvanishing
+  · simp only [vanishingQueries, List.mem_cons, List.mem_nil_iff, or_false] at hvanishing
     rcases hvanishing with rfl | rfl
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr rfl)
