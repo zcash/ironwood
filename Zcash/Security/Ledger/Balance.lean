@@ -40,6 +40,10 @@ no index arithmetic.
 Everything is a plain computable `def` per breaks-as-computed-data; the anchor index
 and the duplicate pair are found by decidable search, so no data is conjured from the
 validity hypothesis's existentials.
+
+The composed Balance-integrity capstone, stated for a proof-emitting adversary, is
+`orchardBalanceIntegrityExtraction_measure_le` in
+`Zcash/Security/Ledger/OrchardExtractionExperiment.lean`.
 -/
 
 namespace Zcash.Security.Ledger.Model

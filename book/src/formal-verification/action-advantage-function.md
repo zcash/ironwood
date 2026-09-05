@@ -27,7 +27,7 @@ random-oracle queries and performing at most $g$ Vesta group operations, the red
 gives
 
 $$
-\Pr[\text{verifier accepts but extraction fails}]
+\Prob{\text{verifier accepts but extraction fails}}
 \;\le\;
 \operatorname{Adv}_{\mathrm{DLOG}}
   \bigl(q+22,\,g+R(n)\bigr)
@@ -59,7 +59,7 @@ For the certified consensus profile, $q\le 2^{123}$, $g\le 2^{125}$,
 $R(n)\le 2^{123}$, and $\varepsilon_{\mathrm{stat}}(q,n)\le 2^{-83}$. The exact bound is
 
 $$
-\Pr[\text{failure}]
+\Prob{\text{failure}}
 \;\le\;
 \operatorname{Adv}_{\mathrm{DLOG}}
   \bigl(2^{123}+22,\,2^{125}+2^{123}\bigr)
@@ -69,7 +69,7 @@ $$
 Rounding the solver budgets up to powers of two gives the simpler endpoint
 
 $$
-\Pr[\text{failure}]
+\Prob{\text{failure}}
 \;\le\;
 \operatorname{Adv}_{\mathrm{DLOG}}
   \bigl(2^{124},\,2^{126}\bigr)

@@ -41,7 +41,7 @@ def hfold_of_member_budget {G : Type*} [AddCommGroup G] [Module Fp G] [Decidable
         (colPoly m₀).eval
             (((constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD i [])[idx])
           = ((deployedSetQueries vk instanceCommitment ps ch i).getD (m₀ : ℕ) (.point 0, [])).2.getD (idx : ℕ) 0
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hquot : hpoly = colPoly ⟨m, hm⟩)
     (hroute : (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD i [] = [ch.x])
     (hevals : ∀ d₀, ((deployedSetQueries vk instanceCommitment ps ch i).getD m d₀).2
@@ -60,7 +60,7 @@ def hfold_of_member_budget {G : Type*} [AddCommGroup G] [Module Fp G] [Decidable
             (fun acc v => acc * ch.y + v) 0) :
     constraints.foldl (fun acc v => acc * ch.y + v) 0
       = hpoly.eval ch.x * (ch.x ^ vk.n - 1)
-    ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+    ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hlt : 0 < ((constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD i []).length := by
     rw [hroute]; simp
   -- `hbindAll` is consumed at a single index, so no search is needed: the outcome threads through.
@@ -110,7 +110,7 @@ def hfold_of_constraint_polys {G : Type*} [AddCommGroup G] [Module Fp G] [Decida
               [])[idx])
           = ((deployedSetQueries vk instanceCommitment ps ch i).getD (m₀ : ℕ)
               (.point 0, [])).2.getD (idx : ℕ) 0
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hquot : hpoly = colPoly ⟨m, hm⟩)
     (hroute : (constructIntermediateSets (assembleQueries vk instanceCommitment ps ch)).points.getD i
       [] = [ch.x])
@@ -138,7 +138,7 @@ def hfold_of_constraint_polys {G : Type*} [AddCommGroup G] [Module Fp G] [Decida
     (combineConstraints fixedCols adviceCols instanceCols vk.gates sets chunks lookups
         ch.beta ch.gamma vk.delta ch.theta ch.y vk.chunkLen l0 lLast lBlind).eval ch.x
       = hpoly.eval ch.x * (ch.x ^ vk.n - 1)
-    ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+    ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hfp := eval_combineConstraints_deployed vk ps ch fixedCols adviceCols instanceCols
     sets chunks lookups l0 lLast lBlind hfixed hadvice hinstance hsets hchunks hlookups
     hl0 hlLast hlBlind

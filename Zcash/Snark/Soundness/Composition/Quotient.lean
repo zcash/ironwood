@@ -124,7 +124,7 @@ def decodedQuotientEqReassembledOrRelationWitness (urs : URS G) (xn : Fp)
     (hpiece : ∀ i, commit urs (hp i) + hpu i • urs.u + hpw i • urs.w = H i)
     (hopen : commit urs a + cu • urs.u + cw • urs.w = ∑ i : Fin d, xn ^ (i : ℕ) • H i) :
     (coeffsToPoly a = reassembledQuotient xn (fun i => coeffsToPoly (hp i))) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hsum : commit urs (∑ i : Fin d, xn ^ (i : ℕ) • hp i)
       + (∑ i : Fin d, xn ^ (i : ℕ) * hpu i) • urs.u
       + (∑ i : Fin d, xn ^ (i : ℕ) * hpw i) • urs.w

@@ -331,7 +331,8 @@ def costedAdaptiveStatementBasisCache (pp : ProofParams)
           apply congrArg expected
           congr 1
         · fin_cases j <;>
-            simp [u.2, w.2, heval, AugmentedIndex.u, AugmentedIndex.w] }
+            simp [u.2, w.2, heval, AugmentedIndex.u, AugmentedIndex.w, BasisIndex.u,
+              BasisIndex.w] }
 
 /-- The reified basis is the expected one. -/
 @[simp] theorem costedAdaptiveStatementBasisCache_run

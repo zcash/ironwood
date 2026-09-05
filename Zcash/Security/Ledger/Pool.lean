@@ -153,19 +153,25 @@ def valueCommit (z : ℤ) (r : Fq) : PallasGroup :=
     + r • PallasGroup.ofPoint Ecc.MulFixed.Certs.valueCommitR.point
       (Or.inl Ecc.MulFixed.Certs.valueCommitR.onCurve)
 
-/-- The deployed binding base ℛ^Orchard —the value-commitment randomness base— as a group
-element. -/
-def bindingBase : PallasGroup :=
+/-- The deployed value-commitment value base 𝒱^Orchard (§5.4.8.3,
+<https://zips.z.cash/protocol/protocol.pdf#concretehomomorphiccommit>). -/
+def valueCommitV : PallasGroup :=
+  PallasGroup.ofPoint Ecc.MulFixed.Certs.valueCommitV.point
+    (Or.inl Ecc.MulFixed.Certs.valueCommitV.onCurve)
+
+/-- The deployed value-commitment randomness base ℛ^Orchard (§5.4.8.3,
+<https://zips.z.cash/protocol/protocol.pdf#concretehomomorphiccommit>). -/
+def valueCommitR : PallasGroup :=
   PallasGroup.ofPoint Ecc.MulFixed.Certs.valueCommitR.point
     (Or.inl Ecc.MulFixed.Certs.valueCommitR.onCurve)
 
 /-- Deployed RedPallas binding verification with challenge hash `H`: RedDSA's Schnorr
-equation at ℛ^Orchard (`bindingBase`), byte encodings elided. Balance uses its
+equation at ℛ^Orchard (`valueCommitR`), byte encodings elided. Balance uses its
 extractability —the binding signature as a signature of knowledge of `bsk`— not its
 unforgeability. -/
 def redPallasBindingVerify {MSG : Type*} (H : PallasGroup → PallasGroup → MSG → Fq) :
     PallasGroup → MSG → Zcash.Security.RedDSA.Sig Fq PallasGroup → Prop :=
-  (Zcash.Security.RedDSA.Scheme.mk bindingBase H).Verify
+  (Zcash.Security.RedDSA.Scheme.mk valueCommitR H).Verify
 
 theorem toPoint_valueCommit (z : ℤ) (r : Fq) :
     PallasGroup.toPoint (valueCommit z r) =

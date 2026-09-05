@@ -555,7 +555,7 @@ only effect is on the bias, where it is accounted for exactly.
 ### The bias reduces to the regularity distance
 
 The claim, in each direction, is that the law in each world *overshoots* that
-of the other world by at most $\beta$: for every test $w$ valued in $[0, 1]$,
+of the other world by at most $\beta$: for every test $w$ valued in $\closedrange{0}{1}$,
 $\sum_x \mu(x)\, w(x) \le \sum_x \nu(x)\, w(x) + \beta$. This one-sided form
 (`PMFWeightedBiasLE`) is what the query-composition step needs.
 

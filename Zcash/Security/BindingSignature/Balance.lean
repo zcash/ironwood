@@ -88,14 +88,30 @@ theorem imbalance_yields_discrete_log (Vbase Rbase bvk : M) (A B bsk : F) (hA : 
 
 /-- A nontrivial `F`-linear (discrete-log) relation between the value base `Vbase` and the
 randomness base `Rbase`, as data: scalars not both zero with `· • Vbase + · • Rbase = 0`.
-It is the shared `Zcash.NontrivialRelation` at the two bases (its generator vector
-`g` empty, `U`/`W` the bases `Vbase`, `Rbase`), so the two coefficients are its
-`α`/`β`. Such a
-relation always *exists* propositionally in a prime-order group, so an ∃-closed Prop
-version would be vacuous; the content of the binding reduction is that imbalance lets us
-*compute* one (breaks as computed data — see `Zcash.Security.RandomOracle`). -/
+It is the shared `Zcash.NontrivialRelation` at the two bases (its generator vector `g`
+empty, `U`/`W` the bases `Vbase`, `Rbase`), so the two coefficients are its `α` and `β`.
+Such a relation always *exists* propositionally in a prime-order group, so an ∃-closed
+Prop version would be vacuous; the content of the binding reduction is that imbalance
+lets us *compute* one (breaks as computed data — see `Zcash.Security.RandomOracle`). -/
 abbrev NontrivialRelation (Vbase Rbase : M) : Type _ :=
-  Zcash.NontrivialRelation (F := F) (Fin.elim0 : Fin 0 → M) Vbase Rbase
+  Zcash.NontrivialRelation (F := F) (Fin.elim0 : Fin 0 → M) ![Vbase, Rbase]
+
+/-- The named two-element index for the value-commitment bases: the value base `𝒱` and the
+randomness base `ℛ`. Deployed statements name their distinguished bases with this type
+rather than by `Fin 2` positions. -/
+inductive ValueBaseIndex : Type where
+  /-- The value base `𝒱`. -/
+  | value
+  /-- The randomness base `ℛ`. -/
+  | randomness
+  deriving DecidableEq
+
+instance : Fintype ValueBaseIndex :=
+  ⟨{.value, .randomness}, fun x => by cases x <;> decide⟩
+
+instance : Inhabited ValueBaseIndex := ⟨.value⟩
+
+instance : Nonempty (BasisIndex 0 ValueBaseIndex) := ⟨.inr .value⟩
 
 /-- **Balance reduction (field level), as a computed relation.** From RedDSA extractability
 (`bvk = bsk • Rbase`), the binding-key decomposition (`bvk = A • Vbase + B • Rbase`), and imbalance
@@ -108,11 +124,14 @@ the decomposition and supply the imbalance hypothesis at the bundle values. -/
 def NontrivialRelation.ofImbalance (Vbase Rbase bvk : M) (A B bsk : F) (hA : A ≠ 0)
     (hExtract : bvk = bsk • Rbase) (hSum : bvk = A • Vbase + B • Rbase) :
     NontrivialRelation (F := F) Vbase Rbase :=
-  ⟨Fin.elim0, A, B - bsk, Or.inr (Or.inl hA), by
-    simp only [Fin.sum_univ_zero, zero_add]
-    rw [smul_value_eq_smul_rand Vbase Rbase bvk A B bsk hExtract hSum, ← add_smul]
-    have hc : (bsk - B) + (B - bsk) = (0 : F) := by ring
-    rw [hc, zero_smul]⟩
+  NontrivialRelation.ofParts Fin.elim0 ![A, B - bsk]
+    (Or.inr (Function.ne_iff.mpr ⟨0, by simpa using hA⟩))
+    (by
+      simp only [commitGen, Fin.sum_univ_zero, Fin.sum_univ_two, Matrix.cons_val_zero,
+        Matrix.cons_val_one, zero_add]
+      rw [smul_value_eq_smul_rand Vbase Rbase bvk A B bsk hExtract hSum, ← add_smul]
+      have hc : (bsk - B) + (B - bsk) = (0 : F) := by ring
+      rw [hc, zero_smul])
 
 /-! ### Integer balance: range / no-overflow lift
 

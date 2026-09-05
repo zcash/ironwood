@@ -391,7 +391,7 @@ def instanceOpening_eq_or_relation
         key.commitInstance values blind) :
     (decoded = instanceCoefficients (2 ^ urs.k) omega values ∧
       uComp = 0 ∧ wComp = blind) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   haveI : DecidableEq Fp := inferInstanceAs (DecidableEq (ZMod Zcash.Arithmetic.scalarFieldOrder))
   let expected := instanceCoefficients (2 ^ urs.k) omega values
   have hcollision :
@@ -421,7 +421,7 @@ def coeffsToPoly_eq_instanceRowPolynomial_or_relation
         key.commitInstance values blind) :
     coeffsToPoly decoded =
         instanceRowPolynomial (2 ^ urs.k) omega values ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w :=
   bindOrRelationWitness
     (instanceOpening_eq_or_relation key values blind decoded uComp wComp hopen)
     fun hcoordinates => by

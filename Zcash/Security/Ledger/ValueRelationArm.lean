@@ -11,10 +11,10 @@ The capstone layer bounds the conservation reduction's relation arm by the named
 module places that arm in the challenge-oracle model, at the reduction's own events: the
 computable finder `valueRelFinder` replays the adversary and rebuilds the arm's nontrivial
 `(𝒱, ℛ)` relation, and on every relation-arm sample it returns one
-(`valueRelation_finder_isSome`). The conservation experiment's combined finder consumes both,
-taking the probability once for the two arms together. The arm contributes no bad-challenge
-accounting: its witness is oracle-free data, the easier sibling of the extraction-failure arm
-in `Ledger/ExtractionKnowledgeError.lean`, over the same experiment.
+(`valueRelation_finder_isSomeAt`). The conservation experiment's combined finder consumes
+both, taking the probability once for the two arms together. The arm contributes no
+bad-challenge accounting: its witness is oracle-free data, the easier sibling of the
+extraction-failure arm in `Ledger/ExtractionKnowledgeError.lean`, over the same experiment.
 
 The reduction's relation branch fires at the prefix's first imbalanced transaction when the
 extractor pins its binding key (`ValueRelationSelection`, computed from the reduction
@@ -163,58 +163,57 @@ def valueRelFinder (hne_idx : v_idx ≠ r_idx) (i : ℕ)
       else none
 
 omit [Fintype Q] [Inhabited Q] in
-/-- On a relation-arm sample the finder returns a relation, for the finder at any prefix `k`
-at least the failing prefix: the arm breaks at the first imbalanced transaction of its
-prefix, which is the same transaction for every prefix containing it. -/
-theorem valueRelation_finder_isSome [DecidableEq (ZMod r)]
+/-- On a relation-arm sample at the presented `basis` the finder returns a relation, for
+the finder at any prefix `k` at least the failing prefix. The arm breaks at the first
+imbalanced transaction of its prefix. That transaction is the same for every prefix
+containing it, so one finder serves every prefix it covers. -/
+theorem valueRelation_finder_isSomeAt [DecidableEq (ZMod r)]
     {LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
       (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m))}
     (hne_idx : v_idx ≠ r_idx)
     (hr : maxActions * (P₀.valueBound - 1) + P₀.vBalanceBound < r) {i k : ℕ} (hik : i ≤ k)
-    {table : Q → ZMod r} {logs : Fin m → ZMod r}
-    (hval : ValidLedger (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-        kv issuance
-      maxActions (((LA (scalarBasis gen logs)).run table).map Prod.fst))
+    {table : Q → ZMod r} {basis : Fin m → G}
+    (hval : ValidLedger (primitivesAtBasis m v_idx r_idx queryOf P₀ toSig basis table) kv issuance
+      maxActions (((LA basis).run table).map Prod.fst))
     {w : BindingSignature.NontrivialRelation (F := ZMod r)
-      (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs).Vbase
-      (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs).Rbase}
+      (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table).Vbase
+      (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table).Rbase}
     (heq : balanceConservationOrBreak (issuance := issuance)
-        (fun tx htx => (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-          |>.premissOrBreakFallible (kappaBindingAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-            hval hr (kappaExtractor m gen r_idx queryOf P₀ k LA table logs) tx htx) i
+        (fun tx htx => (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
+          |>.premissOrBreakFallible (bindingAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
+            hval hr (extractorAtBasis m r_idx queryOf P₀ k LA basis table) tx htx) i
       = .inr (.inl w)) :
-    (valueRelFinder m v_idx r_idx queryOf P₀ toSig hne_idx k LA table (scalarBasis gen logs)).isSome
-      := by
+    (valueRelFinder m v_idx r_idx queryOf P₀ toSig hne_idx k LA table basis).isSome := by
   obtain ⟨tx, hfind, hex⟩ :=
     balanceConservationOrBreak_valueRelation hval _ _ hr
-      (kappaExtractor m gen r_idx queryOf P₀ k LA table logs) i heq
-  have hex' : bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx
-      = kappaExtractor m gen r_idx queryOf P₀ k LA table logs
-          (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx) tx.sighash
-          (toSig tx.bindingSig) • (logs r_idx • gen) := hex
+      (extractorAtBasis m r_idx queryOf P₀ k LA basis table) i heq
+  have hex' : bvkAt m v_idx r_idx P₀ basis tx
+      = extractorAtBasis m r_idx queryOf P₀ k LA basis table
+          (bvkAt m v_idx r_idx P₀ basis tx) tx.sighash
+          (toSig tx.bindingSig) • basis r_idx := hex
   obtain ⟨tx_rep, hpr, hfst⟩ : ∃ tx_rep,
-      failTxOfAnn m P₀ ((LA (scalarBasis gen logs)).run table) i = some tx_rep ∧ tx_rep.1 = tx := by
+      failTxOfAnn m P₀ ((LA basis).run table) i = some tx_rep ∧ tx_rep.1 = tx := by
     rw [← List.map_take, List.find?_map] at hfind
     obtain ⟨tx_rep, hpr, hfst⟩ := Option.map_eq_some_iff.mp hfind
     exact ⟨tx_rep, hpr, hfst⟩
   obtain ⟨rep, rfl⟩ : ∃ rep, tx_rep = (tx, rep) := ⟨tx_rep.2, by rw [← hfst, Prod.mk.eta]⟩
-  have hfindAnnK : failTxOfAnn m P₀ ((LA (scalarBasis gen logs)).run table) k = some (tx, rep) :=
+  have hfindAnnK : failTxOfAnn m P₀ ((LA basis).run table) k = some (tx, rep) :=
     find?_take_eq_some_of_le hik hpr
-  have hmem : (tx, rep) ∈ (LA (scalarBasis gen logs)).run table :=
+  have hmem : (tx, rep) ∈ (LA basis).run table :=
     (List.take_sublist k _).subset (List.mem_of_find?_eq_some hfindAnnK)
-  have htx : tx ∈ ((LA (scalarBasis gen logs)).run table).map Prod.fst :=
+  have htx : tx ∈ ((LA basis).run table).map Prod.fst :=
     List.mem_map_of_mem hmem
   -- the finder's recomputed extractor value is the extractor's
-  have hbsk : kappaExtractor m gen r_idx queryOf P₀ k LA table logs
-        (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx) tx.sighash (toSig tx.bindingSig)
-      = (match (LA (scalarBasis gen logs)).findLabel table
+  have hbsk : extractorAtBasis m r_idx queryOf P₀ k LA basis table
+        (bvkAt m v_idx r_idx P₀ basis tx) tx.sighash (toSig tx.bindingSig)
+      = (match (LA basis).findLabel table
             (queryOf (toSig tx.bindingSig).R
-              (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx) tx.sighash) with
+              (bvkAt m v_idx r_idx P₀ basis tx) tx.sighash) with
         | some ℓ => ℓ.key r_idx
         | none => rep.key r_idx) := by
-    unfold kappaExtractor
-    cases (LA (scalarBasis gen logs)).findLabel table
-        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx)
+    unfold extractorAtBasis
+    cases (LA basis).findLabel table
+        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx)
           tx.sighash) <;>
       simp [hfindAnnK]
     rfl
@@ -230,14 +229,14 @@ theorem valueRelation_finder_isSome [DecidableEq (ZMod r)]
       - (([] : List (ℤ × ZMod r)).map Prod.fst).sum - tx.vBalance).natAbs < r := by
     simp only [List.map_nil, List.sum_nil, sub_zero, txBundle_fst_sum]
     exact hval.imbalance_natAbs_lt hr htx
-  have hc3 : bindingVK (scalarBasis gen logs v_idx) (scalarBasis gen logs r_idx)
+  have hc3 : bindingVK (basis v_idx) (basis r_idx)
       (castBundle (txBundle tx)) (castBundle []) (tx.vBalance : ZMod r)
-      = (match (LA (scalarBasis gen logs)).findLabel table
+      = (match (LA basis).findLabel table
             (queryOf (toSig tx.bindingSig).R
-              (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx) tx.sighash) with
+              (bvkAt m v_idx r_idx P₀ basis tx) tx.sighash) with
         | some ℓ => ℓ.key r_idx
-        | none => rep.key r_idx) • scalarBasis gen logs r_idx := by
-    have hb := bvk_eq (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs)
+        | none => rep.key r_idx) • basis r_idx := by
+    have hb := bvk_eq (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
       (hval.satisfied tx htx)
     rw [← hbsk]
     exact hb.symm.trans hex'

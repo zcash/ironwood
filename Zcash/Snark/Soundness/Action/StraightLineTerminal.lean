@@ -131,7 +131,7 @@ def action_bundleStatement_or_relation_of_decode
         (CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     BundleStatement inputs ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
   let polynomial :=
     CanonicalMemberConstraintRelation.acceptedPolynomial
@@ -194,7 +194,7 @@ def action_bundleStatement_or_relation_of_decode_circuitSat
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     BundleStatement inputs ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   exact topLevelStatements_or_relation_of_circuitSat
     actionCircuit pp urs hk inputs ps ch pU pW a
     (decode.toOpenedBatch hchar)
@@ -249,7 +249,7 @@ def action_bundleWitness_or_relation_of_decode_circuitSat
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     ActionBundleWitness inputs ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   exact topLevelWitnesses_or_relation_of_circuitSat
     actionCircuit pp urs hk inputs ps ch pU pW a
     (decode.toOpenedBatch hchar)
@@ -403,8 +403,7 @@ def actionTerminalWitnessOrRelationFinder
     | none => none
     | some (PSum.inr relation) =>
         some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-          (actionCircuit.shape.withProofParams pp).k basis ▸
-            relation.toAlgebraicRelationWitness))
+          (actionCircuit.shape.withProofParams pp).k basis ▸ relation))
     | some (PSum.inl success) =>
         let decode : DeployedAlgebraicDecode (actionCircuit.shape.withProofParams pp) urs rfl
             (actionCircuit.toVerifierKey urs)
@@ -462,8 +461,7 @@ def actionTerminalWitnessOrRelationFinder
                     (by exact hxgoodProof.down) with
                 | PSum.inr relation =>
                     some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                      (actionCircuit.shape.withProofParams pp).k basis ▸
-                        AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+                      (actionCircuit.shape.withProofParams pp).k basis ▸ relation))
                 | PSum.inl hsatisfied =>
                     match action_bundleWitness_or_relation_of_decode_circuitSat pp urs rfl
                         inputs pnu.1.proof.1 ch
@@ -475,8 +473,7 @@ def actionTerminalWitnessOrRelationFinder
                     | PSum.inl witness => some (Sum.inl witness)
                     | PSum.inr relation =>
                         some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                          (actionCircuit.shape.withProofParams pp).k basis ▸
-                            AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+                          (actionCircuit.shape.withProofParams pp).k basis ▸ relation))
               | none => none
             | none => none
           | none => none

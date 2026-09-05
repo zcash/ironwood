@@ -169,19 +169,21 @@ def canonicalAdaptiveStatementInstanceRepresentation (pp : ProofParams)
     (actionCircuit.publicInputRows (inputs proofIndex) instanceColumn)
   { point := adaptiveActionStatementInstanceCommitment pp basis inputs p column
     repr :=
-      { coeffs := augmentedCoeffs coeffs 0 1
+      { coeffs := augmentedCoeffs coeffs ![0, 1]
         hEq := by
           calc
-            representationEval basis (augmentedCoeffs coeffs 0 1) =
-                representationEval (augmentedBasis urs.g urs.u urs.w)
-                  (augmentedCoeffs coeffs 0 1) := by
-              exact congrArg (fun b => representationEval b (augmentedCoeffs coeffs 0 1))
+            representationEval basis (augmentedCoeffs coeffs ![0, 1]) =
+                representationEval (augmentedBasis urs.g ![urs.u, urs.w])
+                  (augmentedCoeffs coeffs ![0, 1]) := by
+              exact congrArg (fun b => representationEval b (augmentedCoeffs coeffs ![0, 1]))
                 (augmentedBasis_ursOfAugmentedBasis
                   (AdaptiveActionStatementShape pp).k basis).symm
-            _ = commitGen urs.g coeffs + 0 • urs.u + 1 • urs.w :=
-              representationEval_augmentedBasis urs.g urs.u urs.w coeffs 0 1
+            _ = commitGen urs.g coeffs + (0 • urs.u + 1 • urs.w) := by
+              rw [representationEval_augmentedBasis, Fin.sum_univ_two]
+              simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+              rfl
             _ = commit urs coeffs + urs.w := by
-              simp only [zero_smul, add_zero, one_smul, commit]
+              simp only [zero_smul, zero_add, one_smul, commit]
               rfl
             _ = adaptiveActionStatementInstanceCommitment pp basis inputs p column := by
               change commit urs coeffs + urs.w =

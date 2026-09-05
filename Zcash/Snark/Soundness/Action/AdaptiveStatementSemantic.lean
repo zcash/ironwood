@@ -614,7 +614,7 @@ def statementQuotientRelationFinderV {pp : ProofParams}
   | PSum.inl _ => none
   | PSum.inr relation =>
       some (augmentedBasis_ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis ▸
-        relation.toAlgebraicRelationWitness)
+        relation)
 
 /-- Quotient relation projection at one table. -/
 abbrev statementQuotientRelationFinder {pp : ProofParams}

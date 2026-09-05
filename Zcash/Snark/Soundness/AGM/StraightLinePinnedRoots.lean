@@ -181,8 +181,8 @@ def straightLineCanonicalRelation
       (ursOfAugmentedBasis shape.k basis).g
       (ursOfAugmentedBasis shape.k basis).u
       (ursOfAugmentedBasis shape.k basis).w) :
-    AlgebraicRelationWitness (F := Fp) basis := by
-  simpa only [augmentedBasis_ursOfAugmentedBasis] using relation.toAlgebraicRelationWitness
+    AlgebraicRelationWitness (F := Fp) basis :=
+  augmentedBasis_ursOfAugmentedBasis shape.k basis ▸ relation
 
 /-- The one-run binding predicate is an explicit conjunction of Vesta-point and field
 comparisons.  Naming its decision procedure keeps the finder below an ordinary executable

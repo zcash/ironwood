@@ -277,13 +277,14 @@ def straightLineAdjustedPoint
   let pW := p.multiBlind nu + nu 9 * p.sBlind
   { point := commit urs a + pU • urs.u + pW • urs.w
     repr :=
-      { coeffs := augmentedCoeffs a pU pW
+      { coeffs := augmentedCoeffs a ![pU, pW]
         hEq := by
           have h := representationEval_augmentedBasis
-            (ursOfAugmentedBasis shape.k basis).g (ursOfAugmentedBasis shape.k basis).u
-            (ursOfAugmentedBasis shape.k basis).w a pU pW
+            (ursOfAugmentedBasis shape.k basis).g
+            ![(ursOfAugmentedBasis shape.k basis).u, (ursOfAugmentedBasis shape.k basis).w]
+            a ![pU, pW]
           rw [augmentedBasis_ursOfAugmentedBasis] at h
-          simpa [commit_eq_commitGen] using h } }
+          simpa [commit_eq_commitGen, Fin.sum_univ_two, _root_.add_assoc] using h } }
 
 /-- The straight-line adjusted point is exactly the initial point in Halo2's deployed IPA
 verification equation.  In particular, changing only the IPA-round challenge vector does not

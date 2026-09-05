@@ -10,24 +10,28 @@ import Zcash.Security.KeyBinding.Probability
 # The extraction-failure arm's κ in the oracle model
 
 The capstone layer bounds the conservation reduction's extraction-failure arm by the named
-knowledge error κ. This module places that arm in the challenge-oracle model, at the
-reduction's own events: for any `qH`-query-bounded labeled algebraic ledger adversary, an
-extraction-failure sample lands in the knowledge-error event of the composite machine at an
-unchanged query count (`extractFail_mem_kappaEvent`). The knowledge-error layer splits that
-event into two fibres. The bad-challenge fibre is counted at `(qH+1)/#F`. The relation fibre
-is covered by the conservation experiment's combined finder, under one discrete-log bound. As
-with the key-binding arm, everything is joint with validity. The capstones' named κ ranges
-over an abstract `PMF (ValidAnnotated …)`; the conservation experiment is the
-joint-experiment composition, and bounds the challenge-oracle measure directly.
+knowledge error κ — the probability that a binding signature verifies while binding-key
+extraction fails (`Zcash.Security.RedDSA.KnowledgeError`). This module places that arm in
+the challenge-oracle model, at the reduction's own events: for any `qH`-query-bounded
+labeled algebraic ledger adversary, an extraction-failure sample lands in the knowledge-error
+event of the composite machine at an unchanged query count (`extractFail_mem_kappaEventAt`).
+The knowledge-error layer splits that event into two fibres. The bad-challenge fibre is
+counted at `(qH+1)/#F`. The relation fibre is covered by the conservation experiment's
+combined finder, under one discrete-log bound. As with the key-binding arm, the bounds here
+are on the joint event that the ledger is valid and extraction fails, not on extraction
+failure alone. The capstones' named κ ranges over an abstract `PMF (ValidAnnotated …)`; the
+conservation experiment is the joint-experiment composition, and bounds the challenge-oracle
+measure directly.
 
 The sample is a challenge table `table` and the discrete logarithms `logs`, relative to
 the generator `gen`, of the `m` presented bases. The value commitment and the binding
 verification are instantiated at sampled slots, as a record update of the fixed primitives
 (`kappaPrimitivesAt`), so the ledger type does not depend on the sample; the other
 primitives deliberately stay fixed, and the value and signature fields are not separated
-out of `Primitives`. The challenge hash reads the table at `queryOf R bvk m`, intended to
-be an injective encoding — collisions only constrain the algebraic hypotheses, shrinking
-the covered adversary class.
+out of `Primitives`. The `kappa` prefix marks the sampled forms that the knowledge-error
+analysis consumes. The challenge hash reads the table at `queryOf R bvk m`, intended to be
+an injective encoding — collisions only constrain the algebraic hypotheses, shrinking the
+covered adversary class.
 
 The adversary outputs an annotated ledger: each transaction paired with the announced
 representation of its commitment and binding key. Being algebraic is the
@@ -64,35 +68,53 @@ variable (gen : G) (v_idx r_idx : Fin m) (queryOf : G → G → MSG → Q)
   (P₀ : Primitives (ZMod r) G IVK NK RHO PSI MHASH MENC MSG SIG)
   (toSig : SIG → RedDSA.Sig (ZMod r) G)
 
-/-- The primitives at a sampled challenge table `table` and the basis discrete logarithms
-`logs`. The value commitment is the Pedersen commitment at the sampled slots
-`𝒱 = (logs v_idx) • gen`, `ℛ = (logs r_idx) • gen`. Binding verification is the Schnorr
-equation at base ℛ, with the challenge read off the table at the query point
-`queryOf R vk m`. A record update of `P₀`, so the tree depth — and with it the ledger
-type — does not depend on the sample. -/
-def kappaPrimitivesAt (table : Q → ZMod r) (logs : Fin m → ZMod r) :
+/-- The primitives at a presented `basis` and challenge table `table`. The value commitment
+is the Pedersen commitment at the slots `𝒱 = basis v_idx`, `ℛ = basis r_idx`. Binding verification
+is the Schnorr equation at base ℛ, with the challenge read off the table at the query point
+`queryOf R vk m`. A record update of `P₀`, so the tree depth —and with it the ledger
+type— depends on neither the basis nor the table. -/
+def primitivesAtBasis (basis : Fin m → G) (table : Q → ZMod r) :
     Primitives (ZMod r) G IVK NK RHO PSI MHASH MENC MSG SIG :=
   { P₀ with
-    valueCommit := fun v rcv => (v : ZMod r) • (logs v_idx • gen) + rcv • (logs r_idx • gen)
+    valueCommit := fun v rcv => (v : ZMod r) • basis v_idx + rcv • basis r_idx
     bindingVerify := fun vk m σ =>
-      (toSig σ).S • (logs r_idx • gen)
+      (toSig σ).S • basis r_idx
         = (toSig σ).R + table (queryOf (toSig σ).R vk m) • vk }
 
-/-- The value-commitment shape at the sampled bases. -/
+/-- The primitives at a sampled challenge table `table` and the basis discrete logarithms `logs`:
+`primitivesAtBasis` at the sampled basis. The `kappa` prefix marks the sampled forms that the
+knowledge-error (κ) analysis consumes — see `Zcash.Security.RedDSA.KnowledgeError`. -/
+def kappaPrimitivesAt (table : Q → ZMod r) (logs : Fin m → ZMod r) :
+    Primitives (ZMod r) G IVK NK RHO PSI MHASH MENC MSG SIG :=
+  primitivesAtBasis m v_idx r_idx queryOf P₀ toSig (scalarBasis gen logs) table
+
+/-- The value-commitment shape at the presented basis. -/
+def shapeAtBasis (basis : Fin m → G) (table : Q → ZMod r) :
+    ValueShape (primitivesAtBasis m v_idx r_idx queryOf P₀ toSig basis table) :=
+  ⟨basis v_idx, basis r_idx, fun _ _ => rfl⟩
+
+/-- The value-commitment shape at the sampled bases: `shapeAtBasis` at the sampled basis. -/
 def kappaShapeAt (table : Q → ZMod r) (logs : Fin m → ZMod r) :
     ValueShape (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs) :=
-  ⟨logs v_idx • gen, logs r_idx • gen, fun _ _ => rfl⟩
+  shapeAtBasis m v_idx r_idx queryOf P₀ toSig (scalarBasis gen logs) table
 
-/-- The RedDSA shape at the sampled table and bases: the scheme based at ℛ whose challenge
+/-- The RedDSA shape at the presented basis and table: the scheme based at ℛ whose challenge
 hash reads the table at the query point. Its verification equation is definitionally what
-`kappaPrimitivesAt`'s `bindingVerify` states. -/
-def kappaBindingAt (table : Q → ZMod r) (logs : Fin m → ZMod r) :
-    BindingSigShape (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-      (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs) :=
-  { sch := ⟨logs r_idx • gen, fun R vk m => table (queryOf R vk m)⟩
+`primitivesAtBasis`'s `bindingVerify` states. -/
+def bindingAtBasis (basis : Fin m → G) (table : Q → ZMod r) :
+    BindingSigShape (primitivesAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
+      (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table) :=
+  { sch := ⟨basis r_idx, fun R vk m => table (queryOf R vk m)⟩
     toSig := toSig
     base_eq := rfl
     verify_iff := fun _ _ _ => Iff.rfl }
+
+/-- The RedDSA shape at the sampled table and bases: `bindingAtBasis` at the sampled
+basis. -/
+def kappaBindingAt (table : Q → ZMod r) (logs : Fin m → ZMod r) :
+    BindingSigShape (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs)
+      (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs) :=
+  bindingAtBasis m v_idx r_idx queryOf P₀ toSig (scalarBasis gen logs) table
 
 /-- A transaction's binding verification key, computed from the presented bases: the machine
 receives the bases, not their logs, so this is an oracle-free function of its inputs. At
@@ -108,39 +130,48 @@ theorem bvkAt_eq (table : Q → ZMod r) (logs : Fin m → ZMod r)
       = tx.bvk (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs) :=
   rfl
 
-/-- **The adversary is algebraic at the binding-signature points.** For each transaction it
-outputs, and at each challenge query it makes, the adversary announces how it built two group
-elements out of the presented basis: the binding signature's nonce `R`, and the transaction's
-binding verification key `bvk`. Each announcement is a `QueryRep`: a pair of coefficient
-vectors, one for `R` and one for `bvk`. On its own that is only a claim — nothing in the type
-forces the coefficients to be correct. This structure is the assumption that they are correct:
-each vector, evaluated against the presented basis by `representationEval`, yields the group
-element it names (`R` from the commitment vector, `bvk` from the key vector).
+/-- **The adversary is algebraic at the binding-signature points, at the presented `basis`.**
+For each transaction it outputs, and at each challenge query it makes, the adversary
+announces how it built two group elements out of the presented basis: the binding signature's
+nonce `R`, and the transaction's binding verification key `bvk`. Each announcement is a
+`QueryRep`: a pair of coefficient vectors, one for `R` and one for `bvk`. On its own that is
+only a claim — nothing in the type forces the coefficients to be correct. This structure is
+the assumption that they are correct: each vector, evaluated against the presented basis by
+`representationEval`, yields the group element it names (`R` from the commitment vector,
+`bvk` from the key vector).
 
-This module's docstring explains why the reduction needs the assumption, and why only at these
-two points. Consumed by `extractFail_mem_kappaEvent`. -/
-structure AlgebraicAtBindingPoints
+This module's docstring explains why the reduction needs the assumption, and why only at
+these two points. Consumed by `extractFail_mem_kappaEventAt`. -/
+structure AlgebraicAtBindingPointsAt (basis : Fin m → G)
     (LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
       (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m))) :
     Prop where
   /-- At query time: the label recorded at a challenge query represents the querying
   transaction's nonce and binding key. The half that pins the query's one bad challenge before
   the oracle answers. -/
-  atLabel : ∀ (table : Q → ZMod r) (logs : Fin m → ZMod r) (query : Q) (ℓ : QueryRep (ZMod r) m),
-    (LA (scalarBasis gen logs)).findLabel table query = some ℓ →
-    ∀ tx_rep ∈ (LA (scalarBasis gen logs)).run table,
-      queryOf (toSig tx_rep.1.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1)
+  atLabel : ∀ (table : Q → ZMod r) (query : Q) (ℓ : QueryRep (ZMod r) m),
+    (LA basis).findLabel table query = some ℓ →
+    ∀ tx_rep ∈ (LA basis).run table,
+      queryOf (toSig tx_rep.1.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx_rep.1)
           tx_rep.1.sighash = query →
-        (toSig tx_rep.1.bindingSig).R = representationEval (scalarBasis gen logs) ℓ.commitment
-        ∧ bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1
-          = representationEval (scalarBasis gen logs) ℓ.key
+        (toSig tx_rep.1.bindingSig).R = representationEval basis ℓ.commitment
+        ∧ bvkAt m v_idx r_idx P₀ basis tx_rep.1 = representationEval basis ℓ.key
   /-- At output time: each transaction's announced representation represents its own nonce and
   binding key. The half the extractor falls back on when the run never queried that point. -/
-  atOutput : ∀ (table : Q → ZMod r) (logs : Fin m → ZMod r),
-    ∀ tx_rep ∈ (LA (scalarBasis gen logs)).run table,
-      (toSig tx_rep.1.bindingSig).R = representationEval (scalarBasis gen logs) tx_rep.2.commitment
-      ∧ bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1
-        = representationEval (scalarBasis gen logs) tx_rep.2.key
+  atOutput : ∀ (table : Q → ZMod r),
+    ∀ tx_rep ∈ (LA basis).run table,
+      (toSig tx_rep.1.bindingSig).R = representationEval basis tx_rep.2.commitment
+      ∧ bvkAt m v_idx r_idx P₀ basis tx_rep.1 = representationEval basis tx_rep.2.key
+
+/-- The algebraicity assumption at every sampled basis: `AlgebraicAtBindingPointsAt` at
+`scalarBasis gen logs`, for every choice of `logs`. The experiments take this form and
+apply it at their sample's basis. -/
+def AlgebraicAtBindingPoints
+    (LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
+      (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m))) :
+    Prop :=
+  ∀ logs : Fin m → ZMod r,
+    AlgebraicAtBindingPointsAt m v_idx r_idx queryOf P₀ toSig (scalarBasis gen logs) LA
 
 /-- The first transaction of the length-`i` prefix failing the net-value equation, paired
 with its announced representation: the transaction at which the conservation reduction's
@@ -278,21 +309,28 @@ theorem kappaComposite_queryBound {i : ℕ}
     (fun L => OracleComp.QueryBound.pure (kappaOut m v_idx r_idx queryOf P₀ toSig i basis L) 0)
   simpa [LabeledOracleComp.QueryBound, kappaComposite] using h'
 
-/-- The extractor at one sample: read the `key` coefficient at the ℛ slot off the
-representation in effect at the triple's query point — the run's first annotation there when
-one exists, and otherwise the announced representation of the prefix's first imbalanced
-transaction (the one transaction at which the conservation reduction consults the
+/-- The extractor at a presented basis and table: read the `key` coefficient at the ℛ slot
+off the representation in effect at the triple's query point — the run's first annotation
+there when one exists, and otherwise the announced representation of the prefix's first
+imbalanced transaction (the one transaction at which the conservation reduction consults the
 extractor). -/
+def extractorAtBasis (i : ℕ)
+    (LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
+      (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m)))
+    (basis : Fin m → G) (table : Q → ZMod r) : RedDSA.Extractor (ZMod r) G MSG :=
+  fun vk msg σ =>
+    match (LA basis).findLabel table (queryOf σ.R vk msg) with
+    | some ℓ => ℓ.key r_idx
+    | none =>
+        ((failTxOfAnn m P₀ ((LA basis).run table) i).map
+          fun tx_rep => tx_rep.2.key r_idx).getD 0
+
+/-- The extractor at one sample: `extractorAtBasis` at the sampled basis. -/
 def kappaExtractor (i : ℕ)
     (LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
       (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m)))
     (table : Q → ZMod r) (logs : Fin m → ZMod r) : RedDSA.Extractor (ZMod r) G MSG :=
-  fun vk msg σ =>
-    match (LA (scalarBasis gen logs)).findLabel table (queryOf σ.R vk msg) with
-    | some ℓ => ℓ.key r_idx
-    | none =>
-        ((failTxOfAnn m P₀ ((LA (scalarBasis gen logs)).run table) i).map
-          fun tx_rep => tx_rep.2.key r_idx).getD 0
+  extractorAtBasis m r_idx queryOf P₀ i LA (scalarBasis gen logs) table
 
 /-- `List.find?` over a prefix is stable under extending the prefix: the first match in
 `l.take i` is the first match in `l.take k` for any `k ≥ i`. -/
@@ -306,102 +344,86 @@ theorem find?_take_eq_some_of_le {α : Type*} {tx_rep : α → Bool} {l : List �
   rfl
 
 omit [Fintype Q] in
-/-- An extraction-failure sample lands in the knowledge-error event of the prefix-`k`
-composite, for any `k` at least the failing prefix: the arm breaks at the first imbalanced
-transaction of its prefix, which is the same transaction for every prefix containing it
-(`find?_take_eq_some_of_le`), so one machine serves every prefix it covers. -/
-theorem extractFail_mem_kappaEvent
+/-- An extraction-failure sample at the presented `basis` lands in the per-basis
+knowledge-error event of the prefix-`k` composite, for any `k` at least the failing prefix.
+The arm breaks at the first imbalanced transaction of its prefix. That transaction is the
+same for every prefix containing it (`find?_take_eq_some_of_le`), so one machine serves
+every prefix it covers. -/
+theorem extractFail_mem_kappaEventAt
     {LA : (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
       (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m))}
-    (halgLabel : ∀ (table : Q → ZMod r) (logs : Fin m → ZMod r) (query : Q)
-        (ℓ : QueryRep (ZMod r) m),
-      (LA (scalarBasis gen logs)).findLabel table query = some ℓ →
-      ∀ tx_rep ∈ (LA (scalarBasis gen logs)).run table,
-        queryOf (toSig tx_rep.1.bindingSig).R
-            (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1)
-            tx_rep.1.sighash = query →
-          (toSig tx_rep.1.bindingSig).R = representationEval (scalarBasis gen logs) ℓ.commitment
-          ∧ bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1
-            = representationEval (scalarBasis gen logs) ℓ.key)
-    (halgOut : ∀ (table : Q → ZMod r) (logs : Fin m → ZMod r),
-      ∀ tx_rep ∈ (LA (scalarBasis gen logs)).run table,
-        (toSig tx_rep.1.bindingSig).R
-          = representationEval (scalarBasis gen logs) tx_rep.2.commitment
-        ∧ bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx_rep.1
-          = representationEval (scalarBasis gen logs) tx_rep.2.key)
+    {basis : Fin m → G}
+    (halg : AlgebraicAtBindingPointsAt m v_idx r_idx queryOf P₀ toSig basis LA)
     (hr : maxActions * (P₀.valueBound - 1) + P₀.vBalanceBound < r) {i k : ℕ} (hik : i ≤ k)
-    {table : Q → ZMod r} {logs : Fin m → ZMod r}
-    (hval : ValidLedger (kappaPrimitivesAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-        kv issuance
-      maxActions (((LA (scalarBasis gen logs)).run table).map Prod.fst))
+    {table : Q → ZMod r}
+    (hval : ValidLedger (primitivesAtBasis m v_idx r_idx queryOf P₀ toSig basis table) kv issuance
+      maxActions (((LA basis).run table).map Prod.fst))
     {failure : RedDSA.ExtractionFailure
-      (kappaBindingAt m gen v_idx r_idx queryOf P₀ toSig table logs).sch
-      (kappaExtractor m gen r_idx queryOf P₀ k LA table logs)}
+      (bindingAtBasis m v_idx r_idx queryOf P₀ toSig basis table).sch
+      (extractorAtBasis m r_idx queryOf P₀ k LA basis table)}
     (heq : balanceConservationOrBreak (issuance := issuance)
-        (fun tx htx => (kappaShapeAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-          |>.premissOrBreakFallible (kappaBindingAt m gen v_idx r_idx queryOf P₀ toSig table logs)
-            hval hr (kappaExtractor m gen r_idx queryOf P₀ k LA table logs) tx htx) i
+        (fun tx htx => (shapeAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
+          |>.premissOrBreakFallible (bindingAtBasis m v_idx r_idx queryOf P₀ toSig basis table)
+            hval hr (extractorAtBasis m r_idx queryOf P₀ k LA basis table) tx htx) i
       = .inr (.inr failure)) :
-    (table, logs)
-      ∈ kappaEvent m gen r_idx (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) := by
+    table ∈ kappaEventAt m r_idx (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) basis := by
   obtain ⟨tx, hfind, hvk, hm, hσ⟩ :=
     balanceConservationOrBreak_extractFail hval _ _ hr
-      (kappaExtractor m gen r_idx queryOf P₀ k LA table logs) i heq
-  have hvk' : failure.vk = bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx := hvk
+      (extractorAtBasis m r_idx queryOf P₀ k LA basis table) i heq
+  have hvk' : failure.vk = bvkAt m v_idx r_idx P₀ basis tx := hvk
   have hσ' : failure.σ = toSig tx.bindingSig := hσ
   -- lift the first-failure selection to the annotated ledger
   obtain ⟨tx_rep, hpr, hfst⟩ : ∃ tx_rep,
-      failTxOfAnn m P₀ ((LA (scalarBasis gen logs)).run table) i = some tx_rep ∧ tx_rep.1 = tx := by
+      failTxOfAnn m P₀ ((LA basis).run table) i = some tx_rep ∧ tx_rep.1 = tx := by
     rw [← List.map_take, List.find?_map] at hfind
     obtain ⟨tx_rep, hpr, hfst⟩ := Option.map_eq_some_iff.mp hfind
     exact ⟨tx_rep, hpr, hfst⟩
   obtain ⟨rep, rfl⟩ : ∃ rep, tx_rep = (tx, rep) := ⟨tx_rep.2, by rw [← hfst, Prod.mk.eta]⟩
-  have hfindAnnK : failTxOfAnn m P₀ ((LA (scalarBasis gen logs)).run table) k = some (tx, rep) :=
+  have hfindAnnK : failTxOfAnn m P₀ ((LA basis).run table) k = some (tx, rep) :=
     find?_take_eq_some_of_le hik hpr
-  have hmem : (tx, rep) ∈ (LA (scalarBasis gen logs)).run table :=
+  have hmem : (tx, rep) ∈ (LA basis).run table :=
     (List.take_sublist k _).subset (List.mem_of_find?_eq_some hfindAnnK)
-  have hout : dischargeOut m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) table logs
+  have hout : dischargeOutAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) basis table
       = ⟨(toSig tx.bindingSig).S,
-          queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx)
-            tx.sighash,
+          queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx) tx.sighash,
           rep⟩ := by
-    simp only [dischargeOut, kappaComposite, LabeledOracleComp.run_bind,
+    simp only [dischargeOutAt, kappaComposite, LabeledOracleComp.run_bind,
       LabeledOracleComp.run_pure, kappaOut]
     rw [hfindAnnK]
-  have heff : effectiveRep m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) table logs
-      = ((LA (scalarBasis gen logs)).findLabel table
-          (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx)
+  have heff : effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) basis table
+      = ((LA basis).findLabel table
+          (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx)
             tx.sighash)).getD rep := by
-    unfold effectiveRep
+    unfold effectiveRepAt
     rw [hout]
     simp only [kappaComposite, LabeledOracleComp.findLabel_bind_pure]
   have hRB : (toSig tx.bindingSig).R
-        = representationEval (scalarBasis gen logs)
-            (effectiveRep m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
-              table logs).commitment
-      ∧ bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx
-        = representationEval (scalarBasis gen logs)
-            (effectiveRep m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
-              table logs).key := by
+        = representationEval basis
+            (effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
+              basis table).commitment
+      ∧ bvkAt m v_idx r_idx P₀ basis tx
+        = representationEval basis
+            (effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
+              basis table).key := by
     rw [heff]
-    cases hfound : (LA (scalarBasis gen logs)).findLabel table
-        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx)
+    cases hfound : (LA basis).findLabel table
+        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx)
           tx.sighash) with
-    | some ℓ => simpa using halgLabel table logs _ ℓ hfound (tx, rep) hmem rfl
-    | none => simpa using halgOut table logs (tx, rep) hmem
-  have hEval : kappaExtractor m gen r_idx queryOf P₀ k LA table logs failure.vk failure.m failure.σ
-      = (effectiveRep m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) table logs).key
-          r_idx := by
+    | some ℓ => simpa using halg.atLabel table _ ℓ hfound (tx, rep) hmem rfl
+    | none => simpa using halg.atOutput table (tx, rep) hmem
+  have hEval : extractorAtBasis m r_idx queryOf P₀ k LA basis table failure.vk failure.m failure.σ
+      = (effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
+          basis table).key r_idx := by
     rw [hvk', hm, hσ', heff]
-    unfold kappaExtractor
-    cases (LA (scalarBasis gen logs)).findLabel table
-        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ (scalarBasis gen logs) tx)
+    unfold extractorAtBasis
+    cases (LA basis).findLabel table
+        (queryOf (toSig tx.bindingSig).R (bvkAt m v_idx r_idx P₀ basis tx)
           tx.sighash) <;>
       simp [hfindAnnK]
     rfl
   constructor
   · -- the game's verification equation, from the ledger's, through the effective evaluations
-    unfold Verifies dischargeChallenge
+    unfold VerifiesAt dischargeChallengeAt
     rw [hout]
     dsimp only
     rw [← hRB.1, ← hRB.2]
@@ -409,12 +431,12 @@ theorem extractFail_mem_kappaEvent
     rw [hvk, hm, hσ] at hver
     exact hver
   · -- a pivot-free effective key would make the extractor succeed
-    rcases hpiv : (effectiveRep m gen
-        (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) table logs).pivot r_idx with _ | j
+    rcases hpiv : (effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA)
+        basis table).pivot r_idx with _ | j
     · exfalso
       have hkey := QueryRep.representationEval_key_of_pivot_eq_none
-        (effectiveRep m gen (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) table logs) r_idx
-        (scalarBasis gen logs) hpiv
+        (effectiveRepAt m (kappaComposite m v_idx r_idx queryOf P₀ toSig k LA) basis table) r_idx
+        basis hpiv
       apply failure.ne
       rw [hEval, hvk', hRB.2, hkey]
       rfl

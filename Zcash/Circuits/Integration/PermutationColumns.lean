@@ -235,7 +235,7 @@ def permCommon_eq_rowPolynomial_or_relation
       fun i : Fin (2 ^ urs.k) => vk.omega ^ (i : ℕ)) :
     relation.polynomial (.permCommon (c : ℕ)) =
         instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hquery := assembleQueries_permCommon_query vk instanceCommitment ps ch c
   have hsome : (relation.route (.permCommon (c : Nat))).isSome := by
     obtain ⟨q, hq, hqid⟩ := hquery
@@ -324,7 +324,7 @@ def permCommon_eq_keygenSigmaColumn_or_relation
         (sigma ⟨chunk, i, column⟩).2.2) :
     relation.polynomial (.permCommon (c : ℕ)) =
         keygenSigmaColumn vk.omega vk.delta vk.chunkLen sigma chunk column ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w :=
   bindOrRelationWitness
     (relation.permCommon_eq_rowPolynomial_or_relation c key rows hcommit hrows)
     fun heq => heq.trans
@@ -408,7 +408,7 @@ def resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation
     ((ResolverPermutationPairs vk relation.polynomial p cIdx)[j]'
         (by simpa [ResolverPermutationPairs, permutationChunkPairsOfResolver] using hj)).2 =
         keygenSigmaColumn vk.omega vk.delta vk.chunkLen sigma chunk column ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   refine bindOrRelationWitness
     (relation.permCommon_eq_keygenSigmaColumn_or_relation
       c key rows hcommit hrows sigma chunk column hval) fun heq => ?_
@@ -452,7 +452,7 @@ def resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation_of_size
         (by simpa [ResolverPermutationPairs,
           permutationChunkPairsOfResolver] using hj)).2 =
         keygenSigmaColumn vk.omega vk.delta vk.chunkLen sigma chunk column ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   subst n
   exact relation.resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation
     p cIdx j hj c hidx key rows hcommit hrows sigma chunk column hval

@@ -230,7 +230,7 @@ def actionResolverPermutationCycle_or_relation
         (actionCircuit.toVerifierKey urs) relation.polynomial proofIndex
         actionActiveRows
         (actionActiveSigma pp urs relation.polynomial proofIndex)
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   classical
   have hkUrs : urs.k ≤ 32 := by
     rw [← hk]

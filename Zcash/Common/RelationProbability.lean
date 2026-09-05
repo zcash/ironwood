@@ -1,4 +1,4 @@
-import Zcash.Common.AlgebraicRelation
+import Zcash.Common.ProgrammedBasis
 import Zcash.Common.UniformMeasure
 
 /-!

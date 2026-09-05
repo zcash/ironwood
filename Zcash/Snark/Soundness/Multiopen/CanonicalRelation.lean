@@ -191,12 +191,12 @@ def acceptedPolynomial_opens_or_relation
           deployedMemberClaim
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w) :
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) :
     (∀ query ∈ assembleQueries vk instanceCommitment ps ch,
       (acceptedPolynomial
         (memberDecode := memberDecode) haccepts query.commId).eval
           query.point = query.eval)
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let routing :=
     canonicalRoutingConditions_of_accepts
       urs hk vk instanceCommitment ps ch haccepts

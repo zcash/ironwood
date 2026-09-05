@@ -31,9 +31,6 @@ open Zcash.Circuits.Specs.Sinsemilla
 open Zcash.Security.Concrete
 open Zcash.Security.Ledger.Pool
 
-/-- The Merkle domain point `Q("z.cash:Orchard-MerkleCRH")`, as a group element. -/
-def merkleQpt : PallasGroup := PallasGroup.ofPoint merkleQ (Or.inl merkleQ_onCurve)
-
 /-- The chunk values of a Merkle compression message are table indices. -/
 theorem merkleChunks_mem_lt {l lv rv m : ℕ} (hm : m ∈ merkleChunks l lv rv) :
     m < 2 ^ K :=
@@ -75,7 +72,7 @@ The relation then converts to the one-generator form, because its randomness-bas
 coefficient is zero. -/
 def relationOfMerkleCollision {i : Fin 32}
     (c : Zcash.Security.RandomOracle.DefinedCollision (merkleCompress i)) :
-    NontrivialRelationOne (F := Fq) pallasS merkleQpt :=
+    NontrivialRelation (F := Fq) pallasS orchardPoints :=
   let rel := relationOfChainPmEq (Q := merkleQ) (Or.inl merkleQ_onCurve)
     (W := (0 : PallasGroup))
     (fun _ hm => merkleChunks_mem_lt hm) (fun _ hm => merkleChunks_mem_lt hm)
@@ -101,10 +98,18 @@ def relationOfMerkleCollision {i : Fin 32}
         (lt_trans i.2 (by norm_num)) c.q₁.1.2 c.q₁.2.2
         (lt_trans i.2 (by norm_num)) c.q₂.1.2 c.q₂.2.2 hl
       exact c.ne (Prod.ext (Subtype.ext hlv) (Subtype.ext hrv)))
+  toOrchardPoints (V := ![merkleQpt]) (g := ![.idxMerkleQ])
+    (gr := fun s => match s with
+      | .idxMerkleQ => some 0
+      | _ => none)
+    (hg := by intro x y; fin_cases x; cases y <;> decide)
+    (hpt := fun i => by fin_cases i; rfl) <|
   rel.toOne (by
-    rcases rel.nontrivial with ha | hα | hβ
-    · exact Or.inl ha
-    · exact Or.inr hα
-    · exact absurd (relationOfChainPmEq_zero_beta _ _ _ _ _ _ _ _ _ _ _) hβ)
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp rel.nontrivial
+    rcases i with i | j
+    · exact Or.inl (Function.ne_iff.mpr ⟨i, hi⟩)
+    · fin_cases j
+      · exact Or.inr hi
+      · exact absurd (relationOfChainPmEq_zero_beta _ _ _ _ _ _ _ _ _ _ _) hi)
 
 end Zcash.Security.Ledger.Bridge

@@ -51,14 +51,12 @@ about honest generation, a transcript, or verifier acceptance is used, which is 
 see the module docstring for what this does and does not say about the endpoints. -/
 theorem nonempty_nontrivialRelation_vesta {n : ℕ}
     (g : Fin n → VestaG) (u w : VestaG) :
-    Nonempty (Zcash.NontrivialRelation (F := Fp) g u w) := by
+    Nonempty (Zcash.AugmentedRelationWitness (F := Fp) g u w) := by
   classical
   by_cases hw : w = 0
-  · exact ⟨{ a := 0
-             α := 0
-             β := 1
-             nontrivial := Or.inr (Or.inr one_ne_zero)
-             relation := by simp [hw] }⟩
+  · exact ⟨Zcash.NontrivialRelation.ofParts 0 ![0, 1]
+      (Or.inr (Function.ne_iff.mpr ⟨1, by simp⟩))
+      (by simp [hw, commitGen, Fin.sum_univ_two])⟩
   · have hinj : Function.Injective (fun c : Fp => c • w) := by
       intro c c' h
       by_contra hne
@@ -76,10 +74,8 @@ theorem nonempty_nontrivialRelation_vesta {n : ℕ}
       (Fintype.bijective_iff_injective_and_card _).mpr ⟨hinj, hcard⟩
     obtain ⟨c, hc⟩ := hbij.2 u
     have hcw : c • w = u := hc
-    exact ⟨{ a := 0
-             α := 1
-             β := -c
-             nontrivial := Or.inr (Or.inl one_ne_zero)
-             relation := by simp [neg_smul, hcw] }⟩
+    exact ⟨Zcash.NontrivialRelation.ofParts 0 ![1, -c]
+      (Or.inr (Function.ne_iff.mpr ⟨0, by simp⟩))
+      (by simp [neg_smul, hcw, commitGen, Fin.sum_univ_two])⟩
 
 end Zcash.Snark

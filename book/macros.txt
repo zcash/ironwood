@@ -8,6 +8,8 @@
 \floor:{\left\lfloor{#1}\right\rfloor}
 \fraction:{{}^{#1}\kern-0.15em/\kern-0.1em{}_{#2}}
 \mul:{\kern0.12em\cdot\kern0.12em}
+\closedrange:{\lbrack #1, #2\rbrack}
+\Prob:{\Pr\lbrack #1\rbrack}
 \argument:\cdot
 
 # Groups and fields

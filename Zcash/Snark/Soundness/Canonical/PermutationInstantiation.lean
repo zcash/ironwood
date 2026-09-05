@@ -729,7 +729,7 @@ def eval_permutationDataOfDecodedResolver_or_relation
           urs hk vk ps ch memberDecode slot).eval point
           = deployedMemberClaim (instanceCommitment := instanceCommitment)
               vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (p : Fin shape.numProofs) :
     let route := assembledQueryMemberRoute (instanceCommitment := instanceCommitment)
       vk ps ch hcount hdup
@@ -741,7 +741,7 @@ def eval_permutationDataOfDecodedResolver_or_relation
           (chunk.1.map fun q => q.eval ch.x,
             chunk.2.map fun pair => (pair.1.eval ch.x, pair.2.eval ch.x)))
         = subProofPermChunks vk ps p)
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   dsimp only
   refine bindOrRelationWitness
     (decodedPolynomialResolver_opens_or_relation

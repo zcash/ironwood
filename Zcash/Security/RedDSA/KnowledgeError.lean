@@ -5,6 +5,11 @@ import Zcash.Snark.Soundness.AGM.AdaptiveOnline
 /-!
 # The binding-signature knowledge error: κ ≤ (qH+1)/|F| + (ε_DL + 1/|F|)
 
+Throughout, κ is the knowledge error: the probability that the adversary's output verifies
+while the extractor fails to produce the witness — here, a verifying binding signature whose
+announced representations do not yield the binding key. Definitions prefixed with `kappa` build
+this event and its bound.
+
 The κ-discharge for the extraction arm, composing the deterministic core
 (`bindingSig_relation_of_nontrivial`) with the labeled adaptive squeeze
 (`finalBadWithoutRelation_measure_le`) and the relation-to-discrete-log reduction
@@ -37,6 +42,11 @@ page). The knowledge-error event splits along the replayed relation finder:
 
 The two arms live on independent factors of the product, so the fibre-wise Fubini bounds
 compose them with no cross term.
+
+The same split also composes at a single presented basis, with no log sampling. Both arms
+then live over the challenge-table factor, so a plain union bound composes them
+(`kappaEventAt_measure_le`). The relation arm is carried as a named hypothesis: the
+probability that the replayed finder returns a relation at that basis.
 
 Two idealizations are inherited by any instantiation. The challenge oracle is exactly uniform
 on `F`; the deployed challenge hash produces 512 bits reduced mod `r_ℙ`, at statistical
@@ -99,39 +109,70 @@ variable {Q F M : Type*} [Fintype Q] [DecidableEq Q] [Field F] [Fintype F] [None
 variable (gen : M) (r_idx : Fin m)
   (adv : (Fin m → M) → LabeledOracleComp Q F (fun _ => QueryRep F m) (KappaOutput F Q m))
 
+/-- The adversary's output at the presented `basis` and challenge table `table`. -/
+def dischargeOutAt (basis : Fin m → M) (table : Q → F) : KappaOutput F Q m :=
+  (adv basis).run table
+
+/-- The run's challenge at the presented `basis`: the oracle's answer at the output's query
+point. -/
+def dischargeChallengeAt (basis : Fin m → M) (table : Q → F) : F :=
+  table (dischargeOutAt m adv basis table).queryPoint
+
+/-- The representation in effect at the output's query point, at the presented `basis`: the
+first query-time annotation when the run queried that point, and the announced output
+representation otherwise. The fallback plays the game's own final challenge query — the
+Fuchsbauer–Plouviez–Seurin `q_H + 1` accounting. -/
+def effectiveRepAt (basis : Fin m → M) (table : Q → F) : QueryRep F m :=
+  ((adv basis).findLabel table (dischargeOutAt m adv basis table).queryPoint).getD
+    (dischargeOutAt m adv basis table).announced
+
+/-- The Schnorr verification equation `S • ℛ = R + c • bvk` at the presented `basis`, with `R`
+and `bvk` read off the effective representation. -/
+def VerifiesAt (basis : Fin m → M) (table : Q → F) : Prop :=
+  letI t := effectiveRepAt m adv basis table
+  (dischargeOutAt m adv basis table).response • basis r_idx
+    = representationEval basis t.commitment
+      + (dischargeChallengeAt m adv basis table) • representationEval basis t.key
+
 /-- The adversary's output at challenge table `table` and the basis discrete logarithms `logs`. -/
 def dischargeOut (table : Q → F) (logs : Fin m → F) : KappaOutput F Q m :=
-  (adv (scalarBasis gen logs)).run table
+  dischargeOutAt m adv (scalarBasis gen logs) table
 
 /-- The run's challenge: the oracle's answer at the output's query point. -/
 def dischargeChallenge (table : Q → F) (logs : Fin m → F) : F :=
-  table (dischargeOut m gen adv table logs).queryPoint
+  dischargeChallengeAt m adv (scalarBasis gen logs) table
 
-/-- The representation in effect at the output's query point: the first query-time annotation
-when the run queried that point, and the announced output representation otherwise. The
-fallback plays the game's own final challenge query — the Fuchsbauer–Plouviez–Seurin
-`q_H + 1` accounting. -/
+/-- The representation in effect at the output's query point: `effectiveRepAt` at the sampled
+basis. -/
 def effectiveRep (table : Q → F) (logs : Fin m → F) : QueryRep F m :=
-  ((adv (scalarBasis gen logs)).findLabel table (dischargeOut m gen adv table logs).queryPoint).getD
-    (dischargeOut m gen adv table logs).announced
+  effectiveRepAt m adv (scalarBasis gen logs) table
 
-/-- The Schnorr verification equation `S • ℛ = R + c • bvk`, with `R` and `bvk` read off the
-effective representation at the presented basis. -/
+/-- The Schnorr verification equation at the sampled basis: `VerifiesAt` at
+`scalarBasis gen logs`. -/
 def Verifies (table : Q → F) (logs : Fin m → F) : Prop :=
-  letI basis := scalarBasis gen logs
-  letI t := effectiveRep m gen adv table logs
-  (dischargeOut m gen adv table logs).response • basis r_idx
-    = representationEval basis t.commitment
-      + (dischargeChallenge m gen adv table logs) • representationEval basis t.key
+  VerifiesAt m r_idx adv (scalarBasis gen logs) table
 
 variable [DecidableEq F]
 
-/-- The knowledge-error event: the run produces a verifying binding signature whose effective
-representation has a pivot — a key coefficient off the ℛ slot. (A key represented on the ℛ
-slot alone needs no extraction: the extractor that reads `key r_idx` succeeds there.) -/
+/-- The knowledge-error event at the presented `basis`, over the challenge-table factor alone:
+the run produces a verifying binding signature whose effective representation has a pivot — a
+key coefficient off the ℛ slot. (A key represented on the ℛ slot alone needs no extraction:
+the extractor that reads `key r_idx` succeeds there.) -/
+def kappaEventAt (basis : Fin m → M) : Set (Q → F) :=
+  {table | VerifiesAt m r_idx adv basis table
+    ∧ ((effectiveRepAt m adv basis table).pivot r_idx).isSome}
+
+/-- The knowledge-error event over the sampled product space: `kappaEventAt` at the sampled
+basis of each sample's logs. -/
 def kappaEvent : Set ((Q → F) × (Fin m → F)) :=
-  {ω | Verifies m gen r_idx adv ω.1 ω.2
-    ∧ ((effectiveRep m gen adv ω.1 ω.2).pivot r_idx).isSome}
+  {ω | ω.1 ∈ kappaEventAt m r_idx adv (scalarBasis gen ω.2)}
+
+omit [Fintype Q] [Fintype F] [Nonempty F] in
+/-- Membership in the sampled product-space event, from the per-basis event at the sample's
+own basis. -/
+theorem mem_kappaEvent {table : Q → F} {logs : Fin m → F}
+    (h : table ∈ kappaEventAt m r_idx adv (scalarBasis gen logs)) :
+    (table, logs) ∈ kappaEvent m gen r_idx adv := h
 
 variable [DecidableEq M]
 
@@ -149,17 +190,39 @@ def relFinder (table : Q → F) (basis : Fin m → M) :
     some (bindingSig_relation_of_nontrivial basis r_idx t c out.response h.1 h.2)
   else none
 
-/-- Bad-challenge arm (fibre over the basis discrete logarithms `logs`): the knowledge-error
-conditions hold and the replayed finder returns no relation. -/
+/-- The bad-challenge event at the presented `basis`, over the challenge-table factor: the
+knowledge-error conditions hold and the replayed finder returns no relation. -/
+def badFiberAt (basis : Fin m → M) : Set (Q → F) :=
+  {table | VerifiesAt m r_idx adv basis table
+    ∧ ((effectiveRepAt m adv basis table).pivot r_idx).isSome
+    ∧ relFinder m r_idx adv table basis = none}
+
+/-- The relation event at the presented `basis`, over the challenge-table factor: the
+replayed finder returns a relation. -/
+def relFiberAt (basis : Fin m → M) : Set (Q → F) :=
+  {table | (relFinder m r_idx adv table basis).isSome}
+
+/-- Bad-challenge arm (fibre over the basis discrete logarithms `logs`): `badFiberAt` at the
+sampled basis. -/
 def badFiber (logs : Fin m → F) : Set (Q → F) :=
-  {table | Verifies m gen r_idx adv table logs
-    ∧ ((effectiveRep m gen adv table logs).pivot r_idx).isSome
-    ∧ relFinder m r_idx adv table (scalarBasis gen logs) = none}
+  badFiberAt m r_idx adv (scalarBasis gen logs)
 
 /-- Relation arm (fibre over the challenge table `table`): the replayed finder returns a
 relation. -/
 def relFiber (table : Q → F) : Set (Fin m → F) :=
   {logs | (relFinder m r_idx adv table (scalarBasis gen logs)).isSome}
+
+omit [Fintype Q] [Fintype F] [Nonempty F] in
+/-- **Deterministic containment at a fixed basis.** On the knowledge-error event at the
+presented `basis`, either the replayed finder found no relation (the bad-challenge arm) or
+it found one (the relation arm). -/
+theorem kappaEventAt_subset (basis : Fin m → M) :
+    kappaEventAt m r_idx adv basis
+      ⊆ badFiberAt m r_idx adv basis ∪ relFiberAt m r_idx adv basis := by
+  rintro table ⟨hver, hpiv⟩
+  rcases hfind : relFinder m r_idx adv table basis with _ | w
+  · exact Or.inl ⟨hver, hpiv, hfind⟩
+  · exact Or.inr (by simp only [relFiberAt, Set.mem_setOf_eq, hfind, Option.isSome_some])
 
 omit [Fintype Q] [Fintype F] [Nonempty F] in
 /-- **Deterministic containment.** On the knowledge-error event, either the replayed finder
@@ -181,23 +244,22 @@ def finalBadSet (basis : Fin m → M) (out : KappaOutput F Q m) (table : Q → F
       = representationEval basis eff.commitment + x • representationEval basis eff.key
     ∧ (eff.pivot r_idx).isSome}
 
-/-- **The bad-challenge arm discharged by the labeled squeeze.** At the basis discrete
-logarithms `logs`, within query budget `qH`, the bad-challenge fibre has measure at most
-`(qH+1)/|F|`. On that fibre the oracle's answer at the output's query point equals the
-effective representation's one bad challenge: on the annotation branch a singleton fixed
-before the answer was drawn, and on the fallback branch a singleton computed from an output
-that reprogramming the point cannot change. The `+1` is the Fuchsbauer–Plouviez–Seurin
-`q_H + 1` accounting, with the game's own final challenge query played by the fallback
-branch. -/
-theorem badFiber_measure_le {logs : Fin m → F} {qH : ℕ}
-    (hQ : (adv (scalarBasis gen logs)).QueryBound qH) :
-    (PMF.uniformOfFintype (Q → F)).toOuterMeasure (badFiber m gen r_idx adv logs)
+/-- **The bad-challenge event discharged by the labeled squeeze, at the presented `basis`.**
+Within query budget `qH`, the bad-challenge event has measure at most `(qH+1)/|F|`. On that
+event the oracle's answer at the output's query point equals the effective representation's
+one bad challenge: on the annotation branch a singleton fixed before the answer was drawn,
+and on the fallback branch a singleton computed from an output that reprogramming the point
+cannot change. The `+1` is the Fuchsbauer–Plouviez–Seurin `q_H + 1` accounting, with the
+game's own final challenge query played by the fallback branch. -/
+theorem badFiberAt_measure_le {basis : Fin m → M} {qH : ℕ}
+    (hQ : (adv basis).QueryBound qH) :
+    (PMF.uniformOfFintype (Q → F)).toOuterMeasure (badFiberAt m r_idx adv basis)
       ≤ ((qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card F := by
   refine le_trans (MeasureTheory.measure_mono ?_)
-    (le_trans (finalBadWithoutRelation_measure_le (adv (scalarBasis gen logs))
+    (le_trans (finalBadWithoutRelation_measure_le (adv basis)
       (fun out => out.queryPoint)
-      (fun out _ table => finalBadSet m r_idx adv (scalarBasis gen logs) out table)
-      (fun table => relFinder m r_idx adv table (scalarBasis gen logs))
+      (fun out _ table => finalBadSet m r_idx adv basis out table)
+      (fun table => relFinder m r_idx adv table basis)
       (fun _ label _ => {label.badChallenge r_idx})
       (fun out _ _ => {out.announced.badChallenge r_idx})
       ?_ (fun _ _ _ _ => rfl) (fun _ _ _ _ => rfl)
@@ -205,29 +267,55 @@ theorem badFiber_measure_le {logs : Fin m → F} {qH : ℕ}
       (fun out _ _ => le_of_eq (uniformOfFintype_toOuterMeasure_singleton _))
       hQ)
     (le_of_eq (mul_one_div _ _)))
-  · -- the bad-challenge fibre is the squeeze's event
+  · -- the bad-challenge event is the squeeze's event
     rintro table ⟨hver, hpiv, hnone⟩
     exact ⟨⟨hver, hpiv⟩, hnone⟩
   · -- hcover: with no relation found, the challenge is the effective bad challenge
     intro table hfinal hnone
     obtain ⟨hver, hpiv⟩ := hfinal
     obtain ⟨j, hj⟩ := Option.isSome_iff_exists.mp hpiv
-    have hc : table (((adv (scalarBasis gen logs)).run table).queryPoint)
-        = (((adv (scalarBasis gen logs)).findLabel table
-              ((adv (scalarBasis gen logs)).run table).queryPoint).getD
-            ((adv (scalarBasis gen logs)).run table).announced).badChallenge r_idx := by
+    have hc : table (((adv basis).run table).queryPoint)
+        = (((adv basis).findLabel table
+              ((adv basis).run table).queryPoint).getD
+            ((adv basis).run table).announced).badChallenge r_idx := by
       by_contra hne
       have hcond := And.intro hver
         (QueryRep.assembled_ne_zero_of_ne_badChallenge
-          (S := ((adv (scalarBasis gen logs)).run table).response) hj hne)
-      have hnone' : relFinder m r_idx adv table (scalarBasis gen logs) = none := hnone
+          (S := ((adv basis).run table).response) hj hne)
+      have hnone' : relFinder m r_idx adv table basis = none := hnone
       rw [relFinder, dif_pos hcond] at hnone'
       exact Option.some_ne_none _ hnone'
     unfold firstLabelOrFallbackBad
     rw [hc]
-    cases (adv (scalarBasis gen logs)).findLabel table
-        (((adv (scalarBasis gen logs)).run table).queryPoint) <;>
+    cases (adv basis).findLabel table
+        (((adv basis).run table).queryPoint) <;>
       rfl
+
+/-- **The knowledge error at a fixed basis: κ ≤ (qH+1)/|F| + ε_rel.** For a labeled algebraic
+adversary within query budget `qH` at the presented `basis`, if the probability over the
+challenge table that the replayed finder returns a relation at this basis is at most `ε`,
+then the probability of a verifying binding signature whose effective representation has a
+pivot is at most `(qH+1)/|F| + ε`. No basis is sampled: both arms live over the
+challenge-table factor, and the composition is a plain union bound. The bound therefore
+holds at any fixed basis —in particular the deployed one— with the relation arm carried as
+a named hypothesis on that basis. -/
+theorem kappaEventAt_measure_le {basis : Fin m → M} {qH : ℕ} {ε : ℝ≥0∞}
+    (hQ : (adv basis).QueryBound qH)
+    (hrel : (PMF.uniformOfFintype (Q → F)).toOuterMeasure (relFiberAt m r_idx adv basis)
+      ≤ ε) :
+    (PMF.uniformOfFintype (Q → F)).toOuterMeasure (kappaEventAt m r_idx adv basis)
+      ≤ ((qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card F + ε :=
+  le_trans (MeasureTheory.measure_mono (kappaEventAt_subset m r_idx adv basis))
+    (le_trans (MeasureTheory.measure_union_le _ _)
+      (add_le_add (badFiberAt_measure_le m r_idx adv hQ) hrel))
+
+/-- The bad-challenge fibre at the basis discrete logarithms `logs`:
+`badFiberAt_measure_le` at the sampled basis. -/
+theorem badFiber_measure_le {logs : Fin m → F} {qH : ℕ}
+    (hQ : (adv (scalarBasis gen logs)).QueryBound qH) :
+    (PMF.uniformOfFintype (Q → F)).toOuterMeasure (badFiber m gen r_idx adv logs)
+      ≤ ((qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card F :=
+  badFiberAt_measure_le m r_idx adv hQ
 
 omit [Fintype Q] [Nonempty F] in
 /-- The relation arm is the relation-finding event of the replayed finder. -/

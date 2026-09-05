@@ -352,7 +352,7 @@ def ofNodeBinding_or_relation
           deployedMemberClaim
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hpermutationWellFormed :
       permutationLastEvalsWellFormed ps = true)
     (hpermutationRouting :
@@ -365,7 +365,7 @@ def ofNodeBinding_or_relation
     AcceptedModelClaimedEvaluations
         (memberDecode := memberDecode)
         (hblinding := hblinding) haccepts
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+      ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w :=
   bindOrRelationWitness
     (CanonicalMemberConstraintRelation.acceptedPolynomial_opens_or_relation
       (memberDecode := memberDecode) haccepts hbind)
@@ -433,7 +433,7 @@ def acceptedModel_circuitSat_or_relation
           vk instanceCommitment ps ch i).getD
             (memberIndex : ℕ) (.point 0, [])).2.getD
               (pointIndex : ℕ) 0
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hquot : hpoly = columnPolynomial ⟨m, hm⟩)
     (hroute :
       (constructIntermediateSets
@@ -509,7 +509,7 @@ def acceptedModel_circuitSat_or_relation
         (memberDecode := memberDecode)
         (hblinding := hblinding) haccepts).CircuitSat
           ch.y hpoly vk.n a ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let model :=
     CanonicalMemberConstraintRelation.acceptedModel
       (memberDecode := memberDecode)
@@ -776,7 +776,7 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
           deployedMemberClaim
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
-        ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hpermutationRouting :
       PermutationChunkRoutingCoherent vk)
     (hrows : Function.Injective
@@ -837,7 +837,7 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
         (memberDecode := memberDecode)
         (hblinding := hblinding) haccepts).CircuitSat
           ch.y hpoly vk.n a
-      ⊕' NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   refine bindOrRelationWitness
     (CanonicalMemberConstraintRelation.acceptedPolynomial_opens_or_relation
       (memberDecode := memberDecode) haccepts hbind)

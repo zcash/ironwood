@@ -274,8 +274,7 @@ def preXIdentityOutcome?V {pp : ProofParams}
           | PSum.inl extracted => some (Sum.inl extracted)
           | PSum.inr relation => some (Sum.inr
               (augmentedBasis_ursOfAugmentedBasis
-                (AdaptiveActionStatementShape pp).k basis ▸
-                  AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+                (AdaptiveActionStatementShape pp).k basis ▸ relation))
   else
     exact none
 

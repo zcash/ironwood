@@ -33,23 +33,24 @@ def algebraicPointOfCommit {k : ℕ} {basis : AugmentedIndex (2 ^ k) → VestaG}
     AlgebraicPoint (F := Fp) basis where
   point := P
   repr :=
-    { coeffs := augmentedCoeffs coeffs 0 blind
+    { coeffs := augmentedCoeffs coeffs ![0, blind]
       hEq := by
         calc
-          representationEval basis (augmentedCoeffs coeffs 0 blind) =
+          representationEval basis (augmentedCoeffs coeffs ![0, blind]) =
               representationEval
                 (augmentedBasis (ursOfAugmentedBasis k basis).g
-                  (ursOfAugmentedBasis k basis).u (ursOfAugmentedBasis k basis).w)
-                (augmentedCoeffs coeffs 0 blind) :=
-            congrArg (fun b => representationEval b (augmentedCoeffs coeffs 0 blind))
+                  ![(ursOfAugmentedBasis k basis).u, (ursOfAugmentedBasis k basis).w])
+                (augmentedCoeffs coeffs ![0, blind]) :=
+            congrArg (fun b => representationEval b (augmentedCoeffs coeffs ![0, blind]))
               (augmentedBasis_ursOfAugmentedBasis k basis).symm
           _ = commitGen (ursOfAugmentedBasis k basis).g coeffs +
-                (0 : Fp) • (ursOfAugmentedBasis k basis).u +
-                blind • (ursOfAugmentedBasis k basis).w :=
-            representationEval_augmentedBasis _ _ _ coeffs 0 blind
+                ((0 : Fp) • (ursOfAugmentedBasis k basis).u +
+                  blind • (ursOfAugmentedBasis k basis).w) := by
+            rw [representationEval_augmentedBasis, Fin.sum_univ_two]
+            simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
           _ = commit (ursOfAugmentedBasis k basis) coeffs +
                 blind • (ursOfAugmentedBasis k basis).w := by
-            simp only [zero_smul, add_zero, commit]
+            simp only [zero_smul, zero_add, commit]
             rfl
           _ = P := hP }
 

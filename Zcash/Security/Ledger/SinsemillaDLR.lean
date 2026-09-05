@@ -1,4 +1,5 @@
 import Zcash.Security.Ledger.Bridge
+import Zcash.Security.Ledger.Pool
 import Zcash.Common.DiscreteLogRelation
 
 /-!
@@ -6,7 +7,7 @@ import Zcash.Common.DiscreteLogRelation
 
 The onward reduction step for the classified Action escapes: a plain `def`
 converting an `ActionBreakData` — the site and escape datum computed by
-`classifyAction` — into a `NontrivialRelationOne`, the games-facing
+`classifyAction` — into a one-point `NontrivialRelation`, the games-facing
 discrete-log-relation break among the Orchard-protocol Sinsemilla generator table and
 the escaped site's domain point.  This is protocol-spec Theorem 5.4.4 made
 computational end to end: the coefficients of the relation are read off the break
@@ -33,6 +34,7 @@ open Zcash.Circuits.Action.Circuit
 open Zcash.Circuits.Specs (K)
 open Zcash.Circuits.Specs.Sinsemilla
 open Zcash.Security.Concrete
+open Zcash.Security.Ledger.Pool
 
 /-! ## The lifted generator table -/
 
@@ -52,6 +54,72 @@ theorem pallasSAt_of_lt {m : ℕ} (h : m < 2 ^ K) :
     pallasSAt m =
       PallasGroup.ofPoint (orchardGenerators.S m) (orchardGenerators.valid h) :=
   dif_pos h
+
+/-! ## The combined deployed basis -/
+
+/-- The `CommitIvk` domain point `Q("z.cash:Orchard-CommitIvk-M")`, as a group element. -/
+def ivkQpt : PallasGroup := PallasGroup.ofPoint Pool.ivkQ (Or.inl Pool.ivkQ_onCurve)
+
+/-- The `CommitIvk` randomness base, as a group element — the `commitIvkR` argument of
+the Orchard-protocol `keyBinding` interface. -/
+def commitIvkRpt : PallasGroup :=
+  PallasGroup.ofPoint Ecc.MulFixed.Certs.commitIvkR.point
+    (Or.inl Ecc.MulFixed.Certs.commitIvkR.onCurve)
+
+/-- The `NoteCommit` domain point `Q("z.cash:Orchard-NoteCommit-M")`, as a group
+element. -/
+def noteQpt : PallasGroup := PallasGroup.ofPoint Pool.noteQ (Or.inl Pool.noteQ_onCurve)
+
+/-- The `NoteCommit` randomness base, as a group element. -/
+def noteCommitRpt : PallasGroup :=
+  PallasGroup.ofPoint Ecc.MulFixed.Certs.noteCommitR.point
+    (Or.inl Ecc.MulFixed.Certs.noteCommitR.onCurve)
+
+/-- The Merkle domain point `Q("z.cash:Orchard-MerkleCRH")`, as a group element. -/
+def merkleQpt : PallasGroup := PallasGroup.ofPoint Pool.merkleQ (Or.inl Pool.merkleQ_onCurve)
+
+/-- The named slots of the combined deployed basis's distinguished points. The `idx`
+prefix keeps the slot names apart from the points they refer to. -/
+inductive OrchardPointIndex where
+  | idxIvkQ
+  | idxCommitIvkR
+  | idxNoteQ
+  | idxNoteCommitR
+  | idxMerkleQ
+  | idxValueCommitV
+  | idxValueCommitR
+  deriving DecidableEq
+
+instance : Fintype OrchardPointIndex :=
+  ⟨⟨[OrchardPointIndex.idxIvkQ, .idxCommitIvkR, .idxNoteQ, .idxNoteCommitR, .idxMerkleQ,
+      .idxValueCommitV, .idxValueCommitR], by decide⟩,
+    fun x => by cases x <;> decide⟩
+
+/-- **The combined deployed basis's distinguished points.** Every relation arm of the
+Balance route lands among the Sinsemilla generator table and these seven deployed
+points: the three Sinsemilla domain points, their two commitment randomness bases, and
+the two value-commitment bases. -/
+def orchardPoints : OrchardPointIndex → PallasGroup
+  | .idxIvkQ => ivkQpt
+  | .idxCommitIvkR => commitIvkRpt
+  | .idxNoteQ => noteQpt
+  | .idxNoteCommitR => noteCommitRpt
+  | .idxMerkleQ => merkleQpt
+  | .idxValueCommitV => valueCommitV
+  | .idxValueCommitR => valueCommitR
+
+/-- Embed a relation over the generator table and a sub-vector of the deployed points
+into the combined basis: the table slots map identically, and each distinguished slot
+maps to its `orchardPoints` slot. -/
+def toOrchardPoints {s : ℕ} {V : Fin s → PallasGroup}
+    (w : NontrivialRelation (F := Fq) pallasS V) (g : Fin s → OrchardPointIndex)
+    (gr : OrchardPointIndex → Option (Fin s)) (hg : Function.IsPartialInv g gr)
+    (hpt : ∀ i, orchardPoints (g i) = V i) :
+    NontrivialRelation (F := Fq) pallasS orchardPoints :=
+  w.embed (Sum.map id g) (sumMapPartialInv gr) (isPartialInv_sumMap_id hg)
+    (by rintro (a | i)
+        · rfl
+        · exact hpt i)
 
 /-! ## The chain-combination lemma -/
 
@@ -333,17 +401,21 @@ theorem breakCoeffs_relation {Qpt : Point Fp} (hQ : Qpt.Valid) {br : BreakData}
     rw [pow_succ, mul_comm (2 ^ br.pre.length) 2, ← hKind0]
     abel
 
-/-- Package a valid bounded break as the games-facing relation object.  The data
-fields are the computed `breakCoeffs`; the `Prop` fields are discharged from the
-break's validity alone. -/
+/-- Package a valid bounded break as the games-facing relation object. The coefficients
+are the computed `breakCoeffs`; the `Prop` obligations are discharged from the break's
+validity alone. -/
 def relationOfValidBreak {Qpt : Point Fp} (hQ : Qpt.Valid) (br : BreakData)
     (hvb : ValidBreak orchardGenerators.S Qpt br)
     (hpre : ∀ m ∈ br.pre, m < 2 ^ K) (hchunk : br.chunk < 2 ^ K) :
-    NontrivialRelationOne (F := Fq) pallasS (PallasGroup.ofPoint Qpt hQ) where
-  a := (breakCoeffs br).1
-  α := (breakCoeffs br).2
-  nontrivial := breakCoeffs_nontrivial br
-  relation := breakCoeffs_relation hQ hvb hpre hchunk
+    NontrivialRelation (F := Fq) pallasS ![PallasGroup.ofPoint Qpt hQ] :=
+  NontrivialRelation.ofParts (breakCoeffs br).1 ![(breakCoeffs br).2]
+    (by
+      rcases breakCoeffs_nontrivial br with ha | hα
+      · exact Or.inl ha
+      · exact Or.inr (Function.ne_iff.mpr ⟨0, by simpa using hα⟩))
+    (by
+      have h := breakCoeffs_relation hQ hvb hpre hchunk
+      simpa [commitGen, Fin.sum_univ_one] using h)
 
 /-! ## Site dispatch
 
@@ -399,21 +471,21 @@ theorem classify_query_inr {wit : ActionData} {abr : ActionBreakData}
     hashToPointB orchardGenerators.S (siteQ abr.site) (siteQuery wit abr.site) =
       .inr abr.data := by
   unfold classifyAction at h
-  cases hivk : hashToPointB orchardGenerators.S ivkQ (ivkQuery wit) with
+  cases hivk : hashToPointB orchardGenerators.S Action.ivkQ (ivkQuery wit) with
   | inr brd =>
     simp only [hivk] at h
     injection h with h'; subst h'
     exact hivk
   | inl Bi =>
     simp only [hivk] at h
-    cases hold : hashToPointB orchardGenerators.S noteQ (noteOldQuery wit) with
+    cases hold : hashToPointB orchardGenerators.S Action.noteQ (noteOldQuery wit) with
     | inr brd =>
       simp only [hold] at h
       injection h with h'; subst h'
       exact hold
     | inl Bo =>
       simp only [hold] at h
-      cases hnew : hashToPointB orchardGenerators.S noteQ (noteNewQuery wit) with
+      cases hnew : hashToPointB orchardGenerators.S Action.noteQ (noteNewQuery wit) with
       | inr brd =>
         simp only [hnew] at h
         injection h with h'; subst h'
@@ -422,7 +494,7 @@ theorem classify_query_inr {wit : ActionData} {abr : ActionBreakData}
         simp only [hnew] at h
         unfold classifyMerkle at h
         obtain ⟨i, -, hi⟩ := List.exists_of_findSome?_eq_some h
-        cases hm : hashToPointB orchardGenerators.S merkleQ (merkleQuery wit i) with
+        cases hm : hashToPointB orchardGenerators.S Action.merkleQ (merkleQuery wit i) with
         | inl B => simp [hm] at hi
         | inr br =>
           simp only [hm] at hi
@@ -440,6 +512,17 @@ theorem break_bounds {wit : ActionData} {s : BreakSite} {br : BreakData}
   exact ⟨fun m hm => hb m (List.mem_append_left _ hm),
     hb br.chunk (List.mem_append_right _ List.mem_cons_self)⟩
 
+/-- The slot of a break site's domain point in the combined deployed basis. -/
+def siteSlot : BreakSite → OrchardPointIndex
+  | .commitIvk => .idxIvkQ
+  | .noteCommitOld => .idxNoteQ
+  | .noteCommitNew => .idxNoteQ
+  | .merkle _ => .idxMerkleQ
+
+/-- Each break site's combined slot holds its domain point. -/
+theorem orchardPoints_siteSlot (s : BreakSite) : orchardPoints (siteSlot s) = sitePoint s := by
+  cases s <;> rfl
+
 /-- **Reduction from a classified `ActionBreakData` into the games-facing
 discrete-log-relation** at the escaped site's domain point.  The hypothesis ties the
 datum to the witness's own query; `classify_query_inr` discharges it for the
@@ -447,18 +530,23 @@ classifier's output. -/
 def relationOfBreakData (wit : ActionData) (abr : ActionBreakData)
     (h : hashToPointB orchardGenerators.S (siteQ abr.site) (siteQuery wit abr.site) =
       .inr abr.data) :
-    NontrivialRelationOne (F := Fq) pallasS (sitePoint abr.site) :=
-  relationOfValidBreak (siteQ_valid abr.site) abr.data
-    (validBreak_of_inr (siteQ_valid abr.site)
-      (fun m hm => orchardGenerators.S_onCurve (siteQuery_bounded wit abr.site m hm)) h)
-    (break_bounds h).1 (break_bounds h).2
+    NontrivialRelation (F := Fq) pallasS orchardPoints :=
+  toOrchardPoints
+    (relationOfValidBreak (siteQ_valid abr.site) abr.data
+      (validBreak_of_inr (siteQ_valid abr.site)
+        (fun m hm => orchardGenerators.S_onCurve (siteQuery_bounded wit abr.site m hm)) h)
+      (break_bounds h).1 (break_bounds h).2)
+    (fun _ => siteSlot abr.site) (fun j => if j = siteSlot abr.site then some 0 else none)
+    (isPartialInv_const_slot _)
+    (fun i => by fin_cases i; exact orchardPoints_siteSlot abr.site)
 
 /-- A classified Action escape reduced onward: the site together with a nontrivial
-discrete-log relation among the Orchard-protocol generator table and that site's
-domain point. -/
+discrete-log relation among the Orchard-protocol generator table and the combined
+deployed points, with the coefficients supported on the escaped site's domain-point
+slot. -/
 structure ActionDLBreak where
   site : BreakSite
-  rel : NontrivialRelationOne (F := Fq) pallasS (sitePoint site)
+  rel : NontrivialRelation (F := Fq) pallasS orchardPoints
 
 /-- End-to-end computable reduction at the Action boundary: classify the witness's
 four query families and reduce the first escape to its discrete-log relation. -/
@@ -657,7 +745,7 @@ def relationOfChainPmEq {Q : Point Fp} (hQ : Q.Valid) {W : PallasGroup}
       PallasGroup.ofPoint p₁ hv₁ + r₁ • W = -(PallasGroup.ofPoint p₂ hv₂ + r₂ • W))
     (hn : l₁.length ≤ 253)
     (hne : ¬(l₁ = l₂ ∧ r₁ = r₂)) :
-    NontrivialRelation (F := Fq) pallasS (PallasGroup.ofPoint Q hQ) W :=
+    NontrivialRelation (F := Fq) pallasS ![PallasGroup.ofPoint Q hQ, W] :=
   if hplus : PallasGroup.ofPoint p₁ hv₁ + r₁ • W = PallasGroup.ofPoint p₂ hv₂ + r₂ • W then
     NontrivialRelation.ofCombinationCollision
       (a := preCoeffs l₁) (a' := preCoeffs l₂)
@@ -703,7 +791,9 @@ theorem relationOfChainPmEq_zero_beta {Q : Point Fp} (hQ : Q.Valid) {W : PallasG
     (hn : l₁.length ≤ 253) (hne : ¬(l₁ = l₂ ∧ (0 : Fq) = 0)) :
     (relationOfChainPmEq hQ hb₁ hb₂ hlen h₁ hv₁ h₂ hv₂ heq hn hne).β = 0 := by
   unfold relationOfChainPmEq
-  split <;> simp [Zcash.NontrivialRelation.ofCombinationCollision]
+  split <;> simp [Zcash.NontrivialRelation.β,
+    Zcash.NontrivialRelation.ofCombinationCollision,
+    Zcash.NontrivialRelation.ofParts, augmentedCoeffs, BasisIndex.w]
 
 
 end Zcash.Security.Ledger.Bridge

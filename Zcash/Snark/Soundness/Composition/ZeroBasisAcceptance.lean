@@ -1,6 +1,6 @@
 import Zcash.Snark.Soundness.Main
 import Zcash.Snark.Soundness.AGM.Adapter
-import Zcash.Common.AlgebraicRelation
+import Zcash.Common.DiscreteLogRelation
 
 /-!
 # Acceptance at the zero basis, structurally

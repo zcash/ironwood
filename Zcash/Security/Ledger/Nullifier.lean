@@ -152,7 +152,7 @@ and equal notes force `rcm₁ ≠ rcm₂` (a nonzero randomness coefficient); th
 needs no distinctness at all (`coeff_add_ne`). -/
 def NontrivialRelation.ofNullifierCollision [DecidableEq G] (S : NullifierShape P)
     (c : NullifierCollision P) :
-    NontrivialRelation (F := F) S.bases S.K S.R :=
+    NontrivialRelation (F := F) S.bases ![S.K, S.R] :=
   have hcf₁ : S.coeff c.note₁ = some ((S.coeff c.note₁).get (S.coeff₁_isSome c)) :=
     (Option.some_get _).symm
   have hcf₂ : S.coeff c.note₂ = some ((S.coeff c.note₂).get (S.coeff₂_isSome c)) :=
@@ -163,34 +163,37 @@ def NontrivialRelation.ofNullifierCollision [DecidableEq G] (S : NullifierShape 
     exact c.eq
   if hplus : S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ • S.K + c.cm₁
       = S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ • S.K + c.cm₂ then
-    { a := (S.coeff c.note₁).get (S.coeff₁_isSome c)
-        - (S.coeff c.note₂).get (S.coeff₂_isSome c)
-      α := S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ - S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ
-      β := c.rcm₁ - c.rcm₂
-      nontrivial := by
+    NontrivialRelation.ofParts
+      ((S.coeff c.note₁).get (S.coeff₁_isSome c) - (S.coeff c.note₂).get (S.coeff₂_isSome c))
+      ![S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ - S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ,
+        c.rcm₁ - c.rcm₂]
+      (by
         by_cases hnn : c.note₁ = c.note₂
         · -- equal notes ⇒ the openings differ only in randomness
-          refine Or.inr (Or.inr ?_)
+          refine Or.inr (Function.ne_iff.mpr ⟨1, ?_⟩)
+          simp only [Matrix.cons_val_one, Pi.zero_apply]
           intro hβ
           exact c.ne (Prod.ext (sub_eq_zero.mp hβ) hnn)
-        · exact Or.inl (S.coeff_sub_ne hcf₁ hcf₂ hnn)
-      relation := by
+        · exact Or.inl (S.coeff_sub_ne hcf₁ hcf₂ hnn))
+      (by
         have h := hplus
         rw [S.cm₁_eq c, S.cm₂_eq c] at h
         have h0 := sub_eq_zero.mpr h
+        rw [Fin.sum_univ_two]
+        simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
         rw [← h0]
-        simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
-        abel }
+        simp only [commitGen, Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
+        abel)
   else
     have hminus : S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ • S.K + c.cm₁
         = -(S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ • S.K + c.cm₂) :=
       (S.extract_pm _ _ hx).resolve_left hplus
-    { a := (S.coeff c.note₁).get (S.coeff₁_isSome c)
-        + (S.coeff c.note₂).get (S.coeff₂_isSome c)
-      α := S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ + S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ
-      β := c.rcm₁ + c.rcm₂
-      nontrivial := Or.inl (S.coeff_add_ne hcf₁ hcf₂)
-      relation := by
+    NontrivialRelation.ofParts
+      ((S.coeff c.note₁).get (S.coeff₁_isSome c) + (S.coeff c.note₂).get (S.coeff₂_isSome c))
+      ![S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ + S.scalar c.nk₂ c.note₂.ρ c.note₂.ψ,
+        c.rcm₁ + c.rcm₂]
+      (Or.inl (S.coeff_add_ne hcf₁ hcf₂))
+      (by
         have h := hminus
         rw [S.cm₁_eq c, S.cm₂_eq c] at h
         have h0 : (S.scalar c.nk₁ c.note₁.ρ c.note₁.ψ • S.K
@@ -202,9 +205,11 @@ def NontrivialRelation.ofNullifierCollision [DecidableEq G] (S : NullifierShape 
             = 0 := by
           rw [h]
           abel
+        rw [Fin.sum_univ_two]
+        simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
         rw [← h0]
-        simp only [Pi.add_apply, add_smul, Finset.sum_add_distrib]
-        abel }
+        simp only [commitGen, Pi.add_apply, add_smul, Finset.sum_add_distrib]
+        abel)
 
 end Validity
 

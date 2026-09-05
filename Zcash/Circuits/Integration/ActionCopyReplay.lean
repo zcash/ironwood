@@ -76,8 +76,8 @@ def actionCopyReplayWitness_or_relation
             actionActiveRows)
         (actionCircuit.operations)
         (FlatCell actionNumPermCols actionDomainSize)
-        (NontrivialRelation (F := Fp) urs.g urs.u urs.w) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) ⊕'
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hn : actionCircuit.n ≠ 0 :=
     actionCircuit.n_ne_zero
   have hsatisfaction :=
@@ -122,7 +122,7 @@ def actionCopyReplayWitness_or_relation
             (actionCircuit.toVerifierKey urs) relation.polynomial proofIndex
               actionActiveRows).fixed
               ⟨column⟩ (row : ℤ) = value ⊕'
-            NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+            AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
       intro column row value hentry
       have source :=
         relation.topLevelFixedEntryRead_or_relation

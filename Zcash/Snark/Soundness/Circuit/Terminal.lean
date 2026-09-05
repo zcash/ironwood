@@ -298,9 +298,9 @@ def topLevelWitnesses_or_relation_of_circuitSat
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts)
         cell
-        (NontrivialRelation (F := Fp) urs.g urs.u urs.w)) :
+        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
     TopLevelExternalBundleWitness top inputs ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let relation :=
     CanonicalMemberConstraintRelation.ofAcceptedCircuitSat
       haccepts hsatisfied
@@ -361,9 +361,9 @@ def topLevelStatements_or_relation_of_circuitSat
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts)
         cell
-        (NontrivialRelation (F := Fp) urs.g urs.u urs.w)) :
+        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w :=
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w :=
   match topLevelWitnesses_or_relation_of_circuitSat
       top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
       haccepts hpoly hsatisfied hgoodY correctness with
@@ -442,7 +442,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
             (shape := top.shape.withProofParams pp)
             (instanceCommitment := top.instanceCommitment urs inputs)
             (top.toVerifierKey urs) ps ch slot point ⊕'
-        NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+        AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (domainExponent_lt : top.domainExponent < 33)
     (hxgood :
       let model :=
@@ -483,9 +483,9 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts)
         cell
-        (NontrivialRelation (F := Fp) urs.g urs.u urs.w)) :
+        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hrows :
       Function.Injective
         (fun row : Fin top.n =>

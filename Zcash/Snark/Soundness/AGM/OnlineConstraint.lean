@@ -227,8 +227,7 @@ def deployedConstraintQuotientFinder
         match deployedConstraintQuotientAgreementOrRelation family basis pnu with
         | PSum.inl _ => none
         | PSum.inr relation =>
-            some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸
-              relation.toAlgebraicRelationWitness)
+            some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸ relation)
 
 /-- Representation extraction only reads the list, so equal lists extract equal
 representations. -/
@@ -527,8 +526,7 @@ def deployedConstraintFinderOfOutcome (family : ComputedDeployedRootFSFamily sha
   fun basis coins =>
     match provider basis coins with
     | some (PSum.inr relation) =>
-        some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸
-          relation.toAlgebraicRelationWitness)
+        some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸ relation)
     | _ => none
 
 

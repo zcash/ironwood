@@ -111,9 +111,9 @@ def topLevelStatements_or_relation_of_decode
         (CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := memberDecode) haccepts)
         cell
-        (NontrivialRelation (F := Fp) urs.g urs.u urs.w)) :
+        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
   exact topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
     top pp urs hk inputs ps ch pU pW a

@@ -103,7 +103,7 @@ def instanceColumn_eq_rowPolynomial_or_relation
       q.commId = .instanceCol proofIndex column) :
     relation.polynomial (.instanceCol proofIndex column) =
         instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hsome : (relation.route (.instanceCol proofIndex column)).isSome := by
     obtain ⟨q, hq, hqid⟩ := hquery
     have routed := assembledQueryMemberRoute_faithful
@@ -209,7 +209,7 @@ def acceptedInstanceColumn_eq_rowPolynomial_or_relation
           (memberDecode := memberDecode) haccepts
           (.instanceCol proofIndex column) =
         instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let routing :=
     canonicalRoutingConditions_of_accepts
       urs hk vk instanceCommitment ps ch haccepts

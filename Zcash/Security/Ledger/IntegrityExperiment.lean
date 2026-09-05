@@ -14,7 +14,8 @@ prefix `i < k`. This module places that composition in the challenge-oracle mode
 table, and the logs of the `m` presented bases.
 
 The reduction layer is what lets the two sides share one sample space. The conservation side
-runs on the sampled value and binding bases (`kappaPrimitivesAt`) and is discharged wholesale by
+runs on the sampled value and binding bases (`kappaPrimitivesAt`; the `kappa` prefix names the
+knowledge-error analysis that these sampled forms serve) and is discharged wholesale by
 the conservation experiment: one combined coin-consuming finder covering both of its arms'
 relation slices, at `ε_dl + (qH+2)/#F`. The non-negativity side's three arms (Merkle,
 note-commitment, key-binding) are deterministic reductions to breaks among primitives that
@@ -57,6 +58,19 @@ variable (gen : G) (v_idx r_idx : Fin m) (queryOf : G → G → MSG → Q)
 variable {kv : KeyBindingInterface KW G IVK NK}
 variable {issuance : ℕ → ℕ} {maxActions : ℕ}
 
+/-- The combined non-negativity arm event at primitives `P`: a Merkle, note-commitment, or
+key-binding Balance-subset break at some prefix `i < k`. The integrity experiments take one
+named bound (`ε_nonneg`) on the lift of this family. -/
+def balanceSubsetArmsUpTo (k : ℕ)
+    (P : Primitives (ZMod r) G IVK NK RHO PSI MHASH MENC MSG SIG) :
+    Set (ValidAnnotated P kv issuance maxActions) :=
+  balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
+      (maxActions := maxActions) k .merkle
+    ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
+      (maxActions := maxActions) k .noteCommit
+    ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
+      (maxActions := maxActions) k .keyBinding
+
 omit [Fintype Q] [DecidableEq Q] [Inhabited Q] in
 /-- **The challenge-experiment integrity containment.** The samples on which the output ledger
 is valid and violates balance integrity are contained in the lift of the union of the three
@@ -72,12 +86,8 @@ theorem sampledBalanceIntegrity_subset {ι : Type u}
         (fun P => balanceIntegrityViolationBefore (P := P) (kv := kv) (issuance := issuance)
           (maxActions := maxActions) k)
       ⊆ sampledLedgerEvent m gen v_idx r_idx queryOf P₀ toSig LA
-          (fun P => balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .merkle
-            ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .noteCommit
-            ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .keyBinding)
+          (balanceSubsetArmsUpTo (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k)
         ∪ sampledLedgerEvent m gen v_idx r_idx queryOf P₀ toSig LA
           (fun P => balanceConservationViolationBefore (P := P) (kv := kv) (issuance := issuance)
             (maxActions := maxActions) k) :=
@@ -104,12 +114,8 @@ theorem balanceIntegrityBefore_measure_le_experiment {ι : Type u} (p : PMF ι)
     (hr : maxActions * (P₀.valueBound - 1) + P₀.vBalanceBound < r) (k : ℕ) {ε_nonneg ε_dl : ℝ≥0∞}
     (hnn : (challengeExperiment m p).toOuterMeasure
         (sampledLedgerEvent m gen v_idx r_idx queryOf P₀ toSig LA
-          (fun P => balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .merkle
-            ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .noteCommit
-            ∪ balanceSubsetBreakEventUpTo (P := P) (kv := kv) (issuance := issuance)
-              (maxActions := maxActions) k .keyBinding)) ≤ ε_nonneg)
+          (balanceSubsetArmsUpTo (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k)) ≤ ε_nonneg)
     (hdl : ∀ j : ι, TextbookDLWithCoinsAdvantageLE gen (fun basis table =>
       conservationRelFinder m v_idx r_idx queryOf P₀ toSig hne_idx k (LA j) table basis) ε_dl) :
     (challengeExperiment m p).toOuterMeasure
@@ -123,6 +129,64 @@ theorem balanceIntegrityBefore_measure_le_experiment {ι : Type u} (p : PMF ι)
   exact le_trans
     (toOuterMeasure_le_add₂ _
       (sampledBalanceIntegrity_subset m gen v_idx r_idx queryOf P₀ toSig LA k))
+    (add_le_add hnn hcons)
+
+omit [Fintype Q] [DecidableEq Q] [Inhabited Q] in
+/-- **The integrity containment at a fixed basis.** As `sampledBalanceIntegrity_subset`,
+lifted through the `ledgerEventAt` join-homomorphism at the presented `basis`. -/
+theorem balanceIntegrityAt_subset {ι : Type u} (basis : Fin m → G)
+    (LA : ι → (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
+      (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m)))
+    (k : ℕ) :
+    ledgerEventAt m v_idx r_idx queryOf P₀ toSig basis LA
+        (fun P => balanceIntegrityViolationBefore (P := P) (kv := kv) (issuance := issuance)
+          (maxActions := maxActions) k)
+      ⊆ ledgerEventAt m v_idx r_idx queryOf P₀ toSig basis LA
+          (balanceSubsetArmsUpTo (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k)
+        ∪ ledgerEventAt m v_idx r_idx queryOf P₀ toSig basis LA
+          (fun P => balanceConservationViolationBefore (P := P) (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k) :=
+  (ledgerEventAt_mono m v_idx r_idx queryOf P₀ toSig basis LA
+    fun P => balanceIntegrityViolationBefore_subset_conservation (P := P) (kv := kv)
+      (issuance := issuance) (maxActions := maxActions) k).trans
+    (ledgerEventAt_union m v_idx r_idx queryOf P₀ toSig basis LA
+      _
+      (fun P => balanceConservationViolationBefore (P := P) (kv := kv) (issuance := issuance)
+        (maxActions := maxActions) k)).le
+
+/-- **The integrity experiment at a fixed basis.** Over the adversary's coins and the
+challenge table alone, at the presented `basis`, the probability that the output ledger is
+valid and violates balance integrity at some prefix `i < k` is at most
+`ε_nonneg + (ε_valuedlr + (qH+1)/#F)`. The non-negativity side is one named bound on the
+combined arm event over this same space; the conservation side is the fixed-basis
+conservation experiment, with its relation arm the named per-coin hypothesis `hrel`. -/
+theorem balanceIntegrityBefore_measure_le_experimentAt {ι : Type u} (p : PMF ι)
+    {LA : ι → (Fin m → G) → LabeledOracleComp Q (ZMod r) (fun _ => QueryRep (ZMod r) m)
+      (List (Tx KW (ZMod r) G RHO PSI MHASH MENC MSG SIG P₀.depth × QueryRep (ZMod r) m))}
+    {basis : Fin m → G} (hne_idx : v_idx ≠ r_idx)
+    {qH : ℕ} (hQ : ∀ j, (LA j basis).QueryBound qH)
+    (halg : ∀ j : ι, AlgebraicAtBindingPointsAt m v_idx r_idx queryOf P₀ toSig basis (LA j))
+    (hr : maxActions * (P₀.valueBound - 1) + P₀.vBalanceBound < r) (k : ℕ)
+    {ε_nonneg ε_valuedlr : ℝ≥0∞}
+    (hnn : (challengeTableExperiment p).toOuterMeasure
+        (ledgerEventAt m v_idx r_idx queryOf P₀ toSig basis LA
+          (balanceSubsetArmsUpTo (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k)) ≤ ε_nonneg)
+    (hrel : ∀ j : ι, (PMF.uniformOfFintype (Q → ZMod r)).toOuterMeasure
+        (conservationRelFiberAt m v_idx r_idx queryOf P₀ toSig hne_idx k (LA j) basis)
+      ≤ ε_valuedlr) :
+    (challengeTableExperiment p).toOuterMeasure
+        (ledgerEventAt m v_idx r_idx queryOf P₀ toSig basis LA
+          (fun P => balanceIntegrityViolationBefore (P := P) (kv := kv) (issuance := issuance)
+            (maxActions := maxActions) k))
+      ≤ ε_nonneg + (ε_valuedlr + ((qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card (ZMod r)) := by
+  have hcons := balanceConservationBefore_measure_le_experimentAt m v_idx r_idx queryOf P₀
+    toSig (kv := kv) (issuance := issuance) (maxActions := maxActions)
+    p hne_idx hQ halg hr k hrel
+  exact le_trans
+    (toOuterMeasure_le_add₂ _
+      (balanceIntegrityAt_subset m v_idx r_idx queryOf P₀ toSig basis LA k))
     (add_le_add hnn hcons)
 
 end Zcash.Security.Ledger.Model

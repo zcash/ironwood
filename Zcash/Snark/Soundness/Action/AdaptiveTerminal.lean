@@ -124,8 +124,7 @@ def actionWitnessOrRelationOfDecode?
                       (by exact hxgoodProof.down) with
                   | PSum.inr relation =>
                       some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                        (actionCircuit.shape.withProofParams pp).k basis ▸
-                          AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+                        (actionCircuit.shape.withProofParams pp).k basis ▸ relation))
                   | PSum.inl hsatisfied =>
                       match action_bundleWitness_or_relation_of_decode_circuitSat pp urs rfl
                           inputs ps ch pU pW a decode hchar haccepts
@@ -135,8 +134,7 @@ def actionWitnessOrRelationOfDecode?
                       | PSum.inl witness => some (Sum.inl witness)
                       | PSum.inr relation =>
                           some (Sum.inr (augmentedBasis_ursOfAugmentedBasis
-                            (actionCircuit.shape.withProofParams pp).k basis ▸
-                              AugmentedRelationWitness.toAlgebraicRelationWitness relation))
+                            (actionCircuit.shape.withProofParams pp).k basis ▸ relation))
 
 /-- The pointwise semantic terminal is complete whenever all of its finite exclusions hold. -/
 theorem actionWitnessOrRelationOfDecode?_isSome_of

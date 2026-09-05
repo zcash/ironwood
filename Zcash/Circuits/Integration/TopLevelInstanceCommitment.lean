@@ -156,7 +156,7 @@ def acceptedColumn_eq_rowPolynomial_or_relation
         (top.omega)
         (top.publicInputRows (inputs proofIndex)
           (top.publicInputLayout.cells index).1) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let column := (top.publicInputLayout.cells index).1
   have hk' : top.domainExponent = urs.k :=
     top.shape_k.symm.trans hk
@@ -225,7 +225,7 @@ def publicInputEncoding_or_relation
               (shape := top.shape.withProofParams pp)
               (memberDecode := memberDecode) haccepts };
       assignment.PublicInputEncoding (inputs proofIndex)) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let assignment : TopLevelAssignment top
       pp.numProofs proofIndex :=
     { polynomial :=
@@ -233,7 +233,7 @@ def publicInputEncoding_or_relation
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts }
   change assignment.PublicInputEncoding (inputs proofIndex) ⊕'
-    NontrivialRelation (F := Fp) urs.g urs.u urs.w
+    AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w
   refine bindOrRelationWitness
     (finForallOrRelationWitness fun index =>
       acceptedColumn_eq_rowPolynomial_or_relation
@@ -266,7 +266,7 @@ def statements_or_relation_of_accepted_topLevelBundleStatement
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let poly :=
     CanonicalMemberConstraintRelation.acceptedPolynomial
       (shape := top.shape.withProofParams pp)
@@ -296,7 +296,7 @@ def witnesses_or_relation_of_accepted_topLevelBundleWitness
         (shape := top.shape.withProofParams pp)
         (memberDecode := memberDecode) haccepts)) :
     TopLevelExternalBundleWitness top inputs ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let poly :=
     CanonicalMemberConstraintRelation.acceptedPolynomial
       (shape := top.shape.withProofParams pp)

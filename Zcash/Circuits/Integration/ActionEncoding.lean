@@ -99,7 +99,7 @@ def actionTopLevelCircuitCorrectness
     TopLevelCircuitCorrectness
       actionCircuit pp urs ch relation.polynomial
       (FlatCell actionNumPermCols actionDomainSize)
-      (NontrivialRelation (F := Fp) urs.g urs.u urs.w) := by
+      (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) := by
   classical
   have hdomainExponent :
       actionCircuit.domainExponent = urs.k := by
@@ -196,7 +196,7 @@ def actionTopLevelCircuitCorrectness
               actionCircuit.fixedRows.getD column [])
             hfixedRows hdomainSize
             (Bad :=
-              NontrivialRelation (F := Fp) urs.g urs.u urs.w)
+              AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
             (fun column hcolumn =>
               relation.fixedColumn_eq_rowPolynomial_or_relation
                 column

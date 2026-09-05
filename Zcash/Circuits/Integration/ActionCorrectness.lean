@@ -103,7 +103,7 @@ def ofAcceptedCircuitSat
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := memberDecode) haccepts)
       (FlatCell actionNumPermCols actionDomainSize)
-      (NontrivialRelation (F := Fp) urs.g urs.u urs.w) := by
+      (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) := by
   let relation :=
     CanonicalMemberConstraintRelation.ofAcceptedCircuitSat
       haccepts hsatisfied

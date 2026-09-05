@@ -272,8 +272,7 @@ def straightLineConstraintQuotientFinder
             family.toRootFamily basis pnu with
         | PSum.inl _ => none
         | PSum.inr relation =>
-            some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸
-              relation.toAlgebraicRelationWitness)
+            some (augmentedBasis_ursOfAugmentedBasis shape.k basis ▸ relation)
 
 /-- Complete straight-line relation finder: IPA, deployed unbatching, then quotient collision.
 Every branch returns explicit relation coefficients and no branch rewinds the adversary. -/

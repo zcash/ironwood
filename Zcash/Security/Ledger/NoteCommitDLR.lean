@@ -30,15 +30,6 @@ open Zcash.Circuits.Specs.Sinsemilla
 open Zcash.Security.Concrete
 open Zcash.Security.Ledger.Pool
 
-/-- The `NoteCommit` domain point `Q("z.cash:Orchard-NoteCommit-M")`, as a group
-element. -/
-def noteQpt : PallasGroup := PallasGroup.ofPoint noteQ (Or.inl noteQ_onCurve)
-
-/-- The `NoteCommit` randomness base, as a group element. -/
-def noteCommitRpt : PallasGroup :=
-  PallasGroup.ofPoint Ecc.MulFixed.Certs.noteCommitR.point
-    (Or.inl Ecc.MulFixed.Certs.noteCommitR.onCurve)
-
 /-- A scalar acts on the group as its canonical natural representative. -/
 theorem smul_eq_val_nsmul (r : Fq) (P : PallasGroup) : r • P = r.val • P := by
   rw [← Nat.cast_smul_eq_nsmul Fq, ZMod.natCast_zmod_val]
@@ -87,7 +78,15 @@ randomness base. -/
 def relationOfNoteCommitBreak {MSG SIG : Type*}
     (spendAuthVerify bindingVerify : PallasGroup → MSG → SIG → Prop)
     (brk : NoteCommitBreak (primitives (MSG := MSG) (SIG := SIG) spendAuthVerify bindingVerify)) :
-    NontrivialRelation (F := Fq) pallasS noteQpt noteCommitRpt :=
+    NontrivialRelation (F := Fq) pallasS orchardPoints :=
+  toOrchardPoints (V := ![noteQpt, noteCommitRpt])
+    (g := ![.idxNoteQ, .idxNoteCommitR])
+    (gr := fun s => match s with
+      | .idxNoteQ => some 0
+      | .idxNoteCommitR => some 1
+      | _ => none)
+    (hg := by intro x y; fin_cases x <;> cases y <;> decide)
+    (hpt := fun i => by fin_cases i <;> rfl) <|
   relationOfChainPmEq (Q := noteQ) (Or.inl noteQ_onCurve) (W := noteCommitRpt)
     (fun _ hm => chunksOf_mem_lt hm) (fun _ hm => chunksOf_mem_lt hm)
     (by simp [Pool.noteScalars])

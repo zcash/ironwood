@@ -657,7 +657,7 @@ def fixedColumn_eq_rowPolynomial_or_relation
       q.commId = .fixedCol column) :
     relation.polynomial (.fixedCol column) =
         instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hsome : (relation.route (.fixedCol column)).isSome := by
     obtain ⟨q, hq, hqid⟩ := hquery
     have routed := assembledQueryMemberRoute_faithful
@@ -767,7 +767,7 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
       relation.polynomial (.fixedCol column) =
         instanceRowPolynomial (2 ^ urs.k)
           top.omega (top.fixedRows.getD column [])) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hrowsVk : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
         (top.toVerifierKey urs).omega ^ (i : ℕ) := by
@@ -878,7 +878,7 @@ def topLevelFixedConstraints_or_relation
           (top.toVerifierKey urs) relation.polynomial proofIndex
           (top.usableRowsAt top.domainExponent))
         (top.operations) 0) ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   apply topLevelFixedConstraints_or_bad
     relation.polynomial
       hrows hn
@@ -958,7 +958,7 @@ def topLevelFixedEntryRead_or_relation
         (top.toVerifierKey urs) relation.polynomial proofIndex
         (top.usableRowsAt top.domainExponent)).fixed
           ⟨column⟩ (row : ℤ) = value ⊕'
-      NontrivialRelation (F := Fp) urs.g urs.u urs.w := by
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   apply topLevelFixedEntryRead_or_bad
     relation.polynomial
       hrows hn

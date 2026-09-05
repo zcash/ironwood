@@ -1,15 +1,15 @@
-import Zcash.Common.AlgebraicRelation
+import Zcash.Common.DiscreteLogRelation
 import Zcash.Snark.Soundness.Deployed.Binding
 
 /-!
 # The URS as an AGM basis
 
-The relation types and the relation-to-discrete-log reductions are model-free and live in
-`Zcash.Common.AlgebraicRelation`; this module is the AGM-side entry point to them. It carries the
-one piece that is specific to the deployed setup: the deployed URS `(g, U, W)` and the augmented
-basis an algebraic prover represents against are the same public group elements, viewed two ways
-(`ursOfAugmentedBasis` and its two round trips). A commitment collision then converts to a
-relation over the URS generators.
+The relation types and the known-log relation-to-discrete-log dischargers are model-free
+and live in `Zcash.Common.DiscreteLogRelation`; this module is the AGM-side entry point to
+them. It carries the one piece that is specific to the deployed setup: the deployed URS
+`(g, U, W)` and the augmented basis an algebraic prover represents against are the same
+public group elements, viewed two ways (`ursOfAugmentedBasis` and its two round trips). A
+commitment collision then converts to a relation over the URS generators.
 
 ## Computational boundary
 
@@ -46,12 +46,12 @@ omit [AddCommGroup G] in
 @[simp] theorem augmentedBasis_ursOfAugmentedBasis (k : ℕ)
     (basis : AugmentedIndex (2 ^ k) → G) :
     augmentedBasis (ursOfAugmentedBasis k basis).g
-      (ursOfAugmentedBasis k basis).u (ursOfAugmentedBasis k basis).w = basis := by
+      ![(ursOfAugmentedBasis k basis).u, (ursOfAugmentedBasis k basis).w] = basis := by
   funext i
   rcases i with i | j
   · rfl
   · fin_cases j <;> simp [augmentedBasis, ursOfAugmentedBasis, AugmentedIndex.u,
-      AugmentedIndex.w]
+      AugmentedIndex.w, BasisIndex.u, BasisIndex.w]
 
 omit [AddCommGroup G] in
 /-- The other round trip: every URS *is* the split of an augmented basis, namely its own.
@@ -62,12 +62,12 @@ basis the extractor represents against — be instantiated at a URS given as con
 a captured fixture's `capturedURS`. Without it the two families of statements cannot be joined:
 one quantifies over bases, the other names a record. -/
 theorem ursOfAugmentedBasis_augmentedBasis (urs : URS G) :
-    ursOfAugmentedBasis urs.k (augmentedBasis urs.g urs.u urs.w) = urs := by
+    ursOfAugmentedBasis urs.k (augmentedBasis urs.g ![urs.u, urs.w]) = urs := by
   cases urs with
   | mk k g w u =>
     simp only [ursOfAugmentedBasis, augmentedBasis, AugmentedIndex.gen, AugmentedIndex.u,
-      AugmentedIndex.w]
-    norm_num
+      AugmentedIndex.w, BasisIndex.gen, BasisIndex.u, BasisIndex.w, Sum.elim_inl,
+      Sum.elim_inr, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- A commitment collision gives an explicit nontrivial algebraic relation over the URS generators. -/
 def relationWitnessOfCollision (urs : URS G) {a a' : Fin (2 ^ urs.k) → F}

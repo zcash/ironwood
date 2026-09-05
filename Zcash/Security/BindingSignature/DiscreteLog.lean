@@ -1,4 +1,4 @@
-import Zcash.Common.AlgebraicRelation
+import Zcash.Common.DiscreteLogRelation
 import Zcash.Security.BindingSignature.Orchard
 import Zcash.Security.BindingSignature.Sapling
 
@@ -36,10 +36,13 @@ def NontrivialRelation.toAlgebraicRelationWitnessAt {m : ℕ} {Vbase Rbase : M}
     have hβ : rel.β = 0 := by
       have h := congrFun hzero r_idx
       simpa [Ne.symm hne] using h
-    rcases rel.nontrivial with ha | hα' | hβ'
-    · exact ha (Subsingleton.elim _ _)
-    · exact hα' hα
-    · exact hβ' hβ
+    apply rel.nontrivial
+    funext i
+    rcases i with i | j
+    · exact Fin.elim0 i
+    · fin_cases j
+      · exact hα
+      · exact hβ
   relation := by
     have hsplit : representationEval basis
         (fun i => (if i = v_idx then rel.α else 0) + (if i = r_idx then rel.β else 0))
@@ -47,7 +50,10 @@ def NontrivialRelation.toAlgebraicRelationWitnessAt {m : ℕ} {Vbase Rbase : M}
       simp only [representationEval, add_smul, ite_smul, zero_smul,
         Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, if_true]
     rw [hsplit, hV, hR]
-    simpa using rel.relation
+    have hr := rel.relation
+    simpa [NontrivialRelation.α, NontrivialRelation.β, representationEval,
+      Fintype.sum_sum_type, Fin.sum_univ_two, augmentedBasis, BasisIndex.u,
+      BasisIndex.w] using hr
 
 /-- Compute the discrete log of `Vbase` base `Rbase` from a two-base relation, assuming `Rbase ≠ 0`. -/
 def NontrivialRelation.toDiscreteLog [DecidableEq F] (Vbase Rbase : M)
@@ -56,13 +62,23 @@ def NontrivialRelation.toDiscreteLog [DecidableEq F] (Vbase Rbase : M)
   by_cases hα : r.α = 0
   · exfalso
     have hβ : r.β ≠ 0 := by
-      rcases r.nontrivial with ha | hαβ
-      · exact False.elim (ha (Subsingleton.elim _ _))
-      · rcases hαβ with hα' | hβ'
-        · exact False.elim (hα' hα)
-        · exact hβ'
+      intro hβ0
+      apply r.nontrivial
+      funext i
+      rcases i with i | j
+      · exact Fin.elim0 i
+      · fin_cases j
+        · exact hα
+        · exact hβ0
     have hβR : r.β • Rbase = 0 := by
-      simpa [commitGen, hα] using r.relation
+      calc r.β • Rbase
+          = r.α • Vbase + r.β • Rbase := by
+            rw [hα, zero_smul, zero_add]
+        _ = 0 := by
+            have hr := r.relation
+            simpa [NontrivialRelation.α, NontrivialRelation.β, representationEval,
+              Fintype.sum_sum_type, Fin.sum_univ_two, augmentedBasis, BasisIndex.u,
+              BasisIndex.w] using hr
     have hR0 : Rbase = 0 := by
       have h := congrArg (fun X : M => r.β⁻¹ • X) hβR
       simpa [smul_smul, inv_mul_cancel₀ hβ] using h

@@ -3,7 +3,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-import Zcash.Common.AlgebraicRelation
+import Zcash.Common.DiscreteLogRelation
 import Zcash.Security.RedDSA.Basic
 
 /-!
