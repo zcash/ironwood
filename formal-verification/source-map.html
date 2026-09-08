@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-910cf725.js";
+            window.path_to_searchindex_js = "../searchindex-498c5711.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -200,15 +200,14 @@ directory level, naming the notable modules as entry points.</p>
 <h2 id="top-level--zcash"><a class="header" href="#top-level--zcash">Top level — <code>Zcash/</code></a></h2>
 <ul>
 <li><strong><code>Common/</code></strong> — shared leaves that two tiers need and neither should import the other for.
-<code>DiscreteLogRelation</code> carries a nontrivial <code>F</code>-linear (discrete-log) relation among a family of
-generators as <em>computed data</em> — the coefficients — so the reduction-style security arguments can
-produce a break rather than merely assert one exists (see <em>breaks as computed data</em> on the
-<a href="../formal-verification.html">Formal Verification</a> page). <code>AlgebraicRelation</code> carries the same
-relation over an arbitrary indexed basis (<code>AlgebraicRelationWitness</code>) and turns one into a
-discrete log, either against known slot logs or against a basis programmed from the DL challenge
-(Jaeger–Tessaro, <a href="https://eprint.iacr.org/2020/1213">Expected-Time Cryptography: Generic Techniques and Applications to Concrete
-Soundness</a>, Lemma 3); <code>RelationProbability</code>
-and <code>RelationProbabilityCoins</code> price that reduction's single miss hyperplane at <code>1/|F|</code>, and
+<code>DiscreteLogRelation</code> carries a nontrivial <code>F</code>-linear (discrete-log) relation over an arbitrary
+indexed basis (<code>AlgebraicRelationWitness</code>) as <em>computed data</em> — the coefficients — so the
+reduction-style security arguments can produce a break rather than merely assert one exists (see
+<em>breaks as computed data</em> on the <a href="../formal-verification.html">Formal Verification</a> page), and
+turns one into a discrete log against known slot logs. <code>ProgrammedBasis</code> turns a relation into a
+discrete log against a basis programmed from the DL challenge (Jaeger–Tessaro,
+<a href="https://eprint.iacr.org/2020/1213">Expected-Time Cryptography: Generic Techniques and Applications to Concrete Soundness</a>, Lemma 3);
+<code>RelationProbability</code> and <code>RelationProbabilityCoins</code> price that reduction's single miss hyperplane at <code>1/|F|</code>, and
 <code>UniformMeasure</code> holds the distribution facts they count with. None of these restrict the
 adversary — they consume relation coefficients from any source, and what scopes them is how the
 basis is sampled — so they sit here rather than under <code>Snark/Soundness/AGM/</code>. <code>Expr</code> is the
@@ -439,7 +438,8 @@ consume.</p>
 <li><strong><code>AGM/</code></strong> — the algebraic-group-model layer: what it adds is the restriction on the <em>prover</em>,
 namely that it emits a representation alongside every group element (Fuchsbauer–Kiltz–Loss,
 <a href="https://eprint.iacr.org/2017/620">The Algebraic Group Model and its Applications</a>). The
-relation-to-discrete-log machinery itself is model-free and lives in <code>Common/AlgebraicRelation</code>;
+known-log relation-to-discrete-log machinery is model-free and lives in
+<code>Common/DiscreteLogRelation</code>, and the programmed-basis adapter in <code>Common/ProgrammedBasis</code>;
 <code>Adapter</code> supplies only the view of the deployed URS as an augmented basis <code>(g, U, W)</code>. This
 subtree adds the algebraic coefficients to the online prover interfaces (<code>OnlineMembers</code>,
 <code>OnlineMultiopen</code>), reifies erasable group-work events for adaptive programs (<code>CostedOracle</code>),
@@ -671,7 +671,13 @@ and <code>Nullifier</code> reducing a nullifier collision to a discrete-log rela
 the abstract primitives at the deployed pool, <code>Value</code> discharges the transaction-balance premiss
 against the binding-signature layer, <code>KeyBindingArm</code> discharges the key-binding ε in the oracle
 model, <code>Capstone</code> lifts the deterministic layer to a distribution over valid annotated ledgers,
-and <code>Completeness</code> checks the other direction — that an honest wallet's spend actually verifies.</li>
+and <code>Completeness</code> checks the other direction — that an honest wallet's spend actually verifies.
+The experiment lane places those capstones in the challenge-oracle model.
+<code>ConservationExperiment</code> and <code>IntegrityExperiment</code> compose the arms in one sample space
+—at the sampled bases and, in their <code>At</code> forms, at the deployed value bases— and
+<code>OrchardIntegrityExperiment</code> instantiates them at the deployed choices.
+<code>OrchardExtractionExperiment</code> builds the annotated adversary from a proof-emitting one,
+annotating its chain with the Action circuit's extracted witnesses.</li>
 </ul>
 
                     </main>

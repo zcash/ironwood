@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-910cf725.js";
+            window.path_to_searchindex_js = "../searchindex-498c5711.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -245,16 +245,17 @@ properties need to be strengthened by giving the adversary oracles that allow it
 control how the honest parties create transactions, generate keys (without telling the
 adversary those keys), etc. That is how these properties were originally defined at
 Zcon3 in <a href="https://raw.githubusercontent.com/daira/zcash-security/main/zcash-security.pdf">Understanding the Security of Zcash</a>.</p>
-<p>The formalization of <em>Balance integrity</em> is in better shape (modelling honest parties
-is not an issue for Balance properties; the adversary merely has to exhibit an
-unbalanced consensus-valid ledger). All the important pieces have been completed, but
-they have not yet been connected up. The remaining <strong>significant gap</strong> is that ledger
-security arguments are not yet tied into the Action circuit knowledge soundness proof
-at all: the games state their circuit premiss over their own abstract types, and no
-definition is currently shared between the two developments
-(<a href="https://github.com/zcash/ironwood/issues/147">#147</a> and
-<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Additional caveats are stated
-on the <a href="ledger-security-games.html">Ledger Security Games</a> page.</p>
+<p>The formalization of <em>Balance integrity</em> is in better shape (modeling honest parties is
+not an issue for Balance properties; the adversary merely has to exhibit an unbalanced
+consensus-valid ledger). All the important pieces have been completed, and the ledger
+security arguments are now tied into the Action circuit knowledge soundness proof: the
+composed extraction experiment annotates the ledger games' chains with the witnesses
+that the circuit's extractor computes, at the deployed value bases. What remains on that
+route is quantitative — per-bundle-size knowledge-soundness terms at a k·maxActions
+factor (<a href="https://github.com/zcash/ironwood/issues/214">#214</a>) — while the Spendability
+and Spend Authority games still consume annotations directly
+(<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Additional caveats are stated on
+the <a href="ledger-security-games.html">Ledger Security Games</a> page.</p>
 <p>For tractability, the modelled ledger also abstracts away from the real protocol in
 several directions:</p>
 <ul>

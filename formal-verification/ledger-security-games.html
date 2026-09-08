@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-910cf725.js";
+            window.path_to_searchindex_js = "../searchindex-498c5711.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -182,7 +182,10 @@
 under <code>Zcash/Snark/</code>. This page is its companion for the other half of the development: the
 protocol <strong>security properties</strong> under <code>Zcash/Security/</code>. It covers:</p>
 <ul>
-<li>the top-level capstones — the <em>ledger-model security games</em> of <em>Balance integrity</em>, <em>Spendability</em>, and <em>Spend authority</em>;</li>
+<li>the top-level capstones — the <em>ledger-model security games</em> of <em>Balance integrity</em>
+(<code>orchardBalanceIntegrityExtraction_measure_le_of_dlogProfiles</code>), <em>Spendability</em>
+(<code>faerieGoldCore</code>, <code>validLedger_append</code>), and <em>Spend authority</em>
+(<code>orchardSpendAuthority_measure_le</code>);</li>
 <li>how each capstone connects, by reduction via intermediate security properties such as
 <em>binding-signature balance</em> and <em>key binding</em>, to an exhibited break of a cryptographic
 primitive in a specified adversary model — and where the intended hand-off to <em>verifier
@@ -194,9 +197,9 @@ stack described in <a href="security-models.html">Security Models</a>.</p>
 <pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 50, &quot;padding&quot;: 6, &quot;diagramPadding&quot;: 4, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 4, &quot;bottom&quot;: 18}}, &quot;themeCSS&quot;: &quot;.cluster-label { font-weight: 700; font-size: 1.1em; font-family: raleway, sans-serif; } marker { overflow: visible !important; } marker path { transform-box: fill-box !important; transform-origin: center !important; transform: scale(1.25) !important; }&quot;}}%%
 flowchart TD
   subgraph GAMES[&quot;Ledger capstones&quot;]
-    BAL[&quot;Balance integrity&lt;br/&gt;orchardBalanceIntegrity_measure_le&quot;]
-    SPEND[&quot;Spendability&lt;br/&gt;faerieGoldCore&lt;br/&gt;validLedger_append&quot;]
-    SPENDAUTH[&quot;Spend authority&lt;br/&gt;orchardSpendAuthority_measure_le&quot;]
+    BAL[&quot;&lt;span style='display:inline-block; padding:0.2em 0.45em; font-size:1.12em'&gt;Balance integrity&lt;/span&gt;&quot;]
+    SPEND[&quot;&lt;span style='display:inline-block; padding:0.2em 0.45em; font-size:1.12em'&gt;Spendability&lt;/span&gt;&quot;]
+    SPENDAUTH[&quot;&lt;span style='display:inline-block; padding:0.2em 0.45em; font-size:1.12em'&gt;Spend authority&lt;/span&gt;&quot;]
   end
 
   BAL --&gt; BS[&quot;Binding-signature&lt;br/&gt;balance&quot;]
@@ -208,18 +211,14 @@ flowchart TD
   SPEND ---&gt; MERK
   SPEND ---&gt; KB
   SPEND ---&gt; NFB[&quot;Nullifier binding&quot;]
-  SPEND ---&gt; SPENDAUTH
+  SPEND --&gt; SPENDAUTH
   SPENDAUTH --&gt; KB
 
   subgraph ASSUMPTIONS[&quot;Hardness assumptions&quot;]
-    DL[(&quot;Discrete log&quot;)]
+    DL{{&quot;&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;Discrete log&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;&quot;}}
   end
 
-  subgraph MODELS[&quot;Heuristic adversary models&quot;]
-    ROM[(&quot;Random oracle&quot;)]
-  end
-
-  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| NDLR[&quot;NontrivialRelation&lt;br/&gt;(&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;V&lt;/span&gt;&lt;/span&gt;,&amp;nbsp;&lt;span class='katex'&gt;&lt;span class='mord mathcal'&gt;R&lt;/span&gt;&lt;/span&gt;) discrete-log&lt;br/&gt;relation&quot;]
+  BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/Balance.lean'&gt;non-balancing&lt;br/&gt;bundle computes&lt;/a&gt;&quot;| CDLR{{&quot;&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;Nontrivial discrete-log&lt;br/&gt;relation, combined&lt;br/&gt;deployed basis (Pallas)&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;&quot;}}
   BS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionArm.lean'&gt;verifying signature&lt;br/&gt;the extractor misses&lt;/a&gt;&quot;| KERR[&quot;RedDSA&lt;br/&gt;extractability&quot;]
   BS --&gt; STMT[&quot;Witness or replay&lt;br/&gt;evidence&lt;br/&gt;ActionSatisfied&lt;br/&gt;§4.17.4&quot;]
   NCB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Statement.lean'&gt;wrong note&lt;br/&gt;opening computes&lt;/a&gt;&quot;| NCBK[&quot;NoteCommitBreak&quot;]
@@ -227,27 +226,22 @@ flowchart TD
   MERK --&gt; STMT
   MERK ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Merkle.lean'&gt;wrong Merkle&lt;br/&gt;path computes&lt;/a&gt;&quot;| MC[&quot;DefinedCollision&lt;br/&gt;one height,&lt;br/&gt;encoding domain&quot;]
   KB --&gt; STMT
-  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/KeyBindingDLR.lean'&gt;Orchard-protocol&lt;br/&gt;CommitIvkCollision&lt;br/&gt;computes&lt;/a&gt;&quot;| SDLR
-  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS[&quot;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&quot;]
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/KeyBindingDLR.lean'&gt;Orchard-protocol&lt;br/&gt;CommitIvkCollision&lt;br/&gt;computes&lt;/a&gt;&quot;| CDLR
+  KB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/KeyBinding/Basic.lean'&gt;conflicting ivk&lt;br/&gt;witnesses compute&lt;/a&gt;&quot;| CUS{{&quot;&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;CollisionUpToSign&lt;br/&gt;shifted oracle,&lt;br/&gt;distinct queries&lt;span style='display:block; height:0.5em'&gt;&lt;/span&gt;&quot;}}
   NFB --&gt; STMT
   NFB ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean'&gt;distinct derive-inputs +&lt;br/&gt;equal nullifier&lt;br/&gt;computes&lt;/a&gt;&quot;| NFC[&quot;NullifierCollision&quot;]
-  SPENDAUTH ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
+  SPENDAUTH --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean'&gt;verified signature over&lt;br/&gt;unsigned sighash computes&lt;/a&gt;&quot;| SAF[&quot;SpendAuthForgery&lt;br/&gt;(randomization&lt;br/&gt;of ±ak)&quot;]
 
-  STMT STMTtoKS@-. &quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/issues/147'&gt;intended hand-off:&lt;br/&gt;not yet formalized&lt;br/&gt;(#147, #155)&lt;/a&gt;&quot; .-&gt; KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&lt;br/&gt;(separate development)&quot;]
-  NCBK --&gt; SDLR[&quot;Sinsemilla&lt;br/&gt;discrete-log&lt;br/&gt;relation&quot;]
+  STMT STMTtoKS@--&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardExtractionExperiment.lean'&gt;Balance: extract&lt;br/&gt;witness-annotated chain&lt;br/&gt;(#155 for the other games)&lt;/a&gt;&quot;| KS[&quot;Knowledge soundness:&lt;br/&gt;accepting proof yields&lt;br/&gt;witness or break data&quot;]
+  NCBK --&gt; CDLR
 
-  KERR KERRtoNDLR@==&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| NDLR
-  KERR ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/KnowledgeError.lean'&gt;challenge hash as random&lt;br/&gt;oracle; query-time labels&lt;br/&gt;pin the bad challenge&lt;/a&gt;&quot;| ROM
-  NDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  SDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  KS KStoDL@===&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean'&gt;independent&lt;br/&gt;hash-to-curve bases&lt;/a&gt;&quot;| DL
-  KS --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/tree/main/Zcash/Snark/Soundness/FiatShamir'&gt;Fiat–Shamir&lt;br/&gt;heuristic&lt;/a&gt;&quot;| ROM
-  MC --&gt; SDLR
-  CUS ---&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean'&gt;birthday counting&lt;br/&gt;q(q-1)/|𝔽|,&lt;br/&gt;no assumption&lt;/a&gt;&quot;| ROM
-  NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Nullifier.lean'&gt;distinct-note openings&lt;br/&gt;compute&lt;/a&gt;&quot;| SDLR
+  KERR KERRtoCDLR@==&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/RedDSA/Extraction.lean'&gt;good challenge&lt;br/&gt;computes&lt;/a&gt;&quot;| CDLR
+  CDLR --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/BindingSignature/DiscreteLog.lean'&gt;independent&lt;br/&gt;group-hash bases&lt;br/&gt;(Pallas)&lt;/a&gt;&quot;| DL
+  KS KStoDL@===&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean'&gt;independent&lt;br/&gt;group-hash bases&lt;br/&gt;(Vesta)&lt;/a&gt;&quot;| DL
+  MC --&gt; CDLR
+  NFC --&gt;|&quot;&lt;a target='_blank' href='https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/NullifierDLR.lean'&gt;distinct openings&lt;br/&gt;compute&lt;/a&gt;&quot;| CDLR
   SAF ---&gt; RDSA[&quot;RedDSA unforgeability,&lt;br/&gt;±-randomized keys&quot;]
-  RDSA RDSAtoDL@==&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2019/877'&gt;straight-line AGM extraction&lt;/a&gt;&quot;| DL
-  RDSA --&gt;|&quot;challenge hash&lt;br/&gt;as random oracle&quot;| ROM
+  RDSA RDSAtoDL@===&gt;|&quot;re-rand reduction&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2015/395'&gt;[FKMSSS2016]&lt;/a&gt; +&lt;br/&gt;&lt;a target='_blank' href='https://eprint.iacr.org/2019/877'&gt;straight-line AGM extraction&lt;/a&gt;&quot;| DL
 
   click BAL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Balance.lean&quot; _blank
   click SPEND &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
@@ -263,55 +257,74 @@ flowchart TD
   click CUS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
   click NFC &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Spendability.lean&quot; _blank
   click SAF &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SpendAuthority.lean&quot; _blank
-  click NDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
-  click SDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
+  click CDLR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SinsemillaDLR.lean&quot; _blank
   click KS &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Relation/KnowledgeSoundness.lean&quot; _blank
   click DL &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Common/DiscreteLogRelation.lean&quot; _blank
-  click ROM &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/RandomOracle.lean&quot; _blank
   click KERR &quot;https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/ExtractionKnowledgeError.lean&quot; _blank
   click RDSA &quot;https://github.com/zcash/ironwood/issues/121&quot; _blank
 
   classDef proven fill:#1a7f37,stroke:#116329,color:#ffffff
   classDef checked fill:#0969da,stroke:#0550ae,color:#ffffff
   classDef partial fill:#9a6700,stroke:#7d4e00,color:#ffffff
-  classDef hyp fill:#cf222e,stroke:#a40e26,color:#ffffff
+  classDef hyp fill:#a41826,stroke:#82071e,color:#ffffff
   classDef assumed fill:#57606a,stroke:#424a53,color:#ffffff
-  class BAL,SPEND,SPENDAUTH,KS partial
-  class NCB,BS,KB,MERK,NFB,STMT,NDLR,CUS,NCBK,MC,NFC,SAF,SDLR,KERR checked
+  class SPEND,SPENDAUTH partial
+  class BAL,NCB,BS,KB,MERK,NFB,STMT,CDLR,CUS,NCBK,MC,NFC,SAF,KERR,KS checked
   class RDSA hyp
-  class DL,ROM assumed
+  class DL assumed
   classDef agmEdge stroke:#8858c8,stroke-width:4.2px
-  classDef gapEdge stroke:#cf222e,stroke-width:3.5px,stroke-dasharray: 7.5 3.2
-  class KERRtoNDLR,KStoDL,RDSAtoDL agmEdge
-  class STMTtoKS gapEdge
+  class KERRtoCDLR,KStoDL,RDSAtoDL,STMTtoKS agmEdge
 </pre>
 <p>
-<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the online-AGM — both endpoint games are <a href="security-models.html#the-algebraic-adversary-restriction">algebraic</a><br/>
-<span style="color:#cf222e; font-weight: 700; font-size: 1.9rem">⇢</span> dashed red edge: an intended hand-off that is not yet formalized — the endpoints share no definition (<a href="https://github.com/zcash/ironwood/issues/147">#147</a>, <a href="https://github.com/zcash/ironwood/issues/155">#155</a>)<br/>
+<span style="color:#8858c8; font-weight: 700; font-size: 1.9rem">➞</span> heavy purple edge: a reduction (or intended reduction) in the AGM+RO — the adversary is <a href="security-models.html#the-algebraic-adversary-restriction">algebraic</a> and the challenge oracle is a random oracle that the reduction may program<br/>
 <span style="font-size: 1.9rem">➝</span> thin edge: depends on (a reduction, assumption, or model)<br/>
 <span style="color:#1a7f37"> ■ </span> fully proven — nothing here yet<br/>
 <span style="color:#0969da"> ■ </span> stated and machine-checked in Lean, over abstract primitives<br/>
-<span style="color:#9a6700"> ■ </span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end: composing the per-arm oracle-model discharges into one experiment, RedDSA unforgeability; knowledge soundness's circuit-correctness conditions)<br/>
-<span style="color:#cf222e"> ■ </span> named hypothesis; formalization deferred<br/>
-<span style="color:#57606a"> ■ </span> assumption or heuristic model; terminal by design<br/>
+<span style="color:#9a6700"> ■ </span> partly machine-checked; remainder tracked (discharging the capstones' named ε's end to end; the effect of undischarged RedDSA unforgeability on the Spendability and Spend authority goals)<br/>
+<span style="color:#a41826"> ■ </span> named hypothesis; formalization deferred<br/>
+<span style="color:#57606a"> ■ </span> assumption; terminal by design<br/>
 </p>
-<h2 id="what-the-balance-capstones-assume"><a class="header" href="#what-the-balance-capstones-assume">What the Balance capstones assume</a></h2>
-<p>The Balance capstones are stated for a <em>Knowledge-Soundness-idealized</em> adversary
-(<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardIntegrityExperiment.lean"><code>IdealizedKSBalanceAdversary</code></a>):
-one that outputs a witness-annotated ledger, every Action carrying the witness for the
-Action statement. The annotation is where knowledge soundness of the Action circuit enters:
-nothing yet connects an accepting Halo 2 proof to those witnesses, so the <code>idealizedks</code> in
-the capstones' names marks results that are complete over this idealized ledger model but
-not yet composed with the circuit layer. That composition is the dashed red edge above
-(<a href="https://github.com/zcash/ironwood/issues/147">#147</a>); until it lands, the Balance
-integrity node stays amber even though every ledger-side arm is machine-checked. This is an
-incompleteness of the proof, not an accepted modelling trade-off. The capstones' accepted
-trade-offs —the binding challenge hash as a random oracle, the programmed value and
-binding bases carried to the deployed ones by the reference-string heuristic, elided byte
-encodings— are documented at <code>IdealizedKSBalanceAdversary.violationEvent</code>.</p>
 <p>This picture is a deliberate approximation, and is likely to change as the formalization
-proceeds. The RedDSA node is a named hypothesis rather than a terminal assumption: its
-discharge edge names the reduction for security of signatures with re-randomizable keys
+proceeds.</p>
+<h2 id="what-the-balance-capstones-assume"><a class="header" href="#what-the-balance-capstones-assume">What the Balance capstones assume</a></h2>
+<p>The composed Balance capstones are stated for a proof-emitting adversary
+(<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardExtractionExperiment.lean"><code>ExtractionBalanceAdversary</code></a>):
+one that outputs a ledger whose Actions carry accepting proofs, with no witnesses
+supplied. Knowledge soundness of the Action circuit enters through the extractor:
+<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardExtractionExperiment.lean"><code>OrchardExtractionExperiment</code></a>
+builds a <em>Knowledge-Soundness-idealized</em> adversary
+(<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/OrchardIntegrityExperiment.lean"><code>IdealizedKSBalanceAdversary</code></a>)
+—one whose every Action carries the witness for the Action statement— by annotating the
+chain with the witnesses that the extractor computes from the sampled runs. Per bundle,
+<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/SinsemillaDLR.lean"><code>actionSpecToLedgerData</code></a>
+refines each extracted circuit witness to the games-facing ledger data or a computed
+Sinsemilla break, and <code>bundleLedgerData</code> traverses the whole bundle. Each component
+argument consumes the Action statement's satisfaction (<code>ActionSatisfied</code>) on the
+annotated witness; in the model's replay case, the ledger oracle reproduces the
+previously supplied witness. The composed endpoints bound the extraction-failure arm
+together with the deployed violation events.
+The <code>_idealizedks</code> endpoints remain, stated directly over that annotated model —their
+names mark it— and the composed capstones consume them at the constructed adversary.</p>
+<p>On the composed route to the Balance goals, the <code>_of_dlogProfiles</code> endpoints carry no
+per-arm hypotheses at all. The knowledge arm is discharged by the adaptive-statement
+capstone, applied once per slot-size pair, and every relation arm —the per-pair escapes,
+the Sinsemilla reducer's relations, and the value-DLR finder's— is carried by the single
+term <code>combinedDLRAdvantage</code>: one event over the composed deployed experiment, whose
+samples all compute nontrivial relations over the combined deployed basis
+(<code>orchardPoints</code>). The k·maxActions factor multiplies only the knowledge arm and is
+tracked as <a href="https://github.com/zcash/ironwood/issues/214">#214</a>. The deployed forms
+state validity at the deployed value bases: the value commitment is definitionally the
+deployed one, with no reference-string step on the value side. Their accepted
+trade-offs —the binding challenge hash as a random oracle, the per-size finite
+presentation of the Fiat–Shamir oracle, and elided byte encodings— are documented at
+<code>IdealizedKSBalanceAdversary.deployedViolationEvent</code>. For Spendability and Spend
+Authority the annotations remain a modeling assumption: those games are not yet
+composed with the circuit layer, and
+<a href="https://github.com/zcash/ironwood/issues/155">#155</a> tracks the oracle-machine layer
+for their capstone slots.</p>
+<p>Also open is RedDSA unforgeability. The RedDSA node is a named hypothesis rather than a
+terminal assumption: its discharge edge names the reduction for security of signatures
+with re-randomizable keys
 (<a href="https://eprint.iacr.org/2015/395">Efficient Unlinkable Sanitizable Signatures from Signatures with Re-Randomizable Keys</a>,
 section 3), adapted to the ±-randomized variant, together with the same straight-line
 AGM+ROM extraction of Fuchsbauer–Plouviez–Seurin
@@ -325,28 +338,17 @@ oracle at the re-randomized key; the randomizer, carried by the forgery, enters 
 extraction as a known coefficient.</p>
 <p>Every solid arrow reads "rests on"; where an edge carries a label, the label names the
 computed break object flowing along it, or the side condition under which the reduction
-holds (base independence from hash-to-curve, the birthday count). Heavy purple arrows
-mark reductions (or intended reductions) stated for algebraic adversaries: both the
-source and the target of such an edge are interpreted as games against online-AGM
-adversaries, so the model scopes the whole reduction rather than being one more
-assumption it rests on — see
+holds (base independence from the group hash). Heavy purple arrows mark reductions (or
+intended reductions) in the AGM+RO: both the source and the target of such an edge are
+interpreted as games against online-AGM adversaries with the challenge oracle as a
+programmable random oracle, so the model scopes the whole reduction rather than being
+one more assumption it rests on — see
 <a href="security-models.html#the-algebraic-adversary-restriction">Security Models</a>. The
-random-oracle node remains a terminal because some error terms genuinely bottom out
-there: they are counting arguments over the oracle table, with no computational
-assumption. The games are the top-level capstones.</p>
-<p>As stated above, the KS-idealized ledger model requires the adversary to supply, along
-with any accepting proof, a <strong>witness or replay evidence</strong> for the Action statement
-(<code>ActionSatisfied</code>) — in the replay case the ledger oracle can produce the previously
-supplied witness. Each component argument consumes the statement's satisfaction
-<em>on that witness</em>. Knowledge soundness is what is <em>intended</em> to justify that modelling:
-whenever the ledger layer needs a witness, the extractor would compute one —or compute
-break data— from the accepting proof. That hand-off is not yet formalized in any form:
-the games state <code>ActionSatisfied</code> over their own abstract types, and no definition is
-shared with the SNARK development. The dashed red edge marks exactly this gap
-(<a href="https://github.com/zcash/ironwood/issues/147">#147</a>,
-<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Until it lands, the
-witness-supply requirement is a modelling assumption of the ledger games, not a
-consequence of verifier knowledge soundness.</p>
+<code>CollisionUpToSign</code> arm is terminal without any assumption — its bound is the
+<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Common/Birthday.lean">birthday count</a>
+over the oracle table, a pure counting argument. It is the one purely random-oracle
+reduction on this page, and it belongs to the ZIP 2005 recovery analysis rather than
+the pre-quantum story. The games are the top-level capstones.</p>
 <style>
 /* "One picture, not yet connected" links: labels keep their ordinary colour at rest
    (blue is reserved for the status coding); hover underlines. */
