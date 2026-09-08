@@ -24,9 +24,8 @@ and `short_range_check` generic over `K : ℕ`. The value-level range arithmetic
 bound as an explicit hypothesis, so the whole port stays `K`-generic (the Orchard `K = 10`
 discharges the bound by `norm_num`). See `lookup-design.md` §4.
 
-The pure field-arithmetic core (the `2^(K−num_bits)` shift argument) is lifted from the
-phase-one donor `Clean/Orchard/Utilities.lean`, namespace `LookupRangeCheck` — restated
-`K`-generically here.
+The pure field-arithmetic core (the `2^(K−num_bits)` shift argument) is stated
+`K`-generically.
 -/
 
 namespace Zcash.Circuits.LookupRangeCheck
@@ -488,12 +487,11 @@ theorem load_tableLoaded (K : ℕ) (cfg : Config K) (place : RegionIndex → ℕ
 
 /-! ## The pure value-math core of `short_range_check` soundness
 
-Lifted from the phase-one donor `Clean/Orchard/Utilities.lean`,
-`LookupRangeCheck.shortRange_soundness_aux`, restated `K`-generically with the field-card
-bound as an explicit hypothesis. Zero framework vocabulary — pure `Fp`/`ℕ` arithmetic:
+This core is stated `K`-generically, with the field-card bound as an explicit hypothesis,
+and with no framework vocabulary — pure `Fp`/`ℕ` arithmetic:
 `element·2^(K−num_bits) < 2^K ∧ element < 2^K ⇒ element < 2^num_bits`. -/
 
-/-- The shift argument (donor `shortRange_soundness_aux`). If the word and its shift by
+/-- The shift argument. If the word and its shift by
 `2^(K−num_bits)` are both `< 2^K`, then the word is `< 2^num_bits`. The card bound
 `2^K · 2^K < |Fp|` licenses reading the product `word.val · 2^(K−num_bits)` off the field
 element `shifted`. -/
@@ -525,8 +523,8 @@ theorem shortRange_soundness_aux (K numBits : ℕ) (hNumBits : numBits ≤ K)
   rw [hShiftedVal] at hShifted
   exact Nat.not_lt_of_ge hle hShifted
 
-/-- Completeness shift-bound (donor `shortRange_completeness_shifted`): if `word < 2^num_bits`
-then its shift by `2^(K−num_bits)` is `< 2^K`. -/
+/-- Completeness shift-bound: if `word < 2^num_bits` then its shift by `2^(K−num_bits)` is
+`< 2^K`. -/
 theorem shortRange_completeness_shifted (K numBits : ℕ) (hNumBits : numBits ≤ K)
     (hCard : 2 ^ K < PALLAS_BASE_CARD)
     (word : Fp) (hWord : word.val < 2 ^ numBits) :
@@ -888,13 +886,11 @@ theorem shortRangeCheck_configured_permutationColumns_eq
 
 /-! ## The pure telescoping algebra for `range_check`
 
-Lifted `K`-generically from the phase-one donor `Clean/Orchard/Utilities.lean`,
-`LookupRangeCheck.CopyCheck.{chain_telescope, element_lt}` (there `K` is fixed at `10`; here
-it is a parameter). Zero framework vocabulary — a running-sum chain `f : ℕ → Fp` with each
-step a `K`-bit word telescopes to `f 0 = lo + 2^{K·k}·f k` with `lo < 2^{K·k}`. -/
+No framework vocabulary, and `K` is a parameter: a running-sum chain `f : ℕ → Fp` whose
+steps are `K`-bit words telescopes to `f 0 = lo + 2^{K·k}·f k` with `lo < 2^{K·k}`. -/
 
-/-- Telescoping a `K`-bit running-sum chain (donor `CopyCheck.chain_telescope`, `K`-generic):
-`f 0` splits into `K·k` low bits and `2^{K·k}·f k`. -/
+/-- Telescoping a `K`-bit running-sum chain: `f 0` splits into `K·k` low bits and
+`2^{K·k}·f k`. -/
 theorem chain_telescope (K : ℕ) (f : ℕ → Fp) :
     ∀ k : ℕ,
     (∀ i, i < k → ∃ w : ℕ, w < 2 ^ K ∧ f i = 2 ^ K * f (i + 1) + (w : Fp)) →
@@ -916,9 +912,8 @@ theorem chain_telescope (K : ℕ) (f : ℕ → Fp) :
       rw [show K * (k + 1) = K * k + K from by ring, pow_add]
       ring
 
-/-- A fully-decomposed chain (`f numWords = 0`) bounds `f 0` below `2^{K·numWords}`
-(donor `CopyCheck.element_lt`, `K`-generic). The card bound `2^{K·numWords} ≤ |Fp|` reads
-the low part off the field element. -/
+/-- A fully-decomposed chain (`f numWords = 0`) bounds `f 0` below `2^{K·numWords}`. The
+card bound `2^{K·numWords} ≤ |Fp|` reads the low part off the field element. -/
 theorem chain_element_lt (K numWords : ℕ) (hCard : 2 ^ (K * numWords) ≤ PALLAS_BASE_CARD)
     (f : ℕ → Fp)
     (hchain : ∀ i, i < numWords → ∃ w : ℕ, w < 2 ^ K ∧ f i = 2 ^ K * f (i + 1) + (w : Fp))
@@ -930,8 +925,8 @@ theorem chain_element_lt (K numWords : ℕ) (hCard : 2 ^ (K * numWords) ≤ PALL
   exact hlo
 
 /-- The honest running word `z_idx − 2^K·z_{idx+1}` with `z_idx = ↑(b)`,
-`z_{idx+1} = ↑(b / 2^K)` is the low `K`-bit chunk of `b`, hence `< 2^K`.
-Donor `CopyCheck.word_val_lt`, `K`-generic (needs `2^K ≤ |Fp|`). -/
+`z_{idx+1} = ↑(b / 2^K)` is the low `K`-bit chunk of `b`, hence `< 2^K` (this needs
+`2^K ≤ |Fp|`). -/
 theorem honest_word_val_lt (K : ℕ) (hCard : 2 ^ K ≤ PALLAS_BASE_CARD) (b : ℕ) :
     ZMod.val ((b : Fp) - 2 ^ K * ((b / 2 ^ K : ℕ) : Fp)) < 2 ^ K := by
   have hsub : (b : Fp) - 2 ^ K * ((b / 2 ^ K : ℕ) : Fp) = ((b % 2 ^ K : ℕ) : Fp) := by
@@ -942,7 +937,7 @@ theorem honest_word_val_lt (K : ℕ) (hCard : 2 ^ K ≤ PALLAS_BASE_CARD) (b : �
 
 open CompElliptic.Fields.Pasta (PALLAS_BASE_CARD) in
 /-- A fully-decomposed chain pins each running sum to the exact shift of the element:
-`(f k).val = (f 0).val / 2^(K·k)` (donor `CopyCheck.read`, chain-language). -/
+`(f k).val = (f 0).val / 2^(K·k)`. -/
 theorem chain_read (K numWords : ℕ) (hpow : K * numWords ≤ 254) (f : ℕ → Fp)
     (hchain : ∀ i, i < numWords → ∃ w : ℕ, w < 2 ^ K ∧ f i = 2 ^ K * f (i + 1) + (w : Fp))
     (htop : f numWords = 0) (k : ℕ) (hk : k ≤ numWords) :
@@ -997,8 +992,7 @@ recursive `RegionCircuit` def over `numWords` whose `operations` is, by `rfl` (f
 monad's append-bind, `Lemmas.lean`), the concatenation of per-round op lists:
 `(loop (n+1)).operations self = (loop n).operations self ++ (round n).operations self`.
 That append shape is what lets the z-chain invariant be proven by induction over rounds
-(`rangeCheck_loop_word_bounds` below), and the telescoping algebra (lifted `K`-generically
-from the donor `Clean/Orchard/Utilities.lean`, `CopyCheck.chain_telescope`) then reads the
+(`rangeCheck_loop_word_bounds` below), and the telescoping algebra then reads the
 decomposition off the chain. -/
 
 /-- The output of `range_check`: the first (`z_0 = element`) and last (`z_{numWords}`)
@@ -1009,9 +1003,9 @@ structure Output (F : Type) where
   zLast : F
 deriving ProvableStruct
 
-/-- The honest running-sum witness value at word `idx`: `z_idx = element ≫ (K·idx)`
-(donor `CopyCheck.main`). As a witgen program over the `element` cell: cast to ℕ (`.val`),
-shift right by `K·idx` bits (`.div` by `2^(K·idx)`), cast back to the field (`.ofNat`). -/
+/-- The honest running-sum witness value at word `idx`: `z_idx = element ≫ (K·idx)`. As a
+witgen program over the `element` cell: cast to ℕ (`.val`), shift right by `K·idx` bits
+(`.div` by `2^(K·idx)`), cast back to the field (`.ofNat`). -/
 def zWitness (K idx : ℕ) (element : AssignedCell Fp) : WitgenIR Fp 1 :=
   .ofFExpr (.ofNat (.div (.val (.expr element)) (.const (2 ^ (K * idx)))))
 
@@ -1515,7 +1509,7 @@ def rangeCheck (K numWords : ℕ) (strict : Bool) :
 
   -- honest-prover precondition: in `strict` mode the element genuinely fits in `K·numWords`
   -- bits (the assertion precondition — the honest prover can only satisfy `z_last = 0` then).
-  -- Non-strict imposes nothing. Established assertion-gadget pattern (cf. donor `Decomposed`).
+  -- Non-strict imposes nothing. Established assertion-gadget pattern.
   ProverAssumptions input _ _ := strict = true → input.element.val < 2 ^ (K * numWords)
 
   -- honest-prover postcondition (C6): the high-tail cell `zLast` holds the honest NATURAL-NUMBER
@@ -1990,10 +1984,10 @@ theorem rangeCheckAtDecomposedBody_output (numWords : ℕ) (cfg : Config 10)
         z13 := AssignedCell.of self (offset + 13) cfg.runningSum } := rfl
 
 open CompElliptic.Fields.Pasta (PALLAS_BASE_CARD) in
-/-- The positional strict 25-word running-sum check exposing `z_1`/`z_13` (donor
-`CopyCheck.Decomposed`, positional): Rust `witness_check(j, 25, true)` as consumed by
-`y_canonicity` (`note_commit.rs:1997-2010`), which hands out `zs[1]` and `zs[13]`. The
-strict tail derives `elt < 2^250` and pins every running sum to the exact shift. -/
+/-- The positional strict 25-word running-sum check exposing `z_1`/`z_13`: Rust
+`witness_check(j, 25, true)` as consumed by `y_canonicity` (`note_commit.rs:1997-2010`),
+which hands out `zs[1]` and `zs[13]`. The strict tail derives `elt < 2^250` and pins every
+running sum to the exact shift. -/
 def rangeCheckAtDecomposed (numWords : ℕ) (h13 : 13 ≤ numWords)
     (hpow : 10 * numWords ≤ 254) :
     FormalRegionCircuit Fp (Config 10) (Config 10) unit DecomposedOutput where

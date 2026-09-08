@@ -8,18 +8,17 @@ Reference (ported from actual Rust, not memory):
 `ak/a/b/b_0/b_2/z13_a/a_prime/z13_a_prime` and witnesses `b_1`; row 1 copies
 `nk/c/d/d_0/z13_c/b2_c_prime/z14_b2_c_prime` and witnesses `d_1`.
 
-The semantic contract is the phase-1 `CommitIvk.Gate` spec verbatim; the canonicity
-value arguments are the donor row-level lemmas (`soundness_ak`/`soundness_nk` and the
-extracted `eqs_of_spec`).
+The semantic contract is the `CommitIvk.Gate` spec; the canonicity value arguments are
+the row-level lemmas (`soundness_ak`/`soundness_nk` and the extracted `eqs_of_spec`).
 -/
 
 namespace Zcash.Circuits.CommitIvk
 
 open Halo2
 
-private abbrev DRow := Gate.Input
-private abbrev DSpec := Gate.Spec
-private abbrev DAssumptions := Gate.Assumptions
+private abbrev GateRow := Gate.Input
+private abbrev GateSpec := Gate.Spec
+private abbrev GateAssumptions := Gate.Assumptions
 
 /-- `v·(1−v) = 0` pins a boolean. -/
 private theorem isBool_of_boolCheck {v : Fp} (h : v * (1 - v) = 0) : IsBool v := by
@@ -46,8 +45,8 @@ structure Inputs (F : Type) where
   z14B2CPrime : F
 deriving ProvableStruct
 
-/-- The donor-side row at the witnessed `(b1, d1)` pair. -/
-def toDonor (row : Inputs Fp) (b1 d1 : Fp) : DRow Fp :=
+/-- The gate row at the witnessed `(b1, d1)` pair. -/
+def toGateRow (row : Inputs Fp) (b1 d1 : Fp) : GateRow Fp :=
   ⟨row.ak, row.nk, row.a, row.bWhole, row.c, row.dWhole, row.b0, b1, row.b2,
     row.d0, d1, row.z13A, row.z13C, row.aPrime, row.b2CPrime, row.z13APrime,
     row.z14B2CPrime⟩
@@ -148,8 +147,8 @@ def bundleElaborated (wb1 wd1 : WitgenIR Fp 1) :
 
 /-- Rust `CommitIvkChip` canonicity `assign` (`commit_ivk.rs:519-660`), parameterized by
 the `b_1`/`d_1` witness programs. The `(b1, d1)` readings are the extraction data;
-`Spec` is the donor `CommitIvk.Gate.Spec` at them, `Assumptions` the input-only donor
-rely-conditions (the two witnessed-bit implications move to `ProverAssumptions`). -/
+`Spec` is `CommitIvk.Gate.Spec` at them, `Assumptions` the input-only rely-conditions
+(the two witnessed-bit implications move to `ProverAssumptions`). -/
 def bundle (wb1 wd1 : WitgenIR Fp 1) :
     FormalRegionCircuit Fp Config Config Inputs unit where
   configure := pure
@@ -161,7 +160,7 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
     (eval env (AssignedCell.of self offset (cfg.advices 4) : Var field Fp),
      eval env (AssignedCell.of self (offset + 1) (cfg.advices 4) : Var field Fp))
 
-  -- the input-only rely-conditions (donor `Assumptions` minus the witnessed-bit
+  -- the input-only rely-conditions (`Assumptions` minus the witnessed-bit
   -- implications)
   -- input-only rely-conditions: the gate itself enforces both shifts (constraints 9/13)
   Assumptions input :=
@@ -174,14 +173,14 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
     (∃ lo : ℕ, lo < 2 ^ 140 ∧
       input.b2CPrime = ((lo : ℕ) : Fp) + ((2 ^ 140 : ℕ) : Fp) * input.z14B2CPrime)
 
-  Spec := fun input _ (wit : Fp × Fp) => DSpec (toDonor input wit.1 wit.2)
+  Spec := fun input _ (wit : Fp × Fp) => GateSpec (toGateRow input wit.1 wit.2)
 
   ProverAssumptions := fun input (wit : Fp × Fp) _ =>
     (wit.1 = 1 → input.z13APrime = 0) ∧ (wit.2 = 1 → input.z14B2CPrime = 0) ∧
     input.aPrime = input.a + ((2 ^ 130 : ℕ) : Fp) - tP ∧
     input.b2CPrime = input.b2 + input.c * ((2 ^ 5 : ℕ) : Fp)
       + ((2 ^ 140 : ℕ) : Fp) - tP ∧
-    DSpec (toDonor input wit.1 wit.2)
+    GateSpec (toGateRow input wit.1 wit.2)
 
   soundness := by
     circuit_proof_start [gate, boolCheck]
@@ -230,8 +229,8 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
         (isBool_of_boolCheck hd1c) hb2cS
         hA.2.2.2.2.2.2.2.2 hnkEq hd1d0 hd1z14
     exact ⟨hakE1, hakE2, hakE3, hnkE1, hnkE2, hnkE3, hnkE4,
-      by simp only [toDonor]; push_cast at hbW ⊢; linear_combination hbW,
-      by simp only [toDonor]; push_cast at hdW ⊢
+      by simp only [toGateRow]; push_cast at hbW ⊢; linear_combination hbW,
+      by simp only [toGateRow]; push_cast at hdW ⊢
          rw [hidx1] at hdW
          ring_nf at hdW ⊢
          linear_combination hdW⟩
@@ -279,7 +278,7 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
     have hib2CPrime : AssignedCell.eval env.place env.env.toEnvironment input_var.b2CPrime = input.b2CPrime := congrArg Inputs.b2CPrime h_input
     have hiz14B2CPrime : AssignedCell.eval env.place env.env.toEnvironment input_var.z14B2CPrime = input.z14B2CPrime := congrArg Inputs.z14B2CPrime h_input
     have heqs := Gate.eqs_of_spec
-      (toDonor input
+      (toGateRow input
         (env.env.advice (cfg.advices 4) ((env.place self + offset : ℕ) : ℤ))
         (env.env.advice (cfg.advices 4) ((env.place self + (offset + 1) : ℕ) : ℤ)))
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2.1, hA.2.2.2.2.1, hPA.2.2.1,
@@ -288,7 +287,7 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
       hPA.2.2.2.2
     obtain ⟨hbb1, hbd1, he3, he4, he5, he6, he7, he8, he9, he10, he11, he12,
       he13, he14⟩ := heqs
-    simp only [toDonor] at hbb1 hbd1 he3 he4 he5 he6 he7 he8 he9 he10 he11 he12 he13 he14
+    simp only [toGateRow] at hbb1 hbd1 he3 he4 he5 he6 he7 he8 he9 he10 he11 he12 he13 he14
     rw [← hibWhole, ← hib0, ← hib2, ← hwb, ← hwb0, ← hwb2] at he3
     rw [← hidWhole, ← hid0, ← hwd, ← hwd0] at he4
     rw [← hia, ← hib0, ← hiak, ← hwa, ← hwb0, ← hwak] at he5

@@ -9,8 +9,8 @@ Reference (ported from actual Rust, not memory):
   `round = 4 + 2r`), then 4 more full-round rows (`round = 60 + r`). 37 rows total; the
   final state is read at row 36.
 
-`Spec` is the donor's `Permute.value` (the 4+28+4 `Fin.foldl` schedule,
-`Clean/Orchard/Poseidon/Pow5.lean`), at the ported P128Pow5T3 round constants.
+`Spec` is `Permute.value` (the 4+28+4 `Fin.foldl` schedule) at the P128Pow5T3 round
+constants.
 -/
 
 open ProvableStruct.Halo2 (eval_cells_eq_eval)
@@ -262,7 +262,7 @@ def permuteElaborated :
            simp only [circuit_norm, RegionOperation.copiedCells, List.Forall] <;> done)
         | keygen_registration }
 
-/-- Chain a per-row step family into a `Fin.foldl` (the donor `Permute.value` shape). -/
+/-- Chain a per-row step family into a `Fin.foldl` (the `Permute.value` shape). -/
 private theorem foldl_of_steps (f : ℕ → State Fp → State Fp) (st : ℕ → State Fp)
     (base : ℕ) : ∀ n : ℕ,
     (∀ i : ℕ, i < n → st (base + i + 1) = f i (st (base + i))) →
@@ -276,7 +276,7 @@ private theorem foldl_of_steps (f : ℕ → State Fp → State Fp) (st : ℕ →
     exact h n (by omega)
 
 /-- Rust `Pow5Chip::permute`'s region body (`pow5.rs:235-265`): load the state, 4 full
-rounds, 28 double partial rounds, 4 full rounds. `Spec`: the outgoing state is the donor
+rounds, 28 double partial rounds, 4 full rounds. `Spec`: the outgoing state is the
 `Permute.value` of the incoming one. -/
 def permuteRegion : FormalRegionCircuit Fp Config Config State State where
   configure := pure

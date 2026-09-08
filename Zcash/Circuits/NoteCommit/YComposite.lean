@@ -7,13 +7,12 @@ Reference (ported from actual Rust, not memory):
 `witness_short(y[1..10])` (`k_0`), `witness_short(y[250..254])` (`k_2`),
 `witness_check(j, 25, true)` handing out `zs[1]`/`zs[13]`, `canon_bitshift_130(j)`
 (`witness_check(j', 13, false)`), then the `"y canonicity"` gate region
-(`YCanonicity::assign`, lines 1345-1409). Phase-1 donor:
-`NoteCommit.YCanonicity` (`Clean/Orchard/Action/NoteCommit.lean:525-646`).
+(`YCanonicity::assign`, lines 1345-1409).
 
 Only the `lsb` witness program is a parameter (the caller computes it from its Sinsemilla
 sign bit); `k_0`/`k_2`/`k_3` and `j` are witnessed by the canonical bit-slice programs, so
-their honest values fall out of the parent's witness hypotheses. `Spec` is the donor
-composite payoff (`lsb` is the low bit of `y`), conditioned on the lsb cell's booleanity
+their honest values fall out of the parent's witness hypotheses. `Spec`, the composite's
+guarantee, is that `lsb` is the low bit of `y`, conditioned on the lsb cell's booleanity
 (constrained outside this flow, exactly as in the gate bundle).
 -/
 
@@ -253,8 +252,7 @@ theorem synth_regionCount (wlsb : WitgenIR Fp 1) (gcfg : YCanonicity.Config)
 
 /-- Rust `y_canonicity` (`note_commit.rs:1962-2032`). Output is the witnessed `lsb` cell;
 its reading is the extraction data. `Spec`: given the lsb cell's booleanity (constrained
-outside, by the decompose gates on the copied cell), `lsb` is the low bit of `y` — the
-donor composite payoff. -/
+outside, by the decompose gates on the copied cell), `lsb` is the low bit of `y`. -/
 def circuit (wlsb : WitgenIR Fp 1) :
     FormalCircuit Fp (YCanonicity.Config × LookupRangeCheck.Config 10)
       (YCanonicity.Config × LookupRangeCheck.Config 10) Inputs field where
@@ -444,7 +442,7 @@ def circuit (wlsb : WitgenIR Fp 1) :
     have hb' : IsBool (env.advice (cfg.1.advices 6) ((place (i₀ + 4) : ℕ) : ℤ)) := by
       rw [← h_output] at hb; exact hb
     have hD := hGSpec hb'
-    simp only [YCanonicity.toDonor, NoteCommit.YCanonicity.Gate.Spec]
+    simp only [YCanonicity.toGateRow, NoteCommit.YCanonicity.Gate.Spec]
       at hD
     rw [h_input] at hD
     rw [← h_output]
@@ -606,7 +604,7 @@ def circuit (wlsb : WitgenIR Fp 1) :
         rw [hgk3]
         exact cast_bitrange_val (by norm_num) _
       · -- `k_3 = 1 → z13_j' = 0`
-        simp only [YCanonicity.toDonor]
+        simp only [YCanonicity.toGateRow]
         intro h1
         rw [show (i₀ + 2 + 2 : ℕ) = i₀ + 4 from rfl, hgk3] at h1
         rw [hzLastP, ← hpz0P, hWjp, hjeq]

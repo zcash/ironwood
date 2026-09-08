@@ -7,13 +7,12 @@ Reference (ported from actual Rust, not memory):
 `canon_bitshift_130` for `a' = a + 2^130 - t_P` (13-word `witness_check`), the `b2_c'`
 shift `b_2 + 2^5·c + 2^140 - t_P` (14-word `witness_check`), then the
 `"Assign cells used in canonicity gate"` region (`CommitIvkChip::assign`,
-`commit_ivk.rs:519-660`). Phase-1 donor: `CommitIvk.Canonicity`
-(`Clean/Orchard/Action/CommitIvk.lean`).
+`commit_ivk.rs:519-660`).
 
 The composite is a three-child layouter `FormalCircuit` parameterized (like the gate
-bundle) by the `b_1`/`d_1` witness programs. `Spec` is the donor composite payoff — the
-canonical bit slices of `ak`/`nk` and the `b`/`d` decompositions — at the witnessed
-`(b_1, d_1)` readings, which are the extraction data.
+bundle) by the `b_1`/`d_1` witness programs. `Spec`, the composite's guarantee, gives the
+canonical bit slices of `ak`/`nk` and the `b`/`d` decompositions at the witnessed
+`(b_1, d_1)` readings, and those readings are the extraction data.
 -/
 
 namespace Zcash.Circuits.CommitIvk
@@ -149,8 +148,8 @@ theorem circuitSynthesisSummary_lookupActivationCount
   simp only [circuitSynthesisSummary, synthesis_summary_norm]
 
 /-- Rust `CommitIvkChip` canonicity flow: the two shift `witness_check`s, then the
-`"Assign cells used in canonicity gate"` region. `Spec` is the donor composite payoff
-(`CommitIvk.Canonicity.Spec`): the canonical bit slices of `ak`/`nk` and
+`"Assign cells used in canonicity gate"` region. `Spec`, the composite's guarantee
+(`CommitIvk.Canonicity.Spec`), gives the canonical bit slices of `ak`/`nk` and
 the `b`/`d` sub-piece decompositions, at the witnessed `(b_1, d_1)` readings. -/
 def circuit (wb1 wd1 : WitgenIR Fp 1) :
     FormalCircuit Fp (Config × LookupRangeCheck.Config 10)
@@ -323,7 +322,7 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
     rw [LookupRangeCheck.rangeCheckAt_spec_eq, rangeCheckAt_output] at hWSb
     simp only [circuit_norm, show (10 * 14 : ℕ) = 140 from by norm_num] at hWSb
     obtain ⟨hz0b, loB, hloB, htelB⟩ := hWSb
-    -- the gate child: discharge its rely-conditions, harvest the donor gate `Spec`
+    -- the gate child: discharge its rely-conditions, harvest the gate `Spec`
     rw [rangeCheckAt_output, rangeCheckAt_output] at hGate
     simp only [gateChild_assumptions_eq, gateChild_spec_eq, gateChild_extract_cells,
       circuit_norm] at hGate
@@ -334,7 +333,7 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2.1, hA.2.2.2.2.1, hA.2.2.2.2.2.1,
        ⟨loA, hloA, htelA⟩, hA.2.2.2.2.2.2, ⟨loB, hloB, htelB⟩⟩
-    simp only [CommitIvk.toDonor,
+    simp only [CommitIvk.toGateRow,
       CommitIvk.Gate.Spec] at hGSpec
     exact hGSpec
 
@@ -388,7 +387,7 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
       exact ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2.1, hA.2.2.2.2.1, hA.2.2.2.2.2.1,
         ⟨loA, hloA, by rw [hz0a]; exact htelA⟩, hA.2.2.2.2.2.2,
         ⟨loB, hloB, by rw [hz0b]; exact htelB⟩⟩
-    · -- the gate child's honest-prover precondition: tails + shifts + the donor `Spec`
+    · -- the gate child's honest-prover precondition: tails + shifts + the gate `Spec`
       rw [rangeCheckAt_output, rangeCheckAt_output]
       simp only [gateChild_proverAssumptions_eq, gateChild_extract_cells, circuit_norm]
       rw [hiak, hia, hib, hib0, hib2, hiz13a, hInputNk, hic, hid, hid0, hiz13c]
@@ -409,8 +408,8 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
           (bit_one_of_val_eq hpa7 h1) (by norm_num)
         rw [shifted_high_zero (by norm_num) (by norm_num) hbase_lt]
         simp
-      · -- the donor gate `Spec` at the witnessed `(b_1, d_1)` readings
-        simp only [CommitIvk.toDonor, CommitIvk.Gate.Spec]
+      · -- the gate `Spec` at the witnessed `(b_1, d_1)` readings
+        simp only [CommitIvk.toGateRow, CommitIvk.Gate.Spec]
         exact ⟨hpa1, hpa2, hpa3, hpa4, hpa5, hpa6, hpa7, hpa8, hpa9⟩
 
 @[keygen_norm]

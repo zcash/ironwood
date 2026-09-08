@@ -556,7 +556,7 @@ def configureCertificate (scfg : HashPiece.Config) (counts : ConfigureCounts) :
 `K`-bit little-endian digit sums: extraction, recombination, bounds. Framework-agnostic `ℕ`
 arithmetic. -/
 
-/-- Factor the lowest digit out of a digit sum. Donor `Merkle.sum_head_shift`. -/
+/-- Factor the lowest digit out of a digit sum. -/
 private theorem sum_head_shift (Kb m : ℕ) (d : ℕ → ℕ) :
     ∑ j ∈ Finset.range (m + 1), d j * 2 ^ (Kb * j)
       = d 0 + 2 ^ Kb * ∑ j ∈ Finset.range m, d (j + 1) * 2 ^ (Kb * j) := by
@@ -569,7 +569,7 @@ private theorem sum_head_shift (Kb m : ℕ) (d : ℕ → ℕ) :
   simp only [hstep, Nat.mul_zero, pow_zero, Nat.mul_one]
   ring
 
-/-- A digit sum of `n` digits fits in `Kb · n` bits. Donor `Merkle.sum_digits_lt`. -/
+/-- A digit sum of `n` digits fits in `Kb · n` bits. -/
 private theorem sum_digits_lt {Kb : ℕ} {d : ℕ → ℕ} (hd : ∀ j, d j < 2 ^ Kb) (n : ℕ) :
     ∑ j ∈ Finset.range n, d j * 2 ^ (Kb * j) < 2 ^ (Kb * n) := by
   induction n with
@@ -583,7 +583,7 @@ private theorem sum_digits_lt {Kb : ℕ} {d : ℕ → ℕ} (hd : ∀ j, d j < 2 
         _ = 2 ^ (Kb * m) * 2 ^ Kb := by ring
     omega
 
-/-- Concatenating a `Kb·m`-bit value with high bits stays within bounds. Donor `Merkle.append_lt`. -/
+/-- Concatenating a `Kb·m`-bit value with high bits stays within bounds. -/
 private theorem append_lt {m n x y : ℕ} (hx : x < 2 ^ m) (hy : y < 2 ^ n) :
     x + 2 ^ m * y < 2 ^ (m + n) := by
   have h1 : x + 2 ^ m * y < 2 ^ m * (1 + y) := by
@@ -593,7 +593,7 @@ private theorem append_lt {m n x y : ℕ} (hx : x < 2 ^ m) (hy : y < 2 ^ n) :
   rw [pow_add]
   omega
 
-/-- Each digit of a bounded-digit sum is recovered by shift-and-mask. Donor `Merkle.digit_of_sum`. -/
+/-- Each digit of a bounded-digit sum is recovered by shift-and-mask. -/
 private theorem digit_of_sum (Kb : ℕ) :
     ∀ (i n : ℕ) (d : ℕ → ℕ), (∀ j, d j < 2 ^ Kb) → i < n →
       (∑ j ∈ Finset.range n, d j * 2 ^ (Kb * j)) / 2 ^ (Kb * i) % 2 ^ Kb = d i := by
@@ -614,7 +614,7 @@ private theorem digit_of_sum (Kb : ℕ) :
       Nat.div_eq_of_lt (hd 0), Nat.zero_add]
     exact ih m (fun j => d (j + 1)) (fun j => hd (j + 1)) (by omega)
 
-/-- A `Kb·n`-bit value is the sum of its shift-and-mask digits. Donor `Merkle.sum_words`. -/
+/-- A `Kb·n`-bit value is the sum of its shift-and-mask digits. -/
 private theorem sum_words (Kb : ℕ) :
     ∀ (n x : ℕ), x < 2 ^ (Kb * n) →
       ∑ j ∈ Finset.range n, (x / 2 ^ (Kb * j) % 2 ^ Kb) * 2 ^ (Kb * j) = x := by
@@ -641,8 +641,7 @@ private theorem sum_words (Kb : ℕ) :
     rw [Nat.mul_zero, pow_zero, Nat.div_one, Nat.mod_add_div]
 
 set_option exponentiation.threshold 600 in
-/-- Split a 52-digit sum into the `a`/`b`/`c` segments of the `MerkleCRH` message. Donor
-`Merkle.merkle_sum_split`. -/
+/-- Split a 52-digit sum into the `a`/`b`/`c` segments of the `MerkleCRH` message. -/
 private theorem merkle_sum_split (D : ℕ → ℕ) :
     ∑ j ∈ Finset.range 52, D j * 2 ^ (K * j)
       = ∑ j ∈ Finset.range 25, D j * 2 ^ (K * j)
@@ -673,7 +672,7 @@ private theorem merkle_sum_split (D : ℕ → ℕ) :
 
 set_option exponentiation.threshold 600 in
 /-- The `MerkleCRH` chunk list is the concatenation of the three pieces' chunk lists, given that
-the packed message value decomposes into the pieces' digits. Donor `Merkle.merkleChunks_eq`. -/
+the packed message value decomposes into the pieces' digits. -/
 private theorem merkleChunks_eq {dA dB dC : ℕ → ℕ}
     (hA : ∀ j, dA j < 2 ^ K) (hB : ∀ j, dB j < 2 ^ K) (hC : ∀ j, dC j < 2 ^ K)
     {l lv rv : ℕ}
@@ -754,7 +753,7 @@ private theorem natCast_inj_lt {a b : ℕ} (ha : a < 2 ^ 10) (hb : b < 2 ^ 10)
 
 From the decomposition-gate equations, the pieces' chunk sums, and the range-checked sub-pieces,
 the 255-bit encodings of `left`/`right` are recovered, and the `MerkleCRH` chunks are exactly the
-pieces' chunks. Donor `Merkle.assemble`. -/
+pieces' chunks. -/
 
 private theorem two_pow_250_lt_p : (2 : ℕ) ^ 250 < PALLAS_BASE_CARD := by
   norm_num [PALLAS_BASE_CARD]
@@ -874,8 +873,7 @@ private theorem assemble {msA msB msC : ℕ → ℕ}
 /-! ### The honest decomposition (lifted verbatim) -/
 
 set_option exponentiation.threshold 600 in
-/-- Decomposing the packed message value into the three honest piece values. Donor
-`Merkle.merkle_honest_sum`. -/
+/-- Decomposing the packed message value into the three honest piece values. -/
 private theorem merkle_honest_sum (l lv rv : ℕ) :
     l + 2 ^ 10 * lv + 2 ^ 265 * rv
       = (l + 2 ^ 10 * (lv % 2 ^ 240))
@@ -885,8 +883,7 @@ private theorem merkle_honest_sum (l lv rv : ℕ) :
   omega
 
 set_option exponentiation.threshold 600 in
-/-- The `MerkleCRH` chunks of the canonical encodings are the honest pieces' chunks. Donor
-`Merkle.honest_chunks`. -/
+/-- The `MerkleCRH` chunks of the canonical encodings are the honest pieces' chunks. -/
 private theorem honest_chunks {l lv rv : ℕ} (hl : l < 2 ^ 10) (hlv : lv < 2 ^ 255)
     (hrv : rv < 2 ^ 255) :
     merkleChunks l lv rv
@@ -934,8 +931,7 @@ private theorem p_lt_two_pow_255 : PALLAS_BASE_CARD < 2 ^ 255 := by
   norm_num [PALLAS_BASE_CARD]
 
 set_option exponentiation.threshold 600 in
-/-- The honest piece values are in range and their chunk words make up the `MerkleCRH` message.
-Donor `Merkle.honest_pieces`. -/
+/-- The honest piece values are in range and their chunk words make up the `MerkleCRH` message. -/
 private theorem honest_pieces {l lv rv : ℕ} (hl : l < 2 ^ 10)
     (hlv : lv < 2 ^ 255) (hrv : rv < 2 ^ 255)
     {aCell bCell cCell : Fp}
@@ -989,7 +985,7 @@ private theorem honest_pieces {l lv rv : ℕ} (hl : l < 2 ^ 10)
         rw [hvalC]
 
 set_option exponentiation.threshold 600 in
-/-- The decomposition-gate equations hold on the honest witness values. Donor `Merkle.honest_gate`. -/
+/-- The decomposition-gate equations hold on the honest witness values. -/
 private theorem honest_gate {l lv rv : ℕ} (hl : l < 2 ^ 10)
     (hlv : lv < 2 ^ 255) (hrv : rv < 2 ^ 255)
     {aCell bCell b1Cell b2Cell cCell z1A z1B left right : Fp}
@@ -2327,14 +2323,13 @@ theorem HashLayer.circuit_lookupSelectorAnchorRequirements
 
 def depth : ℕ := 32
 
-/-- One Merkle step: the parent node from a child + its sibling (position bit unspecified). Donor
-`Merkle.MerkleStep`. -/
+/-- One Merkle step: the parent node from a child + its sibling (position bit unspecified). -/
 def MerkleStep (G : Generators) (Q : Point Fp) (l : ℕ) (node node' : Fp) : Prop :=
   ∃ lv rv : ℕ, lv < 2 ^ 255 ∧ rv < 2 ^ 255 ∧
     ((lv : Fp) = node ∨ (rv : Fp) = node) ∧
     ∀ B, hashToPoint G.S Q (merkleChunks l lv rv) = some B → node' = B.x
 
-/-- The Merkle root after `k` layers. Donor `Merkle.MerkleRoot`. -/
+/-- The Merkle root after `k` layers. -/
 def MerkleRoot (G : Generators) (Q : Point Fp) : ℕ → Fp → ℕ → Fp → Prop
   | _, node, 0, root => root = node
   | l, node, k + 1, root =>
@@ -2458,8 +2453,7 @@ theorem MerkleRoot.trans (G : Generators) (Q : Point Fp) {l a m r : _} {k k' : �
     exact ⟨mid, hstep,
       ih hrest (by rwa [show l + 1 + n = l + (n + 1) from by omega])⟩
 
-/-- Forward induction: a chain of `MerkleStep`s assembles into a `MerkleRoot`. Donor
-`Merkle.merkleRoot_of_steps`. -/
+/-- Forward induction: a chain of `MerkleStep`s assembles into a `MerkleRoot`. -/
 theorem merkleRoot_of_steps (G : Generators) (Q : Point Fp) (f : ℕ → Fp) (l : ℕ) :
     ∀ k, (∀ i, i < k → MerkleStep G Q (l + i) (f i) (f (i + 1))) →
       MerkleRoot G Q l (f 0) k (f k) := by
@@ -2607,8 +2601,7 @@ One Merkle path layer (`MerklePath::calculate_root`'s loop body): conditionally 
 (Rust `Value`s) — then hash the swapped pair. Both children are proven
 (`CondSwap.swap`, `HashLayer.circuit`). -/
 
-/-- The swapped `(left, right)` pair a layer hashes, selected by the position bit. Donor
-`Merkle.Layer.proverChunks` (value-level). -/
+/-- The swapped `(left, right)` pair a layer hashes, selected by the position bit. -/
 def proverChunks (l : ℕ) (node sibling : Fp) (posBit : Bool) : List ℕ :=
   merkleChunks l
     (ZMod.val (if posBit then sibling else node))
@@ -3409,7 +3402,7 @@ def Layer.configurationCertificate (G : Generators) (Q : Point Fp)
 namespace CalculateRoot
 
 /-- The honest running node after `k` layers (`none` if any layer hash is undefined). Index-based
-to mirror the circuit's fold. Donor `CalculateRoot.honestNode`. -/
+to mirror the circuit's fold. -/
 def honestNode (G : Generators) (Q : Point Fp)
     (leaf : Fp) (path : Vector Fp 32) (pos : ℕ) : ℕ → Option Fp
   | 0 => some leaf
@@ -3420,7 +3413,7 @@ def honestNode (G : Generators) (Q : Point Fp)
           (proverChunks k node (path[k]'(by omega)) (decide (pos >>> k % 2 = 1)))).map (·.x)
     else none
 
-/-- `honestNode` is downward-monotone in success. Donor `CalculateRoot.honestNode_isSome_of_succ`. -/
+/-- `honestNode` is downward-monotone in success. -/
 theorem honestNode_isSome_of_succ (G : Generators) (Q : Point Fp)
     (leaf : Fp) (path : Vector Fp 32) (pos : ℕ) (k : ℕ)
     (h : (honestNode G Q leaf path pos (k + 1)).isSome) :
