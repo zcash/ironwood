@@ -442,7 +442,7 @@ def circuit (wlsb : WitgenIR Fp 1) :
     have hb' : IsBool (env.advice (cfg.1.advices 6) ((place (i₀ + 4) : ℕ) : ℤ)) := by
       rw [← h_output] at hb; exact hb
     have hD := hGSpec hb'
-    simp only [YCanonicity.toDonor, NoteCommit.YCanonicity.Gate.Spec]
+    simp only [YCanonicity.toGateRow, NoteCommit.YCanonicity.Gate.Spec]
       at hD
     rw [h_input] at hD
     rw [← h_output]
@@ -604,7 +604,7 @@ def circuit (wlsb : WitgenIR Fp 1) :
         rw [hgk3]
         exact cast_bitrange_val (by norm_num) _
       · -- `k_3 = 1 → z13_j' = 0`
-        simp only [YCanonicity.toDonor]
+        simp only [YCanonicity.toGateRow]
         intro h1
         rw [show (i₀ + 2 + 2 : ℕ) = i₀ + 4 from rfl, hgk3] at h1
         rw [hzLastP, ← hpz0P, hWjp, hjeq]

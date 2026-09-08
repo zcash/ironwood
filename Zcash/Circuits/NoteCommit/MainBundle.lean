@@ -882,7 +882,7 @@ theorem soundness (G : Generators) (R : FixedBase)
           Nat.add_zero]
         exact ⟨hGbS.1, haval, hb0, hza, loA, hloA, by rw [← haz0] at htelA; exact htelA⟩)
   rw [toFormal_spec_eq, GdCanonicity.bundle_spec_eq] at hGgdS
-  simp only [GdCanonicity.toDonor, NoteCommit.GdCanonicity.Gate.Spec,
+  simp only [GdCanonicity.toGateRow, NoteCommit.GdCanonicity.Gate.Spec,
     synthPieces_output, synthChecks_output, zCell, prefixRows_ns_0,
     circuit_norm,
     Nat.add_assoc, Nat.reduceAdd, Nat.add_zero] at hGgdS
@@ -895,7 +895,7 @@ theorem soundness (G : Generators) (R : FixedBase)
           Nat.add_zero]
         exact ⟨hGdS.1, hcval, hb3, hzc, loB, hloB, by rw [← hbz0] at htelB; exact htelB⟩)
   rw [toFormal_spec_eq, PkdCanonicity.bundle_spec_eq] at hGpkdS
-  simp only [PkdCanonicity.toDonor, NoteCommit.PkdCanonicity.Gate.Spec,
+  simp only [PkdCanonicity.toGateRow, NoteCommit.PkdCanonicity.Gate.Spec,
     synthPieces_output, synthChecks_output, zCell, prefixRows_ns_2,
     circuit_norm,
     Nat.add_assoc, Nat.reduceAdd, Nat.add_zero] at hGpkdS
@@ -908,7 +908,7 @@ theorem soundness (G : Generators) (R : FixedBase)
           Nat.add_zero]
         exact ⟨hd2, by rw [hzd]; exact hzdval, he0⟩)
   rw [toFormal_spec_eq, ValueCanonicity.bundle_spec_eq] at hGvalS
-  simp only [ValueCanonicity.toDonor, NoteCommit.ValueCanonicity.Gate.Spec,
+  simp only [ValueCanonicity.toGateRow, NoteCommit.ValueCanonicity.Gate.Spec,
     synthPieces_output, zCell,
     prefixRows_ns_3, circuit_norm,
     Nat.reduceAdd, Nat.add_zero] at hGvalS
@@ -921,7 +921,7 @@ theorem soundness (G : Generators) (R : FixedBase)
           Nat.add_zero]
         exact ⟨hGgS.1, hfval, he1, hzf, loE, hloE, by rw [← hez0] at htelE; exact htelE⟩)
   rw [toFormal_spec_eq, RhoCanonicity.bundle_spec_eq] at hGrhoS
-  simp only [RhoCanonicity.toDonor, NoteCommit.RhoCanonicity.Gate.Spec,
+  simp only [RhoCanonicity.toGateRow, NoteCommit.RhoCanonicity.Gate.Spec,
     synthPieces_output, synthChecks_output, zCell,
     prefixRows_ns_5, circuit_norm,
     Nat.add_assoc, Nat.reduceAdd, Nat.add_zero] at hGrhoS
@@ -940,7 +940,7 @@ theorem soundness (G : Generators) (R : FixedBase)
         exact ⟨hGhS.1, hg1, by rw [hzg1]; exact hzg1val, hh0, hz13G_tail,
           loG, hloG, by rw [← hgz0] at htelG; exact htelG⟩)
   rw [toFormal_spec_eq, PsiCanonicity.bundle_spec_eq] at hGpsiS
-  simp only [PsiCanonicity.toDonor, NoteCommit.PsiCanonicity.Gate.Spec,
+  simp only [PsiCanonicity.toGateRow, NoteCommit.PsiCanonicity.Gate.Spec,
     synthPieces_output, synthChecks_output, zCell,
     prefixRows_ns_6, circuit_norm,
     Nat.add_assoc, Nat.reduceAdd, Nat.add_zero] at hGpsiS
@@ -1734,7 +1734,7 @@ theorem completeness (G : Generators) (R : FixedBase)
                           circuit_norm,
              Nat.add_assoc, Nat.reduceAdd,
              Nat.add_zero]
-           simp only [GdCanonicity.toDonor,
+           simp only [GdCanonicity.toGateRow,
              NoteCommit.GdCanonicity.Gate.Spec]
            refine ⟨⟨hMa, hMb0, hMb1, fun h1 => ?_⟩, hWaP⟩
            obtain ⟨-, hatp, -⟩ := NoteCommit.high_bit_canonical
@@ -1764,7 +1764,7 @@ theorem completeness (G : Generators) (R : FixedBase)
              circuit_norm,
              Nat.add_assoc, Nat.reduceAdd,
              Nat.add_zero]
-           simp only [PkdCanonicity.toDonor,
+           simp only [PkdCanonicity.toGateRow,
              NoteCommit.PkdCanonicity.Gate.Spec]
            refine ⟨⟨hMb3, hMc, hMd0, fun h1 => ?_⟩, by rw [hWbP]; try ring⟩
            have hbase := NoteCommit.base_val_lt_tP_val hMb3 hMc
@@ -1820,7 +1820,7 @@ theorem completeness (G : Generators) (R : FixedBase)
              circuit_norm,
              Nat.add_assoc, Nat.reduceAdd,
              Nat.add_zero]
-           simp only [RhoCanonicity.toDonor,
+           simp only [RhoCanonicity.toGateRow,
              NoteCommit.RhoCanonicity.Gate.Spec]
            refine ⟨⟨hMe1, hMf, hMg0, fun h1 => ?_⟩, by rw [hWeP]; try ring⟩
            have hbase := NoteCommit.base_val_lt_tP_val hMe1 hMf
@@ -1849,7 +1849,7 @@ theorem completeness (G : Generators) (R : FixedBase)
              circuit_norm,
              Nat.add_assoc, Nat.reduceAdd,
              Nat.add_zero]
-           simp only [PsiCanonicity.toDonor,
+           simp only [PsiCanonicity.toGateRow,
              NoteCommit.PsiCanonicity.Gate.Spec]
            have hg2val : (env.advice cfg.hashConfig.bits
                ((place (i₀ + 27) + 84 : ℕ) : ℤ)).val

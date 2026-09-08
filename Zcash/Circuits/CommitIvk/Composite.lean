@@ -333,7 +333,7 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2.1, hA.2.2.2.2.1, hA.2.2.2.2.2.1,
        ⟨loA, hloA, htelA⟩, hA.2.2.2.2.2.2, ⟨loB, hloB, htelB⟩⟩
-    simp only [CommitIvk.toDonor,
+    simp only [CommitIvk.toGateRow,
       CommitIvk.Gate.Spec] at hGSpec
     exact hGSpec
 
@@ -409,7 +409,7 @@ def circuit (wb1 wd1 : WitgenIR Fp 1) :
         rw [shifted_high_zero (by norm_num) (by norm_num) hbase_lt]
         simp
       · -- the gate `Spec` at the witnessed `(b_1, d_1)` readings
-        simp only [CommitIvk.toDonor, CommitIvk.Gate.Spec]
+        simp only [CommitIvk.toGateRow, CommitIvk.Gate.Spec]
         exact ⟨hpa1, hpa2, hpa3, hpa4, hpa5, hpa6, hpa7, hpa8, hpa9⟩
 
 @[keygen_norm]
