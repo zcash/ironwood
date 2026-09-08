@@ -16,8 +16,8 @@ Reference (ported from actual Rust, not memory):
   `state[0]` with no further region. Region sequence: `"initial state for domain
   ConstantLength<2>"`, `"add input for domain ConstantLength<2>"`, `"permute state"`.
 
-The value-level contract is the donor `Hash.HashPaddedBlock.value`
-(`Clean/Orchard/Poseidon/Hash.lean`) at capacity `ConstantLength.capacity 2 = 2·2⁶⁴`.
+The value-level contract is `Hash.HashPaddedBlock.value` at capacity
+`ConstantLength.capacity 2 = 2·2⁶⁴`.
 -/
 
 namespace Zcash.Circuits.Poseidon
@@ -211,7 +211,7 @@ def addInputRegionElaborated : ElaboratedRegionCircuit Fp Config Config
 /-- Rust `Pow5Chip::add_input`'s region body (`pow5.rs:310-396`), `ConstantLength<2>`
 shape (both rate words are `Message` cells): `s_pad_and_add` at row 1, the initial state
 copied at row 0, the input words copied at row 1, the summed output at row 2. `Spec` is
-the donor `Sponge.AddInput.value`. -/
+`Sponge.AddInput.value`. -/
 def addInputRegion : FormalRegionCircuit Fp Config Config Sponge.AddInputInput State where
   configure := pure
   elaborated := addInputRegionElaborated
@@ -350,7 +350,7 @@ theorem hashSynthesisSummary_tableRowExtent_eq (cfg : Config) :
 
 /-- Rust `Hash::<ConstantLength<2>>::hash` (`poseidon.rs:269-286`) on the Pow5 chip:
 initial state, pad-and-add, one permutation; the digest is `state[0]`. `Spec` is the
-donor one-block hash value `HashPaddedBlock.value`. -/
+one-block hash value `HashPaddedBlock.value`. -/
 def hash (capacity : Fp) :
     FormalCircuit Fp Config Config Sponge.Rate2 field where
   name := "poseidon hash ConstantLength<2>"

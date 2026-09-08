@@ -927,7 +927,7 @@ theorem soundness (G : Generators) (R : FixedBase)
     Nat.add_assoc, Nat.reduceAdd, Nat.add_zero] at hGrhoS
   simp only [prefixRows_ns_3,
     prefixRows_ns_6, Nat.reduceAdd] at hGbS hGdS hGeS hGgS hGhS
-  -- Psi: the z13G tail via the donor bridge over the DecomposeG facts
+  -- Psi: the z13G tail over the DecomposeG facts
   have hz13G_tail := NoteCommit.z13G_tail_of_decompose_g
     hGgS.1 hg1 (by rw [hzg1]; exact hzg1val) hGgS.2 hzg13
   have hGpsiS := hGpsi (by rw [toFormal_envAssumptions_eq]; trivial)

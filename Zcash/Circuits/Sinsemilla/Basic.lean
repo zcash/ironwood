@@ -284,16 +284,14 @@ theorem chain_eq_sum {n : ℕ} (z : ℕ → Fp) (ms : ℕ → ℕ)
   rw [hzn, zero_mul, _root_.add_zero] at hn
   exact hn
 
-/-- A piece that fits in `K·m` bits is the base-`2^K` recombination of its `K`-bit words.
-Donor `HashPiece.piece_recombine`. -/
+/-- A piece that fits in `K·m` bits is the base-`2^K` recombination of its `K`-bit words. -/
 theorem piece_recombine (p : Fp) (m : ℕ) (hp : p.val < 2 ^ (K * m)) :
     p = ((∑ r ∈ Finset.range m, pieceWord p r * 2 ^ (K * r) : ℕ) : Fp) := by
   have hzn : pieceZ p m = 0 := by simp only [pieceZ, Nat.div_eq_of_lt hp, Nat.cast_zero]
   have h := chain_eq_sum (n := m) (pieceZ p) (pieceWord p) (fun r _ => pieceZ_succ p r) hzn
   rwa [pieceZ_zero] at h
 
-/-- Each running sum `z_r` is the recombination of the words from position `r` onward.
-Donor `HashPiece.chain_eq_suffix_sum`. -/
+/-- Each running sum `z_r` is the recombination of the words from position `r` onward. -/
 theorem chain_eq_suffix_sum {w : ℕ} (zV : ℕ → Fp) (ms : ℕ → ℕ)
     (hword : ∀ s, s < w → zV s = (ms s : Fp) + 2 ^ K * zV (s + 1))
     (hlast : zV w = (ms w : Fp)) (d r : ℕ) (hrw : r + d = w) :
@@ -322,8 +320,7 @@ constraints → output coordinates), `step_honest` the completeness bridge (hone
 assignments → gate invariants and chain point), and `accAfter_eq_chain` lifts a whole honest
 piece to the spec-level `hashToPoint` chain. -/
 
-/-- For one Sinsemilla step, the row equations determine the output coordinates.
-Donor `HashPiece.step_coordinates_of_constraints`. -/
+/-- For one Sinsemilla step, the row equations determine the output coordinates. -/
 theorem step_coordinates_of_constraints (S : ℕ → Point Fp) {A B : Point Fp} {m : ℕ}
     (hstep : step S m A = some B)
     {xp lambda1 lambda2 xa' YA' : Fp}
@@ -338,7 +335,7 @@ theorem step_coordinates_of_constraints (S : ℕ → Point Fp) {A B : Point Fp} 
 
 /-- The honest-prover counterpart of `step_coordinates_of_constraints`: the honest cell
 values (the `rowValue` assignment formulas, given as hypotheses) satisfy the row's lookup-`y`
-derivation and `Y_A` invariant, and the next accumulator is `B`. Donor `HashPiece.step_honest`. -/
+derivation and `Y_A` invariant, and the next accumulator is `B`. -/
 theorem step_honest (S : ℕ → Point Fp) {A B : Point Fp} {m : ℕ}
     (hstep : step S m A = some B)
     {l1 l2 xa' ya' : Fp}
@@ -437,7 +434,7 @@ theorem step_honest (S : ℕ → Point Fp) {A B : Point Fp} {m : ℕ}
   exact ⟨hyp, hYA, hBx', hBy'⟩
 
 /-- The honest accumulator chain follows the spec-level chain points, whenever the
-spec-level chain is defined. Donor `HashPiece.accAfter_eq_chain`. -/
+spec-level chain is defined. -/
 theorem accAfter_eq_chain (G : Generators) {A : Point Fp} (p : Fp)
     {r : ℕ} {Ar : Point Fp}
     (hchain : hashToPoint G.S A ((List.range r).map (pieceWord p)) = some Ar) :

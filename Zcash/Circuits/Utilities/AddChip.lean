@@ -11,8 +11,6 @@ Reference (ported from actual Rust, not memory):
   equality on all advices.
 - `AddInstruction::add` (lines 71-91): one region `"c = a + b"`; `q_add` at row 0, copy
   `a` and `b` in, assign `c = a + b`.
-
-The phase-one donor is `Clean/Orchard/Utilities.lean` (`Utilities.AddChip`).
 -/
 
 namespace Zcash.Circuits.AddChip

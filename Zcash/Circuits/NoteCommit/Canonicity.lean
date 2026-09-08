@@ -6,11 +6,11 @@ Reference (ported from Rust):
 `orchard@0.14.0/src/circuit/note_commit.rs` — the input-canonicity `assign` regions
 (`"NoteCommit input value"` 994-1035: pure copies of `value`/`d_2`/`d_3 = z1_d`/`e_0`).
 
-The semantic contracts are the phase-1 gate specs (`Clean/Orchard/Action/Canonicity.lean`)
-verbatim; the heavyweight canonicity value arguments are REUSED wholesale via the
-donor-replay bridge: the donor `Gate.circuit` is a main-Clean `FormalAssertion` over the
-same field equations, so applying its `soundness` at offset 0, a trivial environment and
-const-lifted inputs turns the ironwood-landed equations into the donor `Spec`.
+The semantic contracts are the gate specs. The heavyweight canonicity value arguments come
+from the gate circuits by replay: each `Gate.circuit` is a main-Clean `FormalAssertion` over
+the same field equations, so applying the gate circuit's `soundness` at offset 0, with a
+trivial environment and const-lifted inputs, turns the region's equations into the gate
+`Spec`.
 -/
 
 namespace Zcash.Circuits.NoteCommit
@@ -36,7 +36,7 @@ structure Row (F : Type) where
   e0 : F
 deriving ProvableStruct
 
-/-- The donor-side row record. -/
+/-- The gate row record. -/
 def toDonor (row : Row Fp) : DRow Fp :=
   { value := row.value, d2 := row.d2, d3 := row.d3, e0 := row.e0 }
 
@@ -67,8 +67,8 @@ def bundleSynthesize (cfg : Config) (offset : ℕ)
   pure ()
 
 /-- Rust `ValueCanonicity::assign` (`note_commit.rs:994-1035`): pure copies. `Spec` is
-the donor `ValueCanonicity.Gate.Spec` (canonical 64-bit value with its slices);
-`Assumptions` the donor rely-conditions (the slices are range-checked). -/
+`ValueCanonicity.Gate.Spec` (canonical 64-bit value with its slices);
+`Assumptions` the rely-conditions (the slices are range-checked). -/
 def bundle : FormalRegionCircuit Fp Config Config Row unit where
   configure := pure
   synthesize := bundleSynthesize
@@ -139,7 +139,7 @@ structure Row (F : Type) where
   z13APrime : F
 deriving ProvableStruct
 
-/-- The donor-side row record. -/
+/-- The gate row record. -/
 def toDonor (row : Row Fp) : DRow Fp :=
   ⟨row.gdX, row.b0, row.b1, row.a, row.aPrime, row.z13A, row.z13APrime⟩
 
@@ -203,8 +203,8 @@ def bundleElaborated :
           synthesis_summary_norm] }
 
 /-- Rust `GdCanonicity::assign` (`note_commit.rs:789-841`): pure copies (rows 0/1 of
-`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the donor
-`GdCanonicity.Gate` contract; the canonicity value argument is the donor `spec_of_eqs`. -/
+`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the
+`GdCanonicity.Gate` contract; the canonicity value argument is `spec_of_eqs`. -/
 def bundle : FormalRegionCircuit Fp Config Config Row unit where
   configure := pure
   synthesize := bundleSynthesize
@@ -281,7 +281,7 @@ structure Row (F : Type) where
   z14B3CPrime : F
 deriving ProvableStruct
 
-/-- The donor-side row record. -/
+/-- The gate row record. -/
 def toDonor (row : Row Fp) : DRow Fp :=
   ⟨row.pkdX, row.b3, row.d0, row.c, row.b3CPrime, row.z13C, row.z14B3CPrime⟩
 
@@ -336,8 +336,8 @@ theorem bundleSynthesisSummary_eq (cfg : Config) (offset : ℕ)
       synthesis_summary_norm]
 
 /-- Rust `PkdCanonicity::assign` (`note_commit.rs:789-841`): pure copies (rows 0/1 of
-`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the donor
-`PkdCanonicity.Gate` contract; the canonicity value argument is the donor `spec_of_eqs`. -/
+`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the
+`PkdCanonicity.Gate` contract; the canonicity value argument is `spec_of_eqs`. -/
 def bundle : FormalRegionCircuit Fp Config Config Row unit where
   configure := pure
   synthesize := bundleSynthesize
@@ -423,7 +423,7 @@ structure Row (F : Type) where
   z14E1FPrime : F
 deriving ProvableStruct
 
-/-- The donor-side row record. -/
+/-- The gate row record. -/
 def toDonor (row : Row Fp) : DRow Fp :=
   ⟨row.rho, row.e1, row.g0, row.f, row.e1FPrime, row.z13F, row.z14E1FPrime⟩
 
@@ -478,8 +478,8 @@ theorem bundleSynthesisSummary_eq (cfg : Config) (offset : ℕ)
       synthesis_summary_norm]
 
 /-- Rust `RhoCanonicity::assign` (`note_commit.rs:789-841`): pure copies (rows 0/1 of
-`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the donor
-`RhoCanonicity.Gate` contract; the canonicity value argument is the donor `spec_of_eqs`. -/
+`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the
+`RhoCanonicity.Gate` contract; the canonicity value argument is `spec_of_eqs`. -/
 def bundle : FormalRegionCircuit Fp Config Config Row unit where
   configure := pure
   synthesize := bundleSynthesize
@@ -566,7 +566,7 @@ structure Row (F : Type) where
   z13G1G2Prime : F
 deriving ProvableStruct
 
-/-- The donor-side row record. -/
+/-- The gate row record. -/
 def toDonor (row : Row Fp) : DRow Fp :=
   ⟨row.psi, row.h0, row.g1, row.h1, row.g2, row.g1G2Prime, row.z13G, row.z13G1G2Prime⟩
 
@@ -623,7 +623,7 @@ theorem bundleSynthesisSummary_eq (cfg : Config) (offset : ℕ)
       synthesis_summary_norm]
 
 /-- Rust `PsiCanonicity::assign` (`note_commit.rs:1240-1274`): pure copies (rows 0/1 of
-`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the donor
+`col_l/m/r/z`), gate enabled at row 0. `Spec`/`Assumptions` are the
 `PsiCanonicity.Gate` contract. -/
 def bundle : FormalRegionCircuit Fp Config Config Row unit where
   configure := pure
@@ -716,7 +716,7 @@ structure Row (F : Type) where
   z13JPrime : F
 deriving ProvableStruct
 
-/-- The donor-side row at the witnessed `(lsb, k3)` pair. -/
+/-- The gate row at the witnessed `(lsb, k3)` pair. -/
 def toDonor (row : Row Fp) (lsb k3 : Fp) : DRow Fp :=
   ⟨row.y, lsb, row.k0, row.k2, k3, row.j, row.z1J, row.z13J, row.jPrime,
     row.z13JPrime⟩
@@ -787,7 +787,7 @@ theorem bundleSynthesisSummary_eq (wlsb wk3 : WitgenIR Fp 1)
 /-- Rust `YCanonicity::assign` (`note_commit.rs:1345-1409`): `q_y_canon` at row 0; row 0
 copies `y`/`k_0`/`k_2` and witnesses `LSB`/`k_3` (the `wlsb`/`wk3` programs); row 1 copies
 `j`/`z1_j`/`z13_j`/`j_prime`/`z13_j_prime`. Output is the witnessed `lsb` cell; the
-`(lsb, k3)` readings are the extraction data. `Spec` is the donor `YCanonicity.Gate.Spec`
+`(lsb, k3)` readings are the extraction data. `Spec` is `YCanonicity.Gate.Spec`
 CONDITIONED on the output's booleanity — as in Rust, the lsb cell is boolean-constrained
 *outside* this gate (the decompose gates' `bool_check` on the copied cell), so the
 composite threads it back as a rely. -/
@@ -813,7 +813,7 @@ def bundle (wlsb wk3 : WitgenIR Fp 1) :
     (eval env (AssignedCell.of self offset (cfg.advices 6) : Var field Fp),
      eval env (AssignedCell.of self offset (cfg.advices 9) : Var field Fp))
 
-  -- the input-only rely-conditions (donor `Assumptions` minus `IsBool lsb`)
+  -- the input-only rely-conditions (`Assumptions` minus `IsBool lsb`)
   -- input-only rely-conditions: the gate itself enforces the `j'` shift (constraint 4)
   Assumptions input :=
     input.j.val < 2 ^ 250 ∧ input.k0.val < 2 ^ 9 ∧ input.k2.val < 2 ^ 4 ∧

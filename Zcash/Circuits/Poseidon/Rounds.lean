@@ -11,8 +11,7 @@ Reference (ported from actual Rust, not memory):
 The rounds are positional (`MulIncompleteRound` pattern): the entering state row is the
 `Witness`/`extract` neighborhood, the outgoing state row is the output. Round `r` at
 region offset `o` writes row `o + 1`, which is round `r + 1`'s entering row — the loop
-chains by `rfl`. Value-level contracts are the donor's `FullRound.value` /
-`PartialRounds.value` (`Clean/Orchard/Poseidon/Pow5.lean`).
+chains by `rfl`. Value-level contracts are `FullRound.value` and `PartialRounds.value`.
 -/
 
 namespace Zcash.Circuits.Poseidon
@@ -230,7 +229,7 @@ def partialRoundSynthesize (r : ℕ) (cfg : Config) (offset : ℕ)
 /-- Rust `Pow5State::full_round` at source round `r` (`pow5.rs:434-459` + `round`,
 552-592): enable `s_full` at `offset`, load the `rc_a` round constants at `offset`,
 assign the next state at `offset + 1`. Positional: `Witness` is the entering state row,
-`Spec` is the donor `FullRound.value`. -/
+`Spec` is `FullRound.value`. -/
 def fullRound (r : ℕ) : FormalRegionCircuit Fp Config Config unit State where
   configure := pure
   synthesize := fullRoundSynthesize r
@@ -296,7 +295,7 @@ private theorem nextInv_cancel (j : Fin 3) (r0 r1 r2 : Fp) :
 /-- Rust `Pow5State::partial_round` at source round `r` (`pow5.rs:461-534`): one row
 checking two source rounds. Enable `s_partial` at `offset`, load `rc_a` (round `r`) and
 `rc_b` (round `r + 1`) at `offset`, witness the first-round S-box into `partial_sbox` at
-`offset`, assign the next state at `offset + 1`. `Spec` is the donor
+`offset`, assign the next state at `offset + 1`. `Spec` is
 `PartialRounds.value` at `paramsP128 r`. -/
 def partialRound (r : ℕ) : FormalRegionCircuit Fp Config Config unit State where
   configure := pure

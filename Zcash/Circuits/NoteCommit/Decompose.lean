@@ -8,11 +8,10 @@ Reference (ported from actual Rust, not memory):
 `h` 660-694): enable the gate at row 0, copy the piece and the externally-constrained
 subpieces in, assign the in-gate boolean subpiece (returned; `e` assigns nothing).
 
-The semantic contracts are the phase-1 gate specs
-(`Clean/Orchard/Action/Decompose.lean`, `Decompose{B,D,E,G,H}.Gate.Spec`) verbatim: the
+The semantic contracts are the gate specs (`Decompose{B,D,E,G,H}.Gate.Spec`): the
 booleanity of the in-gate bits plus the piece decomposition identity. Externally-provided
 range facts stay OUT of these bundles (they are the callers' rely-conditions, threaded at
-the composite level exactly as in phase 1).
+the composite level).
 -/
 
 namespace Zcash.Circuits.NoteCommit
@@ -55,7 +54,7 @@ theorem synthesisSummary_hasNoFixedColumns (config : Config) (offset : ℕ) :
 
 /-- Rust `DecomposeB::assign` (`note_commit.rs:179-215`), parameterized by the `b_1`
 witness program (Rust: `RangeConstrained::bitrange_of(gd_x, 254..255)`). Output is the
-witnessed `b_1` cell; `Spec` is the donor `DecomposeB.Gate.Spec`. -/
+witnessed `b_1` cell; `Spec` is `DecomposeB.Gate.Spec`. -/
 def bundle (wb1 : WitgenIR Fp 1) : FormalRegionCircuit Fp Config Config Inputs field where
   configure := pure
   elaborated :=
@@ -174,7 +173,7 @@ theorem synthesisSummary_hasNoFixedColumns (config : Config) (offset : ℕ) :
 
 /-- Rust `DecomposeD::assign` (`note_commit.rs:297-340`), parameterized by the `d_0`
 witness program (bit 254 of `x(pk_d)`). Output is the witnessed `d_0` cell; `Spec` is
-the donor `DecomposeD.Gate.Spec`. -/
+`DecomposeD.Gate.Spec`. -/
 def bundle (wd0 : WitgenIR Fp 1) : FormalRegionCircuit Fp Config Config Inputs field where
   configure := pure
   elaborated :=
@@ -289,7 +288,7 @@ theorem synthesisSummary_hasNoFixedColumns (config : Config) (offset : ℕ) :
   simp
 
 /-- Rust `DecomposeE::assign` (`note_commit.rs:418-448`): pure copies, no in-gate
-witness. `Spec` is the donor `DecomposeE.Gate.Spec`. -/
+witness. `Spec` is `DecomposeE.Gate.Spec`. -/
 def bundle : FormalRegionCircuit Fp Config Config Inputs unit where
   configure := pure
   elaborated :=
@@ -372,8 +371,8 @@ theorem synthesisSummary_hasNoFixedColumns (config : Config) (offset : ℕ) :
   simp
 
 /-- Rust `DecomposeG::assign` (`note_commit.rs:540-575`), parameterized by the `g_0`
-witness program (bit 254 of `rho`). Output is the witnessed `g_0` cell; `Spec` is the
-donor `DecomposeG.Gate.Spec`. -/
+witness program (bit 254 of `rho`). Output is the witnessed `g_0` cell; `Spec` is
+`DecomposeG.Gate.Spec`. -/
 def bundle (wg0 : WitgenIR Fp 1) : FormalRegionCircuit Fp Config Config Inputs field where
   configure := pure
   elaborated :=
@@ -482,8 +481,8 @@ theorem synthesisSummary_hasNoFixedColumns (config : Config) (offset : ℕ) :
   simp
 
 /-- Rust `DecomposeH::assign` (`note_commit.rs:660-694`), parameterized by the `h_1`
-witness program (bit 254 of `psi`). Output is the witnessed `h_1` cell; `Spec` is the
-donor `DecomposeH.Gate.Spec`. -/
+witness program (bit 254 of `psi`). Output is the witnessed `h_1` cell; `Spec` is
+`DecomposeH.Gate.Spec`. -/
 def bundle (wh1 : WitgenIR Fp 1) : FormalRegionCircuit Fp Config Config Inputs field where
   configure := pure
   elaborated :=

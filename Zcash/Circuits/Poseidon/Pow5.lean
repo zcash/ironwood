@@ -17,10 +17,9 @@ the MDS matrix and its inverse are baked into the gate polynomials as constants 
 Rust, where `m_reg`/`m_inv` come from `S::constants()`), while the round constants live
 in the `rc_a`/`rc_b` fixed columns and are queried by the gates.
 
-The proof-content donor is `Clean/Orchard/Poseidon/` (`Pow5.lean`, `Sponge.lean`,
-`Hash.lean`): `pow5`, `FullRound.value`, `PartialRounds.value` (+ the `mds`/`mdsInv`
-inverse algebra), the `Permute.value` 4+28+4 schedule, and the sponge/hash value
-composition are consumed directly from there.
+The value-level definitions are `pow5`, `FullRound.value`, and `PartialRounds.value` (with
+the `mds`/`mdsInv` inverse algebra), the `Permute.value` 4+28+4 schedule, and the sponge/hash
+value composition.
 -/
 
 namespace Zcash.Circuits.Poseidon

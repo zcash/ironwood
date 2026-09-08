@@ -16,8 +16,7 @@ Rust `ternary`/`bool_check` helpers, `utilities.rs:133-143`).
 
 This file carries the VK-facing surface (`Config`, the gate, `configure` — Rust-exact in
 registration order, used by `MerkleChip::configure`); the `swap` gadget bundle follows the
-`MulOverflow`-style leaf pattern. Phase-one donor: `Clean/Orchard/Utilities.lean`,
-namespace `CondSwap`.
+`MulOverflow`-style leaf pattern.
 -/
 
 namespace Zcash.Circuits.CondSwap
