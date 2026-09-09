@@ -74,10 +74,11 @@ theorem topLevelFixedQuery_of_layout
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (pp : ProofParams)
     (instanceCommitment : Fin pp.numProofs → ℕ → G)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
+    (ch : Challenges top.domainExponent Fp)
     (column : ℕ) (rotation : ℤ)
     (hlayout : (column, rotation) ∈ top.fixedQueryLayout) :
     ∃ q ∈ assembleQueries (top.toVerifierKey urs)
@@ -86,8 +87,7 @@ theorem topLevelFixedQuery_of_layout
   apply fixedQuery_of_layout
     (shape := top.shape.withProofParams pp)
     (top.toVerifierKey urs) instanceCommitment ps ch column rotation
-  · simpa only [top.shape_numFixedQueries] using
-      top.toVerifierKey_fixedQueryCount urs
+  · exact top.toVerifierKey_fixedQueryCount urs
   · simpa only [top.toVerifierKey_fixedQueryLayout] using hlayout
 
 omit [AddCommGroup G] [Module Fp G] [DecidableEq G] in
@@ -177,11 +177,12 @@ theorem topLevelFixedLayout_of_assembledQuery
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) (pp : ProofParams)
     (instanceCommitment : Fin pp.numProofs → ℕ → G)
     (ps : ProofString (top.shape.withProofParams pp) Fp G)
-    (ch : Challenges top.shape.k Fp)
-    (q : VerifierQuery top.shape.k Fp G)
+    (ch : Challenges top.domainExponent Fp)
+    (q : VerifierQuery top.domainExponent Fp G)
     (hq : q ∈ assembleQueries (top.toVerifierKey urs)
       instanceCommitment ps ch)
     (column : ℕ) (hid : q.commId = .fixedCol column) :
@@ -195,7 +196,7 @@ theorem topLevelFixedLayout_of_assembledQuery
 
 /-- Sparse table and region-local fixed assignments emitted by top-level keygen. -/
 def topLevelFixedOperationEntries
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     List (Layout.FixedAssignment Fp) :=
   Layout.tableAssignments
       (top.usableRowsAt top.domainExponent) top.operations ++
@@ -212,13 +213,13 @@ opaque. The structural replacement should instead derive non-overlap (or compati
 composition) from selector packing and region-placement invariants.
 -/
 def topLevelSelectorEntries
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     List (Layout.FixedAssignment Fp) :=
   Layout.selectorAssignments top.selectorMap top.selectorActivations
 
 /-- Fixed cells allocated for `constrainConstant` values by the V1 floor planner. -/
 def topLevelConstantEntries
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     List (Layout.FixedAssignment Fp) :=
   Layout.constantAssignments
     (FloorPlanner.V1.constantAssignments top.operations
@@ -226,7 +227,7 @@ def topLevelConstantEntries
 
 /-- The canonical ordered stream of every fixed write emitted by top-level keygen. -/
 def topLevelCompilerFixedEntries
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     List (Layout.FixedAssignment Fp) :=
   Layout.rawAssignments
     (top.usableRowsAt top.domainExponent)
@@ -234,6 +235,7 @@ def topLevelCompilerFixedEntries
 
 theorem mem_topLevelCompilerFixedEntries_of_operation
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {assignment : Layout.FixedAssignment Fp}
     (hassignment : assignment ∈ topLevelFixedOperationEntries top) :
     assignment ∈ topLevelCompilerFixedEntries top := by
@@ -243,6 +245,7 @@ theorem mem_topLevelCompilerFixedEntries_of_operation
 
 theorem mem_topLevelCompilerFixedEntries_of_constant
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {assignment : Layout.FixedAssignment Fp}
     (hassignment : assignment ∈ topLevelConstantEntries top) :
     assignment ∈ topLevelCompilerFixedEntries top := by
@@ -252,6 +255,7 @@ theorem mem_topLevelCompilerFixedEntries_of_constant
 
 theorem mem_topLevelCompilerFixedEntries_of_selector
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     {assignment : Layout.FixedAssignment Fp}
     (hassignment : assignment ∈ topLevelSelectorEntries top) :
     assignment ∈ topLevelCompilerFixedEntries top := by
@@ -260,7 +264,7 @@ theorem mem_topLevelCompilerFixedEntries_of_selector
 
 /-- Every compiler-emitted fixed cell consumed by the semantic bridge. -/
 def topLevelRequiredFixedEntries
-    (top : TopLevelCircuit Fp Config PublicInput) :
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
     List (Layout.FixedAssignment Fp) :=
   topLevelCompilerFixedEntries top
 
@@ -268,6 +272,7 @@ def topLevelRequiredFixedEntries
 top-level circuit's canonical dense fixed rows. -/
 theorem topLevelCompilerFixedEntry_realized
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (assignment : Layout.FixedAssignment Fp)
     (hassignment : assignment ∈ topLevelCompilerFixedEntries top) :
     assignment.2.1 < top.n ∧
@@ -281,6 +286,7 @@ theorem topLevelCompilerFixedEntry_realized
 /-- Every required fixed entry is realized by the canonical dense compiler output. -/
 theorem topLevelRequiredFixedEntry_realized
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (assignment : Layout.FixedAssignment Fp)
     (hassignment : assignment ∈ topLevelRequiredFixedEntries top) :
     assignment.2.1 < top.n ∧
@@ -300,6 +306,7 @@ def TopLevelFixedCoherence
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G) : Prop :=
   ∀ column, column < top.fixedColumnCount →
     (top.fixedCommitments urs).getD column 0 =
@@ -315,6 +322,7 @@ theorem fixedCommitment_eq_commitInstance
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (hlen : (derivedUrsGLagrange urs).length = 2 ^ urs.k)
@@ -359,6 +367,7 @@ def ofDerived
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top]
     (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (hdomainExponent : top.domainExponent < 33) :
@@ -389,6 +398,7 @@ theorem topLevelFixedColumnEncoding_of_binding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {numProofs : ℕ} {proofIndex : Fin numProofs}
     (assignment :
       TopLevelAssignment top numProofs proofIndex)
@@ -421,13 +431,7 @@ theorem topLevelFixedColumnEncoding_of_binding
     instanceRowPolynomial_eval
       (values := top.fixedRows.getD column.index [])
       hrows domainRow
-  change
-    (instanceRowPolynomial top.n
-      top.omega
-      (top.fixedRows.getD column.index [])).eval
-        (top.omega ^ (domainRow : ℕ)) =
-      (top.fixedRows.getD column.index []).getD
-        (row.natMod top.n) 0
+  rw [top.fixedValue_eq_fixedRows_getD]
   simpa only [domainRow] using heval
 
 omit [Module Fp G] [DecidableEq G] in
@@ -442,6 +446,7 @@ theorem topLevelFixedEntryRead_of_column
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     (poly : CommitmentId → CPoly)
     (hrows : Function.Injective
@@ -477,6 +482,7 @@ def topLevelFixedEntryRead_or_bad
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     (poly : CommitmentId → CPoly)
     (hrows : Function.Injective
@@ -514,6 +520,7 @@ def topLevelFixedConstraints_or_bad
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
     (poly : CommitmentId → CPoly)
     (hrows : Function.Injective
@@ -728,11 +735,12 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment : Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -827,13 +835,14 @@ def topLevelFixedConstraints_or_relation
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams}
     {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment :
       Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)
@@ -910,13 +919,14 @@ def topLevelFixedEntryRead_or_relation
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
+    [TopLevelShape top]
     {pp : ProofParams}
     {urs : URS G}
-    {hk : top.shape.k = urs.k}
+    {hk : top.domainExponent = urs.k}
     {instanceCommitment :
       Fin pp.numProofs → ℕ → G}
     {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.shape.k Fp}
+    {ch : Challenges top.domainExponent Fp}
     {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
     {batchOpenings :
       OpenedBatchOpenings urs (evalVector urs.k ch.x3)

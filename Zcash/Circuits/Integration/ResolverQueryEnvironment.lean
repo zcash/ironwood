@@ -159,7 +159,7 @@ theorem PinnedConstraintSystem.mem_instanceQueryLayout_derive_of_mem
 theorem _root_.Halo2.TopLevelCircuit.pinnedQueryState_eq_gateQueryState
     {F : Type} [FiniteField F]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit F Config PublicInput) :
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] :
     pinnedQueryState top.pinnedCS = top.gateQueryState := by
   simpa only [TopLevelCircuit.pinnedCS, TopLevelCircuit.gateQueryState] using
     PinnedConstraintSystem.derive_queryState_eq
@@ -170,6 +170,7 @@ theorem _root_.Halo2.TopLevelCircuit.mem_instanceQueryLayout_of_mem_constraintSy
     {F : Type} [FiniteField F]
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top]
     (column : Column .instance) (rotation : Rotation)
     (hquery : (column, rotation) ∈ top.constraintSystem.instanceQueries) :
     (column.index, rotation) ∈ top.instanceQueryLayout := by

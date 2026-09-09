@@ -417,7 +417,6 @@ assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct
 -- them, so transitive endpoint pins cannot bound their trusted bases.  Keep each one directly
 -- censused rather than relying on the endpoint name regex to classify internal public claims.
 assert_axioms Zcash.Snark.Capstone.actionProofShape_eq_maxShape +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.actionStaticChecks +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -425,10 +424,8 @@ assert_axioms Zcash.Snark.Capstone.actionStaticChecks +native(
 assert_axioms Zcash.Snark.Capstone.capturedActionThetaBudget +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionBetaBudget +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionGammaBudget +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionYBudget +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
@@ -447,7 +444,6 @@ assert_axioms Zcash.Snark.Capstone.adaptiveActionXDegree_bound +native(
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.actionStatisticalModel_at_2pow123 +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.actionDlogOracleQueryCost_bound +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -625,7 +621,6 @@ assert_axioms Zcash.Snark.Fixture2.capturedInit
 assert_axioms Zcash.Snark.deriveChallenges
 assert_axioms Zcash.Snark.nonInteractiveFingerprint
 assert_axioms Zcash.Snark.Fixture2.derivedVk +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived +native(
   CompElliptic.Fields.Pasta.pallasBase,

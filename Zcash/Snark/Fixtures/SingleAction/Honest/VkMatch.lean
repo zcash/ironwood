@@ -1,7 +1,9 @@
 import Zcash.Snark.Fixtures.SingleAction.Honest.Fixture
 import Zcash.Arithmetic.Domain
 import Zcash.Snark.Keygen.Pipeline
-import Zcash.Circuits.Action.PlannerTrace
+import Zcash.Circuits.Action.Shape
+import Zcash.Circuits.Action.Shape.PlannerTrace
+import Zcash.Circuits.Action.TopLevel
 import Clean.Halo2.TopLevel
 import Mathlib.Util.AssertNoSorry
 
@@ -78,7 +80,9 @@ theorem capturedPinnedView_eq_derived : capturedPinnedView = actionPinnedCs := b
 
 /-- The derived domain exponent is orchard's pinned `K = 11` (`circuit.rs:76`). -/
 theorem actionK_eq : actionCircuit.domainExponent = 11 := by
-  exact Zcash.Circuits.Action.actionCircuit_domainExponent_eq
+  rw [Halo2.TopLevelCircuit.domainExponent,
+    Zcash.Circuits.Action.actionCircuit_shape_eq,
+    Zcash.Circuits.Action.actionShape_k]
 
 /-- **The captured verifying key's gates are the derived Action circuit's.** The
 verifying key holds `Zcash.Snark.Expr` gates and the derivation holds

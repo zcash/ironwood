@@ -141,7 +141,6 @@ assert_axioms Zcash.Snark.initialTranscript
 assert_axioms Zcash.Snark.deriveChallengesForStatement
 assert_axioms Zcash.Snark.nonInteractiveFingerprintForStatement
 assert_axioms Zcash.Snark.FixtureRandom.derivedVk +native(
-  Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived +native(
   CompElliptic.Fields.Pasta.pallasBase,

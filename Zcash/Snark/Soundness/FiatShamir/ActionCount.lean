@@ -172,9 +172,9 @@ theorem preTheta_not_prefix_of_numProofs_lt {shape shape' : Shape}
         <+: preThetaTranscriptForStatement vk' inst' ps' := by
   intro hpre
   have hcols : shape.numInstanceColumns = shape'.numInstanceColumns :=
-    congrArg CircuitShape.numInstanceColumns hc
+    congrArg Halo2.CircuitShape.numInstanceColumns hc
   have hadv : shape.numAdviceColumns = shape'.numAdviceColumns :=
-    congrArg CircuitShape.numAdviceColumns hc
+    congrArg Halo2.CircuitShape.numAdviceColumns hc
   have hmul : shape.numProofs * (shape.numInstanceColumns + shape.numAdviceColumns)
       < shape'.numProofs * (shape.numInstanceColumns + shape.numAdviceColumns) :=
     Nat.mul_lt_mul_of_pos_right hlt hpos
@@ -198,9 +198,9 @@ theorem preThetaTranscriptForStatement_length_le_of_numProofs_le {shape shape' :
     (preThetaTranscriptForStatement vk inst ps).length
       ≤ (preThetaTranscriptForStatement vk' inst' ps').length := by
   have hcols : shape.numInstanceColumns = shape'.numInstanceColumns :=
-    congrArg CircuitShape.numInstanceColumns hc
+    congrArg Halo2.CircuitShape.numInstanceColumns hc
   have hadv : shape.numAdviceColumns = shape'.numAdviceColumns :=
-    congrArg CircuitShape.numAdviceColumns hc
+    congrArg Halo2.CircuitShape.numAdviceColumns hc
   rw [preThetaTranscriptForStatement_length, preThetaTranscriptForStatement_length, ← hcols,
     ← hadv]
   have h1 := Nat.mul_le_mul_right shape.numInstanceColumns hle
@@ -224,8 +224,8 @@ theorem preTheta_cones_disjoint {shape shape' : Shape}
         (preThetaTranscriptForStatement_length_le_of_numProofs_le hc hlt.le vk vk' inst inst'
           ps ps'))
   · have hpos' : 0 < shape'.numInstanceColumns + shape'.numAdviceColumns := by
-      rw [← congrArg CircuitShape.numInstanceColumns hc,
-        ← congrArg CircuitShape.numAdviceColumns hc]
+      rw [← congrArg Halo2.CircuitShape.numInstanceColumns hc,
+        ← congrArg Halo2.CircuitShape.numAdviceColumns hc]
       exact hpos
     exact preTheta_not_prefix_of_numProofs_lt hc.symm hpos' hlt vk' vk inst' inst ps' ps
       (List.prefix_of_prefix_length_le h2 h1

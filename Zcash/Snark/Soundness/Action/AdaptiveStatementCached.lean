@@ -352,10 +352,12 @@ theorem relationFinderWithCallsOfCachedRun_none_provenance {pp : ProofParams}
     (cache : CachedRun pp family basis) (hcharV) (hfacts)
     (hnone : (family.relationFinderWithCallsOfCachedRun basis cache hcharV hfacts).1 = none) :
     family.provenanceRelationFinderOfCachedRun basis cache = none := by
-  unfold relationFinderWithCallsOfCachedRun at hnone
-  split at hnone
-  · simp_all
-  · assumption
+  cases hprovenance : family.provenanceRelationFinderOfCachedRun basis cache with
+  | none => rfl
+  | some relation =>
+      rw [family.relationFinderWithCallsOfCachedRun_of_some basis cache hcharV hfacts
+        relation hprovenance] at hnone
+      simp at hnone
 
 /-- The complete one-execution relation finder paired with its exact stage count. -/
 def cachedRelationFinderWithCalls {pp : ProofParams}

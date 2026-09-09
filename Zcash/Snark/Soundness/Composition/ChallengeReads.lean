@@ -319,6 +319,7 @@ theorem TopLevelLookup.thetaBudget_eq
     {G' : Type} [AddCommGroup G'] [Inhabited G']
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : Halo2.TopLevelCircuit Fp Config PublicInput)
+    [Halo2.TopLevelShape top]
     (pp : ProofParams) (urs : URS G')
     (poly : CommitmentId → CPoly) :
     TopLevelLookup.thetaBudget top pp urs poly =
@@ -334,6 +335,7 @@ theorem TopLevelLookup.thetaBadSet_congr
     {G' : Type} [AddCommGroup G'] [Inhabited G']
     {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : Halo2.TopLevelCircuit Fp Config PublicInput)
+    [Halo2.TopLevelShape top]
     (pp : ProofParams) (urs : URS G')
     {poly₁ poly₂ : CommitmentId → CPoly}
     (h : ∀ id, id.isColumnInput → poly₁ id = poly₂ id) :

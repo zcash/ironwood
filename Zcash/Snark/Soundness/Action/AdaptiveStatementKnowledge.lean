@@ -226,9 +226,8 @@ def adaptiveStatementKnowledgeExtractorV {pp : ProofParams}
     (finderResult : Option (AlgebraicRelationWitness (F := Fp) basis))
     (hfacts : finderResult = none → family.SemanticStageFacts basis view) :
     Option (ActionTerminal.ActionBundleWitness view.output.inputs) :=
-  match family.adaptiveStatementKnowledgeOutcomeV basis view hcharV finderResult hfacts with
-  | some (Sum.inl witness) => some witness
-  | _ => none
+  (family.adaptiveStatementKnowledgeOutcomeV basis view hcharV finderResult hfacts).bind
+    Sum.getLeft?
 
 /-- Witness-only projection of the complete selected-statement outcome. -/
 abbrev adaptiveStatementKnowledgeExtractor {pp : ProofParams}
@@ -456,9 +455,8 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
             have hrelationSome : (family.preXIdentityRelation?V basis
                 (runView family basis O) hfacts witness rawDecode hbatches hacceptsFull
                 hcharFull).isSome := by
-              unfold preXIdentityRelation?V
-              rw [houtcomeEq]
-              rfl
+              simp only [preXIdentityRelation?V, houtcomeEq, Option.bind_some,
+                Sum.getRight?_inr, Option.isSome_some]
             have hfinderSome := family.identityRelationFinder_isSome_of hchar basis O
               hprovenance.2.2.2.2.1 witness hout hroots haccepts hz hattack hrelationSome
             rw [hidentityNone] at hfinderSome

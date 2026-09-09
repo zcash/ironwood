@@ -33,6 +33,18 @@ def blindSelectorPolynomial {n : ℕ}
   rowPolynomial omega fun row : Fin n =>
     if lastUsable.val < row.val then 1 else 0
 
+/-- A single-row selector has degree below the size of its evaluation domain. -/
+theorem rowSelectorPolynomial_natDegree_lt {n : ℕ} {omega : Fp}
+    (hrows : Function.Injective fun i : Fin n => omega ^ (i : ℕ))
+    (selected : Fin n) : (rowSelectorPolynomial omega selected).natDegree < n := by
+  exact rowPolynomial_natDegree_lt hrows (Nat.zero_lt_of_lt selected.isLt)
+
+/-- The selector for the blinded rows has degree below the size of its domain. -/
+theorem blindSelectorPolynomial_natDegree_lt {n : ℕ} {omega : Fp}
+    (hrows : Function.Injective fun i : Fin n => omega ^ (i : ℕ))
+    (lastUsable : Fin n) : (blindSelectorPolynomial omega lastUsable).natDegree < n := by
+  exact rowPolynomial_natDegree_lt hrows (Nat.zero_lt_of_lt lastUsable.isLt)
+
 /-- A row selector is exactly the corresponding Lagrange basis polynomial. -/
 theorem toPoly_rowSelectorPolynomial {n : ℕ}
     (omega : Fp) (selected : Fin n) :

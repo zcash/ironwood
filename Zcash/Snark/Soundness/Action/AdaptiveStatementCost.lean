@@ -49,6 +49,7 @@ certified endpoints.
 namespace Zcash.Snark
 
 open Zcash.Common
+open Zcash.Circuits.Action (actionShape actionCircuit_shape_eq)
 
 open Keygen
 
@@ -326,8 +327,11 @@ def costedAdaptiveStatementBasisCache (pp : ProofParams)
         rcases i with i | j
         · rw [generators.2]
           have hi := i.isLt
-          change i.val < 2 ^ (Zcash.Circuits.Action.actionCircuit).domainExponent at hi
-          simp [List.getD, heval, hi]
+          have hiShape : i.val < 2 ^ actionShape.k := by
+            simpa only [AdaptiveActionStatementShape,
+              Halo2.CircuitShape.withProofParams_k,
+              actionCircuit_shape_eq] using hi
+          simp [List.getD, heval, hiShape]
           apply congrArg expected
           congr 1
         · fin_cases j <;>
@@ -358,8 +362,11 @@ def costedAdaptiveStatementBasisCache (pp : ProofParams)
     (hlength : ∀ i, (terms i).length = 2) :
     (costedAdaptiveStatementBasisCache pp expected terms heval).groupWork =
       2 * adaptiveStatementBasisWidth pp := by
-  simp [costedAdaptiveStatementBasisCache, hlength, adaptiveStatementBasisWidth,
-    List.sum_ofFn, Nat.mul_add, Nat.mul_comm]
+  simp only [costedAdaptiveStatementBasisCache, CostedVestaComp.groupWork_bind,
+    CostedVestaComp.groupWork_evalMsmsCertified, CostedVestaComp.groupWork_vestaMsmCertified,
+    CostedVestaComp.groupWork_pure, List.map_ofFn, List.sum_ofFn,
+    Function.comp_apply, hlength, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    smul_eq_mul, add_zero, adaptiveStatementBasisWidth, Nat.mul_add, Nat.mul_comm]
 
 /-- Proof-carrying programmed-basis construction used by the DLOG reduction. -/
 def costedAdaptiveStatementProgrammedBasisCache (pp : ProofParams) (B C : VestaG)
@@ -442,6 +449,7 @@ theorem adaptiveStatementCanonicalInstanceTermMatrix_eval {pp : ProofParams}
   simp only [Function.comp_apply, List.map_ofFn]
   rw [List.ofFn_inj]
   funext column
+  dsimp only [Function.comp_apply]
   exact (vestaAugmentedRepresentationTerms_sum basis
     (canonicalAdaptiveStatementInstanceRepresentation pp basis output.inputs p column).coeffs
   ).trans (canonicalAdaptiveStatementInstanceRepresentation pp basis output.inputs p column).hEq
@@ -477,26 +485,25 @@ theorem commitment_eq {pp : ProofParams} {family : ComputedAdaptiveActionStateme
   funext p column
   unfold commitment
   rw [cache.values_eq]
-  have hp : p.val < pp.numProofs := by
-    simpa [AdaptiveActionStatementShape] using p.isLt
+  have hp : p.val < (List.ofFn fun p => List.ofFn fun column =>
+      (canonicalAdaptiveStatementInstanceRepresentation
+        pp basis output.inputs p column).point).length := by
+    rw [List.length_ofFn]
+    exact p.isLt
+  rw [List.getD_eq_getElem _ _ hp, List.getElem_ofFn]
   by_cases hcolumn : column < (AdaptiveActionStatementShape pp).numInstanceColumns
-  · simp only [AdaptiveActionStatementShape,
-      CircuitShape.withProofParams_numInstanceColumns,
-      Halo2.TopLevelCircuit.shape_numInstanceColumns] at hcolumn
-    simp [List.getD, hp, hcolumn,
-      canonicalAdaptiveStatementInstanceRepresentation]
-    apply congrArg (fun q =>
-      adaptiveActionStatementInstanceCommitment pp basis output.inputs q column)
-    apply Fin.ext
-    rfl
-  · have hbounded := congrFun
+  · rw [List.getD_eq_getElem _ _ (by
+        rw [List.length_ofFn]
+        exact hcolumn), List.getElem_ofFn,
+      canonicalAdaptiveStatementInstanceRepresentation_point]
+  · rw [List.getD_eq_default _ _ (by
+        rw [List.length_ofFn]
+        exact Nat.le_of_not_gt hcolumn)]
+    have hbounded := congrFun
       (congrFun (adaptiveActionStatementInstanceCommitment_eq_bounded pp basis output.inputs) p)
       column
-    simp only [AdaptiveActionStatementShape,
-      CircuitShape.withProofParams_numInstanceColumns,
-      Halo2.TopLevelCircuit.shape_numInstanceColumns] at hcolumn
     rw [hbounded]
-    simp [boundedAdaptiveStatementInstanceCommitment, List.getD, hp, hcolumn,
+    simp only [boundedAdaptiveStatementInstanceCommitment, if_neg hcolumn,
       ursOfAugmentedBasis]
 
 end AdaptiveStatementCanonicalInstanceCache
@@ -532,9 +539,12 @@ def costedAdaptiveStatementCanonicalInstanceCache {pp : ProofParams}
       (AdaptiveActionStatementShape pp).numProofs *
         (AdaptiveActionStatementShape pp).numInstanceColumns *
           adaptiveStatementBasisWidth pp := by
-  simp [costedAdaptiveStatementCanonicalInstanceCache,
-    adaptiveStatementCanonicalInstanceTermMatrix, adaptiveStatementBasisWidth,
-    List.sum_ofFn, Nat.mul_assoc]
+  simp only [costedAdaptiveStatementCanonicalInstanceCache, adaptiveStatementCanonicalInstanceTermMatrix,
+    CostedVestaComp.groupWork_map, CostedVestaComp.groupWork_evalMsmMatrixCertified,
+    List.map_ofFn, List.sum_ofFn, Function.comp_def,
+    vestaAugmentedRepresentationTerms_length,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+    adaptiveStatementBasisWidth, Nat.mul_assoc]
 
 /-- Acceptance driven by the same reified MSM, with an intrinsic equation to the ordinary
 executable check.  The equation lets later costed branches consume the reified verdict without
@@ -633,13 +643,13 @@ costs nothing. -/
   dsimp only
   split
   · rename_i hassemble
-    simp [hassemble]
+    simp only [CostedVestaComp.groupWork_pure, hassemble]
   · rename_i msm hassemble
     simp only [CostedVestaComp.groupWork_bind,
-      CostedVestaComp.groupWork_vestaMsmCertified,
-      CostedVestaComp.run_vestaMsmCertified]
+      CostedVestaComp.groupWork_vestaMsmCertified, apply_dite,
+      CostedVestaComp.groupWork_pure, dite_eq_ite, ite_self, add_zero]
     rw [vestaAssembledMsmTerms_length]
-    split <;> simp [hassemble, ursOfAugmentedBasis]
+    simp only [hassemble, ursOfAugmentedBasis]
 
 /-- That count is under the shape's assembly budget, whatever the adversary supplied. -/
 theorem costedAcceptsVCertified_groupWork_le {pp : ProofParams}
@@ -782,19 +792,20 @@ reifying them changes no result. -/
       family.relationFinderAfterCachedProvenance basis cache hcharV facts := by
   cases hquotient : family.statementQuotientRelationFinderV basis cache.toRunView with
   | some relation =>
-      simp [adaptiveStatementFinderAfterProvenanceProgram,
-        relationFinderAfterCachedProvenance, hquotient]
+      unfold adaptiveStatementFinderAfterProvenanceProgram relationFinderAfterCachedProvenance
+      rw [hquotient]
+      simp only [CostedVestaComp.run_pure]
   | none =>
+      unfold adaptiveStatementFinderAfterProvenanceProgram relationFinderAfterCachedProvenance
+      rw [hquotient, CostedVestaComp.run_bind, costedAcceptsVCertified_run]
+      simp only [identityRelationFinderV]
       cases hidentity : family.identityRelationFinderWithAcceptanceV basis cache.toRunView
           hcharV (family.accepts?V basis cache.toRunView) none (fun _ => facts) with
       | some relation =>
-          simp [adaptiveStatementFinderAfterProvenanceProgram,
-            relationFinderAfterCachedProvenance, identityRelationFinderV,
-            hquotient, hidentity]
+          simp only [CostedVestaComp.run_pure]
       | none =>
-          simp [adaptiveStatementFinderAfterProvenanceProgram,
-            relationFinderAfterCachedProvenance, identityRelationFinderV,
-            terminalRelationFinderV, hquotient, hidentity]
+          simp only [CostedVestaComp.run_bind, costedAcceptsVCertified_run,
+            CostedVestaComp.run_pure, terminalRelationFinderV]
 
 /-- At most two assembled verifier equations run after provenance: one for the identity branch, one
 more for the terminal branch. -/
@@ -915,10 +926,8 @@ def adaptiveStatementKnowledgeExtractorWithAcceptanceV {pp : ProofParams}
   match finderResult with
   | some _ => none
   | none =>
-      match family.adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV basis view hcharV
-          acceptance facts with
-      | some (Sum.inl witness) => some witness
-      | _ => none
+      (family.adaptiveStatementKnowledgeOutcomeCoreWithAcceptanceV basis view hcharV
+        acceptance facts).bind Sum.getLeft?
 
 /-- Passing the ordinary verdict reproduces the original extractor, so threading a reified verdict
 changes nothing. -/
@@ -1038,9 +1047,14 @@ theorem adaptiveStatementExtractorReductionProgram_groupWork_le {pp : ProofParam
   have hfinder := adaptiveStatementFinderReductionProgram_groupWork_le
     family basis cache hcharV plan
   simp only [AdaptiveActionStatementShape,
-    CircuitShape.withProofParams_numProofs,
-    CircuitShape.withProofParams_numInstanceColumns,
-    Halo2.TopLevelCircuit.shape_numInstanceColumns] at hfinder ⊢
+    Halo2.CircuitShape.withProofParams_numProofs,
+    Halo2.CircuitShape.withProofParams_numInstanceColumns] at hfinder
+  rw [actionCircuit_shape_eq] at hfinder
+  conv_rhs =>
+    simp only [AdaptiveActionStatementShape,
+      Halo2.CircuitShape.withProofParams_numProofs,
+      Halo2.CircuitShape.withProofParams_numInstanceColumns,
+      actionCircuit_shape_eq]
   cases plan.verdict with
   | found =>
     rw [CostedVestaComp.groupWork_bind]
@@ -1060,7 +1074,7 @@ theorem adaptiveStatementExtractorReductionProgram_groupWork_le {pp : ProofParam
         cache.toRunView.output.toAlgebraicWfProof.proof.1
         (chRecord (k := (AdaptiveActionStatementShape pp).k)
           cache.toRunView.pre cache.toRunView.rounds)
-      simp only [AdaptiveActionStatementShape] at haccept
+      simp only [AdaptiveActionStatementShape, actionCircuit_shape_eq] at haccept
       exact (Nat.add_le_add hfinder haccept).trans (by omega)
 
 /-- Conservative structural envelope for the complete relation finder.  It intentionally retains
@@ -1164,10 +1178,22 @@ def adversaryOutput (execution : AdaptiveStatementCostedExecution family basis �
     AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis) :=
   execution.program.run.adversaryOutput
 
+/-- Read the adversary output through the constructed program's result equation. -/
+private theorem adversaryOutput_mk (adversaryProgram) (oracle)
+    (program : CostedVestaComp (AdaptiveStatementCostedExecutionResult family basis α)) :
+    adversaryOutput (AdaptiveStatementCostedExecutionCore.mk AdaptiveStatementInstrumentationSeal.seal
+      adversaryProgram oracle program) = program.run.adversaryOutput := rfl
+
 /-- The reduction's returned value, read from the same program run that produced the adversary
 output. -/
 def value (execution : AdaptiveStatementCostedExecution family basis α) : α :=
   execution.program.run.value
+
+/-- Read the result of a constructed execution through its program's result equation. -/
+private theorem value_mk (adversaryProgram) (oracle)
+    (program : CostedVestaComp (AdaptiveStatementCostedExecutionResult family basis α)) :
+    value (AdaptiveStatementCostedExecutionCore.mk AdaptiveStatementInstrumentationSeal.seal
+      adversaryProgram oracle program) = program.run.value := rfl
 
 /-- Adversary work is evaluated from the carried syntax on the carried oracle path; it cannot be
 supplied as a detached natural number. -/
@@ -1834,9 +1860,9 @@ def costedProgrammedCachedKnowledgeExtractor {pp : ProofParams}
     (certificate : AdaptiveStatementAdversaryCostCertificate family workLimit) (basis) (O) :
     (family.costedCachedRelationFinder hchar certificate basis O).value =
       family.cachedRelationFinder hchar basis O := by
-  change (family.certifiedCachedRelationFinderExecutionProgram
-    hchar certificate basis O).run.value = _
-  rw [family.certifiedCachedRelationFinderExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.value_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.value
+      (family.certifiedCachedRelationFinderExecutionProgram_run hchar certificate basis O))
 
 /-- The composed execution's witness is the cached extractor's. -/
 @[simp] theorem costedCachedKnowledgeExtractor_value {pp : ProofParams}
@@ -1844,9 +1870,9 @@ def costedProgrammedCachedKnowledgeExtractor {pp : ProofParams}
     (certificate : AdaptiveStatementAdversaryCostCertificate family workLimit) (basis) (O) :
     (family.costedCachedKnowledgeExtractor hchar certificate basis O).value =
       family.cachedKnowledgeExtractor hchar basis O := by
-  change (family.certifiedCachedKnowledgeExtractorExecutionProgram
-    hchar certificate basis O).run.value = _
-  rw [family.certifiedCachedKnowledgeExtractorExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.value_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.value
+      (family.certifiedCachedKnowledgeExtractorExecutionProgram_run hchar certificate basis O))
 
 /-- The execution carries the certificate's own program, so the work it counts is the certified
 adversary's. -/
@@ -1869,9 +1895,9 @@ adversary's. -/
     (certificate : AdaptiveStatementAdversaryCostCertificate family workLimit) (basis) (O) :
     (family.costedCachedRelationFinder hchar certificate basis O).adversaryOutput =
       family.runOutput basis O := by
-  change (family.certifiedCachedRelationFinderExecutionProgram
-    hchar certificate basis O).run.adversaryOutput = _
-  rw [family.certifiedCachedRelationFinderExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.adversaryOutput_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.adversaryOutput
+      (family.certifiedCachedRelationFinderExecutionProgram_run hchar certificate basis O))
 
 /-- The extractor execution threads that same output. -/
 @[simp] theorem costedCachedKnowledgeExtractor_adversaryOutput {pp : ProofParams}
@@ -1879,9 +1905,9 @@ adversary's. -/
     (certificate : AdaptiveStatementAdversaryCostCertificate family workLimit) (basis) (O) :
     (family.costedCachedKnowledgeExtractor hchar certificate basis O).adversaryOutput =
       family.runOutput basis O := by
-  change (family.certifiedCachedKnowledgeExtractorExecutionProgram
-    hchar certificate basis O).run.adversaryOutput = _
-  rw [family.certifiedCachedKnowledgeExtractorExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.adversaryOutput_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.adversaryOutput
+      (family.certifiedCachedKnowledgeExtractorExecutionProgram_run hchar certificate basis O))
 
 /-- At the programmed basis, the threaded output is the adversary's output at that basis. -/
 @[simp] theorem costedProgrammedCachedRelationFinder_adversaryOutput {pp : ProofParams}
@@ -1891,9 +1917,9 @@ adversary's. -/
     (family.costedProgrammedCachedRelationFinder
       hchar certificate B C x y O).adversaryOutput =
       family.runOutput (fun i => x i • B + y i • C) O := by
-  change (family.certifiedProgrammedCachedRelationFinderExecutionProgram
-    hchar certificate B C x y O).run.adversaryOutput = _
-  rw [family.certifiedProgrammedCachedRelationFinderExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.adversaryOutput_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.adversaryOutput
+      (family.certifiedProgrammedCachedRelationFinderExecutionProgram_run hchar certificate B C x y O))
 
 /-- The extractor's version at the programmed basis. -/
 @[simp] theorem costedProgrammedCachedKnowledgeExtractor_adversaryOutput {pp : ProofParams}
@@ -1903,9 +1929,9 @@ adversary's. -/
     (family.costedProgrammedCachedKnowledgeExtractor
       hchar certificate B C x y O).adversaryOutput =
       family.runOutput (fun i => x i • B + y i • C) O := by
-  change (family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram
-    hchar certificate B C x y O).run.adversaryOutput = _
-  rw [family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram_run]
+  exact (AdaptiveStatementCostedExecution.adversaryOutput_mk _ _ _).trans
+    (congrArg AdaptiveStatementCostedExecutionResult.adversaryOutput
+      (family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram_run hchar certificate B C x y O))
 
 /-- Adversary work in the execution is the certificate's, read from the carried syntax. -/
 @[simp] theorem costedCachedRelationFinder_proverGroupWork {pp : ProofParams}
@@ -1929,9 +1955,10 @@ succeeds. -/
     (B : VestaG) (z : Fp) (x y) (O) :
     (family.costedProgrammedCachedRelationFinder hchar certificate B (z • B) x y O).value.isSome =
       (family.cachedRelationFinder hchar (scalarBasis B (programmedLogs z x y)) O).isSome := by
-  change (family.certifiedProgrammedCachedRelationFinderExecutionProgram
-    hchar certificate B (z • B) x y O).run.value.isSome = _
-  rw [family.certifiedProgrammedCachedRelationFinderExecutionProgram_run]
+  refine (congrArg Option.isSome (AdaptiveStatementCostedExecution.value_mk _ _ _)).trans ?_
+  refine (congrArg Option.isSome (congrArg AdaptiveStatementCostedExecutionResult.value
+    (family.certifiedProgrammedCachedRelationFinderExecutionProgram_run
+      hchar certificate B (z • B) x y O))).trans ?_
   exact congrArg (fun selectedBasis =>
       (family.cachedRelationFinder hchar selectedBasis O).isSome)
     (adaptiveStatementProgrammedBasis_eq_scalarBasis B z x y)
@@ -1944,9 +1971,10 @@ succeeds. -/
     (family.costedProgrammedCachedKnowledgeExtractor hchar certificate B (z • B) x y O).value.isSome =
       (family.cachedKnowledgeExtractor hchar
         (scalarBasis B (programmedLogs z x y)) O).isSome := by
-  change (family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram
-    hchar certificate B (z • B) x y O).run.value.isSome = _
-  rw [family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram_run]
+  refine (congrArg Option.isSome (AdaptiveStatementCostedExecution.value_mk _ _ _)).trans ?_
+  refine (congrArg Option.isSome (congrArg AdaptiveStatementCostedExecutionResult.value
+    (family.certifiedProgrammedCachedKnowledgeExtractorExecutionProgram_run
+      hchar certificate B (z • B) x y O))).trans ?_
   exact congrArg (fun selectedBasis =>
       (family.cachedKnowledgeExtractor hchar selectedBasis O).isSome)
     (adaptiveStatementProgrammedBasis_eq_scalarBasis B z x y)

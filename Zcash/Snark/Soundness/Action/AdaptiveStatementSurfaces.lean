@@ -1742,8 +1742,8 @@ theorem adaptiveActionBetaSurfaceAtOf_measure_le {pp : ProofParams}
         Fintype.card Fp := by
   dsimp only
   simpa [adaptiveActionSurfaceAtOf, actionActiveRows,
-    CircuitShape.withProofParams_numProofs,
-    CircuitShape.withProofParams_numLookups] using
+    Halo2.CircuitShape.withProofParams_numProofs,
+    Halo2.CircuitShape.withProofParams_numLookups] using
     (ActionTerminal.actionBetaBadSets_probability_bound pp basis (earlier 0)
       (adaptiveActionCommitmentPolynomialOf (adaptiveActionStatementVk pp basis)
         instanceCommitment ps source
@@ -1772,8 +1772,8 @@ theorem adaptiveActionGammaSurfaceAtOf_measure_le {pp : ProofParams}
           Fintype.card Fp := by
   dsimp only
   simpa [adaptiveActionSurfaceAtOf, actionActiveRows,
-    CircuitShape.withProofParams_numProofs,
-    CircuitShape.withProofParams_numLookups] using
+    Halo2.CircuitShape.withProofParams_numProofs,
+    Halo2.CircuitShape.withProofParams_numLookups] using
     (ActionTerminal.actionGammaBadSets_probability_bound pp basis (earlier 0)
       (earlier ⟨1, by omega⟩)
       (adaptiveActionCommitmentPolynomialOf (adaptiveActionStatementVk pp basis)
