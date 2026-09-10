@@ -1,7 +1,7 @@
 import Zcash.Circuits.Integration.LookupProjection
 import Zcash.Snark.Soundness.Canonical.ConstraintModel
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Circuits.Integration.TopLevelGates
 
 /-!

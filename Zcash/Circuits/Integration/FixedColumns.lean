@@ -4,7 +4,7 @@ import Zcash.Circuits.Integration.FixedLayout
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Integration.SelectorCoherence
 import Zcash.Circuits.Integration.OperationLookups
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Snark.Keygen.Lagrange
 
 /-!
@@ -300,22 +300,20 @@ theorem topLevelRequiredFixedEntry_realized
 omit [AddCommGroup G] [Inhabited G] [Module Fp G] [DecidableEq G] in
 /--
 Binding every fixed-column resolver polynomial to the circuit's dense keygen rows
-supplies the exact fixed-column encoding expected by `TopLevelAssignment`.
+identifies their evaluations with the circuit's compiled fixed values.
 -/
 theorem topLevelFixedColumnEncoding_of_binding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top] [CircuitFieldSupport top]
-    {numProofs : ℕ} {proofIndex : Fin numProofs}
-    (assignment :
-      TopLevelAssignment top numProofs proofIndex)
+    (poly : CommitmentId → CPoly)
     (binding : ∀ column,
-      assignment.polynomial (.fixedCol column) =
+      poly (.fixedCol column) =
         instanceRowPolynomial top.n
           top.omega
           (top.fixedRows.getD column [])) :
-    assignment.FixedColumnEncoding := by
+    top.FixedColumnEncoding poly := by
   intro column row
   rw [binding column.index]
   let domainRow : Fin top.n :=

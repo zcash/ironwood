@@ -1,6 +1,5 @@
 import Zcash.Circuits.Integration.PermutationColumns
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.CircuitIntegration
 import Zcash.Snark.Keygen.Lagrange
 
 /-!

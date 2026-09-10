@@ -234,27 +234,4 @@ theorem resolverEnvironment_instance_of_rowPolynomial
   rw [resolverEnvironment_instance, hpoly]
   simpa using instanceRowPolynomial_eval hrows row
 
-/-- Full circuit satisfaction through any witness-indexed Clean environment decoder. -/
-def circuitSatViaOperations
-    {k : ℕ}
-    (place : RegionIndex → ℕ)
-    (decodeEnvironment : (Fin (2 ^ k) → Fp) → Environment Fp)
-    (ops : Operations Fp) (initialRegion : RegionIndex)
-    (witness : Fin (2 ^ k) → Fp) : Prop :=
-  FullCircuitSatisfaction place (decodeEnvironment witness) ops initialRegion
-
-/-- Full circuit satisfaction through witness-indexed commitment-ID polynomial resolvers. -/
-def circuitSatViaResolverOperations
-    {shape : CircuitShape} {G : Type*}
-    (vk : VerifyingKey shape Fp G)
-    (decodePoly :
-      (Fin (2 ^ shape.k) → Fp) → CommitmentId → CPoly)
-    (p : ℕ) (usableRows : ℕ)
-    (place : RegionIndex → ℕ) (ops : Operations Fp)
-    (initialRegion : RegionIndex)
-    (witness : Fin (2 ^ shape.k) → Fp) : Prop :=
-  circuitSatViaOperations place
-    (fun a => resolverEnvironment vk (decodePoly a) p usableRows)
-    ops initialRegion witness
-
 end Zcash.Snark

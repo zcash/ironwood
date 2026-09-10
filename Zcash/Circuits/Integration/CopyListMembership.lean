@@ -1,4 +1,5 @@
 import Zcash.Circuits.Integration.PermutationReplay
+import Zcash.Circuits.Integration.OperationCopies
 
 /-!
 # Declared copies resolve into the keygen copy list

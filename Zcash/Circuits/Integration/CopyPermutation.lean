@@ -1,7 +1,7 @@
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.PermutationCompiler
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 import Zcash.Circuits.Integration.CopyListMembership
 

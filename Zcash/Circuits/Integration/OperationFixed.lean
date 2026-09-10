@@ -5,7 +5,7 @@ import Zcash.Circuits.Integration.CircuitSatisfaction
 
 Fixed assignments and lookup-table loads are the circuit-fixed part of Clean's
 authoritative semantics.  This file extracts both forms into one list and proves that
-their satisfaction is exactly the `fixed` field of `FullCircuitSatisfaction`.
+their satisfaction is exactly the fixed constraint family.
 
 The result is useful twice: fixed-column polynomials can discharge the full fixed family
 without an operation-list proof walk, and Action environment assumptions can recover

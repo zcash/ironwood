@@ -7,8 +7,7 @@ import Zcash.Snark.Soundness.Canonical.PermutationSemantics
 
 This is the operation-trace side of the copy bridge.  It extracts the three copy forms carried by
 Clean operations—cell equality, instance equality, and constant equality—into one endpoint type,
-and proves that satisfying the extracted list is exactly the `copy` field of
-`FullCircuitSatisfaction`.
+and proves that satisfying the extracted list is exactly the copy constraint family.
 
 The characterization is independent of the compiler's concrete copy-pair representation.
 -/

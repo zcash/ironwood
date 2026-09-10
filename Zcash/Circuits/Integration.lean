@@ -2,7 +2,6 @@ import Zcash.Circuits.Integration.CopyPermutation
 import Zcash.Circuits.Integration.PermutationCycle
 import Zcash.Circuits.Integration.TopLevelCopyConstraints
 import Zcash.Circuits.Integration.TopLevelInterpretation
-import Zcash.Circuits.Integration.CircuitIntegration
 import Zcash.Circuits.Integration.CircuitSatisfaction
 import Zcash.Circuits.Integration.CopyListMembership
 import Zcash.Circuits.Integration.ExprRich
@@ -22,9 +21,7 @@ import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Circuits.Integration.ResolverGates
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Circuits.Integration.SelectorCoherence
-import Zcash.Circuits.Integration.TopLevelAssignment
-import Zcash.Circuits.Integration.TopLevelBridge
-import Zcash.Circuits.Integration.TopLevelCircuit
+import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Circuits.Integration.TopLevelCoherence
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 import Zcash.Circuits.Integration.TopLevelWitness

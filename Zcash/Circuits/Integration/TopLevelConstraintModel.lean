@@ -1,7 +1,7 @@
 import Zcash.Snark.Keygen.Pipeline
 import Zcash.Snark.Soundness.Canonical.ConstraintModel
 import Zcash.Circuits.Integration.PermutationCompiler
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Integration.AssignmentEncoding
 
 /-!
 # Circuit-derived canonical constraint models

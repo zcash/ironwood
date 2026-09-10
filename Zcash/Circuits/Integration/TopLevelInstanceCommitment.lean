@@ -1,4 +1,5 @@
 import Zcash.Circuits.Integration.InstanceColumns
+import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.TopLevelWitness
 import Mathlib.Util.AssertNoSorry
@@ -231,22 +232,12 @@ that proof, or yields the augmented-basis relation.
 def publicInputEncoding_or_relation
     (proofIndex : Fin pp.numProofs)
     [CircuitFieldSupport top] :
-    (let assignment : TopLevelAssignment top
-          pp.numProofs proofIndex :=
-        { polynomial :=
-            CanonicalMemberConstraintRelation.acceptedPolynomial
-              (shape := top.shape.withProofParams pp)
-              (memberDecode := memberDecode) haccepts };
-      assignment.PublicInputEncoding (inputs proofIndex)) ⊕'
+    top.PublicInputEncoding
+      (CanonicalMemberConstraintRelation.acceptedPolynomial
+        (shape := top.shape.withProofParams pp)
+        (memberDecode := memberDecode) haccepts)
+      proofIndex (inputs proofIndex) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  let assignment : TopLevelAssignment top
-      pp.numProofs proofIndex :=
-    { polynomial :=
-        CanonicalMemberConstraintRelation.acceptedPolynomial
-          (shape := top.shape.withProofParams pp)
-          (memberDecode := memberDecode) haccepts }
-  change assignment.PublicInputEncoding (inputs proofIndex) ⊕'
-    AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w
   refine bindOrRelationWitness
     (finForallOrRelationWitness fun index =>
       acceptedColumn_eq_rowPolynomial_or_relation
@@ -254,55 +245,16 @@ def publicInputEncoding_or_relation
         memberDecode haccepts proofIndex index
         (top.domainRowsInjective))
     fun hcolumns => ?_
-  apply TopLevelAssignment.publicInputEncoding_of_publicInputRowPolynomials
-      (assignment := assignment) (inputs proofIndex)
-  · exact hcolumns
-  · exact top.domainRowsInjective
+  exact top.publicInputEncoding_of_publicInputRowPolynomials _ proofIndex
+    (inputs proofIndex) hcolumns
 
 assert_no_sorry publicInputEncoding_or_relation
-
-/--
-Present the generic statement of an accepted top-level circuit at the public inputs
-supplied to the verifier.
-
-Acceptance binds every circuit-derived public instance column to its layout-derived
-row polynomial, or yields the shared augmented-basis relation. No assumption is made
-about proof multiplicity, column count, column indices, or query rotations.
--/
-def statements_or_relation_of_accepted_topLevelBundleStatement
-    [CircuitFieldSupport top]
-    (htop :
-      TopLevelBundleStatement top pp
-        (CanonicalMemberConstraintRelation.acceptedPolynomial
-          (shape := top.shape.withProofParams pp)
-          (memberDecode := memberDecode) haccepts)) :
-    (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  let poly :=
-    CanonicalMemberConstraintRelation.acceptedPolynomial
-      (shape := top.shape.withProofParams pp)
-      (memberDecode := memberDecode) haccepts
-  change TopLevelBundleStatement top pp poly at htop
-  refine bindOrRelationWitness
-    (finForallOrRelationWitness
-      (A := fun proofIndex : Fin pp.numProofs =>
-        let assignment : TopLevelAssignment top
-            pp.numProofs proofIndex :=
-          { polynomial := poly }
-        assignment.PublicInputEncoding (inputs proofIndex))
-      fun proofIndex =>
-        publicInputEncoding_or_relation
-          top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-          haccepts proofIndex)
-    fun hencoding =>
-      TopLevelBundleStatement.of_publicInputEncoding
-        top pp poly inputs hencoding htop
 
 /-- Present retained private witnesses at the public inputs bound by the accepted instance
 commitments, preserving a computed relation on binding failure. -/
 def witnesses_or_relation_of_accepted_topLevelBundleWitness
     [CircuitFieldSupport top]
-    (witness : TopLevelBundleWitness top pp
+    (witness : TopLevelBundleWitness top pp.numProofs
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (shape := top.shape.withProofParams pp)
         (memberDecode := memberDecode) haccepts)) :
@@ -312,24 +264,20 @@ def witnesses_or_relation_of_accepted_topLevelBundleWitness
     CanonicalMemberConstraintRelation.acceptedPolynomial
       (shape := top.shape.withProofParams pp)
       (memberDecode := memberDecode) haccepts
-  change TopLevelBundleWitness top pp poly at witness
   refine bindOrRelationWitness
     (finForallOrRelationWitness
       (A := fun proofIndex : Fin pp.numProofs =>
-        let assignment : TopLevelAssignment top
-            pp.numProofs proofIndex :=
-          { polynomial := poly }
-        assignment.PublicInputEncoding (inputs proofIndex))
+        top.PublicInputEncoding poly proofIndex (inputs proofIndex))
       fun proofIndex =>
         publicInputEncoding_or_relation
           top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
           haccepts proofIndex)
-    fun hencoding =>
-      TopLevelBundleWitness.of_publicInputEncoding
-        top pp poly inputs hencoding witness
+    fun hencoding proofIndex => by
+      refine { w := (witness proofIndex).w, satisfied := ?_ }
+      rw [← top.extractPublicInput_eq_of_encoding poly proofIndex
+        (inputs proofIndex) (hencoding proofIndex)]
+      exact (witness proofIndex).satisfied
 
-assert_no_sorry
-  statements_or_relation_of_accepted_topLevelBundleStatement
 assert_no_sorry
   witnesses_or_relation_of_accepted_topLevelBundleWitness
 

@@ -4,7 +4,6 @@ import Zcash.Circuits.Integration.InstanceColumns
 import Zcash.Circuits.Integration.LookupSelectorRows
 import Zcash.Circuits.Integration.TopLevelLookups
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
-import Zcash.Circuits.Integration.TopLevelCircuit
 import Zcash.Circuits.Integration.TopLevelGates
 import Zcash.Circuits.Integration.TopLevelWitness
 import Zcash.Circuits.Integration.TopLevelCopyConstraints
@@ -88,7 +87,7 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
     (lookupExclusions :
       TopLevelLookup.ChallengeExclusions
         top pp urs ch relation.polynomial) :
-    TopLevelBundleWitness top pp relation.polynomial ⊕'
+    TopLevelBundleWitness top pp.numProofs relation.polynomial ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hdomainSize : top.n = 2 ^ urs.k := by
     rw [top.n_eq_two_pow_domainExponent, hk]
@@ -102,19 +101,17 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
   obtain hbinding | bad := relation.topLevelFixedColumns_eq_rowPolynomials_or_relation
   swap
   · exact PSum.inr bad
-  refine finForallOrRelationWitness
-    (A := fun proofIndex =>
-      let assignment : TopLevelAssignment top pp.numProofs proofIndex :=
-        { polynomial := relation.polynomial }
-      TopLevelSemanticWitness top
-        (top.extractPublicInput (top.environment assignment.proofAssignment)))
-    fun proofIndex => ?_
-  let assignment : TopLevelAssignment top pp.numProofs proofIndex :=
-    { polynomial := relation.polynomial }
-  have hencoding : assignment.FixedColumnEncoding := by
-    apply topLevelFixedColumnEncoding_of_binding assignment
+  have hencoding : top.FixedColumnEncoding relation.polynomial := by
+    apply topLevelFixedColumnEncoding_of_binding relation.polynomial
     intro column
-    simpa only [assignment, hdomainSize] using hbinding column
+    simpa only [hdomainSize] using hbinding column
+  refine finForallOrRelationWitness
+    (A := fun proofIndex : Fin pp.numProofs =>
+      TopLevelSemanticWitness top
+        (top.extractPublicInput (top.environment
+          (resolverAssignment top.omega relation.polynomial proofIndex))))
+    fun proofIndex => ?_
+  let assignment := resolverAssignment top.omega relation.polynomial proofIndex
   obtain hfixed | bad := relation.topLevelFixedConstraints_or_relation proofIndex
   swap
   · exact PSum.inr bad
@@ -127,10 +124,17 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
       (operationEnabledLookups top.operations 0)
       fun lookup henabled => ?_)
     fun lookupSelectorValues =>
-      (TopLevelAssignment.bridgeWitness_of_components
-        proofIndex hsatisfaction hencoding hfixed.1 hfixed.2 hcopies
-        (TopLevelLookup.WitnessConditions.ofChallengeExclusions
-          ch relation.polynomial proofIndex lookupSelectorValues lookupExclusions)).semanticWitness
+      { w := top.extractPrivateWitness (top.placedEnvironment assignment)
+        satisfied := top.soundness assignment (by
+          rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding,
+            CircuitConstraintFamily.operations_constraints_iff]
+          exact ⟨top.canonicalConstraints ch relation.polynomial proofIndex
+              hsatisfaction hfixed.1,
+            hcopies,
+            TopLevelLookup.constraints ch relation.polynomial proofIndex
+              hsatisfaction (TopLevelLookup.WitnessConditions.ofChallengeExclusions
+                ch relation.polynomial proofIndex lookupSelectorValues lookupExclusions),
+            hfixed.2⟩) }
   have hrow : top.placement lookup.region + lookup.row < top.n :=
     (lookup.activationRow_lt_usableRows henabled).trans_le
       top.usableRowsAt_domainExponent_le_n

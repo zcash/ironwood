@@ -40,17 +40,16 @@ The lookup bridge is split deliberately:
   the remaining projection boundary to exact packed-selector values, packages the
   bundle-wide `β`/`γ`/`θ` exclusions into the per-proof witness conditions, and
   constructs the deployed witnesses consumed by the generic full-circuit bridge.
-* `TopLevelBridge.lean` is the generic join: it derives gate and lookup families
-  from the canonical circuit-owned constraint model and combines them with the
-  fixed/table and copy constraints into `FullCircuitBridge`.
 * `CopyConstraints.lean` derives Clean copy constraints directly from compiler
   copy-pair equalities and fixed-cell reads, including allocated constants.
 * `CopyPermutation.lean` and `PermutationCycle.lean` identify compiler copy replay
   with the verifier's sigma polynomials. `TopLevelCopyConstraints.lean` combines
   that identification with permutation challenge exclusions and constant reads.
-* `TopLevelInterpretation.lean` assembles these generic arguments into executable
-  private witnesses. `TopLevelWitness.lean` provides the witness types and the
-  transport to the circuit's canonical proof assignment.
+* `TopLevelInterpretation.lean` joins the four constraint families directly into
+  Clean's `Constraints` and applies `top.soundness` to extract executable private
+  witnesses. `TopLevelWitness.lean` provides the witness types;
+  `AssignmentEncoding.lean` identifies the polynomial resolver with the circuit's
+  canonical proof assignment and public-input layout.
   `CircuitFieldSupport top` supplies only numerical compatibility bounds;
   `Arithmetic.FieldDomainParams` derives roots and permutation-column separation
   from a certified field generator and its two-adic factorization. The field's

@@ -10,7 +10,7 @@ import Zcash.Common.RelationWitness
 
 This is the operation-trace side of the lookup bridge.  It extracts every
 `RegionOperation.enableLookup` together with its region placement context and proves that
-satisfying the extracted list is exactly the `lookup` field of `FullCircuitSatisfaction`.
+satisfying the extracted list is exactly the lookup constraint family.
 
 The second half is independent of the concrete VK representation.  It turns membership of a
 `θ`-compressed input value in a compressed table column back into equality of the original tuples,

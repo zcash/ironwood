@@ -496,10 +496,9 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
   `PermutationColumns`, `InstanceColumns`), the resolver-backed environments (`ResolverGates`,
   `ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
-  circuit satisfaction (`CircuitSatisfaction`, `CircuitIntegration`). The `Action*` modules
-  specialize all of that to the deployed Action circuit and land at `ActionTerminal`; the
-  `TopLevel*` modules are the circuit-generic versions. `Soundness/Action/StraightLineTerminal`
-  reaches that same terminal from one accepting execution, and
+  circuit satisfaction (`CircuitSatisfaction`, `TopLevelInterpretation`). These arguments
+  apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
+  `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and
   `Soundness/Action/StraightLineEvent` bounds the probability loss from the challenge exclusions it
   leaves open — the probability that an accepting run carries neither the bundle statement nor a
   nontrivial relation.

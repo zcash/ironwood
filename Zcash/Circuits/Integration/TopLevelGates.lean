@@ -287,9 +287,6 @@ theorem canonicalConstraints
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    (domain : ∀ row : ℕ,
-      (top.omega ^ row) ^
-        top.n = 1)
     (hfixed : SelectorActivationsRealized top.selectorMap
       top.selectorActivations
       (resolverEnvironment
@@ -306,7 +303,8 @@ theorem canonicalConstraints
     (resolverEnvironment
       (top.toVerifierKey urs) poly proofIndex
       (top.usableRowsAt top.domainExponent))
-    (top.operations) 0 satisfaction domain
+    (top.operations) 0 satisfaction (fun row => by
+      rw [← pow_mul, Nat.mul_comm, pow_mul, top.omega_pow_n, one_pow])
   intro enabled henabled constraint hconstraint
   let selectors :=
     canonicalLagrangePolynomials

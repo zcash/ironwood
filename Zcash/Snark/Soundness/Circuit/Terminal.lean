@@ -1,7 +1,7 @@
 import Zcash.Circuits.Integration.TopLevelInterpretation
 import Zcash.Circuits.Integration.TopLevelInstanceCommitment
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Snark.Soundness.Canonical.Terminal
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Mathlib.Util.AssertNoSorry

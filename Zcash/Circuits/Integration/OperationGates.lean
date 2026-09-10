@@ -8,7 +8,7 @@ import Zcash.Snark.Soundness.Argument.PermutationRows
 
 This file is the gate analogue of `OperationLookups`.  It extracts every
 `RegionOperation.enableGate` with its placement context and proves that satisfaction of
-those activations is exactly the gate field of `FullCircuitSatisfaction`.
+those activations is exactly the gate constraint family.
 
 `EnabledGate.PolynomialWitness` is the representation boundary to the deployed
 constraint split. For each enabled Clean constraint it identifies a member of the
