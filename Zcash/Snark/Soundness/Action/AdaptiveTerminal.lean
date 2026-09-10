@@ -108,15 +108,8 @@ def actionWitnessOrRelationOfDecode?
                       (actionCircuit.instanceCommitment urs inputs) ps ch
                       (fun i hi => decode.toMemberDecode hchar i hi) haccepts hblinding
                       (polynomial .vanishingH) rfl
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
-                        actionCircuit.toVerifierKey_fixedQueryCount urs)
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
-                        actionCircuit.toVerifierKey_adviceQueryCount urs)
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
-                        actionCircuit.toVerifierKey_instanceQueryCount urs)
                       (fun slot point hpoint =>
                         PSum.inl (decode.memberBinding hchar slot point hpoint))
-                      (actionCircuit.permutationChunkRoutingCoherent urs)
                       (by
                         simpa only [actionCircuit.toVerifierKey_n] using
                           hxgoodProof.down) with

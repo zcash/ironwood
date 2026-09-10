@@ -187,9 +187,6 @@ theorem resolverPermutationDomain
     ResolverPermutationDomain.ofCanonicalConstraintModel
       (top.toVerifierKey urs) ch poly
       (top.toVerifierKey_blindingFactors_lt_n urs)
-      ((top.toVerifierKey urs).domainRowsInjective)
-      ((top.toVerifierKey urs).omega_pow_n)
-      (top.toVerifierKey_permutationChunks_length urs)
 
 /-- Assemble a semantic permutation cycle from a circuit-derived keygen
 permutation while keeping circuit-owned domain and chunk constants in their
@@ -217,12 +214,7 @@ def resolverPermutationCycleOfKeygenColumns
         ResolverPermutationCell
           (top.toVerifierKey urs) poly p activeRows,
       widenPermutationChunkCell hactive (sigma c) =
-        fullSigma (widenPermutationChunkCell hactive c))
-    (hnames : Function.Injective fun c :
-        ResolverPermutationCell
-          (top.toVerifierKey urs) poly p activeRows =>
-      chunkRowName top.omega Zcash.Arithmetic.deltaFp
-        top.chunkLen c.1 c.2.1 c.2.2) :
+        fullSigma (widenPermutationChunkCell hactive c)) :
     ResolverPermutationCycle
       (top.toVerifierKey urs) poly p activeRows := by
   have hcolumns' : ∀
@@ -237,41 +229,13 @@ def resolverPermutationCycleOfKeygenColumns
           (top.toVerifierKey urs).chunkLen fullSigma chunk column := by
     simpa only [top.toVerifierKey_omega, top.toVerifierKey_delta,
       top.toVerifierKey_chunkLen] using hcolumns
-  have hnames' : Function.Injective fun c :
-      ResolverPermutationCell
-        (top.toVerifierKey urs) poly p activeRows =>
-    chunkRowName (top.toVerifierKey urs).omega
-      (top.toVerifierKey urs).delta
-      (top.toVerifierKey urs).chunkLen c.1 c.2.1 c.2.2 := by
-    simpa only [top.toVerifierKey_omega, top.toVerifierKey_delta,
-      top.toVerifierKey_chunkLen] using hnames
   have hrows : Function.Injective fun i : Fin top.n =>
       (top.toVerifierKey urs).omega ^ (i : ℕ) := by
     simpa only [top.toVerifierKey_omega] using
       top.domainRowsInjective
   exact ResolverPermutationCycle.ofKeygenColumns
     (top.toVerifierKey urs) poly p hactive fullSigma sigma
-      hrows hcolumns' hrestrict hnames'
-
-/-- The last usable row of a circuit-derived verifier domain is the verifier's
-canonical negative blinding rotation. -/
-theorem toVerifierKey_lastUsableRowRotation
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top] [CircuitFieldSupport top]
-    (urs : URS G) :
-    (top.toVerifierKey urs).omega ^
-        ((top.toVerifierKey urs).n -
-          (top.toVerifierKey urs).blindingFactors - 1) =
-      (top.toVerifierKey urs).omega ^
-        (-(((top.toVerifierKey urs).blindingFactors : ℤ) + 1)) := by
-  rw [show (top.toVerifierKey urs).n -
-      (top.toVerifierKey urs).blindingFactors - 1 =
-        (top.toVerifierKey urs).n -
-          ((top.toVerifierKey urs).blindingFactors + 1) by omega]
-  exact domain_pow_sub_eq_zpow_neg
-    (by
-      have hblinding := top.toVerifierKey_blindingFactors_lt_n urs
-      omega)
-    ((top.toVerifierKey urs).omega_pow_n)
-
+      hrows hcolumns' hrestrict
+      ((top.toVerifierKey urs).permutationNamesInjective poly p
+        (by simpa only [top.toVerifierKey_n] using hactive))
 end Halo2.TopLevelCircuit

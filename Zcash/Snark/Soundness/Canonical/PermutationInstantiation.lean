@@ -1,6 +1,7 @@
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Multiopen.ConstraintResolver
 import Zcash.Snark.Soundness.Argument.PermutationRows
+import Zcash.Snark.Verifier.WellFormed
 
 /-!
 # Instantiating permutation constraints with routed decoded polynomials
@@ -41,26 +42,6 @@ def permutationColumnCommitmentId
   | .advice i => .adviceCol p (vk.adviceQueryLayout.getD i (0, 0)).1
   | .fixed i => .fixedCol (vk.fixedQueryLayout.getD i (0, 0)).1
   | .instance i => .instanceCol p (vk.instanceQueryLayout.getD i (0, 0)).1
-
-/-- A permutation value-column reference is usable at the unrotated challenge `x`: its evaluation
-index and query-layout entry are in range, and that layout entry has rotation zero. -/
-def PermutationColumnRef.Coherent {shape : CircuitShape} {F G : Type*}
-    (vk : VerifyingKey shape F G) : ColumnRef → Prop
-  | .advice i =>
-      i < shape.numAdviceQueries ∧ i < vk.adviceQueryLayout.length ∧
-        (vk.adviceQueryLayout.getD i (0, 0)).2 = 0
-  | .fixed i =>
-      i < shape.numFixedQueries ∧ i < vk.fixedQueryLayout.length ∧
-        (vk.fixedQueryLayout.getD i (0, 0)).2 = 0
-  | .instance i =>
-      i < shape.numInstanceQueries ∧ i < vk.instanceQueryLayout.length ∧
-        (vk.instanceQueryLayout.getD i (0, 0)).2 = 0
-
-/-- VK coherence needed to route every `(value, σ-name)` pair in every permutation chunk. -/
-def PermutationChunkRoutingCoherent {shape : CircuitShape} {F G : Type*}
-    (vk : VerifyingKey shape F G) : Prop :=
-  ∀ chunk ∈ vk.permutationChunks, ∀ ref ∈ chunk,
-    PermutationColumnRef.Coherent vk ref.1 ∧ ref.2 < shape.numPermutationColumns
 
 /-- Resolve a permutation column reference to its polynomial.  `finFn` mirrors the verifier's
 total claimed-evaluation feeds: an out-of-range evaluation reference reads zero. -/

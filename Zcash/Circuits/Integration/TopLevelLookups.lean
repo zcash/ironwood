@@ -566,13 +566,6 @@ def deployedWitness
       polynomialEnvironment_usableRows]
     rw [hu, top.usableRowsAt_domainExponent]
     omega
-  have hrows : Function.Injective
-      fun row : Fin top.n =>
-        top.omega ^ (row : ℕ) :=
-    top.domainRowsInjective
-  have hroot :
-      top.omega ^ top.n = 1 :=
-    top.omega_pow_n
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=
@@ -586,20 +579,18 @@ def deployedWitness
   let canonical :=
     canonicalLagrangePolynomials vk.omega
       (Nat.lt_of_succ_lt husable)
-  have hrows' : Function.Injective
-      fun row : Fin vk.n =>
-        vk.omega ^ (row : ℕ) := by
-    rw [hn, homega]
-    exact hrows
-  have hroot' :
-      vk.omega ^ vk.n = 1 := by
-    simpa only [hn, homega] using hroot
+  haveI : VerifyingKey.FieldSupport vk := by
+    rw [← hvk]
+    infer_instance
+  haveI : VerifyingKey.WellFormed vk := by
+    rw [← hvk]
+    infer_instance
   have domain :
       ResolverLookupDomain vk canonical.1 canonical.2.1 canonical.2.2
         vk.n u := by
     simpa only [canonical] using
       ResolverLookupDomain.ofCanonicalPolynomials
-        vk husable hrows' hroot'
+        vk
   have satisfactionAtVk :
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly) vk.n := by

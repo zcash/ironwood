@@ -108,7 +108,6 @@ def actionTopLevelCircuitCorrectness
   have fixedCoherence :
       TopLevelFixedCoherence actionCircuit urs :=
     TopLevelFixedCoherence.ofDerived actionCircuit urs hdomainExponent
-      actionCircuit.domainExponent_lt
   have hdomainSize :
       actionCircuit.n = 2 ^ urs.k := by
     rw [actionCircuit.n_eq_two_pow_domainExponent]
@@ -135,8 +134,6 @@ def actionTopLevelCircuitCorrectness
       { polynomial := relation.polynomial }
     apply topLevelFixedColumnEncoding_of_binding
       assignment
-      (actionCircuit.domainRowsInjective)
-      (actionCircuit.omega_pow_n)
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex

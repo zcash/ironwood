@@ -511,19 +511,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       terminal memberDecode
   have terminal :=
     outcome haccepts (top.toVerifierKey_blindingFactors_lt_n urs)
-  have outcome :=
-      terminal
-        hpoly hquot
-        (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
-          top.toVerifierKey_fixedQueryCount urs)
-        (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
-          top.toVerifierKey_adviceQueryCount urs)
-        (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
-          top.toVerifierKey_instanceQueryCount urs)
-  have terminal := outcome
-        hbind
-        (top.permutationChunkRoutingCoherent urs)
-  have outcome := terminal
+  have outcome := terminal hpoly hquot hbind
   have hxgoodVk :
       let model :=
         CanonicalMemberConstraintRelation.acceptedModel

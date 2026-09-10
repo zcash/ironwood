@@ -2,6 +2,7 @@ import Zcash.Snark.Soundness.Canonical.PermutationInstantiation
 import Zcash.Snark.Soundness.Argument.PermutationConstruction
 import Zcash.Snark.Soundness.Pricing.GoodChallenge
 import Zcash.Snark.Soundness.Canonical.DomainSelectors
+import Zcash.Snark.Verifier.FieldSupport
 
 /-!
 # Semantic endpoint for resolver-backed permutation constraints
@@ -354,6 +355,67 @@ abbrev ResolverPermutationCell
     (p : Fin numProofs) (m : ℕ) :=
   ChunkCell shape.numPermutationSets m
     (fun c => (ResolverPermutationPairs vk poly p c).length)
+
+namespace VerifyingKey
+
+variable {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
+    (vk : VerifyingKey shape Fp G) [WellFormed vk]
+    (poly : CommitmentId → CPoly) (p : Fin numProofs)
+
+theorem resolverPermutationPairs_length (chunk : Fin shape.numPermutationSets) :
+    (ResolverPermutationPairs vk poly p chunk).length =
+      min vk.chunkLen (shape.numPermutationColumns - (chunk : ℕ) * vk.chunkLen) := by
+  simp only [ResolverPermutationPairs, permutationChunkPairsOfResolver, List.length_map]
+  apply WellFormed.permutationChunks_getD_length
+  rw [WellFormed.permutationChunks_length (vk := vk)]
+  exact chunk.isLt
+
+/-- Field separation and a well-formed chunk layout give unique cell names on
+every active prefix. The decoded column polynomials play no role in this fact. -/
+theorem permutationNamesInjective [Zcash.Arithmetic.FieldDomainParams Fp] [FieldSupport vk]
+    {activeRows : ℕ} (hactive : activeRows ≤ vk.n) :
+    Function.Injective fun c : ResolverPermutationCell vk poly p activeRows =>
+      chunkRowName vk.omega vk.delta vk.chunkLen c.1 c.2.1 c.2.2 := by
+  have hfull : Function.Injective fun c : ResolverPermutationCell vk poly p vk.n =>
+      chunkRowName vk.omega vk.delta vk.chunkLen c.1 c.2.1 c.2.2 := by
+    apply chunkRowName_injective_of_actual_coset
+    · intro j
+      exact pow_ne_zero _ vk.delta_ne_zero
+    · exact vk.omega_pow_n
+    · intro i j hi hj h
+      exact vk.omega_isPrimitiveRoot.pow_inj hi hj h
+    · intro j j' row hcoset
+      have hj := j.2.isLt
+      have hj' := j'.2.isLt
+      simp only [vk.resolverPermutationPairs_length poly p j.1] at hj
+      simp only [vk.resolverPermutationPairs_length poly p j'.1] at hj'
+      have hindex := congrArg Fin.val (vk.eq_of_delta_pow_eq_omega_pow_mul
+        ⟨(j.1 : ℕ) * vk.chunkLen + (j.2 : ℕ), by omega⟩
+        ⟨(j'.1 : ℕ) * vk.chunkLen + (j'.2 : ℕ), by omega⟩ row hcoset)
+      have hwidth : (j.2 : ℕ) < vk.chunkLen := lt_of_lt_of_le hj (min_le_left _ _)
+      have hwidth' : (j'.2 : ℕ) < vk.chunkLen := lt_of_lt_of_le hj' (min_le_left _ _)
+      have hchunk : j.1 = j'.1 := by
+        apply Fin.ext
+        have hdiv := congrArg (· / vk.chunkLen) hindex
+        dsimp only at hdiv
+        rw [Nat.mul_comm (j.1 : ℕ), Nat.mul_comm (j'.1 : ℕ),
+          Nat.mul_add_div (WellFormed.chunkLen_pos (vk := vk)),
+          Nat.mul_add_div (WellFormed.chunkLen_pos (vk := vk)),
+          Nat.div_eq_of_lt hwidth, Nat.div_eq_of_lt hwidth', Nat.add_zero,
+          Nat.add_zero] at hdiv
+        exact hdiv
+      obtain ⟨chunk, column⟩ := j
+      obtain ⟨chunk', column'⟩ := j'
+      dsimp only at hchunk hindex
+      subst chunk'
+      exact congrArg (Sigma.mk chunk) (Fin.ext (Nat.add_left_cancel hindex))
+  intro c d hname
+  apply widenPermutationChunkCell_injective hactive
+  apply hfull
+  simpa only [widenPermutationChunkCell_fst, widenPermutationChunkCell_row,
+    widenPermutationChunkCell_column] using hname
+
+end VerifyingKey
 
 /-- VK structure and evaluation-domain facts needed after the polynomial constraints have been
 extracted.  These are independent of the proof's committed witness columns. -/

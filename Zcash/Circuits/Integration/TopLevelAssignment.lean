@@ -64,20 +64,6 @@ variable
     [TopLevelShape top]
     {numProofs : ℕ} {proofIndex : Fin numProofs}
 
-/-- A fitting top-level circuit has fewer blinding rows than domain rows. -/
-theorem blindingFactors_lt_domainSize
-    : top.blindingFactors < top.n := by
-  have h := top.blindingFactors_add_three_le_domainSize
-  omega
-
-/--
-The compiler-derived domain has room beyond the blinding rows and final unusable row.
--/
-theorem blindingFactors_succ_lt_domainSize
-    : top.blindingFactors + 1 < top.n := by
-  have h := top.blindingFactors_add_three_le_domainSize
-  omega
-
 /--
 The Clean proof-varying assignment decoded from this bundle member.
 

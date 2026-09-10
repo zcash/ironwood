@@ -316,16 +316,9 @@ def actionDecodedTerminal?
                     (fun i hi => decode.toMemberDecode hchar i hi)
                   let terminal := outcome haccepts hblinding
                   let outcome := terminal (polynomial .vanishingH) rfl
-                    (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
-                      actionCircuit.toVerifierKey_fixedQueryCount urs)
-                    (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
-                      actionCircuit.toVerifierKey_adviceQueryCount urs)
-                    (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
-                      actionCircuit.toVerifierKey_instanceQueryCount urs)
                   let terminal := outcome
                     (fun slot point hpoint =>
                       PSum.inl (decode.memberBinding hchar slot point hpoint))
-                    (actionCircuit.permutationChunkRoutingCoherent urs)
                   let outcome := terminal
                     (by simpa only [actionCircuit.toVerifierKey_n] using hxgoodProof.down)
                   match outcome with

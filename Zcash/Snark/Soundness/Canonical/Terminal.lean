@@ -157,7 +157,8 @@ def ofOpenings
     {shape : Shape}
     [Zcash.Arithmetic.FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
-    {vk : VerifyingKey shape Fp G} [VerifyingKey.FieldSupport vk]
+    {vk : VerifyingKey shape Fp G}
+    [VerifyingKey.FieldSupport vk] [VerifyingKey.WellFormed vk]
     {instanceCommitment : Fin shape.numProofs → ℕ → G}
     {ps : ProofString shape Fp G}
     {ch : Challenges shape.k Fp}
@@ -181,12 +182,6 @@ def ofOpenings
     {hblinding : vk.blindingFactors < vk.n}
     (haccepts :
       DeployedAccepts shape urs hk vk instanceCommitment ps ch)
-    (hfixedLayout :
-      vk.fixedQueryLayout.length = shape.numFixedQueries)
-    (hadviceLayout :
-      vk.adviceQueryLayout.length = shape.numAdviceQueries)
-    (hinstanceLayout :
-      vk.instanceQueryLayout.length = shape.numInstanceQueries)
     (hopen : ∀ query ∈
       assembleQueries vk instanceCommitment ps ch,
       (CanonicalMemberConstraintRelation.acceptedPolynomial
@@ -194,8 +189,6 @@ def ofOpenings
           query.point = query.eval)
     (hpermutationWellFormed :
       permutationLastEvalsWellFormed ps = true)
-    (hpermutationRouting :
-      PermutationChunkRoutingCoherent vk)
     (hxDomain : ch.x ^ vk.n ≠ 1) :
     AcceptedModelClaimedEvaluations
       (memberDecode := memberDecode)
@@ -208,7 +201,7 @@ def ofOpenings
   have hselectorEvaluations :=
     VerifyingKey.constraintModel_selectorEvaluations
       (numProofs := shape.numProofs)
-      vk ch polynomial hblinding vk.domainRowsInjective vk.omega_pow_n vk.n_cast_ne_zero hxDomain
+      vk ch polynomial hblinding hxDomain
   refine
     { fixed := ?_
       advice := ?_
@@ -226,7 +219,7 @@ def ofOpenings
       resolverQueryFeed_eval_of_columnQueries
         (k := shape.k)
         vk.omega ch.x vk.fixedCommitment CommitmentId.fixedCol
-        vk.fixedQueryLayout ps.fixedEvals hfixedLayout polynomial
+        vk.fixedQueryLayout ps.fixedEvals (VerifyingKey.WellFormed.fixedQueryLayout_length (vk := vk)) polynomial
         (fun q hq => hopen q (by
           simp only [assembleQueries]
           exact List.mem_append_left _
@@ -242,7 +235,7 @@ def ofOpenings
         vk.omega ch.x (finFnG (ps.adviceCommitments proofIndex))
         (CommitmentId.adviceCol proofIndex)
         vk.adviceQueryLayout (ps.adviceEvals proofIndex)
-        hadviceLayout polynomial
+        (VerifyingKey.WellFormed.adviceQueryLayout_length (vk := vk)) polynomial
         (fun q hq => hopen q (by
           simp only [assembleQueries]
           refine List.mem_append.mpr
@@ -263,7 +256,7 @@ def ofOpenings
         vk.omega ch.x (instanceCommitment proofIndex)
         (CommitmentId.instanceCol proofIndex)
         vk.instanceQueryLayout (ps.instanceEvals proofIndex)
-        hinstanceLayout polynomial
+        (VerifyingKey.WellFormed.instanceQueryLayout_length (vk := vk)) polynomial
         (fun q hq => hopen q (by
           simp only [assembleQueries]
           refine List.mem_append.mpr
@@ -288,7 +281,7 @@ def ofOpenings
       constraintModelOfResolver, polynomial, selectors] using
       eval_permutationChunksOfResolver
         vk instanceCommitment ps ch polynomial
-        hpermutationWellFormed hpermutationRouting proofIndex hopen
+        hpermutationWellFormed (VerifyingKey.WellFormed.permutationChunkRoutingCoherent (vk := vk)) proofIndex hopen
   · intro proofIndex
     simpa [CanonicalMemberConstraintRelation.acceptedModel,
       VerifyingKey.constraintModel,
@@ -310,7 +303,8 @@ def ofNodeBinding_or_relation
     {shape : Shape}
     [Zcash.Arithmetic.FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
-    {vk : VerifyingKey shape Fp G} [VerifyingKey.FieldSupport vk]
+    {vk : VerifyingKey shape Fp G}
+    [VerifyingKey.FieldSupport vk] [VerifyingKey.WellFormed vk]
     {instanceCommitment : Fin shape.numProofs → ℕ → G}
     {ps : ProofString shape Fp G}
     {ch : Challenges shape.k Fp}
@@ -334,12 +328,6 @@ def ofNodeBinding_or_relation
     {hblinding : vk.blindingFactors < vk.n}
     (haccepts :
       DeployedAccepts shape urs hk vk instanceCommitment ps ch)
-    (hfixedLayout :
-      vk.fixedQueryLayout.length = shape.numFixedQueries)
-    (hadviceLayout :
-      vk.adviceQueryLayout.length = shape.numAdviceQueries)
-    (hinstanceLayout :
-      vk.instanceQueryLayout.length = shape.numInstanceQueries)
     (hbind : ∀
       (slot : DeployedMemberSlot
         (instanceCommitment := instanceCommitment) vk ps ch)
@@ -356,8 +344,6 @@ def ofNodeBinding_or_relation
         ⊕' AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
     (hpermutationWellFormed :
       permutationLastEvalsWellFormed ps = true)
-    (hpermutationRouting :
-      PermutationChunkRoutingCoherent vk)
     (hxDomain : ch.x ^ vk.n ≠ 1) :
     AcceptedModelClaimedEvaluations
         (memberDecode := memberDecode)
@@ -367,9 +353,7 @@ def ofNodeBinding_or_relation
     (CanonicalMemberConstraintRelation.acceptedPolynomial_opens_or_relation
       (memberDecode := memberDecode) haccepts hbind)
     fun hopen =>
-      ofOpenings haccepts hfixedLayout hadviceLayout hinstanceLayout
-        hopen hpermutationWellFormed hpermutationRouting
-        hxDomain
+      ofOpenings haccepts hopen hpermutationWellFormed hxDomain
 
 end AcceptedModelClaimedEvaluations
 
@@ -727,7 +711,8 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
     [Zcash.Arithmetic.FieldDomainParams Fp]
     {R : Sort u}
     (urs : URS G) (hk : shape.k = urs.k)
-    (vk : VerifyingKey shape Fp G) [VerifyingKey.FieldSupport vk]
+    (vk : VerifyingKey shape Fp G)
+    [VerifyingKey.FieldSupport vk] [VerifyingKey.WellFormed vk]
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
@@ -756,12 +741,6 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
       hpoly =
         CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := memberDecode) haccepts .vanishingH)
-    (hfixedLayout :
-      vk.fixedQueryLayout.length = shape.numFixedQueries)
-    (hadviceLayout :
-      vk.adviceQueryLayout.length = shape.numAdviceQueries)
-    (hinstanceLayout :
-      vk.instanceQueryLayout.length = shape.numInstanceQueries)
     (hbind : ∀
       (slot : DeployedMemberSlot
         (instanceCommitment := instanceCommitment) vk ps ch)
@@ -776,8 +755,6 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
             (instanceCommitment := instanceCommitment)
             vk ps ch slot point
         ⊕' R)
-    (hpermutationRouting :
-      PermutationChunkRoutingCoherent vk)
     (hxgood :
       ch.x ∉ szBadSet
         (combineConstraints
@@ -840,10 +817,9 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
   have claimed :=
       AcceptedModelClaimedEvaluations.ofOpenings
         (hblinding := hblinding)
-        haccepts hfixedLayout hadviceLayout hinstanceLayout hopen
+        haccepts hopen
         (permutationLastEvalsWellFormed_of_deployedAccepts
           urs hk vk instanceCommitment ps ch haccepts)
-        hpermutationRouting
         (deployedAccepts_xn_ne_one
           urs hk vk instanceCommitment ps ch haccepts)
   exact

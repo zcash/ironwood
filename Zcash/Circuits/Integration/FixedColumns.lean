@@ -369,14 +369,13 @@ def ofDerived
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    [TopLevelShape top] [CircuitFieldSupport top]
     (urs : URS G)
-    (hk : top.domainExponent = urs.k)
-    (hdomainExponent : top.domainExponent < 33) :
+    (hk : top.domainExponent = urs.k) :
     TopLevelFixedCoherence top urs := by
   have hkUrs : urs.k ≤ 32 := by
     rw [← hk]
-    exact Nat.le_of_lt_succ hdomainExponent
+    exact Nat.le_of_lt_succ top.domainExponent_lt
   have homega : top.omega = omegaOf urs.k := by
     simp only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, hk]
   apply fixedCommitment_eq_commitInstance top urs hk
@@ -400,16 +399,10 @@ theorem topLevelFixedColumnEncoding_of_binding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
+    [TopLevelShape top] [CircuitFieldSupport top]
     {numProofs : ℕ} {proofIndex : Fin numProofs}
     (assignment :
       TopLevelAssignment top numProofs proofIndex)
-    (hrows : Function.Injective
-      fun row : Fin top.n =>
-        top.omega ^ (row : ℕ))
-    (hroot :
-      top.omega ^
-        top.n = 1)
     (binding : ∀ column,
       assignment.polynomial (.fixedCol column) =
         instanceRowPolynomial top.n
@@ -427,12 +420,12 @@ theorem topLevelFixedColumnEncoding_of_binding
     simpa only [domainRow] using
       zpow_eq_pow_natMod
         top.omega
-        top.n top.n_pos hroot row
+        top.n top.n_pos top.omega_pow_n row
   rw [hpow]
   have heval :=
     instanceRowPolynomial_eval
       (values := top.fixedRows.getD column.index [])
-      hrows domainRow
+      top.domainRowsInjective domainRow
   rw [top.fixedValue_eq_fixedRows_getD]
   simpa only [domainRow] using heval
 

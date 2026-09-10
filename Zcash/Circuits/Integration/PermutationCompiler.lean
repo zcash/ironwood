@@ -302,6 +302,33 @@ theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_getD_length
   rw [top.toVerifierKey_permutationChunks] at hi ⊢
   exact verifierCS_permutationChunks_getD_length top i hi
 
+namespace _root_.Halo2.TopLevelCircuit
+
+/-- A closed circuit's compiler supplies all structural verifying-key laws;
+neither field compatibility nor a particular URS is needed for these facts. -/
+instance toVerifierKeyWellFormed
+    {G : Type} [AddCommGroup G] [Inhabited G]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (urs : URS G) : VerifyingKey.WellFormed (top.toVerifierKey urs) where
+  adviceQueryLayout_length := top.toVerifierKey_adviceQueryCount urs
+  instanceQueryLayout_length := top.toVerifierKey_instanceQueryCount urs
+  fixedQueryLayout_length := top.toVerifierKey_fixedQueryCount urs
+  blindingFactors_add_one_lt_n := by
+    rw [top.toVerifierKey_blindingFactors, top.toVerifierKey_n]
+    have h := top.blindingFactors_add_three_le_domainSize
+    omega
+  chunkLen_pos := by
+    rw [top.toVerifierKey_chunkLen]
+    exact constraintSystem_chunkLen_pos top.constraintSystem
+  permutationChunks_length := top.toVerifierKey_permutationChunks_length urs
+  permutationChunks_getD_length i hi := by
+    rw [top.toVerifierKey_chunkLen]
+    exact top.toVerifierKey_permutationChunks_getD_length urs i hi
+  permutationChunkRoutingCoherent := top.permutationChunkRoutingCoherent urs
+
+end _root_.Halo2.TopLevelCircuit
+
 /-- Every prefix ending before a valid compiler chunk contains `i * chunkLen`
 permutation columns. -/
 theorem verifierCS_permutationChunks_take_flatten_length
