@@ -9,6 +9,9 @@ captured scalars, the shape counts they induce, the static checks, and the `x`-s
 schedule whose degree caps make `epsilonX` concrete.
 -/
 
+open Zcash.Arithmetic (omegaOf pastaDomain)
+open Halo2 (CircuitFieldSupport)
+
 namespace Zcash.Snark.Capstone
 
 -- The captured facts these endpoints are stated at.
@@ -55,7 +58,7 @@ private theorem castVk_lookup {s₁ s₂ : CircuitShape} (h : s₁ = s₂)
 the proof parameters or URS; the keygen certificate pins their circuit-owned values to the
 capture. -/
 theorem derived_scalars :
-    actionCircuit.omega = vk.omega ∧
+    (omegaOf actionCircuit.domainExponent) = vk.omega ∧
     actionCircuit.n = vk.n ∧
     actionCircuit.verifierCS.gates = vk.gates ∧
     actionCircuit.instanceQueryLayout =
@@ -170,11 +173,11 @@ theorem capturedActionStaticChecks
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      actionCircuit.domainExponent_lt
+      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      actionCircuit.domainExponent_lt
+      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
 
 /-- **The captured `x`-squeeze schedule at the derived key**: the degree caps
 transfer through the scalar equalities, and pinning is the family's own derived projection. -/
@@ -283,11 +286,11 @@ theorem actionStaticChecks (numProofs : ℕ)
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      actionCircuit.domainExponent_lt
+      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      actionCircuit.domainExponent_lt
+      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
 
 /-- The captured `x`-squeeze schedule transported to an arbitrary Action bundle size. -/
 def actionXSqueezeSchedule (numProofs : ℕ)

@@ -10,6 +10,8 @@ by the generic soundness terminal.  It deliberately contains no final circuit
 statement and no opaque encoding implication.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+
 namespace Zcash.Snark
 
 open Zcash.Arithmetic (deltaFp)
@@ -222,7 +224,7 @@ def bridgeWitness_of_components
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     (fixedEncoding :
       let assignment :
           TopLevelAssignment top
@@ -261,7 +263,7 @@ def bridgeWitness_of_components
   change TopLevelBridgeWitness top assignment.proofAssignment cell Bad
   have hroot :=
     TopLevelAssignment.domainRoot
-      (top := top) top.domainExponent_lt
+      (top := top) (CircuitFieldSupport.domainExponent_lt top pastaDomain)
   let bridge :=
     FullCircuitBridge.ofTopLevelCanonical
       (top := top) (pp := pp) (urs := urs)

@@ -8,6 +8,8 @@ This module retains the adaptive-run abbreviations used by the stage-local surfa
 and provides the statement-independent terminal checker shared by adaptive-statement extraction.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+
 namespace Zcash.Snark
 
 namespace ActionTerminal
@@ -104,7 +106,7 @@ def actionWitnessOrRelationOfDecode?
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
                   let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
                     TopLevelAssignment.domainSizeCastNeZero
-                      actionCircuit.domainExponent_lt
+                      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
                   match acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       urs rfl (actionCircuit.toVerifierKey urs)
                       (actionCircuit.instanceCommitment urs inputs) ps ch
@@ -120,9 +122,9 @@ def actionWitnessOrRelationOfDecode?
                         PSum.inl (decode.memberBinding hchar slot point hpoint))
                       (actionCircuit.permutationChunkRoutingCoherent urs)
                       (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                        urs actionCircuit.domainExponent_lt)
+                        urs (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
                       (TopLevelAssignment.toVerifierKey_domainRoot
-                        urs actionCircuit.domainExponent_lt)
+                        urs (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
                       (by
                         simpa only [actionCircuit.toVerifierKey_n] using hnFp)
                       (by

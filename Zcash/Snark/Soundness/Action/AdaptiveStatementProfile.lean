@@ -12,6 +12,9 @@ capstone derives its direct-decode bound from the family's structural source-len
 compatibility profile below retains its explicit premise.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+open Halo2 (CircuitFieldSupport)
+
 namespace Zcash.Snark
 
 open Keygen
@@ -284,7 +287,8 @@ theorem AdaptiveStatementDirectDlogProfile.solverCost_le {pp : ProofParams}
   · unfold adaptiveStatementDlogRandomOracleQueries
     rw [adaptiveStatementDlogTraversalSlots_eq_four]
     rw [Halo2.CircuitShape.withProofParams_k]
-    have hk := actionCircuit.domainExponent_lt
+    have hk : actionCircuit.domainExponent < 33 :=
+      CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain
     have hT := profile.targetAtLeastSeventyTwo
     calc
       4 * family.Q + 4 * (11 + actionCircuit.domainExponent) ≤
@@ -324,7 +328,8 @@ theorem AdaptiveStatementDirectDlogProfile.knowledgeExtractorCost_le {pp : Proof
   · unfold adaptiveStatementKnowledgeExtractorRandomOracleQueries
       adaptiveStatementKnowledgeExtractorTraversalSlots
     rw [Halo2.CircuitShape.withProofParams_k]
-    have hk := actionCircuit.domainExponent_lt
+    have hk : actionCircuit.domainExponent < 33 :=
+      CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain
     have hT := profile.targetAtLeastSeventyTwo
     calc
       5 * family.Q + 5 * (11 + actionCircuit.domainExponent) ≤

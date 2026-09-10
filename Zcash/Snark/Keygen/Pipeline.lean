@@ -35,6 +35,8 @@ Action capture certification lives in `Certificate.lean`.
 * Permutation commitments: `plonk/permutation/keygen.rs:102-152` (`Assembly::build_vk`).
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Halo2.TopLevelCircuit
 
 open Zcash.Snark
@@ -73,21 +75,6 @@ def permutationCommitments
   permutationCommitmentsOf urs.w (derivedUrsGLagrange urs) top.domainExponent
     top.constraintSystem (top.operations)
 
-/-- The fitting-domain generator used by the circuit's verifier. -/
-def omega (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top] : Fp :=
-  Zcash.Arithmetic.omegaOf top.domainExponent
-
-/-- The fitting-domain generator is nonzero whenever its exponent lies in
-Pasta's supported range. -/
-theorem omega_ne_zero
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (hbound : top.domainExponent ≤ 32) :
-    top.omega ≠ 0 :=
-  (Zcash.Arithmetic.omegaOf_isPrimitiveRoot
-    top.domainExponent hbound).isUnit (by positivity) |>.ne_zero
-
 /-- **The verifying key of a closed top-level circuit**: the `TopLevelCircuit` carries
 unit configuration and synthesis inputs, so the only remaining input is the URS —
 `keygen_vk` at the `TopLevelCircuit` level, indexed by the circuit-owned shape. -/
@@ -99,7 +86,7 @@ def toVerifierKey
   let verifierCS := top.verifierCS
   let fixedCommitments := top.fixedCommitments urs
   let permutationCommitments := top.permutationCommitments urs
-  { omega := top.omega
+  { omega := (omegaOf top.domainExponent)
     n := top.n
     blindingFactors := top.blindingFactors
     delta := Zcash.Arithmetic.deltaFp
@@ -121,7 +108,7 @@ def toVerifierKey
     [TopLevelShape top]
     (urs : URS G) :
     (top.toVerifierKey urs).omega =
-      top.omega := by
+      (omegaOf top.domainExponent) := by
   simp only [toVerifierKey]
 
 /-- The derived key uses the circuit-owned fitting domain size. -/

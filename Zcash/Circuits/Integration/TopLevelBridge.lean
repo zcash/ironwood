@@ -11,6 +11,8 @@ layers in their native polynomial language: Clean-specific reconstruction is
 finished here before the resulting bridge is handed to the semantic endpoint.
 -/
 
+open Zcash.Arithmetic (omegaOf pastaDomain)
+
 namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
@@ -45,7 +47,7 @@ only the representation boundaries that genuinely come from other streams:
 -/
 def ofTopLevelCanonical
     {k : ℕ}
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -54,7 +56,7 @@ def ofTopLevelCanonical
         (top.constraintModel pp urs ch poly)
         top.n)
     (hroot :
-      top.omega ^
+      (omegaOf top.domainExponent) ^
         top.n = 1)
     (selectorActivations :
       SelectorActivationsRealized top.selectorMap

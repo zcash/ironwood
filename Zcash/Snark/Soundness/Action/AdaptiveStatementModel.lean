@@ -38,6 +38,8 @@ strengthening models hash-to-curve as an adversary-queryable oracle whose fresh 
 the basis.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Zcash.Snark
 
 open Zcash.Common
@@ -165,7 +167,7 @@ def canonicalAdaptiveStatementInstanceRepresentation (pp : ProofParams)
   let proofIndex : Fin pp.numProofs :=
     Fin.cast (actionCircuit.shape.withProofParams_numProofs pp) p
   let instanceColumn : Column .instance := ⟨column⟩
-  let coeffs := instanceCoefficients (2 ^ urs.k) actionCircuit.omega
+  let coeffs := instanceCoefficients (2 ^ urs.k) (omegaOf actionCircuit.domainExponent)
     (actionCircuit.publicInputRows (inputs proofIndex) instanceColumn)
   { point := adaptiveActionStatementInstanceCommitment pp basis inputs p column
     repr :=

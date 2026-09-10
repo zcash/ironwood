@@ -10,6 +10,8 @@ These captured facts validate the one-Action query layouts, domain, and `x`-sque
 `D = Dq = 20470`.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Zcash.Snark.Fixture
 
 open Zcash.Snark
@@ -39,7 +41,7 @@ private theorem action_domainExponent_eq : actionCircuit.domainExponent = 11 := 
 
 private theorem vk_domain_eq :
     (vk.omega, vk.n) =
-      (actionCircuit.omega, actionCircuit.n) := by
+      ((omegaOf actionCircuit.domainExponent), actionCircuit.n) := by
   have hscalars :=
     congrArg (fun bundle => bundle.2.2.2.1) Keygen.certificate
   apply Prod.ext

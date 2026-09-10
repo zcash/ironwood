@@ -15,6 +15,8 @@ size equality is discharged by the generic size-transport theorem in
 `PermutationColumns`.
 -/
 
+open Zcash.Arithmetic (omegaOf pastaDomain)
+
 namespace Zcash.Snark
 
 open Zcash.Arithmetic (derivedUrsGLagrange omegaOf)
@@ -63,7 +65,7 @@ theorem actionPermutationRows_eq_chunkRowName
       ((Zcash.Snark.actionChunkFlatten pp urs poly proofIndex
         ⟨chunk, row, column⟩).2 : ℕ)).getD (row : ℕ) 0 =
       chunkRowName
-        actionCircuit.omega
+        (omegaOf actionCircuit.domainExponent)
         Zcash.Arithmetic.deltaFp
         actionCircuit.chunkLen
         ((Zcash.Snark.actionFullSigma pp urs poly proofIndex
@@ -185,7 +187,7 @@ theorem actionRowsInjectiveAtUrs
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) actionCircuit.domainExponent_lt
+      (top := actionCircuit) (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
       hk
 
 set_option maxRecDepth 100000 in
@@ -238,7 +240,7 @@ def actionResolverPermutationCycle_or_relation
     hk
   have hkUrs : urs.k ≤ 32 := by
     rw [← hkDomain]
-    exact Nat.le_of_lt_succ actionCircuit.domainExponent_lt
+    exact Nat.le_of_lt_succ (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
   let setup := LagrangePrefixSetup.ofDerived urs hkUrs
   have hcolumns : ∀
       (chunk : Fin actionCircuit.permutationSetCount)
@@ -250,7 +252,7 @@ def actionResolverPermutationCycle_or_relation
         (actionCircuit.toVerifierKey urs) relation.polynomial
         proofIndex chunk)[column].2 =
           keygenSigmaColumn
-            actionCircuit.omega Arithmetic.deltaFp actionCircuit.chunkLen
+            (omegaOf actionCircuit.domainExponent) Arithmetic.deltaFp actionCircuit.chunkLen
             (actionFullSigma pp urs relation.polynomial proofIndex)
             chunk column ⊕'
         AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
@@ -274,8 +276,7 @@ def actionResolverPermutationCycle_or_relation
       common
     have homega :
         vk.omega = omegaOf urs.k := by
-      simpa only [vk, actionCircuit.toVerifierKey_omega,
-        TopLevelCircuit.omega] using congrArg omegaOf hkDomain
+      simpa only [vk, actionCircuit.toVerifierKey_omega] using congrArg omegaOf hkDomain
     let key : LagrangeCommitmentKey urs vk.omega := by
       let sourceKey :=
         LagrangeCommitmentKey.ofPrefix urs

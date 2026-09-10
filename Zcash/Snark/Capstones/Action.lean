@@ -119,6 +119,9 @@ separate proof blobs remains outside the formalization.
 Each is censused directly in `Fixtures/MultiAction/Honest/TrustBoundary.lean`.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+open Halo2 (CircuitFieldSupport)
+
 namespace Zcash.Snark.Capstone
 
 -- The captured facts these endpoints are stated at.
@@ -497,7 +500,7 @@ theorem orchard_action_adaptiveStatement_modeled_2pow123_knowledge_finite_securi
   refine challenge255_joint_charge_le_at_2pow123 deployment.profile.queryBound ?_
     deployment.challengeQueryBound_le
   rw [Halo2.CircuitShape.withProofParams_k, ← Halo2.TopLevelCircuit.domainExponent]
-  exact actionCircuit.domainExponent_lt
+  exact (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
 
 /-- The selected proof's direct-decode source fits the `2^90` endpoint envelope.  All
 proof-controlled and instance entries have shape-indexed lengths; the sole list-valued input is

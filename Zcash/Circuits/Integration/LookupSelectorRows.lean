@@ -14,6 +14,8 @@ fixed-polynomial binding step. The latter transports exact packed rows into the
 resolver environment, preserving the caller's existing commitment-relation branch.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
@@ -336,14 +338,14 @@ def EnabledLookup.inputSelectorValuesRealized_or_bad
     (rows : ℕ → List Fp)
     (hrows : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
+        (omegaOf top.domainExponent) ^ (i : ℕ))
     (hn : top.n = 2 ^ urs.k)
     {Bad : Type}
     (binding : ∀ column,
       column < top.fixedColumnCount →
         poly (.fixedCol column) =
             instanceRowPolynomial (2 ^ urs.k)
-              top.omega (rows column) ⊕'
+              (omegaOf top.domainExponent) (rows column) ⊕'
           Bad)
     (proofIndex : Fin pp.numProofs)
     (lookup : EnabledLookup Fp)

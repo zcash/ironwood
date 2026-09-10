@@ -21,6 +21,8 @@ conditions.  In particular, `TopLevelCircuitCorrectness` does not contain the
 desired statement or an opaque encoding implication.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+
 namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
@@ -64,7 +66,7 @@ def topLevelBundleStatement_or_bad_of_components
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -107,7 +109,7 @@ def topLevelBundleWitness_or_bad_of_components
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -144,7 +146,7 @@ def topLevelBundleStatement_or_bad_of_constraintSatisfaction
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -193,7 +195,7 @@ def topLevelBundleWitness_or_bad_of_constraintSatisfaction
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -245,7 +247,7 @@ variable
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -340,7 +342,7 @@ def topLevelWitnesses_or_relation_of_circuitSat
   · exact
       TopLevelInstanceCommitment.witnesses_or_relation_of_accepted_topLevelBundleWitness
         top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-        haccepts top.domainExponent_lt hwitness
+        haccepts (CircuitFieldSupport.domainExponent_lt top pastaDomain) hwitness
   · exact PSum.inr hrelation
 
 assert_no_sorry topLevelWitnesses_or_relation_of_circuitSat
@@ -398,7 +400,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
-    [CircuitFieldSupport top top.omega deltaFp]
+    [CircuitFieldSupport top pastaDomain]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -500,7 +502,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hnFp : (top.n : Fp) ≠ 0 :=
     TopLevelAssignment.domainSizeCastNeZero
-      (top := top) top.domainExponent_lt
+      (top := top) (CircuitFieldSupport.domainExponent_lt top pastaDomain)
   have terminal :=
     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
       (G := G) (shape := top.shape.withProofParams pp)
@@ -529,11 +531,11 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       fun row : Fin (top.toVerifierKey urs).n =>
         (top.toVerifierKey urs).omega ^ (row : ℕ) :=
     TopLevelAssignment.toVerifierKey_domainRowsInjective
-      urs top.domainExponent_lt
+      urs (CircuitFieldSupport.domainExponent_lt top pastaDomain)
   have outcome := terminal hrowsVk
   have hrootVk :
       (top.toVerifierKey urs).omega ^ (top.toVerifierKey urs).n = 1 :=
-    TopLevelAssignment.toVerifierKey_domainRoot urs top.domainExponent_lt
+    TopLevelAssignment.toVerifierKey_domainRoot urs (CircuitFieldSupport.domainExponent_lt top pastaDomain)
   have outcome := outcome hrootVk
   have hnFpVk : ((top.toVerifierKey urs).n : Fp) ≠ 0 := by
     rw [top.toVerifierKey_n]

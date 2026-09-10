@@ -16,6 +16,8 @@ The keygen permutation itself belongs to the separate replay/assembly layer.
 the restriction equation, and the common-column identification explicitly.
 -/
 
+open Zcash.Arithmetic (omegaOf pastaDomain pastaDomain_omega_eq pastaDomain_delta_eq)
+
 namespace Zcash.Snark
 
 open Zcash.Arithmetic
@@ -65,7 +67,7 @@ theorem lastRowRotation (urs : URS G) :
       (actionCircuit.toVerifierKey urs).omega ^
         (-(((actionCircuit.toVerifierKey urs).blindingFactors : ℤ) + 1)) :=
   actionCircuit.toVerifierKey_lastUsableRowRotation
-    urs actionCircuit.domainExponent_lt
+    urs (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
 
 set_option maxRecDepth 100000 in
 /-- Action chunk names are injective on any active prefix of the derived
@@ -78,30 +80,25 @@ theorem namesInjective
     {activeRows : ℕ} (hactive : activeRows ≤ actionCircuit.n) :
     Function.Injective fun c :
         ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p activeRows =>
-      chunkRowName actionCircuit.omega Zcash.Arithmetic.deltaFp
+      chunkRowName (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
         actionCircuit.chunkLen c.1 c.2.1 c.2.2 := by
-  have support : CircuitFieldSupport actionCircuit actionCircuit.omega deltaFp :=
-    inferInstance
+  have hRoot : IsPrimitiveRoot (omegaOf actionCircuit.domainExponent) actionCircuit.n := by
+    simpa only [CircuitFieldSupport.omega, pastaDomain_omega_eq] using
+      CircuitFieldSupport.omega_isPrimitiveRoot actionCircuit pastaDomain
   have hfull :
       Function.Injective fun c :
           ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p
             actionCircuit.n =>
-        chunkRowName actionCircuit.omega Zcash.Arithmetic.deltaFp
+        chunkRowName (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
           actionCircuit.chunkLen c.1 c.2.1 c.2.2 := by
     apply chunkRowName_injective_of_actual_coset
     · intro j
       apply pow_ne_zero
-      exact support.delta_ne_zero
-    · exact support.omega_isPrimitiveRoot.pow_eq_one
+      exact (pastaDomain_delta_eq ▸ pastaDomain.delta_ne_zero)
+    · exact hRoot.pow_eq_one
     · intro i i' hi hi' heq
-      exact support.omega_isPrimitiveRoot.pow_inj hi hi' heq
+      exact hRoot.pow_inj hi hi' heq
     · intro j j' t hcoset
-      change
-        deltaFp ^
-            ((j.1 : ℕ) * actionCircuit.chunkLen + (j.2 : ℕ)) =
-          omegaOf actionCircuit.domainExponent ^ t *
-            deltaFp ^
-              ((j'.1 : ℕ) * actionCircuit.chunkLen + (j'.2 : ℕ)) at hcoset
       have hjWidth :
           (j.2 : ℕ) <
             min actionCircuit.chunkLen
@@ -125,8 +122,10 @@ theorem namesInjective
             actionCircuit.permutationColumnCount := by
         omega
       have hglobal :=
-        support.eq_of_delta_pow_eq_omega_pow_mul
-          ⟨_, hj⟩ ⟨_, hj'⟩ t hcoset
+        CircuitFieldSupport.eq_of_delta_pow_eq_omega_pow_mul actionCircuit pastaDomain
+          ⟨_, hj⟩ ⟨_, hj'⟩ t (by
+            simpa only [CircuitFieldSupport.omega, pastaDomain_omega_eq,
+              pastaDomain_delta_eq] using hcoset)
       have hindex :
           (j.1 : ℕ) * actionCircuit.chunkLen + (j.2 : ℕ) =
             (j'.1 : ℕ) * actionCircuit.chunkLen + (j'.2 : ℕ) :=
@@ -204,12 +203,12 @@ theorem namesInjective
       (ResolverPermutationPairs (actionCircuit.toVerifierKey urs) poly p i).length)
     hactive
   have hwname :
-      chunkRowName actionCircuit.omega Zcash.Arithmetic.deltaFp
+      chunkRowName (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
           actionCircuit.chunkLen
           (widenPermutationChunkCell hactive c).1
           (widenPermutationChunkCell hactive c).2.1
           (widenPermutationChunkCell hactive c).2.2 =
-        chunkRowName actionCircuit.omega Zcash.Arithmetic.deltaFp
+        chunkRowName (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
           actionCircuit.chunkLen
           (widenPermutationChunkCell hactive d).1
           (widenPermutationChunkCell hactive d).2.1
@@ -240,7 +239,7 @@ def cycleOfKeygenColumnsAt
       (ResolverPermutationPairs
           (actionCircuit.toVerifierKey urs) poly p chunk)[column].2 =
         keygenSigmaColumn
-          actionCircuit.omega Zcash.Arithmetic.deltaFp
+          (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
           actionCircuit.chunkLen fullSigma chunk column)
     (hrestrict : ∀ c :
         ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p m,
@@ -249,7 +248,7 @@ def cycleOfKeygenColumnsAt
           (widenPermutationChunkCell hactive c)) :
     ResolverPermutationCycle (actionCircuit.toVerifierKey urs) poly p m :=
   actionCircuit.resolverPermutationCycleOfKeygenColumns
-    urs poly p hactive fullSigma sigma actionCircuit.domainExponent_lt
+    urs poly p hactive fullSigma sigma (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
       hcolumns hrestrict
       (namesInjective pp urs poly p hactive)
 
@@ -271,7 +270,7 @@ def cycleOfKeygenColumns
       (ResolverPermutationPairs
           (actionCircuit.toVerifierKey urs) poly p chunk)[column].2 =
         keygenSigmaColumn
-          actionCircuit.omega Zcash.Arithmetic.deltaFp
+          (omegaOf actionCircuit.domainExponent) Zcash.Arithmetic.deltaFp
           actionCircuit.chunkLen fullSigma chunk column)
     (hrestrict : ∀ c :
         ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p

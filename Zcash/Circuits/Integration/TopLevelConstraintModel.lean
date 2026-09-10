@@ -12,6 +12,8 @@ keys still require an explicit proof that their blinding rows fit the domain;
 a key derived from `TopLevelCircuit` carries that fact by construction.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Halo2.TopLevelCircuit
 
 open Zcash.Snark
@@ -56,7 +58,7 @@ theorem constraintModel_eq_constraintModelOfResolver
     [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
-    let selectors := canonicalLagrangePolynomials top.omega
+    let selectors := canonicalLagrangePolynomials (omegaOf top.domainExponent)
       (top.toVerifierKey_blindingFactors_lt_n urs)
     top.constraintModel pp urs ch poly =
       constraintModelOfResolver
@@ -95,7 +97,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).l0 =
-      (canonicalLagrangePolynomials top.omega
+      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
         (top.toVerifierKey_blindingFactors_lt_n urs)).1 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -106,7 +108,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lLast =
-      (canonicalLagrangePolynomials top.omega
+      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.1 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -117,7 +119,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lBlind =
-      (canonicalLagrangePolynomials top.omega
+      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.2 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -213,7 +215,7 @@ def resolverPermutationCycleOfKeygenColumns
           (top.toVerifierKey urs) poly p chunk).length),
       (ResolverPermutationPairs
           (top.toVerifierKey urs) poly p chunk)[column].2 =
-        keygenSigmaColumn top.omega Zcash.Arithmetic.deltaFp
+        keygenSigmaColumn (omegaOf top.domainExponent) Zcash.Arithmetic.deltaFp
           top.chunkLen fullSigma chunk column)
     (hrestrict : ∀ c :
         ResolverPermutationCell
@@ -223,7 +225,7 @@ def resolverPermutationCycleOfKeygenColumns
     (hnames : Function.Injective fun c :
         ResolverPermutationCell
           (top.toVerifierKey urs) poly p activeRows =>
-      chunkRowName top.omega Zcash.Arithmetic.deltaFp
+      chunkRowName (omegaOf top.domainExponent) Zcash.Arithmetic.deltaFp
         top.chunkLen c.1 c.2.1 c.2.2) :
     ResolverPermutationCycle
       (top.toVerifierKey urs) poly p activeRows := by

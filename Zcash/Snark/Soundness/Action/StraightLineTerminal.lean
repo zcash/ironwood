@@ -12,6 +12,8 @@ retains either all private witnesses or relation coefficients; `StraightLineEven
 the remaining challenge exclusions.
 -/
 
+open Zcash.Arithmetic (pastaDomain)
+
 namespace Zcash.Snark
 
 namespace ActionTerminal
@@ -308,7 +310,7 @@ def actionDecodedTerminal?
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
                   let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
                     TopLevelAssignment.domainSizeCastNeZero
-                      actionCircuit.domainExponent_lt
+                      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
                   let terminal :=
                     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       (R := AlgebraicRelationWitness (F := Fp) basis)
@@ -330,10 +332,10 @@ def actionDecodedTerminal?
                     (actionCircuit.permutationChunkRoutingCoherent urs)
                   let outcome := terminal
                     (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                      urs actionCircuit.domainExponent_lt)
+                      urs (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
                   let outcome := outcome
                     (TopLevelAssignment.toVerifierKey_domainRoot
-                      urs actionCircuit.domainExponent_lt)
+                      urs (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
                   let outcome := outcome
                     (by simpa only [actionCircuit.toVerifierKey_n] using hnFp)
                   let outcome := outcome

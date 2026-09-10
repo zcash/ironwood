@@ -26,6 +26,8 @@ Like the fingerprint match, these are `native_decide` facts about one capture, n
 theorems.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Zcash.Snark.Fixture
 
 open Zcash.Arithmetic (deltaFp omegaOf)
@@ -131,14 +133,14 @@ and `permutationChunks` the recorded permutation columns chunked by it. -/
 
 theorem vk_scalars_and_chunks_derived :
     ((vk.omega, vk.n, vk.blindingFactors, vk.delta, vk.chunkLen), vk.permutationChunks)
-      = ((actionCircuit.omega, actionCircuit.n,
+      = (((omegaOf actionCircuit.domainExponent), actionCircuit.n,
             actionCircuit.blindingFactors, deltaFp, actionCircuit.chunkLen),
           actionCircuit.verifierCS.permutationChunks) := by
   native_decide
 
 theorem vk_scalars_derived :
     (vk.omega, vk.n, vk.blindingFactors, vk.delta, vk.chunkLen)
-      = (actionCircuit.omega,
+      = ((omegaOf actionCircuit.domainExponent),
           actionCircuit.n,
           actionCircuit.blindingFactors, deltaFp,
           actionCircuit.chunkLen) := by
