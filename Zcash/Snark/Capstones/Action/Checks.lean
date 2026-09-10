@@ -171,12 +171,10 @@ theorem capturedActionStaticChecks
   omegaOrder := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainRoot
-      actionCircuit.domainExponent_lt
+    exact actionCircuit.omega_pow_n
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainSizeCastNeZero
-      actionCircuit.domainExponent_lt
+    exact actionCircuit.n_cast_ne_zero
 
 /-- **The captured `x`-squeeze schedule at the derived key**: the degree caps
 transfer through the scalar equalities, and pinning is the family's own derived projection. -/
@@ -284,12 +282,10 @@ theorem actionStaticChecks (numProofs : ℕ)
   omegaOrder := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainRoot
-      actionCircuit.domainExponent_lt
+    exact actionCircuit.omega_pow_n
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainSizeCastNeZero
-      actionCircuit.domainExponent_lt
+    exact actionCircuit.n_cast_ne_zero
 
 /-- The captured `x`-squeeze schedule transported to an arbitrary Action bundle size. -/
 def actionXSqueezeSchedule (numProofs : ℕ)

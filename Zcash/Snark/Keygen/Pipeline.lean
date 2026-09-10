@@ -12,6 +12,7 @@ import Zcash.Arithmetic
 import Zcash.Snark.Keygen.Commitments
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Verifier.Circuit
+import Zcash.Snark.Verifier.FieldSupport
 
 /-!
 # `TopLevelCircuit.toVerifierKey` — the circuit-side half of halo2 `keygen_vk`, generic
@@ -138,6 +139,18 @@ theorem toVerifierKey_blindingFactors
     (top.toVerifierKey urs).delta =
       Zcash.Arithmetic.deltaFp := by
   simp only [toVerifierKey]
+
+/-- Field compatibility of a compiled key is independent of the URS contents. -/
+instance toVerifierKeyFieldSupport
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] [CircuitFieldSupport top] (urs : URS G) :
+    VerifyingKey.FieldSupport (top.toVerifierKey urs) where
+  n_eq := (top.toVerifierKey_n urs).trans top.n_eq_two_pow_domainExponent
+  omega_eq := top.toVerifierKey_omega urs
+  delta_eq := (top.toVerifierKey_delta urs).trans
+    Zcash.Arithmetic.pastaDomain_delta_eq.symm
+  domainExponent_le := CircuitFieldSupport.domainExponent_le (top := top)
+  permutationColumnCount_le := CircuitFieldSupport.permutationColumnCount_le (top := top)
 
 /-- The derived key uses the circuit-owned permutation chunk width. -/
 @[simp] theorem toVerifierKey_chunkLen

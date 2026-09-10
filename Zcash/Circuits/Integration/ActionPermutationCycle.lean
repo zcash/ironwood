@@ -187,9 +187,7 @@ theorem actionRowsInjectiveAtUrs
     Function.Injective fun i : Fin (2 ^ urs.k) =>
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
-    TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) actionCircuit.domainExponent_lt
-      hk
+    actionCircuit.domainRowsInjective_of_domainExponent_eq hk
 
 set_option maxRecDepth 100000 in
 def actionResolverPermutationCycle_or_relation

@@ -64,63 +64,6 @@ variable
     [TopLevelShape top]
     {numProofs : ℕ} {proofIndex : Fin numProofs}
 
-/-- The circuit-derived domain generator has exact order `2^k`. -/
-theorem domainRoot
-    (hbound : top.domainExponent < 33) :
-    top.omega ^
-      top.n = 1 := by
-  simpa only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq,
-    TopLevelCircuit.n, pow_one] using Zcash.Arithmetic.omegaOf_domain
-    top.domainExponent 1 (by omega)
-
-/-- Circuit-derived domain row names are injective. -/
-theorem domainRowsInjective
-    (hbound : top.domainExponent < 33) :
-    Function.Injective fun row : Fin top.n =>
-      top.omega ^ (row : ℕ) := by
-  simpa only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq,
-    TopLevelCircuit.n] using Zcash.Arithmetic.omegaOf_powers_injective
-      top.domainExponent (by omega)
-
-/-- Reindex the circuit's injective domain rows along an identified exponent. -/
-theorem domainRowsInjective_of_domainExponent_eq
-    {k : ℕ}
-    (hbound : top.domainExponent < 33)
-    (hk : top.domainExponent = k) :
-    Function.Injective fun row : Fin (2 ^ k) =>
-      top.omega ^ (row : ℕ) := by
-  rw [← hk, ← top.n_eq_two_pow_domainExponent]
-  exact domainRowsInjective hbound
-
-/-- The verifier key derived from a top-level circuit uses the same injective
-evaluation-domain row names. -/
-theorem toVerifierKey_domainRowsInjective
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    (urs : URS G)
-    (hbound : top.domainExponent < 33) :
-    Function.Injective fun row : Fin (top.toVerifierKey urs).n =>
-      (top.toVerifierKey urs).omega ^ (row : ℕ) := by
-  rw [top.toVerifierKey_n, top.toVerifierKey_omega]
-  exact domainRowsInjective (top := top) hbound
-
-/-- The verifier key derived from a top-level circuit uses the circuit's
-evaluation-domain root. -/
-theorem toVerifierKey_domainRoot
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    (urs : URS G)
-    (hbound : top.domainExponent < 33) :
-    (top.toVerifierKey urs).omega ^
-        (top.toVerifierKey urs).n = 1 := by
-  simpa only [top.toVerifierKey_n, top.toVerifierKey_omega] using
-    domainRoot (top := top) hbound
-
-/-- The circuit-derived domain size is nonzero in the verifier scalar field. -/
-theorem domainSizeCastNeZero
-    (hbound : top.domainExponent < 33) :
-    (((top.n : ℕ) : Fp)) ≠ 0 :=
-  Zcash.Arithmetic.domainSize_cast_ne_zero
-    top.domainExponent (by omega)
-
 /-- A fitting top-level circuit has fewer blinding rows than domain rows. -/
 theorem blindingFactors_lt_domainSize
     : top.blindingFactors < top.n := by

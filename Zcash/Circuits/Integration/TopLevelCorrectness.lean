@@ -261,8 +261,7 @@ def bridgeWitness_of_components
     { polynomial := poly }
   change TopLevelBridgeWitness top assignment.proofAssignment cell Bad
   have hroot :=
-    TopLevelAssignment.domainRoot
-      (top := top) top.domainExponent_lt
+    top.omega_pow_n
   let bridge :=
     FullCircuitBridge.ofTopLevelCanonical
       (top := top) (pp := pp) (urs := urs)

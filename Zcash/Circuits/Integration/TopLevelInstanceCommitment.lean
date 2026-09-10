@@ -230,7 +230,7 @@ that proof, or yields the augmented-basis relation.
 -/
 def publicInputEncoding_or_relation
     (proofIndex : Fin pp.numProofs)
-    (domainExponent_lt : top.domainExponent < 33) :
+    [CircuitFieldSupport top] :
     (let assignment : TopLevelAssignment top
           pp.numProofs proofIndex :=
         { polynomial :=
@@ -252,12 +252,12 @@ def publicInputEncoding_or_relation
       acceptedColumn_eq_rowPolynomial_or_relation
         top pp urs hk inputs ps ch pU pW a batchOpenings
         memberDecode haccepts proofIndex index
-        (TopLevelAssignment.domainRowsInjective domainExponent_lt))
+        (top.domainRowsInjective))
     fun hcolumns => ?_
   apply TopLevelAssignment.publicInputEncoding_of_publicInputRowPolynomials
       (assignment := assignment) (inputs proofIndex)
   · exact hcolumns
-  · exact TopLevelAssignment.domainRowsInjective domainExponent_lt
+  · exact top.domainRowsInjective
 
 assert_no_sorry publicInputEncoding_or_relation
 
@@ -270,7 +270,7 @@ row polynomial, or yields the shared augmented-basis relation. No assumption is 
 about proof multiplicity, column count, column indices, or query rotations.
 -/
 def statements_or_relation_of_accepted_topLevelBundleStatement
-    (domainExponent_lt : top.domainExponent < 33)
+    [CircuitFieldSupport top]
     (htop :
       TopLevelBundleStatement top pp
         (CanonicalMemberConstraintRelation.acceptedPolynomial
@@ -293,7 +293,7 @@ def statements_or_relation_of_accepted_topLevelBundleStatement
       fun proofIndex =>
         publicInputEncoding_or_relation
           top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-          haccepts proofIndex domainExponent_lt)
+          haccepts proofIndex)
     fun hencoding =>
       TopLevelBundleStatement.of_publicInputEncoding
         top pp poly inputs hencoding htop
@@ -301,7 +301,7 @@ def statements_or_relation_of_accepted_topLevelBundleStatement
 /-- Present retained private witnesses at the public inputs bound by the accepted instance
 commitments, preserving a computed relation on binding failure. -/
 def witnesses_or_relation_of_accepted_topLevelBundleWitness
-    (domainExponent_lt : top.domainExponent < 33)
+    [CircuitFieldSupport top]
     (witness : TopLevelBundleWitness top pp
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (shape := top.shape.withProofParams pp)
@@ -323,7 +323,7 @@ def witnesses_or_relation_of_accepted_topLevelBundleWitness
       fun proofIndex =>
         publicInputEncoding_or_relation
           top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-          haccepts proofIndex domainExponent_lt)
+          haccepts proofIndex)
     fun hencoding =>
       TopLevelBundleWitness.of_publicInputEncoding
         top pp poly inputs hencoding witness

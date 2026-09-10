@@ -421,7 +421,6 @@ assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct
 assert_axioms Zcash.Snark.Capstone.actionProofShape_eq_maxShape +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.actionStaticChecks +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionThetaBudget +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
@@ -464,7 +463,6 @@ assert_axioms Zcash.Snark.Capstone.derived_lookups +native(
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionStaticChecks +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionXSqueezeSchedule +native(
   CompElliptic.Fields.Pasta.pallasBase,

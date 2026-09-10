@@ -569,12 +569,10 @@ def deployedWitness
   have hrows : Function.Injective
       fun row : Fin top.n =>
         top.omega ^ (row : ℕ) :=
-    TopLevelAssignment.domainRowsInjective
-      top.domainExponent_lt
+    top.domainRowsInjective
   have hroot :
       top.omega ^ top.n = 1 :=
-    TopLevelAssignment.domainRoot
-      top.domainExponent_lt
+    top.omega_pow_n
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=

@@ -1,6 +1,7 @@
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Snark.Soundness.Constraint.VanishingSlotFold
+import Zcash.Snark.Verifier.FieldSupport
 
 /-!
 # Canonical decoded-model constraint terminal
@@ -154,8 +155,9 @@ same opening family; they are not independent terminal premises.
 -/
 def ofOpenings
     {shape : Shape}
+    [Zcash.Arithmetic.FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
-    {vk : VerifyingKey shape Fp G}
+    {vk : VerifyingKey shape Fp G} [VerifyingKey.FieldSupport vk]
     {instanceCommitment : Fin shape.numProofs → ℕ → G}
     {ps : ProofString shape Fp G}
     {ch : Challenges shape.k Fp}
@@ -194,10 +196,6 @@ def ofOpenings
       permutationLastEvalsWellFormed ps = true)
     (hpermutationRouting :
       PermutationChunkRoutingCoherent vk)
-    (hrows : Function.Injective
-      fun row : Fin vk.n => vk.omega ^ (row : ℕ))
-    (hroot : vk.omega ^ vk.n = 1)
-    (hnFp : (vk.n : Fp) ≠ 0)
     (hxDomain : ch.x ^ vk.n ≠ 1) :
     AcceptedModelClaimedEvaluations
       (memberDecode := memberDecode)
@@ -210,7 +208,7 @@ def ofOpenings
   have hselectorEvaluations :=
     VerifyingKey.constraintModel_selectorEvaluations
       (numProofs := shape.numProofs)
-      vk ch polynomial hblinding hrows hroot hnFp hxDomain
+      vk ch polynomial hblinding vk.domainRowsInjective vk.omega_pow_n vk.n_cast_ne_zero hxDomain
   refine
     { fixed := ?_
       advice := ?_
@@ -310,8 +308,9 @@ chooses the route, and node binding supplies all assembled openings.
 -/
 def ofNodeBinding_or_relation
     {shape : Shape}
+    [Zcash.Arithmetic.FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
-    {vk : VerifyingKey shape Fp G}
+    {vk : VerifyingKey shape Fp G} [VerifyingKey.FieldSupport vk]
     {instanceCommitment : Fin shape.numProofs → ℕ → G}
     {ps : ProofString shape Fp G}
     {ch : Challenges shape.k Fp}
@@ -359,10 +358,6 @@ def ofNodeBinding_or_relation
       permutationLastEvalsWellFormed ps = true)
     (hpermutationRouting :
       PermutationChunkRoutingCoherent vk)
-    (hrows : Function.Injective
-      fun row : Fin vk.n => vk.omega ^ (row : ℕ))
-    (hroot : vk.omega ^ vk.n = 1)
-    (hnFp : (vk.n : Fp) ≠ 0)
     (hxDomain : ch.x ^ vk.n ≠ 1) :
     AcceptedModelClaimedEvaluations
         (memberDecode := memberDecode)
@@ -374,7 +369,7 @@ def ofNodeBinding_or_relation
     fun hopen =>
       ofOpenings haccepts hfixedLayout hadviceLayout hinstanceLayout
         hopen hpermutationWellFormed hpermutationRouting
-        hrows hroot hnFp hxDomain
+        hxDomain
 
 end AcceptedModelClaimedEvaluations
 
@@ -729,9 +724,10 @@ supplied by node binding.
 -/
 def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
     {shape : Shape}
+    [Zcash.Arithmetic.FieldDomainParams Fp]
     {R : Sort u}
     (urs : URS G) (hk : shape.k = urs.k)
-    (vk : VerifyingKey shape Fp G)
+    (vk : VerifyingKey shape Fp G) [VerifyingKey.FieldSupport vk]
     (instanceCommitment : Fin shape.numProofs → ℕ → G)
     (ps : ProofString shape Fp G)
     (ch : Challenges shape.k Fp)
@@ -782,10 +778,6 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
         ⊕' R)
     (hpermutationRouting :
       PermutationChunkRoutingCoherent vk)
-    (hrows : Function.Injective
-      fun row : Fin vk.n => vk.omega ^ (row : ℕ))
-    (hroot : vk.omega ^ vk.n = 1)
-    (hnFp : (vk.n : Fp) ≠ 0)
     (hxgood :
       ch.x ∉ szBadSet
         (combineConstraints
@@ -851,7 +843,7 @@ def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
         haccepts hfixedLayout hadviceLayout hinstanceLayout hopen
         (permutationLastEvalsWellFormed_of_deployedAccepts
           urs hk vk instanceCommitment ps ch haccepts)
-        hpermutationRouting hrows hroot hnFp
+        hpermutationRouting
         (deployedAccepts_xn_ne_one
           urs hk vk instanceCommitment ps ch haccepts)
   exact

@@ -172,11 +172,10 @@ permutation-domain interface. Only support for the circuit's evaluation-domain
 exponent is external; chunking and blinding bounds follow from compilation. -/
 theorem resolverPermutationDomain
     (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    [TopLevelShape top] [CircuitFieldSupport top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges top.domainExponent Fp)
-    (poly : CommitmentId → CPoly)
-    (hdomainExponent : top.domainExponent < 33) :
+    (poly : CommitmentId → CPoly) :
     ResolverPermutationDomain (top.toVerifierKey urs)
       (top.constraintModel pp urs ch poly).l0
       (top.constraintModel pp urs ch poly).lLast
@@ -188,10 +187,8 @@ theorem resolverPermutationDomain
     ResolverPermutationDomain.ofCanonicalConstraintModel
       (top.toVerifierKey urs) ch poly
       (top.toVerifierKey_blindingFactors_lt_n urs)
-      (TopLevelAssignment.toVerifierKey_domainRowsInjective
-        urs hdomainExponent)
-      (TopLevelAssignment.toVerifierKey_domainRoot
-        urs hdomainExponent)
+      ((top.toVerifierKey urs).domainRowsInjective)
+      ((top.toVerifierKey urs).omega_pow_n)
       (top.toVerifierKey_permutationChunks_length urs)
 
 /-- Assemble a semantic permutation cycle from a circuit-derived keygen
@@ -199,7 +196,7 @@ permutation while keeping circuit-owned domain and chunk constants in their
 canonical spelling. -/
 def resolverPermutationCycleOfKeygenColumns
     (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    [TopLevelShape top] [CircuitFieldSupport top]
     {numProofs : ℕ} (urs : URS G)
     (poly : CommitmentId → CPoly) (p : Fin numProofs)
     {activeRows : ℕ} (hactive : activeRows ≤ top.n)
@@ -207,7 +204,6 @@ def resolverPermutationCycleOfKeygenColumns
       (ResolverPermutationCell (top.toVerifierKey urs) poly p top.n))
     (sigma : Equiv.Perm
       (ResolverPermutationCell (top.toVerifierKey urs) poly p activeRows))
-    (hdomainExponent : top.domainExponent < 33)
     (hcolumns : ∀
       (chunk : Fin top.permutationSetCount)
       (column : Fin
@@ -252,8 +248,7 @@ def resolverPermutationCycleOfKeygenColumns
   have hrows : Function.Injective fun i : Fin top.n =>
       (top.toVerifierKey urs).omega ^ (i : ℕ) := by
     simpa only [top.toVerifierKey_omega] using
-      TopLevelAssignment.domainRowsInjective
-        (top := top) hdomainExponent
+      top.domainRowsInjective
   exact ResolverPermutationCycle.ofKeygenColumns
     (top.toVerifierKey urs) poly p hactive fullSigma sigma
       hrows hcolumns' hrestrict hnames'
@@ -262,9 +257,8 @@ def resolverPermutationCycleOfKeygenColumns
 canonical negative blinding rotation. -/
 theorem toVerifierKey_lastUsableRowRotation
     (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G)
-    (hdomainExponent : top.domainExponent < 33) :
+    [TopLevelShape top] [CircuitFieldSupport top]
+    (urs : URS G) :
     (top.toVerifierKey urs).omega ^
         ((top.toVerifierKey urs).n -
           (top.toVerifierKey urs).blindingFactors - 1) =
@@ -278,7 +272,6 @@ theorem toVerifierKey_lastUsableRowRotation
     (by
       have hblinding := top.toVerifierKey_blindingFactors_lt_n urs
       omega)
-    (TopLevelAssignment.toVerifierKey_domainRoot
-      urs hdomainExponent)
+    ((top.toVerifierKey urs).omega_pow_n)
 
 end Halo2.TopLevelCircuit

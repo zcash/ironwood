@@ -75,4 +75,33 @@ theorem csDegree_lt_ringChar : csDegree top.constraintSystem < ringChar F := by
 
 end CircuitFieldSupport
 
+namespace TopLevelCircuit
+
+variable {F : Type} [FiniteField F] [FieldDomainParams F]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top]
+    [CircuitFieldSupport top]
+
+theorem omega_pow_n : top.omega ^ top.n = 1 :=
+  (CircuitFieldSupport.omega_isPrimitiveRoot top).pow_eq_one
+
+/-- The circuit's domain enumerates distinct evaluation points. -/
+theorem domainRowsInjective :
+    Function.Injective (fun row : Fin top.n => top.omega ^ (row : ℕ)) := by
+  intro i j h
+  exact Fin.ext ((CircuitFieldSupport.omega_isPrimitiveRoot top).pow_inj i.isLt j.isLt h)
+
+theorem n_cast_ne_zero : (top.n : F) ≠ 0 := by
+  letI : NeZero top.n := ⟨top.n_pos.ne'⟩
+  exact (CircuitFieldSupport.omega_isPrimitiveRoot top).neZero'.out
+
+/-- Transport row injectivity when another domain has the same exponent. -/
+theorem domainRowsInjective_of_domainExponent_eq {k : ℕ}
+    (hk : top.domainExponent = k) :
+    Function.Injective (fun row : Fin (2 ^ k) => top.omega ^ (row : ℕ)) := by
+  rw [← hk, ← top.n_eq_two_pow_domainExponent]
+  exact top.domainRowsInjective
+
+end TopLevelCircuit
+
 end Halo2

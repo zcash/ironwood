@@ -1348,12 +1348,9 @@ assert_computable Zcash.Snark.decodedPolynomialResolver_opens_or_relation +choic
 
 -- The accepted-route terminal converts canonical `CircuitSat` into the circuit's statements with
 -- no free semantic callback, decoder, or selected-column feed.
-assert_axioms Zcash.Snark.topLevelBundleStatement_or_bad_of_constraintSatisfaction +native(
-  CompElliptic.Fields.Pasta.pallasBase)
-assert_computable Zcash.Snark.topLevelStatements_or_relation_of_circuitSat +choice +native(
-  CompElliptic.Fields.Pasta.pallasBase)
-assert_computable Zcash.Snark.topLevelStatements_or_relation_of_decodedMemberPolynomial_eq +choice +native(
-  CompElliptic.Fields.Pasta.pallasBase)
+assert_axioms Zcash.Snark.topLevelBundleStatement_or_bad_of_constraintSatisfaction
+assert_computable Zcash.Snark.topLevelStatements_or_relation_of_circuitSat +choice
+assert_computable Zcash.Snark.topLevelStatements_or_relation_of_decodedMemberPolynomial_eq +choice
 -- The last links: the point check lifted to the polynomial identity, the permutation taken to be the
 -- one keygen builds from the circuit's copy constraints, the cells of every word covered at once,
 -- and circuit satisfaction defined by the whole constraint list rather than the gates alone.
@@ -1826,8 +1823,7 @@ assert_axioms Zcash.Snark.algebraicFullPrefixesPre_ne_at +native(CompElliptic.Cu
 assert_axioms Zcash.Snark.decodePoints_injective
 assert_axioms Zcash.Snark.decodePoints_zero
 -- Circuit-generic straight-line decode terminal.
-assert_computable Zcash.Snark.topLevelStatements_or_relation_of_decode +choice +native(
-  CompElliptic.Fields.Pasta.pallasBase)
+assert_computable Zcash.Snark.topLevelStatements_or_relation_of_decode +choice
 -- The rewind-free decode reaching the Action terminal
 -- (`Soundness.Action.StraightLineTerminal`): one accepting execution, no rewind, with
 -- only the challenge exclusions left as premises.

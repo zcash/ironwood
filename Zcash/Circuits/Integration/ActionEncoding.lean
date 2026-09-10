@@ -117,8 +117,7 @@ def actionTopLevelCircuitCorrectness
       fun i : Fin (2 ^ urs.k) =>
         actionCircuit.omega ^
           (i : ℕ) :=
-    TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      actionCircuit.domainExponent_lt hdomainExponent
+    actionCircuit.domainRowsInjective_of_domainExponent_eq hdomainExponent
   refine
     { fixedEncoding := ?_
       fixed := ?_
@@ -136,12 +135,8 @@ def actionTopLevelCircuitCorrectness
       { polynomial := relation.polynomial }
     apply topLevelFixedColumnEncoding_of_binding
       assignment
-      (TopLevelAssignment.domainRowsInjective
-        (top := actionCircuit)
-        actionCircuit.domainExponent_lt)
-      (TopLevelAssignment.domainRoot
-        (top := actionCircuit)
-        actionCircuit.domainExponent_lt)
+      (actionCircuit.domainRowsInjective)
+      (actionCircuit.omega_pow_n)
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex
@@ -163,8 +158,7 @@ def actionTopLevelCircuitCorrectness
       have hroot :
           actionCircuit.omega ^
             actionCircuit.n = 1 :=
-        TopLevelAssignment.domainRoot
-          actionCircuit.domainExponent_lt
+        actionCircuit.omega_pow_n
       have hn : actionCircuit.n ≠ 0 := by
         exact actionCircuit.n_ne_zero
       have hsatisfaction :=

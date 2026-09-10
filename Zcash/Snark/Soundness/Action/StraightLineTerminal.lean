@@ -307,9 +307,6 @@ def actionDecodedTerminal?
                   actionCircuit pp urs ch polynomial with
               | some hlookupProof =>
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
-                  let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
-                    TopLevelAssignment.domainSizeCastNeZero
-                      actionCircuit.domainExponent_lt
                   let terminal :=
                     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       (R := AlgebraicRelationWitness (F := Fp) basis)
@@ -330,14 +327,6 @@ def actionDecodedTerminal?
                       PSum.inl (decode.memberBinding hchar slot point hpoint))
                     (actionCircuit.permutationChunkRoutingCoherent urs)
                   let outcome := terminal
-                    (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                      urs actionCircuit.domainExponent_lt)
-                  let outcome := outcome
-                    (TopLevelAssignment.toVerifierKey_domainRoot
-                      urs actionCircuit.domainExponent_lt)
-                  let outcome := outcome
-                    (by simpa only [actionCircuit.toVerifierKey_n] using hnFp)
-                  let outcome := outcome
                     (by simpa only [actionCircuit.toVerifierKey_n] using hxgoodProof.down)
                   match outcome with
                   | PSum.inr relation => some (Sum.inr relation)
