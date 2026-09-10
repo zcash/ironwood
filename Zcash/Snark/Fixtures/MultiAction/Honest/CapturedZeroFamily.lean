@@ -80,15 +80,15 @@ def capturedZeroDeployedRootFamily :
     ComputedDeployedRootFSFamily capturedZeroShape :=
   zeroDeployedRootFamily capturedZeroVk capturedZeroVk_fixed capturedZeroVk_perm
 
-/-- **The static checks hold at the instantiating key.**  Its layouts and domain data are the
-captured ones, so the same five decided facts apply. -/
-theorem capturedZeroStaticChecks :
-    DeployedConstraintStaticChecks capturedZeroStraightLineFamily.toRootFamily where
-  adviceLength := fun _basis => vk_advice_layout_length
-  instanceLength := fun _basis => vk_instance_layout_length
-  fixedLength := fun _basis => vk_fixed_layout_length
-  omegaOrder := fun _basis => vk_omega_order
-  characteristic := fun _basis => vk_n_cast_ne_zero
+/-- The instance-free key preserves the captured scalar and layout profile. -/
+theorem capturedZeroVk_profile : CapturedVerifierKeyProfile capturedZeroVk := by
+  constructor <;> rfl
+
+instance capturedZeroVkFieldSupport : VerifyingKey.FieldSupport capturedZeroVk :=
+  capturedZeroVk_profile.fieldSupport
+
+instance capturedZeroVkWellFormed : VerifyingKey.WellFormed capturedZeroVk :=
+  capturedZeroVk_profile.wellFormed
 
 /-- **The constraint-`x` squeeze schedule at budget zero.**  The stage's root set is empty on
 every table, so the event costs nothing and its pinning is the staged trace's. -/
@@ -152,14 +152,15 @@ def capturedLiveZeroStraightLineFamily :
   zeroConstStraightLineDeployedFamily capturedLiveZeroVk capturedLiveZeroVk_fixed
     capturedLiveZeroVk_perm
 
-/-- The static checks hold at the live key: its layouts and domain data are the captured ones. -/
-theorem capturedLiveZeroStaticChecks :
-    DeployedConstraintStaticChecks capturedLiveZeroStraightLineFamily.toRootFamily where
-  adviceLength := fun _basis => vk_advice_layout_length
-  instanceLength := fun _basis => vk_instance_layout_length
-  fixedLength := fun _basis => vk_fixed_layout_length
-  omegaOrder := fun _basis => vk_omega_order
-  characteristic := fun _basis => vk_n_cast_ne_zero
+/-- The live key preserves the captured scalar and layout profile. -/
+theorem capturedLiveZeroVk_profile : CapturedVerifierKeyProfile capturedLiveZeroVk := by
+  constructor <;> rfl
+
+instance capturedLiveZeroVkFieldSupport : VerifyingKey.FieldSupport capturedLiveZeroVk :=
+  capturedLiveZeroVk_profile.fieldSupport
+
+instance capturedLiveZeroVkWellFormed : VerifyingKey.WellFormed capturedLiveZeroVk :=
+  capturedLiveZeroVk_profile.wellFormed
 
 /-- **The straight-line interface is inhabited at the full captured shape** — the non-vacuity
 smoke test of the total pre-`x` constraint event. -/

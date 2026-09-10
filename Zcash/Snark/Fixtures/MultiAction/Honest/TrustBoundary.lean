@@ -334,26 +334,9 @@ assert_axioms Zcash.Snark.Fixture2.vk_quotient_tail_le +native(
   Zcash.Snark.Fixture2.vk_quotient_tail_le)
 assert_axioms Zcash.Snark.Fixture2.vk_n_pred_le +native(Zcash.Snark.Fixture2.vk_n_pred_le)
 assert_axioms Zcash.Snark.Fixture2.shape_k_pred_le +native(Zcash.Snark.Fixture2.shape_k_pred_le)
--- The captured key's static checks: the query layouts cover the shape's counts, `ω` has order
--- dividing `n`, and `n` does not vanish in `𝔽` — packaged for any family carrying the
--- captured non-group profile. Literal equality of fixed Vesta commitments is intentionally absent.
+-- The captured non-group profile pins scalar and layout data, leaving the commitments free
+-- to be represented over each sampled AGM basis.
 assert_axioms Zcash.Snark.Fixture2.capturedVerifierKeyProfile_vk
-assert_axioms Zcash.Snark.Fixture2.vk_advice_layout_length +native(
-  Zcash.Snark.Fixture2.vk_advice_layout_length)
-assert_axioms Zcash.Snark.Fixture2.vk_instance_layout_length +native(
-  Zcash.Snark.Fixture2.vk_instance_layout_length)
-assert_axioms Zcash.Snark.Fixture2.vk_fixed_layout_length +native(
-  Zcash.Snark.Fixture2.vk_fixed_layout_length)
-assert_axioms Zcash.Snark.Fixture2.vk_omega_order +native(Zcash.Snark.Fixture2.vk_omega_order)
-assert_axioms Zcash.Snark.Fixture2.vk_n_cast_ne_zero +native(
-  Zcash.Snark.Fixture2.vk_n_cast_ne_zero)
-assert_axioms Zcash.Snark.Fixture2.deployedConstraintStaticChecks_of_captured +native(
-  Zcash.Snark.Fixture2.vk_advice_layout_length,
-  Zcash.Snark.Fixture2.vk_fixed_layout_length,
-  Zcash.Snark.Fixture2.vk_instance_layout_length,
-  Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
-  Zcash.Snark.Fixture2.vk_omega_order,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The `x`-squeeze schedule at the captured key: the degree caps are discharged, so `epsilonX` is
 -- the concrete `20470 / |𝔽|`; exact leave-one-`x` invariance follows from the family's
 -- fresh-query constraint trace.
@@ -367,51 +350,58 @@ assert_axioms Zcash.Snark.Fixture2.deployedConstraintXSqueezeSchedule_captured +
   Zcash.Snark.Fixture2.vk_quotient_tail_le,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The deployed compressed-identity extraction bound at the captured key: the straight-line
--- capstone with the static checks and degree caps discharged, so the bad-`x` term is the concrete
+-- capstone with key lawfulness and degree caps discharged, so the bad-`x` term is the concrete
 -- `(Q + 1) · 20470 / |𝔽|` and the multiopen term is the additive root budget.  Semantic circuit
 -- satisfaction additionally uses the four-budget promotion in the core trust census.
+-- Key lawfulness is inherited through the keygen equality and cross-capture certificates.
 assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_knowledge_error_bound +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   Zcash.Snark.Fixture2.shape_k_pred_le,
-  Zcash.Snark.Fixture2.vk_advice_layout_length,
   Zcash.Snark.Fixture2.vk_chunk_width_le,
-  Zcash.Snark.Fixture2.vk_fixed_layout_length,
   Zcash.Snark.Fixture2.vk_gates_degree_le,
-  Zcash.Snark.Fixture2.vk_instance_layout_length,
   Zcash.Snark.Fixture2.vk_lookup_input_degree_le,
   Zcash.Snark.Fixture2.vk_lookup_table_degree_le,
-  Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
   Zcash.Snark.Fixture2.vk_n_pred_le,
-  Zcash.Snark.Fixture2.vk_omega_order,
   Zcash.Snark.Fixture2.vk_quotient_tail_le,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   Zcash.Snark.Fixture2.shape_k_pred_le,
-  Zcash.Snark.Fixture2.vk_advice_layout_length,
   Zcash.Snark.Fixture2.vk_chunk_width_le,
-  Zcash.Snark.Fixture2.vk_fixed_layout_length,
   Zcash.Snark.Fixture2.vk_gates_degree_le,
-  Zcash.Snark.Fixture2.vk_instance_layout_length,
   Zcash.Snark.Fixture2.vk_lookup_input_degree_le,
   Zcash.Snark.Fixture2.vk_lookup_table_degree_le,
-  Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
   Zcash.Snark.Fixture2.vk_n_pred_le,
-  Zcash.Snark.Fixture2.vk_omega_order,
   Zcash.Snark.Fixture2.vk_quotient_tail_le,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The same bound on the interpolation-free route: the deployed constraint family is built by
 -- `ofCovered` from the two fresh-query traces, with no field-capacity premise or interpolation.
 assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct_generatorRO_knowledge_error_bound +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   Zcash.Snark.Fixture2.shape_k_pred_le,
-  Zcash.Snark.Fixture2.vk_advice_layout_length,
   Zcash.Snark.Fixture2.vk_chunk_width_le,
-  Zcash.Snark.Fixture2.vk_fixed_layout_length,
   Zcash.Snark.Fixture2.vk_gates_degree_le,
-  Zcash.Snark.Fixture2.vk_instance_layout_length,
   Zcash.Snark.Fixture2.vk_lookup_input_degree_le,
   Zcash.Snark.Fixture2.vk_lookup_table_degree_le,
-  Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
   Zcash.Snark.Fixture2.vk_n_pred_le,
-  Zcash.Snark.Fixture2.vk_omega_order,
   Zcash.Snark.Fixture2.vk_quotient_tail_le,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
@@ -420,8 +410,6 @@ assert_axioms Zcash.Snark.Fixture2.orchard_deployed_straightline_captured_direct
 -- censused rather than relying on the endpoint name regex to classify internal public claims.
 assert_axioms Zcash.Snark.Capstone.actionProofShape_eq_maxShape +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.Capstone.actionStaticChecks +native(
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionThetaBudget +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionBetaBudget +native(
@@ -461,8 +449,6 @@ assert_axioms Zcash.Snark.Capstone.derived_scalars +native(
 assert_axioms Zcash.Snark.Capstone.derived_lookups +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Capstone.capturedActionStaticChecks +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Capstone.capturedActionXSqueezeSchedule +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -649,10 +635,6 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived +na
 assert_computable Zcash.Snark.Fixture2.capturedZeroVk +choice
 assert_axioms Zcash.Snark.Fixture2.capturedZeroStraightLineFamily +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedZeroDeployedConstraintFamily +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Fixture2.capturedZeroStaticChecks +native(
-  Zcash.Snark.Fixture2.vk_advice_layout_length, Zcash.Snark.Fixture2.vk_fixed_layout_length,
-  Zcash.Snark.Fixture2.vk_instance_layout_length, Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
-  Zcash.Snark.Fixture2.vk_omega_order, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedZeroConstraintSchedule +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The live-instance layers at the full captured shape: the root and IPA layers run with both
 -- sub-proofs; the constraint-x stage is the honest-prover boundary and is deliberately absent.
@@ -661,10 +643,6 @@ assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroRootFamily +native(CompEllipt
 assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroIpaTrace +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroStraightLineFamily +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroStaticChecks +native(
-  Zcash.Snark.Fixture2.vk_advice_layout_length, Zcash.Snark.Fixture2.vk_fixed_layout_length,
-  Zcash.Snark.Fixture2.vk_instance_layout_length, Zcash.Snark.Fixture2.vk_n_cast_ne_zero,
-  Zcash.Snark.Fixture2.vk_omega_order, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.straightLineInterface_nonempty_at_captured_shape +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
@@ -673,7 +651,7 @@ assert_axioms Zcash.Snark.Fixture2.straightLineInterface_nonempty_at_captured_sh
 -- the profiled endpoints the
 -- book's proof journey cites by name, and they are top-level leaves: nothing censused depends on
 -- them, so without these entries nothing bounds their trusted base. Unlike the captured-key
--- knowledge-error endpoints, they take the static checks and the `x`-squeeze schedule as
+-- knowledge-error endpoints, they take key lawfulness and the `x`-squeeze schedule as
 -- hypotheses rather than discharging them from the capture, so they reach no fixture native
 -- certificate — only the Vesta point count, through the `Fp`-module structure on the curve.
 assert_axioms Zcash.Snark.FixtureMax.orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_security +native(

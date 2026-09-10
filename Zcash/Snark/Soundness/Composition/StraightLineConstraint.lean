@@ -202,7 +202,8 @@ pre-`x` difference.  No `Nonempty`, `Classical.choice`, recursive tape, or impor
 the returned-data path. -/
 def straightLineConstraintOutcome?
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) :
@@ -237,9 +238,12 @@ def straightLineConstraintOutcome?
             | some hxgoodProof =>
               match deployedOnlineConstraintOutcomeOfDecode family.toRootFamily basis pnu
                   witness hsource.down decoded.1 decoded.2
-                  checks (static.adviceLength basis) (static.instanceLength basis)
-                  (static.fixedLength basis) (static.omegaOrder basis)
-                  (static.characteristic basis) hxgoodProof.down with
+                  checks
+                  (VerifyingKey.WellFormed.adviceQueryLayout_length (vk := family.vk basis)).ge
+                  (VerifyingKey.WellFormed.instanceQueryLayout_length (vk := family.vk basis)).ge
+                  (VerifyingKey.WellFormed.fixedQueryLayout_length (vk := family.vk basis)).ge
+                  (family.vk basis).omega_pow_n
+                  (family.vk basis).n_cast_ne_zero hxgoodProof.down with
               | PSum.inl constraint => exact some (PSum.inl
                   { witness := constraint, accepts := haccepts })
               | PSum.inr relation => exact some (PSum.inr relation)
@@ -248,11 +252,12 @@ def straightLineConstraintOutcome?
 /-- Successful constraint witness projected as data from the total straight-line adapter. -/
 def straightLineConstraintSuccess?
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) :=
-  match family.straightLineConstraintOutcome? static basis O with
+  match family.straightLineConstraintOutcome? basis O with
   | some (PSum.inl witness) => some witness
   | _ => none
 
@@ -336,24 +341,26 @@ view of `straightLineConstraintSuccess?`; consumers recover the exact retained s
 `Option.get`, never with `Classical.choice`. -/
 def straightLineConstraintDecoded
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) : Prop :=
-  (family.straightLineConstraintSuccess? static basis O).isSome
+  (family.straightLineConstraintSuccess? basis O).isSome
 
 /-- A decoded run exposes the exact successful branch of the executable outcome. -/
 theorem straightLineConstraintOutcome?_eq_some_of_decoded
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (hdecoded : family.straightLineConstraintDecoded static basis O) :
-    ∃ success, family.straightLineConstraintOutcome? static basis O =
+    (hdecoded : family.straightLineConstraintDecoded basis O) :
+    ∃ success, family.straightLineConstraintOutcome? basis O =
       some (PSum.inl success) := by
   unfold straightLineConstraintDecoded straightLineConstraintSuccess? at hdecoded
-  cases hout : family.straightLineConstraintOutcome? static basis O with
+  cases hout : family.straightLineConstraintOutcome? basis O with
   | none => simp [hout] at hdecoded
   | some outcome =>
       cases outcome with
@@ -363,15 +370,16 @@ theorem straightLineConstraintOutcome?_eq_some_of_decoded
 /-- The `Option.get` success is the same value exposed by the outcome branch. -/
 theorem straightLineConstraintSuccess_eq_of_outcome
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (hdecoded : family.straightLineConstraintDecoded static basis O)
+    (hdecoded : family.straightLineConstraintDecoded basis O)
     (success : StraightLineConstraintSuccess family basis O)
-    (hout : family.straightLineConstraintOutcome? static basis O =
+    (hout : family.straightLineConstraintOutcome? basis O =
       some (PSum.inl success)) :
-    (family.straightLineConstraintSuccess? static basis O).get hdecoded = success := by
+    (family.straightLineConstraintSuccess? basis O).get hdecoded = success := by
   simp [straightLineConstraintSuccess?, hout]
 
 set_option maxHeartbeats 800000 in
@@ -379,7 +387,8 @@ set_option maxHeartbeats 800000 in
 root-event probability decomposition to the value returned by `straightLineConstraintOutcome?`. -/
 theorem straightLineConstraintDecoded_of_root
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
@@ -411,9 +420,9 @@ theorem straightLineConstraintDecoded_of_root
         O).1.multiBlind
           (wrappedPreIpaReads (deployedRootRunOutput family.toRootFamily basis
             O))))
-    (hout : deployedConstraintOutcomeOfRoot family.toRootFamily static basis
+    (hout : deployedConstraintOutcomeOfRoot family.toRootFamily basis
       O haccept root hxgood = PSum.inl constraint) :
-    family.straightLineConstraintDecoded static basis O := by
+    family.straightLineConstraintDecoded basis O := by
   rcases root with ⟨batchWitness, outcome_eq, decoded, batches_eq⟩
   cases decoded with
   | mk batches x4Values memberValues =>
@@ -500,7 +509,8 @@ theorem straightLineConstraintDecoded_of_root
 constraint witness. -/
 def straightLineConstraintFailureEvent
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily) :
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)] :
     Set ((AugmentedIndex (2 ^ shape.k) -> VestaG) ×
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)) :=
@@ -508,7 +518,7 @@ def straightLineConstraintFailureEvent
       (fullAlgebraicAcceptDeployed q.1 (family.vk q.1)
         (family.instanceCommitment q.1))
       (algebraicFullPrefixesPre family.init) (algebraicFullPrefixes family.init) q.2 ∧
-    ¬family.straightLineConstraintDecoded static q.1 q.2}
+    ¬family.straightLineConstraintDecoded q.1 q.2}
 
 /-- Basis/oracle pairs on which an arbitrary executable relation finder returns data. -/
 def straightLineRelationEvent
@@ -525,18 +535,20 @@ def straightLineRelationEvent
 /-- Scalar-basis form used by the textbook-DLOG reduction. -/
 def straightLineConstraintFailureSet (B : VestaG)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily) :
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)] :
     Set ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)) :=
   (fun q => (scalarBasis B q.1, q.2)) ⁻¹'
-    family.straightLineConstraintFailureEvent static
+    family.straightLineConstraintFailureEvent
 
 /-- Transfer the complete straight-line failure event across a uniform-URS identification. -/
 theorem straightLineConstraintFailure_prob_eq_of_uniformURS
     {Omega : Type*} (setup : PMF Omega) (B : VestaG)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basisOf : Omega -> AugmentedIndex (2 ^ shape.k) -> VestaG)
     (hURS : OrchardUniformURSIdentification setup shape.k B basisOf) :
     (independentProductPMF setup
@@ -544,12 +556,12 @@ theorem straightLineConstraintFailure_prob_eq_of_uniformURS
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (basisOf p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) =
+          family.straightLineConstraintFailureEvent) =
       (PMF.uniformOfFintype
         ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
           (BTranscript Fp VestaG
             (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static) := by
+        (family.straightLineConstraintFailureSet B) := by
   let oraclePMF := PMF.uniformOfFintype
     (BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
@@ -571,20 +583,20 @@ theorem straightLineConstraintFailure_prob_eq_of_uniformURS
     (fun p : PMF ((AugmentedIndex (2 ^ shape.k) -> VestaG) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)) =>
-      p.toOuterMeasure (family.straightLineConstraintFailureEvent static)) hprod
+      p.toOuterMeasure (family.straightLineConstraintFailureEvent)) hprod
   change ((independentProductPMF setup oraclePMF).map
       (fun p => (basisOf p.1, p.2))).toOuterMeasure
-        (family.straightLineConstraintFailureEvent static) =
+        (family.straightLineConstraintFailureEvent) =
     ((independentProductPMF
       (PMF.uniformOfFintype (AugmentedIndex (2 ^ shape.k) -> Fp)) oraclePMF).map
         (fun p => (scalarBasis B p.1, p.2))).toOuterMeasure
-          (family.straightLineConstraintFailureEvent static) at hmeasure
+          (family.straightLineConstraintFailureEvent) at hmeasure
   rw [PMF.toOuterMeasure_map_apply, PMF.toOuterMeasure_map_apply] at hmeasure
   calc
     _ = (independentProductPMF
           (PMF.uniformOfFintype (AugmentedIndex (2 ^ shape.k) -> Fp)) oraclePMF).toOuterMeasure
           ((fun p => (scalarBasis B p.1, p.2)) ⁻¹'
-            family.straightLineConstraintFailureEvent static) := hmeasure
+            family.straightLineConstraintFailureEvent) := hmeasure
     _ = _ := by
       rw [independentProductPMF_uniform]
       rfl
@@ -595,7 +607,8 @@ only once. -/
 theorem straightLineConstraintFailure_union_relation_prob_eq_of_uniformURS
     {Omega : Type*} (setup : PMF Omega) (B : VestaG)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (finder : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) ->
@@ -607,13 +620,13 @@ theorem straightLineConstraintFailure_union_relation_prob_eq_of_uniformURS
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (basisOf p.1, p.2)) ⁻¹'
-          (family.straightLineConstraintFailureEvent static ∪
+          (family.straightLineConstraintFailureEvent ∪
             family.straightLineRelationEvent finder)) =
       (PMF.uniformOfFintype
         ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
           (BTranscript Fp VestaG
             (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static ∪ relSetWithCoins B finder) := by
+        (family.straightLineConstraintFailureSet B ∪ relSetWithCoins B finder) := by
   let oraclePMF := PMF.uniformOfFintype
     (BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
@@ -635,7 +648,7 @@ theorem straightLineConstraintFailure_union_relation_prob_eq_of_uniformURS
     (fun p : PMF ((AugmentedIndex (2 ^ shape.k) -> VestaG) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)) =>
-      p.toOuterMeasure (family.straightLineConstraintFailureEvent static ∪
+      p.toOuterMeasure (family.straightLineConstraintFailureEvent ∪
         family.straightLineRelationEvent finder)) hprod
   change ((independentProductPMF setup oraclePMF).map
       (fun p => (basisOf p.1, p.2))).toOuterMeasure _ =
@@ -647,15 +660,15 @@ theorem straightLineConstraintFailure_union_relation_prob_eq_of_uniformURS
     _ = (independentProductPMF
           (PMF.uniformOfFintype (AugmentedIndex (2 ^ shape.k) -> Fp)) oraclePMF).toOuterMeasure
           ((fun p => (scalarBasis B p.1, p.2)) ⁻¹'
-            (family.straightLineConstraintFailureEvent static ∪
+            (family.straightLineConstraintFailureEvent ∪
               family.straightLineRelationEvent finder)) := hmeasure
     _ = _ := by
       rw [independentProductPMF_uniform]
       have hsets :
           ((fun p => (scalarBasis B p.1, p.2)) ⁻¹'
-              (family.straightLineConstraintFailureEvent static ∪
+              (family.straightLineConstraintFailureEvent ∪
                 family.straightLineRelationEvent finder)) =
-            family.straightLineConstraintFailureSet B static ∪
+            family.straightLineConstraintFailureSet B ∪
               relSetWithCoins B finder := by
         ext q
         simp [straightLineConstraintFailureSet, straightLineRelationEvent, relSetWithCoins]
@@ -676,8 +689,9 @@ zero and pinned-root events, the one combined relation finder, or the single con
 -/
 theorem straightLineConstraintFailureSet_subset
     (B : VestaG) (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily) :
-    family.straightLineConstraintFailureSet B static <=
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)] :
+    family.straightLineConstraintFailureSet B <=
       family.straightLineRootZeroSet B ∪
         ({q | (family.toIpaFamily.pinnedIpaRoots (scalarBasis B q.1)).Landing q.2} ∪
           ({q | (family.toRootFamily.pinnedRoots (scalarBasis B q.1)).Landing q.2} ∪
@@ -694,12 +708,12 @@ theorem straightLineConstraintFailureSet_subset
     by_cases hxgood : (wrappedPreIpaRecord
         (deployedRootRunOutput family.toRootFamily basis coins)).x ∉
         szBadSet (deployedConstraintDifferencePreX family.toRootFamily basis coins)
-    · cases hout : deployedConstraintOutcomeOfRoot family.toRootFamily static basis coins
+    · cases hout : deployedConstraintOutcomeOfRoot family.toRootFamily basis coins
           hfailure.1 root hxgood with
       | inl witness =>
           exfalso
           apply hfailure.2
-          exact family.straightLineConstraintDecoded_of_root static basis q.2
+          exact family.straightLineConstraintDecoded_of_root basis q.2
             hfailure.1 root hxgood witness hout
       | inr relation =>
           apply Or.inr
@@ -713,7 +727,7 @@ theorem straightLineConstraintFailureSet_subset
           | some baseRelation => simp
           | none =>
               have hrelation := deployedConstraintOutcomeOfRoot_relation_eq_online
-                family.toRootFamily static basis coins hfailure.1 root hxgood relation hout
+                family.toRootFamily basis coins hfailure.1 root hxgood relation hout
               -- Restate both equations with the `let`s expanded so `simp` can use them.
               have houtcome : family.outcome (scalarBasis B q.1) q.2 =
                 PSum.inl root.batchWitness := root.outcome_eq
@@ -799,7 +813,8 @@ theorem straightLineConstraintRelation_prob_le_of_textbookDL
 /-- Prices any computed relation finder that pointwise extends the constraint finder. -/
 theorem straightLineConstraintFailure_union_relation_prob_le_of_relationSupersetTextbookDL
     (B : VestaG) (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (finder : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) ->
@@ -814,7 +829,7 @@ theorem straightLineConstraintFailure_union_relation_prob_le_of_relationSuperset
       ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static ∪ relSetWithCoins B finder) <=
+        (family.straightLineConstraintFailureSet B ∪ relSetWithCoins B finder) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -849,11 +864,11 @@ theorem straightLineConstraintFailure_union_relation_prob_le_of_relationSuperset
     simpa only [oldRelationSet, relationSet, relSetWithCoins, Finset.mem_coe,
       Finset.mem_filter, Finset.mem_univ, true_and] using
       hextends (scalarBasis B q.1) q.2 hq'
-  have hcontain : family.straightLineConstraintFailureSet B static ∪ relationSet <=
+  have hcontain : family.straightLineConstraintFailureSet B ∪ relationSet <=
       zeroSet ∪ (ipaSet ∪ (rootSet ∪ (relationSet ∪ badXSet))) :=
     fun q hq => by
       rcases hq with hfailure | hrelation
-      · rcases family.straightLineConstraintFailureSet_subset B static hfailure with
+      · rcases family.straightLineConstraintFailureSet_subset B hfailure with
           hzero | hipa | hroot | hold | hbad
         · exact Or.inl hzero
         · exact Or.inr (Or.inl hipa)
@@ -906,7 +921,8 @@ theorem straightLineConstraintFailure_union_relation_prob_le_of_relationSuperset
 finite relation finder, and contains no expectation or Markov term. -/
 theorem straightLineConstraintFailure_prob_le_of_textbookDL
     (B : VestaG) (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     {epsilonX bound : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
     (hDL : TextbookDLWithCoinsAdvantageLE B
@@ -915,7 +931,7 @@ theorem straightLineConstraintFailure_prob_le_of_textbookDL
       ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static) <=
+        (family.straightLineConstraintFailureSet B) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -954,7 +970,7 @@ theorem straightLineConstraintFailure_prob_le_of_textbookDL
   have hrelation := family.straightLineConstraintRelation_prob_le_of_textbookDL B hDL
   have hbadX := family.straightLineConstraintBadX_prob_le B schedule
   refine le_trans (MeasureTheory.measure_mono
-    (family.straightLineConstraintFailureSet_subset B static)) ?_
+    (family.straightLineConstraintFailureSet_subset B)) ?_
   refine le_trans (MeasureTheory.measure_union_le zeroSet
     (ipaSet ∪ (rootSet ∪ (relationSet ∪ badXSet)))) ?_
   refine le_trans (add_le_add hzero
@@ -978,7 +994,8 @@ theorem straightLineConstraintFailure_prob_le_of_textbookDL
 /-- Runtime-aware spelling of the capstone using the proved fixed four-call budget. -/
 theorem straightLineConstraintFailure_prob_le_of_fixedCallsTextbookDL
     (B : VestaG) (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     {epsilonX bound : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
     (hDL : TextbookDLWithCoinsFixedCallsAdvantageLE B
@@ -988,7 +1005,7 @@ theorem straightLineConstraintFailure_prob_le_of_fixedCallsTextbookDL
       ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static) <=
+        (family.straightLineConstraintFailureSet B) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -996,7 +1013,7 @@ theorem straightLineConstraintFailure_prob_le_of_fixedCallsTextbookDL
           algebraicRootBudget shape shape.k +
         (bound + 1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) * epsilonX :=
-  family.straightLineConstraintFailure_prob_le_of_textbookDL B static schedule hDL.2
+  family.straightLineConstraintFailure_prob_le_of_textbookDL B schedule hDL.2
 
 /-! ## Promotion from the compressed identity to circuit semantics
 
@@ -1010,7 +1027,8 @@ witness outside them has the intended semantics.
 to the caller's row-level semantic predicate. -/
 def StraightLineConstraintSemanticUpgradeContained
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (semanticDecoded : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) -> Prop)
@@ -1018,7 +1036,7 @@ def StraightLineConstraintSemanticUpgradeContained
       Set ((AugmentedIndex (2 ^ shape.k) -> VestaG) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))) : Prop :=
-  {q | family.straightLineConstraintDecoded static q.1 q.2 ∧ ¬ semanticDecoded q.1 q.2} <=
+  {q | family.straightLineConstraintDecoded q.1 q.2 ∧ ¬ semanticDecoded q.1 q.2} <=
     badY ∪ (badBeta ∪ (badGamma ∪ badTheta))
 
 /-- Basis/oracle pairs on which the one-run endpoint accepts but the caller's semantic predicate
@@ -1041,7 +1059,8 @@ def straightLineConstraintSemanticFailureEvent
 challenge surfaces. -/
 theorem straightLineConstraintSemanticFailure_subset_union
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (semanticDecoded : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) -> Prop)
@@ -1049,13 +1068,13 @@ theorem straightLineConstraintSemanticFailure_subset_union
       Set ((AugmentedIndex (2 ^ shape.k) -> VestaG) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)))
-    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained static
+    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained
       semanticDecoded badY badBeta badGamma badTheta) :
     family.straightLineConstraintSemanticFailureEvent semanticDecoded <=
-      family.straightLineConstraintFailureEvent static ∪
+      family.straightLineConstraintFailureEvent ∪
         (badY ∪ (badBeta ∪ (badGamma ∪ badTheta))) := by
   rintro q ⟨haccept, hnotSemantic⟩
-  by_cases hcompressed : family.straightLineConstraintDecoded static q.1 q.2
+  by_cases hcompressed : family.straightLineConstraintDecoded q.1 q.2
   · exact Or.inr (hsemantic ⟨hcompressed, hnotSemantic⟩)
   · exact Or.inl ⟨haccept, hcompressed⟩
 
@@ -1065,7 +1084,8 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_compressed_bound
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex (2 ^ shape.k) -> T)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (semanticDecoded : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) -> Prop)
@@ -1074,14 +1094,14 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_compressed_bound
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)))
     {compressedBound yBound betaBound gammaBound thetaBound : ENNReal}
-    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained static
+    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained
       semanticDecoded badY badBeta badGamma badTheta)
     (hcompressed : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) <= compressedBound)
+          family.straightLineConstraintFailureEvent) <= compressedBound)
     (hY : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
@@ -1125,24 +1145,24 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_compressed_bound
   have hsubset : basisOracle ⁻¹'
         family.straightLineConstraintSemanticFailureEvent semanticDecoded <=
       basisOracle ⁻¹'
-        (family.straightLineConstraintFailureEvent static ∪
+        (family.straightLineConstraintFailureEvent ∪
           (badY ∪ (badBeta ∪ (badGamma ∪ badTheta)))) :=
     Set.preimage_mono
-      (family.straightLineConstraintSemanticFailure_subset_union static semanticDecoded
+      (family.straightLineConstraintSemanticFailure_subset_union semanticDecoded
         badY badBeta badGamma badTheta hsemantic)
   calc
     mu (basisOracle ⁻¹'
         family.straightLineConstraintSemanticFailureEvent semanticDecoded)
         <= mu (basisOracle ⁻¹'
-          (family.straightLineConstraintFailureEvent static ∪
+          (family.straightLineConstraintFailureEvent ∪
             (badY ∪ (badBeta ∪ (badGamma ∪ badTheta))))) :=
       MeasureTheory.measure_mono hsubset
-    _ = mu ((basisOracle ⁻¹' family.straightLineConstraintFailureEvent static) ∪
+    _ = mu ((basisOracle ⁻¹' family.straightLineConstraintFailureEvent) ∪
         ((basisOracle ⁻¹' badY) ∪
           ((basisOracle ⁻¹' badBeta) ∪
             ((basisOracle ⁻¹' badGamma) ∪ (basisOracle ⁻¹' badTheta))))) := by
       simp only [Set.preimage_union]
-    _ <= mu (basisOracle ⁻¹' family.straightLineConstraintFailureEvent static) +
+    _ <= mu (basisOracle ⁻¹' family.straightLineConstraintFailureEvent) +
         (mu (basisOracle ⁻¹' badY) +
           (mu (basisOracle ⁻¹' badBeta) +
             (mu (basisOracle ⁻¹' badGamma) + mu (basisOracle ⁻¹' badTheta)))) := by

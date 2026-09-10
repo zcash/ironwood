@@ -23,7 +23,8 @@ local instance vestaInhabitedStraightLineActionEvent : Inhabited VestaG := ⟨0�
 
 variable (pp : ProofParams)
   (family : ComputedStraightLineDeployedFSFamily (actionCircuit.shape.withProofParams pp))
-  (static : DeployedConstraintStaticChecks family.toRootFamily)
+  [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+  [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
   (inputs : Fin pp.numProofs → PublicInputs Fp)
 
 variable
@@ -51,7 +52,7 @@ def actionKnowledgeFailureEvent :
       (fullAlgebraicAcceptDeployed q.1 (family.vk q.1)
         (family.instanceCommitment q.1))
       (algebraicFullPrefixesPre family.init) (algebraicFullPrefixes family.init) q.2 ∧
-    actionKnowledgeExtractor pp family static inputs hvk hI hchar q.1 q.2 = none}
+    actionKnowledgeExtractor pp family inputs hvk hI hchar q.1 q.2 = none}
 
 /-- Accepting a false bundle statement is a knowledge failure.  A returned witness entails
 `BundleStatement` by `ActionBundleWitness.statement`, so on a false statement the executable
@@ -64,10 +65,10 @@ error.  It is a containment, not an endpoint — no probability is claimed here.
 theorem acceptFalseStatement_subset_knowledgeFailure :
     family.straightLineConstraintSemanticFailureEvent
         (fun _ _ => BundleStatement inputs) ⊆
-      actionKnowledgeFailureEvent pp family static inputs hvk hI hchar := by
+      actionKnowledgeFailureEvent pp family inputs hvk hI hchar := by
   rintro q ⟨haccept, hfalse⟩
   refine ⟨haccept, ?_⟩
-  cases hextract : actionKnowledgeExtractor pp family static inputs hvk hI hchar q.1 q.2 with
+  cases hextract : actionKnowledgeExtractor pp family inputs hvk hI hchar q.1 q.2 with
   | none => rfl
   | some witness => exact absurd (ActionBundleWitness.statement witness) hfalse
 
@@ -77,14 +78,14 @@ abbrev actionRunModel
     (O : BTranscript Fp VestaG
       (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
         + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
+    (h : family.straightLineConstraintDecoded basis O) :=
   CanonicalMemberConstraintRelation.acceptedModel
     (memberDecode := fun i hi =>
-      (actionRunDecode pp family static basis O inputs (hvk basis) (hI basis) h).toMemberDecode
+      (actionRunDecode pp family basis O inputs (hvk basis) (hI basis) h).toMemberDecode
         (hchar basis O) i hi)
     (hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-    (actionRunAccepts pp family static basis O inputs (hvk basis) (hI basis) h)
+    (actionRunAccepts pp family basis O inputs (hvk basis) (hI basis) h)
 
 /-- The accepted member polynomial at the run's own decode. -/
 abbrev actionRunPolynomial
@@ -92,12 +93,12 @@ abbrev actionRunPolynomial
     (O : BTranscript Fp VestaG
       (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
         + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
+    (h : family.straightLineConstraintDecoded basis O) :=
   CanonicalMemberConstraintRelation.acceptedPolynomial
     (memberDecode := fun i hi =>
-      (actionRunDecode pp family static basis O inputs (hvk basis) (hI basis) h).toMemberDecode
+      (actionRunDecode pp family basis O inputs (hvk basis) (hI basis) h).toMemberDecode
         (hchar basis O) i hi)
-    (actionRunAccepts pp family static basis O inputs (hvk basis) (hI basis) h)
+    (actionRunAccepts pp family basis O inputs (hvk basis) (hI basis) h)
 
 /-- Decoding runs whose `x` or `y` challenge lands in the terminal's constraint-fold exclusion
 sets: `x` in the combined-constraint difference roots, `y` in a fold-split witness. -/
@@ -106,31 +107,31 @@ def actionXYFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).x ∉ szBadSet
         (combineConstraints
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).fixedCols
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).adviceCols
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).instanceCols
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).gates
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).sets
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).chunks
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).lookups
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).beta
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).gamma
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).delta
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).theta
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).fixedCols
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).adviceCols
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).instanceCols
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).gates
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).sets
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).chunks
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).lookups
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).beta
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).gamma
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).delta
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).theta
           (straightLineRunRecord family q.1 q.2).y
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).chunkLen
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).l0
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).lLast
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).lBlind -
-          actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).chunkLen
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).l0
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).lLast
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).lBlind -
+          actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h
               CommitmentId.vanishingH *
             (X ^ actionCircuit.n - 1))) ∧
       ∀ j, (straightLineRunRecord family q.1 q.2).y ∉ szBadSet
         (foldSplitWitness
-          (actionRunModel pp family static inputs hvk hI hchar q.1 q.2 h).constraints
+          (actionRunModel pp family inputs hvk hI hchar q.1 q.2 h).constraints
           actionCircuit.n j))}
 
 /-- Decoding runs whose `β` challenge lands in a permutation or lookup resolver exclusion set. -/
@@ -139,18 +140,18 @@ def actionBetaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).beta ∉ allResolverPermutationBetaBadSet
         pp.numProofs (actionCircuit.toVerifierKey
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
-        (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h)
+        (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
         actionActiveRows) ∧
       (straightLineRunRecord family q.1 q.2).beta ∉ allResolverLookupBetaBadSet
         pp.numProofs
         (actionCircuit.toVerifierKey
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
         (straightLineRunRecord family q.1 q.2)
-        (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h)
+        (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
         (actionCircuit.n -
           actionCircuit.blindingFactors - 2))}
 
@@ -160,19 +161,19 @@ def actionGammaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).gamma ∉ allResolverPermutationGammaBadSet
         pp.numProofs (actionCircuit.toVerifierKey
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
         (straightLineRunRecord family q.1 q.2)
-        (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h)
+        (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
         actionActiveRows) ∧
       (straightLineRunRecord family q.1 q.2).gamma ∉ allResolverLookupGammaBadSet
         pp.numProofs
         (actionCircuit.toVerifierKey
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
         (straightLineRunRecord family q.1 q.2)
-        (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h)
+        (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
         (actionCircuit.n -
           actionCircuit.blindingFactors - 2))}
 
@@ -182,11 +183,11 @@ def actionThetaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬((straightLineRunRecord family q.1 q.2).theta ∉
       TopLevelLookup.thetaBadSet actionCircuit pp
         (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1)
-        (actionRunPolynomial pp family static inputs hvk hI hchar q.1 q.2 h))}
+        (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h))}
 
 set_option maxHeartbeats 800000 in
 /-- Outside the four semantic challenge surfaces, a decoded run computes either all private
@@ -196,14 +197,14 @@ theorem actionKnowledgeOutcome_isSome_of_good
     (O : BTranscript Fp VestaG
       (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
         + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp)
-    (hdecoded : family.straightLineConstraintDecoded static basis O)
-    (hXY : (basis, O) ∉ actionXYFailureEvent pp family static inputs hvk hI hchar)
-    (hBeta : (basis, O) ∉ actionBetaFailureEvent pp family static inputs hvk hI hchar)
-    (hGamma : (basis, O) ∉ actionGammaFailureEvent pp family static inputs hvk hI hchar)
-    (hTheta : (basis, O) ∉ actionThetaFailureEvent pp family static inputs hvk hI hchar) :
-    (actionKnowledgeOutcome pp family static inputs hvk hI hchar basis O).isSome := by
+    (hdecoded : family.straightLineConstraintDecoded basis O)
+    (hXY : (basis, O) ∉ actionXYFailureEvent pp family inputs hvk hI hchar)
+    (hBeta : (basis, O) ∉ actionBetaFailureEvent pp family inputs hvk hI hchar)
+    (hGamma : (basis, O) ∉ actionGammaFailureEvent pp family inputs hvk hI hchar)
+    (hTheta : (basis, O) ∉ actionThetaFailureEvent pp family inputs hvk hI hchar) :
+    (actionKnowledgeOutcome pp family inputs hvk hI hchar basis O).isSome := by
   obtain ⟨success, hout⟩ :=
-    family.straightLineConstraintOutcome?_eq_some_of_decoded static basis O hdecoded
+    family.straightLineConstraintOutcome?_eq_some_of_decoded basis O hdecoded
   have hxy := not_exists.mp hXY hdecoded
   rw [not_not] at hxy
   have hbeta := not_exists.mp hBeta hdecoded
@@ -234,23 +235,23 @@ theorem actionKnowledgeOutcome_isSome_of_good
     unfold actionDecodedTerminal?
     have hxgood : (straightLineRunRecord family basis O).x ∉ szBadSet
         (combineConstraints
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).fixedCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).adviceCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).instanceCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).gates
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).sets
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).chunks
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).lookups
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).beta
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).gamma
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).delta
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).theta
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).fixedCols
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).adviceCols
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).instanceCols
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).gates
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).sets
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).chunks
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).lookups
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).beta
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).gamma
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).delta
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).theta
           (straightLineRunRecord family basis O).y
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).chunkLen
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).l0
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).lLast
-          (actionRunModel pp family static inputs hvk hI hchar basis O hdecoded).lBlind -
-          actionRunPolynomial pp family static inputs hvk hI hchar basis O hdecoded
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).chunkLen
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).l0
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).lLast
+          (actionRunModel pp family inputs hvk hI hchar basis O hdecoded).lBlind -
+          actionRunPolynomial pp family inputs hvk hI hchar basis O hdecoded
               CommitmentId.vanishingH *
             (X ^ actionCircuit.n - 1)) := hxy.1
     have hxgoodData := hxgood
@@ -268,7 +269,7 @@ theorem actionKnowledgeOutcome_isSome_of_good
                 pp.numProofs (actionCircuit.toVerifierKey
                   (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
                 (straightLineRunRecord family basis O)
-                (actionRunPolynomial pp family static inputs hvk hI hchar
+                (actionRunPolynomial pp family inputs hvk hI hchar
                   basis O hdecoded) actionActiveRows := ⟨hgamma.1, hbeta.1⟩
         have hpermutationSome := resolverPermutationChallengeExclusions?_isSome_of
           pp.numProofs _ _ _ _ hpermutation'
@@ -277,7 +278,7 @@ theorem actionKnowledgeOutcome_isSome_of_good
                   actionCircuit pp
                   (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
                   (straightLineRunRecord family basis O)
-                  (actionRunPolynomial pp family static inputs hvk hI hchar
+                  (actionRunPolynomial pp family inputs hvk hI hchar
                     basis O hdecoded) := ⟨hgamma.2, hbeta.2, htheta⟩
           have hlookupSome :=
             TopLevelLookup.topLevelLookupChallengeExclusions?_isSome_of
@@ -300,40 +301,45 @@ set_option maxHeartbeats 800000 in
 /-- Straight-line knowledge failure is covered by the compressed failure, the computed DLOG
 relation, and the four semantic challenge surfaces. -/
 theorem actionKnowledgeFailure_subset_union :
-    actionKnowledgeFailureEvent pp family static inputs hvk hI hchar ⊆
-      (family.straightLineConstraintFailureEvent static ∪
+    actionKnowledgeFailureEvent pp family inputs hvk hI hchar ⊆
+      (family.straightLineConstraintFailureEvent ∪
         family.straightLineRelationEvent
-          (actionRelationFinder pp family static inputs hvk hI hchar)) ∪
-      (actionXYFailureEvent pp family static inputs hvk hI hchar ∪
-        (actionBetaFailureEvent pp family static inputs hvk hI hchar ∪
-          (actionGammaFailureEvent pp family static inputs hvk hI hchar ∪
-            actionThetaFailureEvent pp family static inputs hvk hI hchar))) := by
+          (actionRelationFinder pp family inputs hvk hI hchar)) ∪
+      (actionXYFailureEvent pp family inputs hvk hI hchar ∪
+        (actionBetaFailureEvent pp family inputs hvk hI hchar ∪
+          (actionGammaFailureEvent pp family inputs hvk hI hchar ∪
+            actionThetaFailureEvent pp family inputs hvk hI hchar))) := by
   rintro q ⟨haccept, hextractor⟩
-  by_cases hdecoded : family.straightLineConstraintDecoded static q.1 q.2
-  · by_cases hXY : q ∈ actionXYFailureEvent pp family static inputs hvk hI hchar
+  by_cases hdecoded : family.straightLineConstraintDecoded q.1 q.2
+  · by_cases hXY : q ∈ actionXYFailureEvent pp family inputs hvk hI hchar
     · exact Or.inr (Or.inl hXY)
-    by_cases hBeta : q ∈ actionBetaFailureEvent pp family static inputs hvk hI hchar
+    by_cases hBeta : q ∈ actionBetaFailureEvent pp family inputs hvk hI hchar
     · exact Or.inr (Or.inr (Or.inl hBeta))
-    by_cases hGamma : q ∈ actionGammaFailureEvent pp family static inputs hvk hI hchar
+    by_cases hGamma : q ∈ actionGammaFailureEvent pp family inputs hvk hI hchar
     · exact Or.inr (Or.inr (Or.inr (Or.inl hGamma)))
-    by_cases hTheta : q ∈ actionThetaFailureEvent pp family static inputs hvk hI hchar
+    by_cases hTheta : q ∈ actionThetaFailureEvent pp family inputs hvk hI hchar
     · exact Or.inr (Or.inr (Or.inr (Or.inr hTheta)))
-    have hsome := actionKnowledgeOutcome_isSome_of_good pp family static inputs hvk hI hchar
+    have hsome := actionKnowledgeOutcome_isSome_of_good pp family inputs hvk hI hchar
       q.1 q.2 hdecoded hXY hBeta hGamma hTheta
     obtain ⟨outcome, houtcome⟩ := Option.isSome_iff_exists.mp hsome
     cases outcome with
     | inl witness =>
         have hextracted := actionKnowledgeExtractor_eq_some_of_outcome_eq_inl
-          pp family static inputs hvk hI hchar q.1 q.2 witness houtcome
+          pp family inputs hvk hI hchar q.1 q.2 witness houtcome
         cases hextracted.symm.trans hextractor
     | inr relation =>
         refine Or.inl (Or.inr ?_)
-        change (actionRelationFinder pp family static inputs hvk hI hchar q.1 q.2).isSome
+        change (actionRelationFinder pp family inputs hvk hI hchar q.1 q.2).isSome
         have hfinder := actionRelationFinder_eq_some_of_outcome_eq_inr
-          pp family static inputs hvk hI hchar q.1 q.2 relation houtcome
+          pp family inputs hvk hI hchar q.1 q.2 relation houtcome
         rw [hfinder]
         rfl
   · exact Or.inl (Or.inl ⟨haccept, hdecoded⟩)
+
+section
+
+omit [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+  [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
 
 /-- Conservative black-box calls of the combined finder: the existing constraint finder has its
 proved four-call bound, and the terminal fallback performs at most two further represented-run
@@ -378,6 +384,8 @@ explicit reduction component; fixture theorems separately prove ceilings on this
 def actionDlogGroupWork (proverGroupWork reductionGroupWork : Nat) : Nat :=
   6 * proverGroupWork + reductionGroupWork
 
+end
+
 /-- One finite-security premise for the complete constraint-plus-Action relation finder. -/
 structure StraightLineActionDlogProfile (B : VestaG) where
   proverGroupWork : Nat
@@ -386,13 +394,13 @@ structure StraightLineActionDlogProfile (B : VestaG) where
   advantage_mono : ∀ {q q' g g'}, q ≤ q' → g ≤ g' →
     advantage q g ≤ advantage q' g'
   hardness : TextbookDLWithCoinsAdvantageLE B
-    (actionRelationFinder pp family static inputs hvk hI hchar)
+    (actionRelationFinder pp family inputs hvk hI hchar)
     (advantage (actionDlogOracleQueryCost pp family)
       (actionDlogGroupWork proverGroupWork reductionGroupWork))
 
 /-- Direct-route profile covering prover, postprocessing, and both possible decoder executions. -/
 structure StraightLineActionDirectDlogProfile (B : VestaG) (T : Nat)
-    extends StraightLineActionDlogProfile pp family static inputs hvk hI hchar B where
+    extends StraightLineActionDlogProfile pp family inputs hvk hI hchar B where
   scheduleOverheadBound : 3 * (11 + actionCircuit.domainExponent) <= T
   queryBound : family.Q <= T
   proverWorkBound : toStraightLineActionDlogProfile.proverGroupWork <= T
@@ -404,7 +412,7 @@ structure StraightLineActionDirectDlogProfile (B : VestaG) (T : Nat)
 retains the direct-decoder certificate used by the straight-line implementation. -/
 theorem StraightLineActionDirectDlogProfile.solverCost_le
     {B : VestaG} {T : Nat}
-    (profile : StraightLineActionDirectDlogProfile pp family static inputs
+    (profile : StraightLineActionDirectDlogProfile pp family inputs
       hvk hI hchar B T) :
     actionDlogOracleQueryCost pp family <= 8 * T /\
       actionDlogGroupWork profile.proverGroupWork profile.reductionGroupWork <= 8 * T /\
@@ -432,7 +440,7 @@ theorem StraightLineActionDirectDlogProfile.solverCost_le
 outcome and therefore adds no seventh represented-prover run. -/
 theorem StraightLineActionDirectDlogProfile.knowledgeExtractorCost_le
     {B : VestaG} {T : Nat}
-    (profile : StraightLineActionDirectDlogProfile pp family static inputs
+    (profile : StraightLineActionDirectDlogProfile pp family inputs
       hvk hI hchar B T) :
     actionKnowledgeExtractorOracleQueryCost pp family <= 8 * T /\
       actionDlogGroupWork profile.proverGroupWork profile.reductionGroupWork <= 8 * T /\
@@ -448,7 +456,7 @@ theorem actionRelationFinder_extends_constraint
       (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
         + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp) :
     (family.straightLineConstraintRelationFinder basis O).isSome →
-      (actionRelationFinder pp family static inputs hvk hI hchar basis O).isSome := by
+      (actionRelationFinder pp family inputs hvk hI hchar basis O).isSome := by
   intro hsome
   unfold actionRelationFinder
   cases hfinder : family.straightLineConstraintRelationFinder basis O with
@@ -457,7 +465,7 @@ theorem actionRelationFinder_extends_constraint
         simpa only [hfinder, Option.isSome_none] using hsome
       exact (Bool.false_ne_true hfalse).elim
   | some relation =>
-      have hout : actionKnowledgeOutcome pp family static inputs hvk hI hchar basis O =
+      have hout : actionKnowledgeOutcome pp family inputs hvk hI hchar basis O =
           some (Sum.inr relation) := by
         unfold actionKnowledgeOutcome
         rw [hfinder]
@@ -473,16 +481,16 @@ theorem actionBaseUnion_probability_bound_of_dlogProfile
     (hquery : Function.Injective query)
     {epsilonX : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
-    (profile : StraightLineActionDlogProfile pp family static inputs hvk hI hchar B) :
+    (profile : StraightLineActionDlogProfile pp family inputs hvk hI hchar B) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
           (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
             + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          (family.straightLineConstraintFailureEvent static ∪
+          (family.straightLineConstraintFailureEvent ∪
             family.straightLineRelationEvent
-              (actionRelationFinder pp family static inputs hvk hI hchar))) ≤
+              (actionRelationFinder pp family inputs hvk hI hchar))) ≤
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           ((actionCircuit.shape.withProofParams pp).k *
@@ -495,14 +503,14 @@ theorem actionBaseUnion_probability_bound_of_dlogProfile
           1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) * epsilonX := by
   rw [family.straightLineConstraintFailure_union_relation_prob_eq_of_uniformURS
-    (orchardGeneratorROSetup query) B static
-    (actionRelationFinder pp family static inputs hvk hI hchar)
+    (orchardGeneratorROSetup query) B
+    (actionRelationFinder pp family inputs hvk hI hchar)
     (orchardGeneratorROBasis query)
     (orchard_uniformURSIdentification_of_generatorRO
       (actionCircuit.shape.withProofParams pp).k B hB query hquery)]
   exact family.straightLineConstraintFailure_union_relation_prob_le_of_relationSupersetTextbookDL
-    B static (actionRelationFinder pp family static inputs hvk hI hchar)
-    (actionRelationFinder_extends_constraint pp family static inputs hvk hI hchar)
+    B (actionRelationFinder pp family inputs hvk hI hchar)
+    (actionRelationFinder_extends_constraint pp family inputs hvk hI hchar)
     schedule profile.hardness
 
 /-- Probability bound for end-to-end straight-line Action knowledge failure, factored through the
@@ -517,35 +525,35 @@ theorem actionKnowledgeFailure_probability_bound_of_baseUnionBound
           (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
             + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          (family.straightLineConstraintFailureEvent static ∪
+          (family.straightLineConstraintFailureEvent ∪
             family.straightLineRelationEvent
-              (actionRelationFinder pp family static inputs hvk hI hchar))) ≤ baseBound)
+              (actionRelationFinder pp family inputs hvk hI hchar))) ≤ baseBound)
     (hXY : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype _)).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionXYFailureEvent pp family static inputs hvk hI hchar) ≤ xyBound)
+          actionXYFailureEvent pp family inputs hvk hI hchar) ≤ xyBound)
     (hBeta : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype _)).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionBetaFailureEvent pp family static inputs hvk hI hchar) ≤ betaBound)
+          actionBetaFailureEvent pp family inputs hvk hI hchar) ≤ betaBound)
     (hGamma : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype _)).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionGammaFailureEvent pp family static inputs hvk hI hchar) ≤ gammaBound)
+          actionGammaFailureEvent pp family inputs hvk hI hchar) ≤ gammaBound)
     (hTheta : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype _)).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionThetaFailureEvent pp family static inputs hvk hI hchar) ≤ thetaBound) :
+          actionThetaFailureEvent pp family inputs hvk hI hchar) ≤ thetaBound) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
           (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
             + 3 * (actionCircuit.shape.withProofParams pp).k) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          actionKnowledgeFailureEvent pp family static inputs hvk hI hchar) ≤
+          actionKnowledgeFailureEvent pp family inputs hvk hI hchar) ≤
       baseBound + (xyBound + (betaBound + (gammaBound + thetaBound))) := by
   refine le_trans (MeasureTheory.measure_mono
-    (Set.preimage_mono (actionKnowledgeFailure_subset_union pp family static inputs
+    (Set.preimage_mono (actionKnowledgeFailure_subset_union pp family inputs
       hvk hI hchar))) ?_
   rw [Set.preimage_union, Set.preimage_union, Set.preimage_union, Set.preimage_union]
   refine le_trans (MeasureTheory.measure_union_le _ _) ?_
@@ -574,14 +582,14 @@ theorem actionThetaFailureEvent_subset_surface
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) →
       (Fin 0 → Fp) → Set Fp)
-    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
+    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded basis O),
       ↑(TopLevelLookup.thetaBadSet actionCircuit pp
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis)
-          (actionRunPolynomial pp family static inputs hvk hI hchar basis O h)) ⊆
+          (actionRunPolynomial pp family inputs hvk hI hchar basis O h)) ⊆
         badF basis (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 0)
           (fun i => O (algebraicFullPrefixesPre family.init
             ((family.adversary basis).run O) (i.castLE (le_of_lt (0 : Fin 11).isLt))))) :
-    actionThetaFailureEvent pp family static inputs hvk hI hchar ⊆
+    actionThetaFailureEvent pp family inputs hvk hI hchar ⊆
       squeezeSurfaceEvent 0 family.toFamily badF := by
   rintro q ⟨h, hbad⟩
   rw [not_not] at hbad
@@ -599,25 +607,25 @@ theorem actionBetaFailureEvent_subset_surface
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) →
       (Fin 1 → Fp) → Set Fp)
-    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
+    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded basis O),
       ↑(allResolverPermutationBetaBadSet
           pp.numProofs (actionCircuit.toVerifierKey
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
-          (actionRunPolynomial pp family static inputs hvk hI hchar basis O h)
+          (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
           actionActiveRows ∪
         allResolverLookupBetaBadSet
           pp.numProofs
           (actionCircuit.toVerifierKey
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
           (straightLineRunRecord family basis O)
-          (actionRunPolynomial pp family static inputs hvk hI hchar basis O h)
+          (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
           (actionCircuit.n -
             actionCircuit.blindingFactors
             - 2)) ⊆
         badF basis (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 1)
           (fun i => O (algebraicFullPrefixesPre family.init
             ((family.adversary basis).run O) (i.castLE (le_of_lt (1 : Fin 11).isLt))))) :
-    actionBetaFailureEvent pp family static inputs hvk hI hchar ⊆
+    actionBetaFailureEvent pp family inputs hvk hI hchar ⊆
       squeezeSurfaceEvent 1 family.toFamily badF := by
   rintro q ⟨h, hbad⟩
   rw [not_and_or, not_not, not_not] at hbad
@@ -638,26 +646,26 @@ theorem actionGammaFailureEvent_subset_surface
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) →
       (Fin 2 → Fp) → Set Fp)
-    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
+    (hcompat : ∀ basis O (h : family.straightLineConstraintDecoded basis O),
       ↑(allResolverPermutationGammaBadSet
           pp.numProofs (actionCircuit.toVerifierKey
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
           (straightLineRunRecord family basis O)
-          (actionRunPolynomial pp family static inputs hvk hI hchar basis O h)
+          (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
           actionActiveRows ∪
         allResolverLookupGammaBadSet
           pp.numProofs
           (actionCircuit.toVerifierKey
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
           (straightLineRunRecord family basis O)
-          (actionRunPolynomial pp family static inputs hvk hI hchar basis O h)
+          (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
           (actionCircuit.n -
             actionCircuit.blindingFactors
             - 2)) ⊆
         badF basis (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 2)
           (fun i => O (algebraicFullPrefixesPre family.init
             ((family.adversary basis).run O) (i.castLE (le_of_lt (2 : Fin 11).isLt))))) :
-    actionGammaFailureEvent pp family static inputs hvk hI hchar ⊆
+    actionGammaFailureEvent pp family inputs hvk hI hchar ⊆
       squeezeSurfaceEvent 2 family.toFamily badF := by
   rintro q ⟨h, hbad⟩
   rw [not_and_or, not_not, not_not] at hbad
@@ -683,40 +691,40 @@ theorem actionXYFailureEvent_subset_surfaces
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
           + 3 * (actionCircuit.shape.withProofParams pp).k) →
       (Fin 3 → Fp) → Set Fp)
-    (hcompatX : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
+    (hcompatX : ∀ basis O (h : family.straightLineConstraintDecoded basis O),
       ↑(szBadSet
         (combineConstraints
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).fixedCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).adviceCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).instanceCols
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).gates
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).sets
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).chunks
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).lookups
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).beta
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).gamma
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).delta
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).theta
+          (actionRunModel pp family inputs hvk hI hchar basis O h).fixedCols
+          (actionRunModel pp family inputs hvk hI hchar basis O h).adviceCols
+          (actionRunModel pp family inputs hvk hI hchar basis O h).instanceCols
+          (actionRunModel pp family inputs hvk hI hchar basis O h).gates
+          (actionRunModel pp family inputs hvk hI hchar basis O h).sets
+          (actionRunModel pp family inputs hvk hI hchar basis O h).chunks
+          (actionRunModel pp family inputs hvk hI hchar basis O h).lookups
+          (actionRunModel pp family inputs hvk hI hchar basis O h).beta
+          (actionRunModel pp family inputs hvk hI hchar basis O h).gamma
+          (actionRunModel pp family inputs hvk hI hchar basis O h).delta
+          (actionRunModel pp family inputs hvk hI hchar basis O h).theta
           (straightLineRunRecord family basis O).y
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).chunkLen
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).l0
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).lLast
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).lBlind -
-          actionRunPolynomial pp family static inputs hvk hI hchar basis O h
+          (actionRunModel pp family inputs hvk hI hchar basis O h).chunkLen
+          (actionRunModel pp family inputs hvk hI hchar basis O h).l0
+          (actionRunModel pp family inputs hvk hI hchar basis O h).lLast
+          (actionRunModel pp family inputs hvk hI hchar basis O h).lBlind -
+          actionRunPolynomial pp family inputs hvk hI hchar basis O h
               CommitmentId.vanishingH *
             (X ^ actionCircuit.n - 1))) ⊆
         badFX basis (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 4)
           (fun i => O (algebraicFullPrefixesPre family.init
             ((family.adversary basis).run O) (i.castLE (le_of_lt (4 : Fin 11).isLt)))))
-    (hcompatY : ∀ basis O (h : family.straightLineConstraintDecoded static basis O),
+    (hcompatY : ∀ basis O (h : family.straightLineConstraintDecoded basis O),
       {v : Fp | ∃ j, v ∈ szBadSet
         (foldSplitWitness
-          (actionRunModel pp family static inputs hvk hI hchar basis O h).constraints
+          (actionRunModel pp family inputs hvk hI hchar basis O h).constraints
           actionCircuit.n j)} ⊆
         badFY basis (algebraicFullPrefixesPre family.init ((family.adversary basis).run O) 3)
           (fun i => O (algebraicFullPrefixesPre family.init
             ((family.adversary basis).run O) (i.castLE (le_of_lt (3 : Fin 11).isLt))))) :
-    actionXYFailureEvent pp family static inputs hvk hI hchar ⊆
+    actionXYFailureEvent pp family inputs hvk hI hchar ⊆
       squeezeSurfaceEvent 4 family.toFamily badFX ∪
         squeezeSurfaceEvent 3 family.toFamily badFY := by
   rintro q ⟨h, hbad⟩

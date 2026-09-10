@@ -417,7 +417,7 @@ and their events are retired.
 
 `Action.lean` is the only endpoint file here. The `Action/` subdirectory below it holds what
 discharges those endpoints at the captured key: `Base` carries the shape identification the
-chain is stated over, `Checks` the captured key's scalars and static checks, and `Budgets` the
+chain is stated over, `Checks` the captured key’s scalars and shape counts, and `Budgets` the
 semantic surfaces. Those three are instance-level — stated at the capture and reaching it through
 their imports — which is why they sit here rather than under `Soundness/`, a subtree that imports
 no fixture so that the captures stay off `lake build Zcash`'s path.

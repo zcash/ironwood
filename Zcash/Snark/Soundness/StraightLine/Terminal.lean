@@ -131,7 +131,8 @@ def topLevelStatements_or_relation_of_decode
 def straightLineRunDecodeAt
     {shape : Shape}
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) → VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp)
@@ -139,7 +140,7 @@ def straightLineRunDecodeAt
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (hvk : family.vk basis = vk)
     (hI : family.instanceCommitment basis = instanceCommitment)
-    (hdecoded : family.straightLineConstraintDecoded static basis O) :
+    (hdecoded : family.straightLineConstraintDecoded basis O) :
     let pnu := straightLineRunOutput family basis O
     DeployedAlgebraicDecode shape (ursOfAugmentedBasis shape.k basis) rfl
       vk instanceCommitment
@@ -148,14 +149,15 @@ def straightLineRunDecodeAt
       (pnu.1.aMulti (wrappedPreIpaReads pnu))
       (pnu.1.multiU (wrappedPreIpaReads pnu))
       (pnu.1.multiBlind (wrappedPreIpaReads pnu)) :=
-  hI ▸ hvk ▸ (straightLineDecode family static basis O hdecoded).reRound
+  hI ▸ hvk ▸ (straightLineDecode family basis O hdecoded).reRound
     (runRounds family.toFamily basis O)
 
 /-- Transport the run's verifier acceptance to any identified verifier artifacts. -/
 theorem straightLineRunAcceptsAt
     {shape : Shape}
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) → VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp)
@@ -163,13 +165,13 @@ theorem straightLineRunAcceptsAt
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (hvk : family.vk basis = vk)
     (hI : family.instanceCommitment basis = instanceCommitment)
-    (hdecoded : family.straightLineConstraintDecoded static basis O) :
+    (hdecoded : family.straightLineConstraintDecoded basis O) :
     let pnu := straightLineRunOutput family basis O
     DeployedAccepts shape (ursOfAugmentedBasis shape.k basis) rfl
       vk instanceCommitment
       pnu.1.proof.1
       (straightLineRunRecord family basis O) :=
   hI ▸ hvk ▸ straightLineAccepts_of_decoded
-    family static basis O hdecoded
+    family basis O hdecoded
 
 end Zcash.Snark

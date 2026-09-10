@@ -52,25 +52,15 @@ halo2, which upholds those agreements by construction (one evaluation read per q
 by `chunks(chunk_len)`).  Where the Lean split makes disagreement representable, the assembly
 degrades rather than rejects — `columnQueries` zips truncate, `finFn`/`finFnG` alias out-of-range
 indices to `0`/`default`, and `subProofPermSets.zip vk.permutationChunks` drops unmatched sets —
-so the soundness layers consume the agreements as named facts of the deployed key:
-* query-layout lengths equal the shape's query counts — premises of `Soundness/Canonical/
-  Terminal.lean`, discharged by the `toVerifierKey_*QueryCount` lemmas (`Keygen/Pipeline.lean`);
-* `permutationChunks.length` equals the shape's permutation-set count — the
-  `ResolverPermutationDomain.chunkCount` field, discharged by the `chunkCount` theorem of
-  `Integration/ActionPermutationDomain.lean` and, at the captured key,
-  `permutation_chunks_match_shape` (`Fixtures/*/Faithfulness.lean`);
-* chunk widths and common-eval indices — `permutation_chunk_layout_regular` (ibid.) pins the
-  `chunkLen`-regular stride and in-order indices the δ-coset offsets need;
-* expression and chunk references in range — `vk_expression_refs_in_range` (ibid.) keeps the
-  `finFn`/`finFnG` alias branch unreachable; query-layout columns are consumed at the pinned
-  concrete layouts.
-A key supplied outside these agreements silently checks fewer constraints instead of failing, so
-any alternate key-loading or circuit-version path must re-establish them.
+so supported-key soundness interfaces require `VerifyingKey.WellFormed`. It supplies query-layout
+lengths, permutation chunk counts and widths, in-range zero-rotation permutation references,
+and room for the blinding rows. `VerifyingKey.FieldSupport` separately ties the domain size,
+root and permutation separator to certified field parameters. Derived keys instantiate both;
+captured keys inherit them through the keygen equality certificate.
 
-Two further conventions hold for the deployed key but are not enforced by this structure:
-* `n` is both Halo2's `params.n` and the domain size; the fixture exporter checks their equality.
-* `permutationChunks` uses `chunkLen` as its stride, matching Halo2's `chunks(chunk_len)`; the
-  captured key packs 7/7/1 columns with `chunkLen = 7`. -/
+Expression-reference bounds remain separate (`vk_expression_refs_in_range` in fixture
+faithfulness). A key outside the required agreements can silently check fewer constraints, so
+alternate key-loading or circuit-version paths must establish the same laws. -/
 structure VerifyingKey (shape : CircuitShape) (F G : Type*) where
   omega : F
   n : ℕ

@@ -1,5 +1,8 @@
 import Zcash.Snark.Soundness.AGM.OnlineConstraint
 import Zcash.Snark.Soundness.Composition.DeployedRootContainment
+import Zcash.Snark.Verifier.FieldSupport
+import Zcash.Snark.Verifier.WellFormed
+import Zcash.Arithmetic.Domain
 
 /-!
 # Composite constraint bound for the rewind-free AGM path
@@ -23,18 +26,6 @@ variable {shape : Shape}
 
 local instance vestaInhabitedDeployedConstraintContainment : Inhabited VestaG := ⟨0⟩
 
-/-- Verifying-key facts that do not depend on the adversary run.  The captured Orchard fixture
-discharges these once; deployed acceptance supplies the remaining per-run routing checks. -/
-structure DeployedConstraintStaticChecks (family : ComputedDeployedRootFSFamily shape) : Prop where
-  adviceLength : forall basis,
-    shape.numAdviceQueries <= (family.vk basis).adviceQueryLayout.length
-  instanceLength : forall basis,
-    shape.numInstanceQueries <= (family.vk basis).instanceQueryLayout.length
-  fixedLength : forall basis,
-    shape.numFixedQueries <= (family.vk basis).fixedQueryLayout.length
-  omegaOrder : forall basis, (family.vk basis).omega ^ (family.vk basis).n = 1
-  characteristic : forall basis, (((family.vk basis).n : Nat) : Fp) ≠ 0
-
 /-- **The total pre-`x` constraint difference**: built from the run's own pre-`x`
 representation source over the family's retained list.  It mentions no root witness, batch
 witness, decode, or outcome branch, so it is defined on every run — honest, cheating, or
@@ -55,7 +46,8 @@ def deployedConstraintDifferencePreX
 acceptance.  The result still preserves the explicit quotient-collision relation branch. -/
 def deployedConstraintOutcomeOfRoot
     (family : ComputedDeployedRootFSFamily shape)
-    (static : DeployedConstraintStaticChecks family)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) (coins : family.toFamily.Coins)
     (haccept : fsWinsFull (family.adversary basis)
       (fullAlgebraicAcceptDeployed basis (family.vk basis)
@@ -86,14 +78,18 @@ def deployedConstraintOutcomeOfRoot
     (runRounds family.toFamily basis coins) hdeployed'
   exact deployedOnlineConstraintOutcomeOfDecode family basis pnu root.batchWitness
     (family.outcome_source basis coins root.batchWitness root.outcome_eq) root.decoded
-    root.batches_eq checks (static.adviceLength basis) (static.instanceLength basis)
-    (static.fixedLength basis) (static.omegaOrder basis) (static.characteristic basis) hxgood
+    root.batches_eq checks
+    (VerifyingKey.WellFormed.adviceQueryLayout_length (vk := family.vk basis)).ge
+    (VerifyingKey.WellFormed.instanceQueryLayout_length (vk := family.vk basis)).ge
+    (VerifyingKey.WellFormed.fixedQueryLayout_length (vk := family.vk basis)).ge
+    (family.vk basis).omega_pow_n (family.vk basis).n_cast_ne_zero hxgood
 
 /-- A relation returned by the proof-producing root adapter is exactly the relation returned by
 the standalone computable quotient comparison. -/
 theorem deployedConstraintOutcomeOfRoot_relation_eq_online
     (family : ComputedDeployedRootFSFamily shape)
-    (static : DeployedConstraintStaticChecks family)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) (coins : family.toFamily.Coins)
     (haccept : fsWinsFull (family.adversary basis)
       (fullAlgebraicAcceptDeployed basis (family.vk basis)
@@ -106,7 +102,7 @@ theorem deployedConstraintOutcomeOfRoot_relation_eq_online
       (ursOfAugmentedBasis shape.k basis).g
       (ursOfAugmentedBasis shape.k basis).u
       (ursOfAugmentedBasis shape.k basis).w)
-    (hout : deployedConstraintOutcomeOfRoot family static basis coins haccept root hxgood =
+    (hout : deployedConstraintOutcomeOfRoot family basis coins haccept root hxgood =
       PSum.inr relation) :
     deployedConstraintQuotientAgreementOrRelation family basis
       (deployedRootRunOutput family basis coins) = PSum.inr relation := by
@@ -123,8 +119,11 @@ theorem deployedConstraintOutcomeOfRoot_relation_eq_online
     (runRounds family.toFamily basis coins) hdeployed'
   apply deployedOnlineConstraintOutcome_relation_eq_online family basis pnu root.batchWitness
     (family.outcome_source basis coins root.batchWitness root.outcome_eq)
-    root.decoded root.batches_eq checks (static.adviceLength basis) (static.instanceLength basis)
-    (static.fixedLength basis) (static.omegaOrder basis) (static.characteristic basis) hxgood
+    root.decoded root.batches_eq checks
+    (VerifyingKey.WellFormed.adviceQueryLayout_length (vk := family.vk basis)).ge
+    (VerifyingKey.WellFormed.instanceQueryLayout_length (vk := family.vk basis)).ge
+    (VerifyingKey.WellFormed.fixedQueryLayout_length (vk := family.vk basis)).ge
+    (family.vk basis).omega_pow_n (family.vk basis).n_cast_ne_zero hxgood
     relation
   simpa [deployedConstraintOutcomeOfRoot, pnu, checks] using hout
 
@@ -133,7 +132,8 @@ polynomial witness is executable finite data; every relation branch is also expo
 standalone computable `deployedConstraintQuotientFinder`. -/
 def deployedConstraintDecodedOfRoot
     (family : ComputedDeployedRootFSFamily shape)
-    (static : DeployedConstraintStaticChecks family)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (coins : family.toFamily.Coins) : Prop :=
   ∃ (haccept : fsWinsFull (family.adversary basis)
@@ -144,7 +144,7 @@ def deployedConstraintDecodedOfRoot
     (hxgood : (wrappedPreIpaRecord
         (deployedRootRunOutput family basis coins)).x ∉
         szBadSet (deployedConstraintDifferencePreX family basis coins)),
-    ∃ witness, deployedConstraintOutcomeOfRoot family static basis coins haccept root hxgood =
+    ∃ witness, deployedConstraintOutcomeOfRoot family basis coins haccept root hxgood =
       PSum.inl witness
 
 /-- The concrete pre-`x` failure event: the run's `x` answer lands in the total constraint

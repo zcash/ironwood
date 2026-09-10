@@ -30,6 +30,11 @@ instance fieldSupportWithProofParams (vk : VerifyingKey shape F G) [FieldSupport
   simpa only [Halo2.CircuitShape.withProofParams_toCircuitShape] using
     (inferInstance : FieldSupport vk)
 
+theorem fieldSupport_cast {other : CircuitShape} (hShape : shape = other)
+    (vk : VerifyingKey shape F G) [FieldSupport vk] : FieldSupport (hShape ▸ vk) := by
+  subst other
+  infer_instance
+
 variable (vk : VerifyingKey shape F G) [FieldSupport vk]
 
 theorem n_pos : 0 < vk.n := by

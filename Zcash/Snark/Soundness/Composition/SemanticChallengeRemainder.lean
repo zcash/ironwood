@@ -300,7 +300,8 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_surfaces
     {T : Type*} [DecidableEq T]
     (query : AugmentedIndex (2 ^ shape.k) → T)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (semanticDecoded : (basis : AugmentedIndex (2 ^ shape.k) → VestaG) →
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp) → Prop)
@@ -317,7 +318,7 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_surfaces
       BTranscript Fp VestaG (preIpaLen shape family.init.length 10 + 3 * shape.k) →
       (Fin 3 → Fp) → Set Fp)
     {compressedBound epsTheta epsBeta epsGamma epsY : ENNReal}
-    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained static semanticDecoded
+    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained semanticDecoded
       (ySurface family.toFamily badY) (betaSurface family.toFamily badBeta)
       (gammaSurface family.toFamily badGamma) (thetaSurface family.toFamily badTheta))
     (hcompressed : (independentProductPMF (orchardGeneratorROSetup query)
@@ -325,7 +326,7 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_surfaces
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) ≤ compressedBound)
+          family.straightLineConstraintFailureEvent) ≤ compressedBound)
     (hdetTheta : PrefixDeterminedAt family.toFamily 0)
     (hdetBeta : PrefixDeterminedAt family.toFamily 1)
     (hdetGamma : PrefixDeterminedAt family.toFamily 2)
@@ -353,7 +354,7 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_surfaces
     (hstab_of_prefixDeterminedAt family.toFamily 3 hdetY)
     hTheta hBeta hGamma hY
   family.straightLineConstraintSemanticFailure_prob_le_of_compressed_bound
-    query static semanticDecoded _ _ _ _ hsemantic hcompressed
+    query semanticDecoded _ _ _ _ hsemantic hcompressed
     hsurfaces.2.2.2 hsurfaces.2.1 hsurfaces.2.2.1 hsurfaces.1
 
 end Zcash.Snark

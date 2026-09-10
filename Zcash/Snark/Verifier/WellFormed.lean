@@ -51,6 +51,11 @@ instance wellFormedWithProofParams (vk : VerifyingKey shape F G) [WellFormed vk]
   simpa only [Halo2.CircuitShape.withProofParams_toCircuitShape] using
     (inferInstance : WellFormed vk)
 
+theorem wellFormed_cast {other : CircuitShape} (hShape : shape = other)
+    (vk : VerifyingKey shape F G) [WellFormed vk] : WellFormed (hShape ▸ vk) := by
+  subst other
+  infer_instance
+
 theorem blindingFactors_lt_n (vk : VerifyingKey shape F G) [WellFormed vk] :
     vk.blindingFactors < vk.n :=
   Nat.lt_of_succ_lt (WellFormed.blindingFactors_add_one_lt_n (vk := vk))
