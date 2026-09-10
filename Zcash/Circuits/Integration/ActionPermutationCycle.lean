@@ -188,7 +188,7 @@ theorem actionRowsInjectiveAtUrs
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      (top := actionCircuit) actionCircuit.domainExponent_lt
       hk
 
 set_option maxRecDepth 100000 in
@@ -241,7 +241,7 @@ def actionResolverPermutationCycle_or_relation
     hk
   have hkUrs : urs.k ≤ 32 := by
     rw [← hkDomain]
-    exact Nat.le_of_lt_succ (CircuitFieldSupport.domainExponent_lt actionCircuit)
+    exact Nat.le_of_lt_succ actionCircuit.domainExponent_lt
   let setup := LagrangePrefixSetup.ofDerived urs hkUrs
   have hcolumns : ∀
       (chunk : Fin actionCircuit.permutationSetCount)

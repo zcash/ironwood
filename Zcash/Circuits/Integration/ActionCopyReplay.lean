@@ -101,7 +101,7 @@ def actionCopyReplayWitness_or_relation
       actionCircuit.n actionActiveRows := by
     simpa only [actionActiveRows] using
       actionCircuit.resolverPermutationDomain
-        pp urs ch relation.polynomial (CircuitFieldSupport.domainExponent_lt actionCircuit)
+        pp urs ch relation.polynomial actionCircuit.domainExponent_lt
   have hcycleResult :=
     actionResolverPermutationCycle_or_relation
       pp urs hk relation proofIndex
@@ -132,7 +132,7 @@ def actionCopyReplayWitness_or_relation
           (top := actionCircuit) (pp := pp) (urs := urs)
           fixedCoherence
           (TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-            (CircuitFieldSupport.domainExponent_lt actionCircuit) hkDomain)
+            actionCircuit.domainExponent_lt hkDomain)
           hdomainSize proofIndex hentry
       simpa only [actionActiveRows] using source
     exact

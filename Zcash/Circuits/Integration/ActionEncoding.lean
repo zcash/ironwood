@@ -108,7 +108,7 @@ def actionTopLevelCircuitCorrectness
   have fixedCoherence :
       TopLevelFixedCoherence actionCircuit urs :=
     TopLevelFixedCoherence.ofDerived actionCircuit urs hdomainExponent
-      (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      actionCircuit.domainExponent_lt
   have hdomainSize :
       actionCircuit.n = 2 ^ urs.k := by
     rw [actionCircuit.n_eq_two_pow_domainExponent]
@@ -118,7 +118,7 @@ def actionTopLevelCircuitCorrectness
         actionCircuit.omega ^
           (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (CircuitFieldSupport.domainExponent_lt actionCircuit) hdomainExponent
+      actionCircuit.domainExponent_lt hdomainExponent
   refine
     { fixedEncoding := ?_
       fixed := ?_
@@ -138,10 +138,10 @@ def actionTopLevelCircuitCorrectness
       assignment
       (TopLevelAssignment.domainRowsInjective
         (top := actionCircuit)
-        (CircuitFieldSupport.domainExponent_lt actionCircuit))
+        actionCircuit.domainExponent_lt)
       (TopLevelAssignment.domainRoot
         (top := actionCircuit)
-        (CircuitFieldSupport.domainExponent_lt actionCircuit))
+        actionCircuit.domainExponent_lt)
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex
@@ -164,7 +164,7 @@ def actionTopLevelCircuitCorrectness
           actionCircuit.omega ^
             actionCircuit.n = 1 :=
         TopLevelAssignment.domainRoot
-          (CircuitFieldSupport.domainExponent_lt actionCircuit)
+          actionCircuit.domainExponent_lt
       have hn : actionCircuit.n ≠ 0 := by
         exact actionCircuit.n_ne_zero
       have hsatisfaction :=

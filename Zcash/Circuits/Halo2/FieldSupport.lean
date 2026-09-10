@@ -12,16 +12,6 @@ namespace Halo2
 
 open Zcash.Arithmetic
 
-namespace TopLevelCircuit
-
-/-- The circuit's evaluation root, using the field's chosen domain convention. -/
-def omega {F : Type} [FiniteField F] [FieldDomainParams F]
-    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] : F :=
-  FieldDomainParams.omega top.domainExponent
-
-end TopLevelCircuit
-
 /-- The circuit fits the evaluation domains, characteristic, and permutation cosets
 provided by the field. All algebraic consequences follow from `FieldDomainParams`. -/
 class CircuitFieldSupport
@@ -33,6 +23,22 @@ class CircuitFieldSupport
   constraintDegree_lt_ringChar : top.constraintDegree < ringChar F
   permutationColumnCount_le : top.permutationColumnCount ≤ params.oddPart
 
+namespace TopLevelCircuit
+
+variable {F : Type} [FiniteField F] [params : FieldDomainParams F]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top]
+
+/-- The circuit's evaluation root, using the field's chosen domain convention. -/
+def omega : F := FieldDomainParams.omega top.domainExponent
+
+/-- Field support bounds the circuit's domain exponent by the chosen two-adicity. -/
+theorem domainExponent_lt [CircuitFieldSupport top] :
+    top.domainExponent < params.twoAdicity + 1 :=
+  Nat.lt_succ_of_le (CircuitFieldSupport.domainExponent_le (top := top))
+
+end TopLevelCircuit
+
 namespace CircuitFieldSupport
 
 variable {F : Type} [FiniteField F]
@@ -41,10 +47,6 @@ variable {F : Type} [FiniteField F]
     [params : FieldDomainParams F]
 
 variable [CircuitFieldSupport top]
-
-/-- Strict-bound form of the supported domain exponent. -/
-theorem domainExponent_lt : top.domainExponent < params.twoAdicity + 1 :=
-  Nat.lt_succ_of_le (domainExponent_le (top := top))
 
 /-- Numerical domain support gives the circuit root its exact order. -/
 theorem omega_isPrimitiveRoot : IsPrimitiveRoot top.omega top.n := by

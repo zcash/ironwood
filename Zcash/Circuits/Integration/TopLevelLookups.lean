@@ -570,11 +570,11 @@ def deployedWitness
       fun row : Fin top.n =>
         top.omega ^ (row : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      (CircuitFieldSupport.domainExponent_lt top)
+      top.domainExponent_lt
   have hroot :
       top.omega ^ top.n = 1 :=
     TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt top)
+      top.domainExponent_lt
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=

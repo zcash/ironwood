@@ -67,7 +67,7 @@ theorem lastRowRotation (urs : URS G) :
       (actionCircuit.toVerifierKey urs).omega ^
         (-(((actionCircuit.toVerifierKey urs).blindingFactors : ℤ) + 1)) :=
   actionCircuit.toVerifierKey_lastUsableRowRotation
-    urs (CircuitFieldSupport.domainExponent_lt actionCircuit)
+    urs actionCircuit.domainExponent_lt
 
 set_option maxRecDepth 100000 in
 /-- Action chunk names are injective on any active prefix of the derived
@@ -247,7 +247,7 @@ def cycleOfKeygenColumnsAt
           (widenPermutationChunkCell hactive c)) :
     ResolverPermutationCycle (actionCircuit.toVerifierKey urs) poly p m :=
   actionCircuit.resolverPermutationCycleOfKeygenColumns
-    urs poly p hactive fullSigma sigma (CircuitFieldSupport.domainExponent_lt actionCircuit)
+    urs poly p hactive fullSigma sigma actionCircuit.domainExponent_lt
       hcolumns hrestrict
       (namesInjective pp urs poly p hactive)
 

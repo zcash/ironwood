@@ -262,7 +262,7 @@ def bridgeWitness_of_components
   change TopLevelBridgeWitness top assignment.proofAssignment cell Bad
   have hroot :=
     TopLevelAssignment.domainRoot
-      (top := top) (CircuitFieldSupport.domainExponent_lt top)
+      (top := top) top.domainExponent_lt
   let bridge :=
     FullCircuitBridge.ofTopLevelCanonical
       (top := top) (pp := pp) (urs := urs)

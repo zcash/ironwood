@@ -10,7 +10,6 @@ schedule whose degree caps make `epsilonX` concrete.
 -/
 
 open Zcash.Arithmetic (omegaOf)
-open Halo2 (CircuitFieldSupport)
 
 namespace Zcash.Snark.Capstone
 
@@ -173,11 +172,11 @@ theorem capturedActionStaticChecks
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      actionCircuit.domainExponent_lt
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      actionCircuit.domainExponent_lt
 
 /-- **The captured `x`-squeeze schedule at the derived key**: the degree caps
 transfer through the scalar equalities, and pinning is the family's own derived projection. -/
@@ -286,11 +285,11 @@ theorem actionStaticChecks (numProofs : ℕ)
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      actionCircuit.domainExponent_lt
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      (CircuitFieldSupport.domainExponent_lt actionCircuit)
+      actionCircuit.domainExponent_lt
 
 /-- The captured `x`-squeeze schedule transported to an arbitrary Action bundle size. -/
 def actionXSqueezeSchedule (numProofs : ℕ)

@@ -341,7 +341,7 @@ def topLevelWitnesses_or_relation_of_circuitSat
   · exact
       TopLevelInstanceCommitment.witnesses_or_relation_of_accepted_topLevelBundleWitness
         top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-        haccepts (CircuitFieldSupport.domainExponent_lt top) hwitness
+        haccepts top.domainExponent_lt hwitness
   · exact PSum.inr hrelation
 
 assert_no_sorry topLevelWitnesses_or_relation_of_circuitSat
@@ -501,7 +501,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hnFp : (top.n : Fp) ≠ 0 :=
     TopLevelAssignment.domainSizeCastNeZero
-      (top := top) (CircuitFieldSupport.domainExponent_lt top)
+      (top := top) top.domainExponent_lt
   have terminal :=
     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
       (G := G) (shape := top.shape.withProofParams pp)
@@ -530,11 +530,11 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       fun row : Fin (top.toVerifierKey urs).n =>
         (top.toVerifierKey urs).omega ^ (row : ℕ) :=
     TopLevelAssignment.toVerifierKey_domainRowsInjective
-      urs (CircuitFieldSupport.domainExponent_lt top)
+      urs top.domainExponent_lt
   have outcome := terminal hrowsVk
   have hrootVk :
       (top.toVerifierKey urs).omega ^ (top.toVerifierKey urs).n = 1 :=
-    TopLevelAssignment.toVerifierKey_domainRoot urs (CircuitFieldSupport.domainExponent_lt top)
+    TopLevelAssignment.toVerifierKey_domainRoot urs top.domainExponent_lt
   have outcome := outcome hrootVk
   have hnFpVk : ((top.toVerifierKey urs).n : Fp) ≠ 0 := by
     rw [top.toVerifierKey_n]
