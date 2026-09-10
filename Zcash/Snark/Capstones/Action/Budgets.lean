@@ -9,7 +9,7 @@ parameters and at arbitrary bundle size, plus the statistical models the resourc
 endpoints evaluate.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 open Halo2 (CircuitFieldSupport)
 
 namespace Zcash.Snark.Capstone
@@ -586,9 +586,9 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
     rw [derived_scalars.2.1]
     exact vk_n_pred_le
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
-      (omegaOf actionCircuit.domainExponent) ^ (i : ℕ) :=
+      actionCircuit.omega ^ (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis
@@ -1125,9 +1125,9 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
     rw [derived_scalars.2.1]
     exact vk_n_pred_le
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
-      (omegaOf actionCircuit.domainExponent) ^ (i : ℕ) :=
+      actionCircuit.omega ^ (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis

@@ -13,7 +13,6 @@ handles allocated constants, after which `ActionCopyWitness` constructs the
 complete Clean copy witness.
 -/
 
-open Zcash.Arithmetic (pastaDomain)
 
 namespace Zcash.Snark
 
@@ -102,7 +101,7 @@ def actionCopyReplayWitness_or_relation
       actionCircuit.n actionActiveRows := by
     simpa only [actionActiveRows] using
       actionCircuit.resolverPermutationDomain
-        pp urs ch relation.polynomial (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+        pp urs ch relation.polynomial (CircuitFieldSupport.domainExponent_lt actionCircuit)
   have hcycleResult :=
     actionResolverPermutationCycle_or_relation
       pp urs hk relation proofIndex
@@ -133,7 +132,7 @@ def actionCopyReplayWitness_or_relation
           (top := actionCircuit) (pp := pp) (urs := urs)
           fixedCoherence
           (TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-            (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain) hkDomain)
+            (CircuitFieldSupport.domainExponent_lt actionCircuit) hkDomain)
           hdomainSize proofIndex hentry
       simpa only [actionActiveRows] using source
     exact

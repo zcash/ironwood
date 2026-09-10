@@ -133,14 +133,14 @@ and `permutationChunks` the recorded permutation columns chunked by it. -/
 
 theorem vk_scalars_and_chunks_derived :
     ((vk.omega, vk.n, vk.blindingFactors, vk.delta, vk.chunkLen), vk.permutationChunks)
-      = (((omegaOf actionCircuit.domainExponent), actionCircuit.n,
+      = ((actionCircuit.omega, actionCircuit.n,
             actionCircuit.blindingFactors, deltaFp, actionCircuit.chunkLen),
           actionCircuit.verifierCS.permutationChunks) := by
   native_decide
 
 theorem vk_scalars_derived :
     (vk.omega, vk.n, vk.blindingFactors, vk.delta, vk.chunkLen)
-      = ((omegaOf actionCircuit.domainExponent),
+      = (actionCircuit.omega,
           actionCircuit.n,
           actionCircuit.blindingFactors, deltaFp,
           actionCircuit.chunkLen) := by

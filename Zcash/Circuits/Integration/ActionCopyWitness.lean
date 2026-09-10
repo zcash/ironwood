@@ -551,7 +551,7 @@ theorem actionCopyValue_eq_activeChunkRowValue
       actionActiveChunkCell pp urs poly proofIndex flat hrow
     actionCopyValue
         (resolverEnvironment vk poly proofIndex actionActiveRows) flat =
-      chunkRowValue (omegaOf actionCircuit.domainExponent)
+      chunkRowValue actionCircuit.omega
         (ResolverPermutationPairs (shape := circuitShape)
           (numProofs := pp.numProofs) vk poly proofIndex)
         cell.1 cell.2.1 cell.2.2 := by
@@ -653,7 +653,7 @@ theorem actionCopyValue_eq_activeChunkRowValue
   have hresult :
     actionCopyValue
         (resolverEnvironment vk poly proofIndex actionActiveRows) flat =
-      chunkRowValue (omegaOf actionCircuit.domainExponent)
+      chunkRowValue actionCircuit.omega
         (ResolverPermutationPairs (shape := circuitShape)
           (numProofs := pp.numProofs) vk poly proofIndex)
         chunk row column := by
@@ -671,7 +671,7 @@ theorem actionCopyValue_eq_activeChunkRowValue
             rw [← hcellRow]
             congr 1
             exact haddress.symm
-      _ = chunkRowValue (omegaOf actionCircuit.domainExponent)
+      _ = chunkRowValue actionCircuit.omega
           (ResolverPermutationPairs (shape := circuitShape)
             (numProofs := pp.numProofs) vk poly proofIndex)
           chunk row column := by
@@ -772,14 +772,14 @@ theorem actionCopyPairValue_of_resolverPermutation
         (resolverEnvironment
           (actionCircuit.toVerifierKey urs) poly proofIndex actionActiveRows)
         pair.1 =
-      chunkRowValue (omegaOf actionCircuit.domainExponent)
+      chunkRowValue actionCircuit.omega
         (ResolverPermutationPairs (numProofs := pp.numProofs)
           (actionCircuit.toVerifierKey urs) poly proofIndex)
         left.1 left.2.1 left.2.2 := by
           simpa only [left] using
             actionCopyValue_eq_activeChunkRowValue
               pp urs poly proofIndex pair.1 hrows.1
-    _ = chunkRowValue (omegaOf actionCircuit.domainExponent)
+    _ = chunkRowValue actionCircuit.omega
         (ResolverPermutationPairs (numProofs := pp.numProofs)
           (actionCircuit.toVerifierKey urs) poly proofIndex)
         right.1 right.2.1 right.2.2 := by

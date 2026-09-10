@@ -15,7 +15,7 @@ size equality is discharged by the generic size-transport theorem in
 `PermutationColumns`.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -65,7 +65,7 @@ theorem actionPermutationRows_eq_chunkRowName
       ((Zcash.Snark.actionChunkFlatten pp urs poly proofIndex
         ⟨chunk, row, column⟩).2 : ℕ)).getD (row : ℕ) 0 =
       chunkRowName
-        (omegaOf actionCircuit.domainExponent)
+        actionCircuit.omega
         Zcash.Arithmetic.deltaFp
         actionCircuit.chunkLen
         ((Zcash.Snark.actionFullSigma pp urs poly proofIndex
@@ -74,6 +74,7 @@ theorem actionPermutationRows_eq_chunkRowName
           ⟨chunk, row, column⟩).2.1 : ℕ)
         ((Zcash.Snark.actionFullSigma pp urs poly proofIndex
           ⟨chunk, row, column⟩).2.2 : ℕ) := by
+  rw [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq]
   apply Zcash.Snark.Layout.Asm.permPolysOf_getD_eq_chunkRowName
     actionCircuit.constraintSystem
     (actionCircuit.operations)
@@ -187,7 +188,7 @@ theorem actionRowsInjectiveAtUrs
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (top := actionCircuit) (CircuitFieldSupport.domainExponent_lt actionCircuit)
       hk
 
 set_option maxRecDepth 100000 in
@@ -240,7 +241,7 @@ def actionResolverPermutationCycle_or_relation
     hk
   have hkUrs : urs.k ≤ 32 := by
     rw [← hkDomain]
-    exact Nat.le_of_lt_succ (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+    exact Nat.le_of_lt_succ (CircuitFieldSupport.domainExponent_lt actionCircuit)
   let setup := LagrangePrefixSetup.ofDerived urs hkUrs
   have hcolumns : ∀
       (chunk : Fin actionCircuit.permutationSetCount)
@@ -252,7 +253,7 @@ def actionResolverPermutationCycle_or_relation
         (actionCircuit.toVerifierKey urs) relation.polynomial
         proofIndex chunk)[column].2 =
           keygenSigmaColumn
-            (omegaOf actionCircuit.domainExponent) Arithmetic.deltaFp actionCircuit.chunkLen
+            actionCircuit.omega Arithmetic.deltaFp actionCircuit.chunkLen
             (actionFullSigma pp urs relation.polynomial proofIndex)
             chunk column ⊕'
         AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
@@ -276,7 +277,8 @@ def actionResolverPermutationCycle_or_relation
       common
     have homega :
         vk.omega = omegaOf urs.k := by
-      simpa only [vk, actionCircuit.toVerifierKey_omega] using congrArg omegaOf hkDomain
+      simpa only [vk, actionCircuit.toVerifierKey_omega, TopLevelCircuit.omega,
+        Zcash.Arithmetic.pastaDomain_omega_eq] using congrArg omegaOf hkDomain
     let key : LagrangeCommitmentKey urs vk.omega := by
       let sourceKey :=
         LagrangeCommitmentKey.ofPrefix urs

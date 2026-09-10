@@ -13,7 +13,7 @@ consumed by the generic constraint-satisfaction split. Every verifier-side objec
 uses the circuit's own derived key.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain pastaDomain_omega_eq)
+open Zcash.Arithmetic (omegaOf pastaDomain_omega_eq)
 
 namespace Halo2.TopLevelCircuit
 
@@ -32,7 +32,7 @@ variable
 
 /-- The resolver feeds interpret the complete circuit-derived pinned query state. -/
 theorem resolverInterpretsPinned
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
     (usableRows row : ℕ) :
@@ -41,22 +41,20 @@ theorem resolverInterpretsPinned
       (fun query =>
         (fixedQueryFeedOfResolver
           (top.toVerifierKey urs) poly query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (adviceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (instanceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (Query.eval
         (resolverEnvironment
           (top.toVerifierKey urs) poly proofIndex usableRows)
         (fun _ => 0) row) := by
-  have homega : (omegaOf top.domainExponent) ≠ 0 := by
-    simpa only [CircuitFieldSupport.omega, pastaDomain_omega_eq] using
-      CircuitFieldSupport.omega_ne_zero top pastaDomain
+  have homega : top.omega ≠ 0 := CircuitFieldSupport.omega_ne_zero top
   have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
     (fun _ => 0) row
@@ -81,7 +79,7 @@ The final pinned query state interprets the resolver feeds, and restricts to the
 intermediate gate-erasure state because lookup erasure only appends query entries.
 -/
 theorem resolverInterpretsGates
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
     (usableRows row : ℕ) :
@@ -90,22 +88,20 @@ theorem resolverInterpretsGates
       (fun query =>
         (fixedQueryFeedOfResolver
           (top.toVerifierKey urs) poly query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (adviceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (instanceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (Query.eval
         (resolverEnvironment
           (top.toVerifierKey urs) poly proofIndex usableRows)
         (fun _ => 0) row) := by
-  have homega : (omegaOf top.domainExponent) ≠ 0 := by
-    simpa only [CircuitFieldSupport.omega, pastaDomain_omega_eq] using
-      CircuitFieldSupport.omega_ne_zero top pastaDomain
+  have homega : top.omega ≠ 0 := CircuitFieldSupport.omega_ne_zero top
   have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
     (fun _ => 0) row
@@ -128,7 +124,7 @@ theorem resolverInterpretsGates
 
 /-- The circuit-derived selector map has the roots required by gate scaling. -/
 theorem selectorRootsWellFormed
-    [CircuitFieldSupport top pastaDomain] :
+    [CircuitFieldSupport top] :
     SelectorRootsWellFormed top.selectorMap := by
   simp only [TopLevelCircuit.selectorMap]
   exact selectorRootsWellFormed_deriveSelCompressMap
@@ -136,7 +132,7 @@ theorem selectorRootsWellFormed
     top.n
     top.selectorActivations (by
       simpa only [ZMod.ringChar_zmod_n] using
-        CircuitFieldSupport.csDegree_lt_ringChar top pastaDomain)
+        CircuitFieldSupport.csDegree_lt_ringChar top)
 
 /-- Selector compression covers every configured gate expression. -/
 theorem gateSelectorsCovered :
@@ -157,7 +153,7 @@ resolver gate polynomial witness.
 -/
 opaque polynomialWitness
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (sets : Fin pp.numProofs →
@@ -183,7 +179,7 @@ opaque polynomialWitness
         (top.toVerifierKey urs) ch poly sets chunks
         l0 lLast lBlind)
       proofIndex
-      (omegaOf top.domainExponent) top.placement
+      top.omega top.placement
       (resolverEnvironment
         (top.toVerifierKey urs) poly proofIndex usableRows)
       enabled constraint := by
@@ -251,17 +247,17 @@ opaque polynomialWitness
           (fun query =>
             (fixedQueryFeedOfResolver
               (top.toVerifierKey urs) poly query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement enabled.region + enabled.row)))
           (fun query =>
             (adviceQueryFeedOfResolver
               (top.toVerifierKey urs) poly proofIndex query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement enabled.region + enabled.row)))
           (fun query =>
             (instanceQueryFeedOfResolver
               (top.toVerifierKey urs) poly proofIndex query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement enabled.region + enabled.row)))
           (Query.eval
             (resolverEnvironment
@@ -283,7 +279,7 @@ resolver and circuit-owned verification key.
 -/
 theorem canonicalConstraints
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -292,7 +288,7 @@ theorem canonicalConstraints
         (top.constraintModel pp urs ch poly)
         top.n)
     (domain : ∀ row : ℕ,
-      ((omegaOf top.domainExponent) ^ row) ^
+      (top.omega ^ row) ^
         top.n = 1)
     (hfixed : SelectorActivationsRealized top.selectorMap
       top.selectorActivations
@@ -306,7 +302,7 @@ theorem canonicalConstraints
       (top.operations) 0 := by
   apply gate_constraints_of_polynomial_witnesses
     (top.constraintModel pp urs ch poly)
-    proofIndex (omegaOf top.domainExponent) top.placement
+    proofIndex top.omega top.placement
     (resolverEnvironment
       (top.toVerifierKey urs) poly proofIndex
       (top.usableRowsAt top.domainExponent))
@@ -314,7 +310,7 @@ theorem canonicalConstraints
   intro enabled henabled constraint hconstraint
   let selectors :=
     canonicalLagrangePolynomials
-      (omegaOf top.domainExponent)
+      top.omega
       (top.toVerifierKey_blindingFactors_lt_n urs)
   rw [top.constraintModel_eq_constraintModelOfResolver]
   exact top.polynomialWitness ch poly

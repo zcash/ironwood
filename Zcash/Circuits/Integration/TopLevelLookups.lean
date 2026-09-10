@@ -18,7 +18,7 @@ scale. The fixed-column compiler will discharge this premise from its complete
 packed-selector rows.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -290,7 +290,7 @@ The circuit-derived verifying key's selected lookup tuples evaluate like the
 enabled Clean lookup's concrete input and table tuples.
 -/
 theorem projectedValues
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
     (lookup : EnabledLookup Fp)
@@ -311,17 +311,17 @@ theorem projectedValues
           (fun query =>
             (fixedQueryFeedOfResolver
               (top.toVerifierKey urs) poly query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement lookup.region + lookup.row)))
           (fun query =>
             (adviceQueryFeedOfResolver
               (top.toVerifierKey urs) poly proofIndex query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement lookup.region + lookup.row)))
           (fun query =>
             (instanceQueryFeedOfResolver
               (top.toVerifierKey urs) poly proofIndex query).eval
-              ((omegaOf top.domainExponent) ^
+              (top.omega ^
                 (top.placement lookup.region + lookup.row)))) =
       lookup.inputValues top.placement environment) ∧
     (∀ row < environment.usableRows,
@@ -330,15 +330,15 @@ theorem projectedValues
             (fun query =>
               (fixedQueryFeedOfResolver
                 (top.toVerifierKey urs) poly query).eval
-                ((omegaOf top.domainExponent) ^ row))
+                (top.omega ^ row))
             (fun query =>
               (adviceQueryFeedOfResolver
                 (top.toVerifierKey urs) poly proofIndex query).eval
-                ((omegaOf top.domainExponent) ^ row))
+                (top.omega ^ row))
             (fun query =>
               (instanceQueryFeedOfResolver
                 (top.toVerifierKey urs) poly proofIndex query).eval
-                ((omegaOf top.domainExponent) ^ row))) =
+                (top.omega ^ row))) =
         lookup.tableValues environment row) := by
   dsimp only
   let route :=
@@ -358,15 +358,15 @@ theorem projectedValues
       (fun query =>
         (fixedQueryFeedOfResolver
           (top.toVerifierKey urs) poly query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (adviceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (fun query =>
         (instanceQueryFeedOfResolver
           (top.toVerifierKey urs) poly proofIndex query).eval
-          ((omegaOf top.domainExponent) ^ row))
+          (top.omega ^ row))
       (Query.eval
         (resolverEnvironment
           (top.toVerifierKey urs) poly proofIndex
@@ -427,7 +427,7 @@ Clean tuples compressed with the transcript challenge.
 -/
 theorem projectedPolynomialValues
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -446,14 +446,14 @@ theorem projectedPolynomialValues
         (top.usableRowsAt top.domainExponent)
     (lookupInputPolyOfResolver
         (top.toVerifierKey urs) ch poly proofIndex route.index).eval
-        ((omegaOf top.domainExponent) ^
+        (top.omega ^
           (top.placement lookup.region + lookup.row)) =
       compressValues ch.theta
         (lookup.inputValues top.placement environment) ∧
     (∀ row < environment.usableRows,
       (lookupTablePolyOfResolver
           (top.toVerifierKey urs) ch poly proofIndex route.index).eval
-          ((omegaOf top.domainExponent) ^ row) =
+          (top.omega ^ row) =
         compressValues ch.theta
           (lookup.tableValues environment row)) := by
   dsimp only
@@ -499,7 +499,7 @@ challenge exclusions are supplied.
 -/
 def deployedWitness
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -547,7 +547,7 @@ def deployedWitness
   have hn : vk.n = top.n := by
     rw [← hvk]
     exact top.toVerifierKey_n urs
-  have homega : vk.omega = (omegaOf top.domainExponent) := by
+  have homega : vk.omega = top.omega := by
     rw [← hvk]
     exact top.toVerifierKey_omega urs
   have hblinding :
@@ -568,13 +568,13 @@ def deployedWitness
     omega
   have hrows : Function.Injective
       fun row : Fin top.n =>
-        (omegaOf top.domainExponent) ^ (row : ℕ) :=
+        top.omega ^ (row : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      (CircuitFieldSupport.domainExponent_lt top pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt top)
   have hroot :
-      (omegaOf top.domainExponent) ^ top.n = 1 :=
+      top.omega ^ top.n = 1 :=
     TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt top pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt top)
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=
@@ -921,7 +921,7 @@ def WitnessConditions.ofChallengeExclusions
 /-- Construct the complete deployed-witness family for one top-level proof. -/
 def deployedWitnesses
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -958,7 +958,7 @@ def deployedWitnesses
 /-- The deployed family discharges Clean's complete lookup constraint family. -/
 theorem constraints
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)

@@ -22,7 +22,7 @@ is handled by the generic assignment layer. The generic terminal theorem remains
 `Zcash.Snark.Soundness.Circuit.Terminal`.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -108,17 +108,17 @@ def actionTopLevelCircuitCorrectness
   have fixedCoherence :
       TopLevelFixedCoherence actionCircuit urs :=
     TopLevelFixedCoherence.ofDerived actionCircuit urs hdomainExponent
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
   have hdomainSize :
       actionCircuit.n = 2 ^ urs.k := by
     rw [actionCircuit.n_eq_two_pow_domainExponent]
     exact congrArg (2 ^ ·) hdomainExponent
   have hfixedRows : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
-        (omegaOf actionCircuit.domainExponent) ^
+        actionCircuit.omega ^
           (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain) hdomainExponent
+      (CircuitFieldSupport.domainExponent_lt actionCircuit) hdomainExponent
   refine
     { fixedEncoding := ?_
       fixed := ?_
@@ -138,10 +138,10 @@ def actionTopLevelCircuitCorrectness
       assignment
       (TopLevelAssignment.domainRowsInjective
         (top := actionCircuit)
-        (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
+        (CircuitFieldSupport.domainExponent_lt actionCircuit))
       (TopLevelAssignment.domainRoot
         (top := actionCircuit)
-        (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain))
+        (CircuitFieldSupport.domainExponent_lt actionCircuit))
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex
@@ -156,15 +156,15 @@ def actionTopLevelCircuitCorrectness
     · have hrows : Function.Injective
           fun i : Fin
               actionCircuit.n =>
-            (omegaOf actionCircuit.domainExponent) ^
+            actionCircuit.omega ^
               (i : ℕ) := by
         rw [hdomainSize]
         exact hfixedRows
       have hroot :
-          (omegaOf actionCircuit.domainExponent) ^
+          actionCircuit.omega ^
             actionCircuit.n = 1 :=
         TopLevelAssignment.domainRoot
-          (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+          (CircuitFieldSupport.domainExponent_lt actionCircuit)
       have hn : actionCircuit.n ≠ 0 := by
         exact actionCircuit.n_ne_zero
       have hsatisfaction :=
@@ -198,7 +198,7 @@ def actionTopLevelCircuitCorrectness
             (fun column hcolumn =>
               relation.fixedColumn_eq_rowPolynomial_or_relation
                 column
-                (LagrangeCommitmentKey.canonical urs (omegaOf actionCircuit.domainExponent))
+                (LagrangeCommitmentKey.canonical urs actionCircuit.omega)
                 (actionCircuit.fixedRows.getD column [])
                 (fixedCoherence column hcolumn)
                 hfixedRows

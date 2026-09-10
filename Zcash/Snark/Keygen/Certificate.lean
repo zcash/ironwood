@@ -342,7 +342,8 @@ theorem vk_eq_toVerifierKey :
     ⟨hiq, haq, hfq⟩, hpch, ⟨hli, hlt⟩⟩ := h
   symm
   apply verifyingKey_eq_cast_of_fields actionCircuitShape_eq_fixtureCircuitShape
-  · simpa only [actionCircuit.toVerifierKey_omega] using ho
+  · simpa only [actionCircuit.toVerifierKey_omega, TopLevelCircuit.omega,
+      Zcash.Arithmetic.pastaDomain_omega_eq] using ho
   · simpa only [actionCircuit.toVerifierKey_n,
       actionCircuit.n_eq_two_pow_domainExponent] using hn
   · simpa only [actionCircuit.toVerifierKey_blindingFactors,

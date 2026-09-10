@@ -41,9 +41,10 @@ private theorem action_domainExponent_eq : actionCircuit.domainExponent = 11 := 
 
 private theorem vk_domain_eq :
     (vk.omega, vk.n) =
-      ((omegaOf actionCircuit.domainExponent), actionCircuit.n) := by
+      (actionCircuit.omega, actionCircuit.n) := by
   have hscalars :=
     congrArg (fun bundle => bundle.2.2.2.1) Keygen.certificate
+  rw [Halo2.TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq]
   apply Prod.ext
   · exact (congrArg (fun scalars => scalars.1) hscalars).symm
   · exact (congrArg (fun scalars => scalars.2.1) hscalars).symm
@@ -69,7 +70,8 @@ theorem vk_omega_order : vk.omega ^ vk.n = 1 := by
   have hdomain := vk_domain_eq
   simp only [Prod.mk.injEq] at hdomain
   rw [hdomain.1, hdomain.2]
-  rw [Halo2.TopLevelCircuit.n_eq_two_pow_domainExponent]
+  rw [Halo2.TopLevelCircuit.n_eq_two_pow_domainExponent,
+    Halo2.TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq]
   exact (omegaOf_isPrimitiveRoot actionCircuit.domainExponent (by
     rw [action_domainExponent_eq]
     norm_num)).pow_eq_one

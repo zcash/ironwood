@@ -11,7 +11,6 @@ run to the derived key and public-input commitment of an arbitrary
 the constructor of `TopLevelCircuitCorrectness`.
 -/
 
-open Zcash.Arithmetic (pastaDomain)
 
 namespace Zcash.Snark
 
@@ -53,7 +52,7 @@ def topLevelStatements_or_relation_of_decode
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)

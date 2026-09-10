@@ -11,7 +11,7 @@ layers in their native polynomial language: Clean-specific reconstruction is
 finished here before the resulting bridge is handed to the semantic endpoint.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -47,7 +47,7 @@ only the representation boundaries that genuinely come from other streams:
 -/
 def ofTopLevelCanonical
     {k : ℕ}
-    [CircuitFieldSupport top pastaDomain]
+    [CircuitFieldSupport top]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -56,7 +56,7 @@ def ofTopLevelCanonical
         (top.constraintModel pp urs ch poly)
         top.n)
     (hroot :
-      (omegaOf top.domainExponent) ^
+      top.omega ^
         top.n = 1)
     (selectorActivations :
       SelectorActivationsRealized top.selectorMap

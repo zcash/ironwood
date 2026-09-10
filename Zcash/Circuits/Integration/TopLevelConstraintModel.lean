@@ -58,7 +58,7 @@ theorem constraintModel_eq_constraintModelOfResolver
     [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
-    let selectors := canonicalLagrangePolynomials (omegaOf top.domainExponent)
+    let selectors := canonicalLagrangePolynomials top.omega
       (top.toVerifierKey_blindingFactors_lt_n urs)
     top.constraintModel pp urs ch poly =
       constraintModelOfResolver
@@ -97,7 +97,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).l0 =
-      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
+      (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).1 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -108,7 +108,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lLast =
-      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
+      (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.1 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -119,7 +119,7 @@ theorem constraintModel_eq_toVerifierKey_constraintModel
     (pp : ProofParams) (urs : URS G)
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     (top.constraintModel pp urs ch poly).lBlind =
-      (canonicalLagrangePolynomials (omegaOf top.domainExponent)
+      (canonicalLagrangePolynomials top.omega
         (top.toVerifierKey_blindingFactors_lt_n urs)).2.2 := by
   unfold constraintModel
   simp only [top.toVerifierKey_omega, constraintModelOfResolver]
@@ -215,7 +215,7 @@ def resolverPermutationCycleOfKeygenColumns
           (top.toVerifierKey urs) poly p chunk).length),
       (ResolverPermutationPairs
           (top.toVerifierKey urs) poly p chunk)[column].2 =
-        keygenSigmaColumn (omegaOf top.domainExponent) Zcash.Arithmetic.deltaFp
+        keygenSigmaColumn top.omega Zcash.Arithmetic.deltaFp
           top.chunkLen fullSigma chunk column)
     (hrestrict : ∀ c :
         ResolverPermutationCell
@@ -225,7 +225,7 @@ def resolverPermutationCycleOfKeygenColumns
     (hnames : Function.Injective fun c :
         ResolverPermutationCell
           (top.toVerifierKey urs) poly p activeRows =>
-      chunkRowName (omegaOf top.domainExponent) Zcash.Arithmetic.deltaFp
+      chunkRowName top.omega Zcash.Arithmetic.deltaFp
         top.chunkLen c.1 c.2.1 c.2.2) :
     ResolverPermutationCycle
       (top.toVerifierKey urs) poly p activeRows := by

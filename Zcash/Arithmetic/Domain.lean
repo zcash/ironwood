@@ -155,7 +155,7 @@ private theorem five_isPrimitiveRoot :
   · exact five_prattPart.out
 
 /-- Pasta's multiplicative generator and certified two-adic factorization. -/
-def pastaDomain : FieldDomainParams Fp where
+instance pastaDomain : FieldDomainParams Fp where
   twoAdicity := 32
   oddPart := deltaFpOrder
   generator := 5
@@ -168,18 +168,26 @@ def pastaDomain : FieldDomainParams Fp where
   generator_isPrimitiveRoot := by
     simpa only [Nat.card_eq_fintype_card, ZMod.card] using five_isPrimitiveRoot
 
+theorem pastaDomain_twoAdicity_eq : FieldDomainParams.twoAdicity Fp = 32 := rfl
+
+theorem pastaDomain_oddPart_eq : FieldDomainParams.oddPart Fp = deltaFpOrder := rfl
+
+theorem pastaDomain_generator_eq : FieldDomainParams.generator (F := Fp) = 5 := rfl
+
 /-- The generator-derived maximal root agrees with the deployed Pasta constant. -/
-theorem pastaDomain_rootOfUnity_eq : pastaDomain.rootOfUnity = rootOfUnityFp := by
+theorem pastaDomain_rootOfUnity_eq :
+    FieldDomainParams.rootOfUnity (F := Fp) = rootOfUnityFp := by
   decide +kernel
 
 /-- The generic column separator is Halo2's existing Pasta delta. -/
-theorem pastaDomain_delta_eq : pastaDomain.delta = deltaFp := by
-  simp only [FieldDomainParams.delta_eq_pow, pastaDomain, deltaFp, powFast_eq_pow]
+theorem pastaDomain_delta_eq : FieldDomainParams.delta (F := Fp) = deltaFp := by
+  simp only [FieldDomainParams.delta_eq_pow, pastaDomain_generator_eq,
+    pastaDomain_twoAdicity_eq, deltaFp, powFast_eq_pow]
 
 /-- The generic root construction agrees with the efficient Pasta domain implementation. -/
-theorem pastaDomain_omega_eq (k : ℕ) : pastaDomain.omega k = omegaOf k := by
+theorem pastaDomain_omega_eq (k : ℕ) : FieldDomainParams.omega k = omegaOf k := by
   rw [FieldDomainParams.omega_eq_pow, pastaDomain_rootOfUnity_eq]
-  simp only [pastaDomain, omegaOf, powFast_eq_pow]
+  simp only [pastaDomain_twoAdicity_eq, omegaOf, powFast_eq_pow]
 
 /-- Halo2's permutation coset generator has the full odd order obtained by
 removing Pasta's `2^32` evaluation subgroup from `Fpˣ`. -/

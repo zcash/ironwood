@@ -9,7 +9,7 @@ captured scalars, the shape counts they induce, the static checks, and the `x`-s
 schedule whose degree caps make `epsilonX` concrete.
 -/
 
-open Zcash.Arithmetic (omegaOf pastaDomain)
+open Zcash.Arithmetic (omegaOf)
 open Halo2 (CircuitFieldSupport)
 
 namespace Zcash.Snark.Capstone
@@ -58,7 +58,7 @@ private theorem castVk_lookup {s₁ s₂ : CircuitShape} (h : s₁ = s₂)
 the proof parameters or URS; the keygen certificate pins their circuit-owned values to the
 capture. -/
 theorem derived_scalars :
-    (omegaOf actionCircuit.domainExponent) = vk.omega ∧
+    actionCircuit.omega = vk.omega ∧
     actionCircuit.n = vk.n ∧
     actionCircuit.verifierCS.gates = vk.gates ∧
     actionCircuit.instanceQueryLayout =
@@ -173,11 +173,11 @@ theorem capturedActionStaticChecks
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
 
 /-- **The captured `x`-squeeze schedule at the derived key**: the degree caps
 transfer through the scalar equalities, and pinning is the family's own derived projection. -/
@@ -286,11 +286,11 @@ theorem actionStaticChecks (numProofs : ℕ)
     rw [hvk basis, actionCircuit.toVerifierKey_omega,
       actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainRoot
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
   characteristic := fun basis => by
     rw [hvk basis, actionCircuit.toVerifierKey_n]
     exact TopLevelAssignment.domainSizeCastNeZero
-      (CircuitFieldSupport.domainExponent_lt actionCircuit pastaDomain)
+      (CircuitFieldSupport.domainExponent_lt actionCircuit)
 
 /-- The captured `x`-squeeze schedule transported to an arbitrary Action bundle size. -/
 def actionXSqueezeSchedule (numProofs : ℕ)

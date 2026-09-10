@@ -167,7 +167,7 @@ def canonicalAdaptiveStatementInstanceRepresentation (pp : ProofParams)
   let proofIndex : Fin pp.numProofs :=
     Fin.cast (actionCircuit.shape.withProofParams_numProofs pp) p
   let instanceColumn : Column .instance := ⟨column⟩
-  let coeffs := instanceCoefficients (2 ^ urs.k) (omegaOf actionCircuit.domainExponent)
+  let coeffs := instanceCoefficients (2 ^ urs.k) actionCircuit.omega
     (actionCircuit.publicInputRows (inputs proofIndex) instanceColumn)
   { point := adaptiveActionStatementInstanceCommitment pp basis inputs p column
     repr :=

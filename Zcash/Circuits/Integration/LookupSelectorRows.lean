@@ -338,14 +338,14 @@ def EnabledLookup.inputSelectorValuesRealized_or_bad
     (rows : ℕ → List Fp)
     (hrows : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
-        (omegaOf top.domainExponent) ^ (i : ℕ))
+        top.omega ^ (i : ℕ))
     (hn : top.n = 2 ^ urs.k)
     {Bad : Type}
     (binding : ∀ column,
       column < top.fixedColumnCount →
         poly (.fixedCol column) =
             instanceRowPolynomial (2 ^ urs.k)
-              (omegaOf top.domainExponent) (rows column) ⊕'
+              top.omega (rows column) ⊕'
           Bad)
     (proofIndex : Fin pp.numProofs)
     (lookup : EnabledLookup Fp)

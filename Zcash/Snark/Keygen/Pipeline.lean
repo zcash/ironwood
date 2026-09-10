@@ -4,6 +4,7 @@ import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Zcash.Circuits.Integration.ExprRich
+import Zcash.Circuits.Halo2.FieldSupport
 import Clean.Halo2.Keygen.Layout
 import Clean.Halo2.Keygen
 import Clean.Halo2.TopLevel
@@ -86,7 +87,7 @@ def toVerifierKey
   let verifierCS := top.verifierCS
   let fixedCommitments := top.fixedCommitments urs
   let permutationCommitments := top.permutationCommitments urs
-  { omega := (omegaOf top.domainExponent)
+  { omega := top.omega
     n := top.n
     blindingFactors := top.blindingFactors
     delta := Zcash.Arithmetic.deltaFp
@@ -108,7 +109,7 @@ def toVerifierKey
     [TopLevelShape top]
     (urs : URS G) :
     (top.toVerifierKey urs).omega =
-      (omegaOf top.domainExponent) := by
+      top.omega := by
   simp only [toVerifierKey]
 
 /-- The derived key uses the circuit-owned fitting domain size. -/

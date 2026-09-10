@@ -47,9 +47,10 @@ The lookup bridge is split deliberately:
   packages fixed-polynomial encoding, fixed/selector, copy, and lookup representation facts
   for one canonical assignment, but contains neither the desired circuit statement
   nor an opaque encoding implication.
-  `CircuitFieldSupport top params` supplies only numerical compatibility bounds;
+  `CircuitFieldSupport top` supplies only numerical compatibility bounds;
   `Arithmetic.FieldDomainParams` derives roots and permutation-column separation
-  from a certified field generator and its two-adic factorization.
+  from a certified field generator and its two-adic factorization. The field's
+  chosen parameter instance and the circuit's exponent determine `top.omega`.
 * `TopLevelInstanceCommitment.lean` derives the verifier's instance commitments
   from any top-level circuit's public-input layout and binds accepted instance
   polynomials back to the supplied public inputs, for arbitrary column and proof

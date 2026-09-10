@@ -88,7 +88,7 @@ theorem instanceCommitment_column_eq_commit
     top.instanceCommitment urs inputs proofIndex column.index =
       commit urs
           (instanceCoefficients (2 ^ urs.k)
-            (omegaOf top.domainExponent)
+            top.omega
             (top.publicInputRows (inputs proofIndex) column)) +
         urs.w := by
   rw [top.instanceCommitment_column,
@@ -153,14 +153,14 @@ def acceptedColumn_eq_rowPolynomial_or_relation
     (index : Fin (size PublicInput))
     (hrows : Function.Injective
       fun i : Fin (2 ^ top.domainExponent) =>
-        (omegaOf top.domainExponent) ^ (i : ℕ)) :
+        top.omega ^ (i : ℕ)) :
     CanonicalMemberConstraintRelation.acceptedPolynomial
           (shape := top.shape.withProofParams pp)
           (memberDecode := memberDecode) haccepts
         (.instanceCol proofIndex
           (top.publicInputLayout.cells index).1.index) =
       instanceRowPolynomial top.n
-        ((omegaOf top.domainExponent))
+        (top.omega)
         (top.publicInputRows (inputs proofIndex)
           (top.publicInputLayout.cells index).1) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
@@ -170,7 +170,7 @@ def acceptedColumn_eq_rowPolynomial_or_relation
   have hn : 2 ^ urs.k = 2 ^ top.domainExponent :=
     congrArg (2 ^ ·) hk'.symm
   have hrows' : Function.Injective
-      (fun i : Fin (2 ^ urs.k) => (omegaOf top.domainExponent) ^ (i : ℕ)) := by
+      (fun i : Fin (2 ^ urs.k) => top.omega ^ (i : ℕ)) := by
     intro i j hij
     have hcast :
         Fin.cast hn i = Fin.cast hn j :=
@@ -252,14 +252,12 @@ def publicInputEncoding_or_relation
       acceptedColumn_eq_rowPolynomial_or_relation
         top pp urs hk inputs ps ch pU pW a batchOpenings
         memberDecode haccepts proofIndex index
-        (omegaOf_powers_injective
-          top.domainExponent (by omega)))
+        (TopLevelAssignment.domainRowsInjective domainExponent_lt))
     fun hcolumns => ?_
   apply TopLevelAssignment.publicInputEncoding_of_publicInputRowPolynomials
       (assignment := assignment) (inputs proofIndex)
   · exact hcolumns
-  · exact omegaOf_powers_injective
-      top.domainExponent (by omega)
+  · exact TopLevelAssignment.domainRowsInjective domainExponent_lt
 
 assert_no_sorry publicInputEncoding_or_relation
 

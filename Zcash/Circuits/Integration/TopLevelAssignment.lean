@@ -67,18 +67,20 @@ variable
 /-- The circuit-derived domain generator has exact order `2^k`. -/
 theorem domainRoot
     (hbound : top.domainExponent < 33) :
-    (omegaOf top.domainExponent) ^
+    top.omega ^
       top.n = 1 := by
-  simpa using Zcash.Arithmetic.omegaOf_domain
+  simpa only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq,
+    TopLevelCircuit.n, pow_one] using Zcash.Arithmetic.omegaOf_domain
     top.domainExponent 1 (by omega)
 
 /-- Circuit-derived domain row names are injective. -/
 theorem domainRowsInjective
     (hbound : top.domainExponent < 33) :
     Function.Injective fun row : Fin top.n =>
-      (omegaOf top.domainExponent) ^ (row : ℕ) :=
-  Zcash.Arithmetic.omegaOf_powers_injective
-    top.domainExponent (by omega)
+      top.omega ^ (row : ℕ) := by
+  simpa only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq,
+    TopLevelCircuit.n] using Zcash.Arithmetic.omegaOf_powers_injective
+      top.domainExponent (by omega)
 
 /-- Reindex the circuit's injective domain rows along an identified exponent. -/
 theorem domainRowsInjective_of_domainExponent_eq
@@ -86,7 +88,7 @@ theorem domainRowsInjective_of_domainExponent_eq
     (hbound : top.domainExponent < 33)
     (hk : top.domainExponent = k) :
     Function.Injective fun row : Fin (2 ^ k) =>
-      (omegaOf top.domainExponent) ^ (row : ℕ) := by
+      top.omega ^ (row : ℕ) := by
   rw [← hk, ← top.n_eq_two_pow_domainExponent]
   exact domainRowsInjective hbound
 
@@ -143,7 +145,7 @@ def proofAssignment
     (assignment : TopLevelAssignment top numProofs proofIndex) :
     ProofAssignment Fp :=
   resolverAssignment
-    ((omegaOf top.domainExponent))
+    (top.omega)
     assignment.polynomial proofIndex
 
 /-- The circuit-owned semantic environment for this bundle member. -/
@@ -163,7 +165,7 @@ def FixedColumnEncoding
     (assignment : TopLevelAssignment top numProofs proofIndex) : Prop :=
   ∀ column row,
     (assignment.polynomial (.fixedCol column.index)).eval
-        ((omegaOf top.domainExponent) ^ row) =
+        (top.omega ^ row) =
       top.fixedValue column row
 
 /--
@@ -219,7 +221,7 @@ theorem resolverEnvironment_eq_environment
     assignment.environment.advice column row =
       (assignment.polynomial
         (.adviceCol proofIndex column.index)).eval
-          ((omegaOf top.domainExponent) ^ row) :=
+          (top.omega ^ row) :=
   rfl
 
 @[simp] theorem environment_instance
@@ -228,7 +230,7 @@ theorem resolverEnvironment_eq_environment
     assignment.environment.inst column row =
       (assignment.polynomial
         (.instanceCol proofIndex column.index)).eval
-          ((omegaOf top.domainExponent) ^ row) :=
+          (top.omega ^ row) :=
   rfl
 
 /--
@@ -271,7 +273,7 @@ theorem publicInputEncoding_of_rowPolynomials
           (.instanceCol proofIndex
             (top.publicInputLayout.cells index).1.index) =
         instanceRowPolynomial top.n
-          ((omegaOf top.domainExponent))
+          (top.omega)
           (rows (top.publicInputLayout.cells index).1.index))
     (hencoded : ∀ index,
       (rows (top.publicInputLayout.cells index).1.index).getD
@@ -279,7 +281,7 @@ theorem publicInputEncoding_of_rowPolynomials
         (toElements input)[index])
     (hinjective : Function.Injective
       fun row : Fin top.n =>
-        (omegaOf top.domainExponent) ^ (row : ℕ)) :
+        top.omega ^ (row : ℕ)) :
     assignment.PublicInputEncoding input := by
   intro index
   let cell := top.publicInputLayout.cells index
@@ -298,9 +300,9 @@ theorem publicInputEncoding_of_rowPolynomials
     (values := rows cell.1.index) hinjective domainRow
   rw [show
     (instanceRowPolynomial top.n
-      ((omegaOf top.domainExponent))
+      (top.omega)
       (rows cell.1.index)).eval
-        ((omegaOf top.domainExponent) ^ (cell.2 : ℤ)) =
+        (top.omega ^ (cell.2 : ℤ)) =
       (rows cell.1.index).getD cell.2 0 by
     simpa only [cell, domainRow] using hrow]
   exact hencoded index
@@ -317,12 +319,12 @@ theorem publicInputEncoding_of_publicInputRowPolynomials
           (.instanceCol proofIndex
             (top.publicInputLayout.cells index).1.index) =
         instanceRowPolynomial top.n
-          ((omegaOf top.domainExponent))
+          (top.omega)
           (top.publicInputRows input
             (top.publicInputLayout.cells index).1))
     (hinjective : Function.Injective
       fun row : Fin top.n =>
-        (omegaOf top.domainExponent) ^ (row : ℕ)) :
+        top.omega ^ (row : ℕ)) :
     assignment.PublicInputEncoding input := by
   apply assignment.publicInputEncoding_of_rowPolynomials input
     (fun column => top.publicInputRows input ⟨column⟩)

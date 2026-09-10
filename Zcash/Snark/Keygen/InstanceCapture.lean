@@ -148,8 +148,8 @@ theorem actionCircuit_domainExponent : actionCircuit.domainExponent = capturedUR
 /-- The derived verifying key's domain generator is the captured URS's, so a key stated at that key's
 `omega` is a key at the captured domain. -/
 theorem actionCircuit_omega_captured :
-    (omegaOf actionCircuit.domainExponent) = omegaOf capturedURS.k := by
-  rw [actionCircuit_domainExponent]
+    actionCircuit.omega = omegaOf capturedURS.k := by
+  rw [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, actionCircuit_domainExponent]
 
 /-- **The circuit-derived public-instance family is the fixture's.**
 `actionCircuit.instanceCommitment` computes commitments from the public inputs the way halo2's
