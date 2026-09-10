@@ -85,7 +85,7 @@ def adaptiveStatementFixedCoherence :
       (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) :=
   TopLevelFixedCoherence.ofDerived actionCircuit
     (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
-    ActionConstraintBounds.domainExponent_lt
+    actionCircuit.domainExponent_lt
 
 /-- Rewrite the derived Lagrange generators into the monomial form used by permutation
 commitments. -/
@@ -105,12 +105,12 @@ theorem adaptiveStatementLagrangePrefix :
     (by
       simpa only [ursOfAugmentedBasis_k, AdaptiveActionStatementShape,
         Halo2.CircuitShape.withProofParams_k] using
-          Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt)
+          Nat.le_of_lt_succ actionCircuit.domainExponent_lt)
     (derivedUrsGLagrange_generator_eq _
       (by
         simpa only [ursOfAugmentedBasis_k, AdaptiveActionStatementShape,
           Halo2.CircuitShape.withProofParams_k] using
-            Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt))
+            Nat.le_of_lt_succ actionCircuit.domainExponent_lt))
 
 /-- The canonical augmented-basis representation of a fixed-column commitment, using the dense
 keygen row and Halo2's default blind `1`. -/
@@ -160,7 +160,7 @@ def canonicalActionPermutationRepresentation
       have hk : actionCircuit.domainExponent = urs.k := rfl
       have hkUrs : urs.k ≤ 32 := by
         rw [← hk]
-        exact Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt
+        exact Nat.le_of_lt_succ actionCircuit.domainExponent_lt
       let setup := LagrangePrefixSetup.ofDerived urs hkUrs
       have hcTop : (c : ℕ) < actionCircuit.permutationColumnCount := by
         simpa only [AdaptiveActionStatementShape,

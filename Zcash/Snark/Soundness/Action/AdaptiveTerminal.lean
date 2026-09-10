@@ -104,7 +104,7 @@ def actionWitnessOrRelationOfDecode?
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
                   let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
                     TopLevelAssignment.domainSizeCastNeZero
-                      ActionConstraintBounds.domainExponent_lt
+                      actionCircuit.domainExponent_lt
                   match acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       urs rfl (actionCircuit.toVerifierKey urs)
                       (actionCircuit.instanceCommitment urs inputs) ps ch
@@ -120,9 +120,9 @@ def actionWitnessOrRelationOfDecode?
                         PSum.inl (decode.memberBinding hchar slot point hpoint))
                       (actionCircuit.permutationChunkRoutingCoherent urs)
                       (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                        urs ActionConstraintBounds.domainExponent_lt)
+                        urs actionCircuit.domainExponent_lt)
                       (TopLevelAssignment.toVerifierKey_domainRoot
-                        urs ActionConstraintBounds.domainExponent_lt)
+                        urs actionCircuit.domainExponent_lt)
                       (by
                         simpa only [actionCircuit.toVerifierKey_n] using hnFp)
                       (by

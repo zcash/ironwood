@@ -22,7 +22,6 @@ open Zcash.Arithmetic (derivedUrsGLagrange omegaOf)
 open Halo2 CompPoly.CPolynomial
 open Keygen
 open ActionPermutationDomain
-open ActionConstraintBounds (domainExponent_lt)
 open Zcash.Circuits.Action (actionCircuit)
 
 variable {G : Type} [AddCommGroup G] [Module Fp G]
@@ -186,7 +185,7 @@ theorem actionRowsInjectiveAtUrs
       (actionCircuit.toVerifierKey urs).omega ^ (i : ℕ) := by
   simpa only [actionCircuit.toVerifierKey_omega] using
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      (top := actionCircuit) domainExponent_lt
+      (top := actionCircuit) actionCircuit.domainExponent_lt
       hk
 
 set_option maxRecDepth 100000 in
@@ -239,7 +238,7 @@ def actionResolverPermutationCycle_or_relation
     hk
   have hkUrs : urs.k ≤ 32 := by
     rw [← hkDomain]
-    exact Nat.le_of_lt_succ domainExponent_lt
+    exact Nat.le_of_lt_succ actionCircuit.domainExponent_lt
   let setup := LagrangePrefixSetup.ofDerived urs hkUrs
   have hcolumns : ∀
       (chunk : Fin actionCircuit.permutationSetCount)

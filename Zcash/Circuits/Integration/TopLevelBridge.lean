@@ -14,6 +14,7 @@ finished here before the resulting bridge is handed to the semantic endpoint.
 namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
+open Zcash.Arithmetic (deltaFp)
 
 set_option maxHeartbeats 20000
 
@@ -44,7 +45,7 @@ only the representation boundaries that genuinely come from other streams:
 -/
 def ofTopLevelCanonical
     {k : ℕ}
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -87,12 +88,12 @@ def ofTopLevelCanonical
       copies := copies
       theta := ch.theta
       lookups := ?_ }
-  · apply gateCoherence.canonicalConstraints ch poly proofIndex
+  · apply top.canonicalConstraints ch poly proofIndex
       satisfaction
     · intro row
       rw [← pow_mul, Nat.mul_comm, pow_mul, hroot, one_pow]
     · exact selectorActivations
-  · exact TopLevelLookup.deployedWitnesses gateCoherence ch poly proofIndex
+  · exact TopLevelLookup.deployedWitnesses ch poly proofIndex
       satisfaction lookupConditions
 
 /--

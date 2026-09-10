@@ -12,6 +12,8 @@ statement and no opaque encoding implication.
 
 namespace Zcash.Snark
 
+open Zcash.Arithmetic (deltaFp)
+
 open Halo2 CompPoly.CPolynomial
 
 /--
@@ -220,7 +222,7 @@ def bridgeWitness_of_components
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    (gates : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (fixedEncoding :
       let assignment :
           TopLevelAssignment top
@@ -259,12 +261,12 @@ def bridgeWitness_of_components
   change TopLevelBridgeWitness top assignment.proofAssignment cell Bad
   have hroot :=
     TopLevelAssignment.domainRoot
-      (top := top) gates.domainExponent_lt
+      (top := top) top.domainExponent_lt
   let bridge :=
     FullCircuitBridge.ofTopLevelCanonical
       (top := top) (pp := pp) (urs := urs)
       (cell := cell) (Bad := Bad)
-      gates ch poly proofIndex satisfaction
+      ch poly proofIndex satisfaction
       hroot selectorActivations fixed copies lookups
   clear_value bridge
   generalize henvironmentValue :
@@ -297,11 +299,10 @@ end TopLevelAssignment
 The representation-boundary data needed to interpret one canonical polynomial
 assignment as an execution of a top-level circuit.
 
-Each field names one of the four Clean constraint families.  The shared `Bad`
-alternative is retained componentwise so that commitment-binding failures can be
-joined without turning this record into an opaque statement-level hypothesis, and
-is carried as data: a field that cannot be discharged returns the break rather
-than asserting one exists.
+The fields describe fixed-polynomial interpretation and the fixed, copy, and
+lookup constraints. Each component returns its witness or a `Bad` value, so
+commitment-binding failures can be joined without replacing the computed break
+with a claim that one exists.
 
 The copy field carries its witness directly because `Bad` is a type, keeping the
 terminal independent of choice.
@@ -317,7 +318,6 @@ structure TopLevelCircuitCorrectness
     (poly : CommitmentId → CPoly)
     (cell : Type) [DecidableEq cell] [Fintype cell]
     (Bad : Type) : Type where
-  gates : TopLevelConstraintBounds top
   fixedEncoding : ∀ proofIndex,
     TopLevelFixedEncoding top pp poly proofIndex ⊕' Bad
   fixed : ∀ proofIndex,

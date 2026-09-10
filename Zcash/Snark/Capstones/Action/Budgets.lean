@@ -585,7 +585,7 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
       actionCircuit.omega ^ (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      ActionConstraintBounds.domainExponent_lt
+      actionCircuit.domainExponent_lt
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis
@@ -1124,7 +1124,7 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
       actionCircuit.omega ^ (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      ActionConstraintBounds.domainExponent_lt
+      actionCircuit.domainExponent_lt
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis

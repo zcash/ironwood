@@ -24,6 +24,7 @@ desired statement or an opaque encoding implication.
 namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
+open Zcash.Arithmetic (deltaFp)
 
 universe u v w
 
@@ -63,6 +64,7 @@ def topLevelBundleStatement_or_bad_of_components
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -72,7 +74,6 @@ def topLevelBundleStatement_or_bad_of_components
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    (gates : TopLevelConstraintBounds top)
     (fixedEncoding : ∀ proofIndex,
       TopLevelFixedEncoding top pp poly proofIndex)
     (fixed : ∀ proofIndex,
@@ -94,7 +95,7 @@ def topLevelBundleStatement_or_bad_of_components
             (top.environment assignment.proofAssignment)))
       fun proofIndex =>
         (TopLevelAssignment.bridgeWitness_of_components
-            proofIndex satisfaction gates
+            proofIndex satisfaction
             (fixedEncoding proofIndex)
             (fixed proofIndex).1 (fixed proofIndex).2
             (copies proofIndex) (lookups proofIndex)).statement_or_bad
@@ -106,6 +107,7 @@ def topLevelBundleWitness_or_bad_of_components
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -115,7 +117,6 @@ def topLevelBundleWitness_or_bad_of_components
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    (gates : TopLevelConstraintBounds top)
     (fixedEncoding : ∀ proofIndex,
       TopLevelFixedEncoding top pp poly proofIndex)
     (fixed : ∀ proofIndex,
@@ -127,7 +128,7 @@ def topLevelBundleWitness_or_bad_of_components
     TopLevelWitnessTerminalOutcome top pp poly Bad := by
   exact finForallOrRelationWitness fun proofIndex =>
     (TopLevelAssignment.bridgeWitness_of_components
-      proofIndex satisfaction gates
+      proofIndex satisfaction
       (fixedEncoding proofIndex)
       (fixed proofIndex).1 (fixed proofIndex).2
       (copies proofIndex) (lookups proofIndex)).semanticWitness_or_bad
@@ -143,6 +144,7 @@ def topLevelBundleStatement_or_bad_of_constraintSatisfaction
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -181,7 +183,7 @@ def topLevelBundleStatement_or_bad_of_constraintSatisfaction
       bindOutcome copiesOutcome fun hcopies =>
         bindOutcome lookupsOutcome fun hlookups =>
           topLevelBundleStatement_or_bad_of_components
-            satisfaction correctness.gates
+            satisfaction
             hfixedEncoding hfixed hcopies hlookups
 
 /-- The correctness-package terminal retaining executable private witnesses. -/
@@ -191,6 +193,7 @@ def topLevelBundleWitness_or_bad_of_constraintSatisfaction
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
@@ -229,7 +232,7 @@ def topLevelBundleWitness_or_bad_of_constraintSatisfaction
       bindOutcome copiesOutcome fun hcopies =>
         bindOutcome lookupsOutcome fun hlookups =>
           topLevelBundleWitness_or_bad_of_components
-            satisfaction correctness.gates
+            satisfaction
             hfixedEncoding hfixed hcopies hlookups
 
 assert_no_sorry topLevelBundleStatement_or_bad_of_constraintSatisfaction
@@ -242,6 +245,7 @@ variable
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -336,7 +340,7 @@ def topLevelWitnesses_or_relation_of_circuitSat
   · exact
       TopLevelInstanceCommitment.witnesses_or_relation_of_accepted_topLevelBundleWitness
         top pp urs hk inputs ps ch pU pW a batchOpenings memberDecode
-        haccepts correctness.gates.domainExponent_lt hwitness
+        haccepts top.domainExponent_lt hwitness
   · exact PSum.inr hrelation
 
 assert_no_sorry topLevelWitnesses_or_relation_of_circuitSat
@@ -394,6 +398,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega deltaFp]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -451,7 +456,6 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
             (instanceCommitment := top.instanceCommitment urs inputs)
             (top.toVerifierKey urs) ps ch slot point ⊕'
         AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)
-    (domainExponent_lt : top.domainExponent < 33)
     (hxgood :
       let model :=
         CanonicalMemberConstraintRelation.acceptedModel
@@ -496,7 +500,7 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hnFp : (top.n : Fp) ≠ 0 :=
     TopLevelAssignment.domainSizeCastNeZero
-      (top := top) domainExponent_lt
+      (top := top) top.domainExponent_lt
   have terminal :=
     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
       (G := G) (shape := top.shape.withProofParams pp)
@@ -525,11 +529,11 @@ def topLevelStatements_or_relation_of_decodedMemberPolynomial_eq
       fun row : Fin (top.toVerifierKey urs).n =>
         (top.toVerifierKey urs).omega ^ (row : ℕ) :=
     TopLevelAssignment.toVerifierKey_domainRowsInjective
-      urs domainExponent_lt
+      urs top.domainExponent_lt
   have outcome := terminal hrowsVk
   have hrootVk :
       (top.toVerifierKey urs).omega ^ (top.toVerifierKey urs).n = 1 :=
-    TopLevelAssignment.toVerifierKey_domainRoot urs domainExponent_lt
+    TopLevelAssignment.toVerifierKey_domainRoot urs top.domainExponent_lt
   have outcome := outcome hrootVk
   have hnFpVk : ((top.toVerifierKey urs).n : Fp) ≠ 0 := by
     rw [top.toVerifierKey_n]

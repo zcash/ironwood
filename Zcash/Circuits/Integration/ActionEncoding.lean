@@ -1,5 +1,4 @@
 import Zcash.Circuits.Action.TopLevel
-import Zcash.Circuits.Action.Shape.Anchors
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.InstanceColumns
@@ -10,7 +9,7 @@ import Zcash.Circuits.Integration.TopLevelCircuit
 import Zcash.Circuits.Integration.TopLevelGates
 import Zcash.Circuits.Integration.TopLevelCorrectness
 import Zcash.Circuits.Integration.ActionCopyReplay
-import Zcash.Circuits.Integration.ActionConstraintBounds
+import Zcash.Circuits.Action.FieldSupport
 import Zcash.Snark.Keygen.Pipeline
 import Mathlib.Util.AssertNoSorry
 
@@ -107,7 +106,7 @@ def actionTopLevelCircuitCorrectness
   have fixedCoherence :
       TopLevelFixedCoherence actionCircuit urs :=
     TopLevelFixedCoherence.ofDerived actionCircuit urs hdomainExponent
-      ActionConstraintBounds.domainExponent_lt
+      actionCircuit.domainExponent_lt
   have hdomainSize :
       actionCircuit.n = 2 ^ urs.k := by
     rw [actionCircuit.n_eq_two_pow_domainExponent]
@@ -117,10 +116,9 @@ def actionTopLevelCircuitCorrectness
         actionCircuit.omega ^
           (i : ℕ) :=
     TopLevelAssignment.domainRowsInjective_of_domainExponent_eq
-      ActionConstraintBounds.domainExponent_lt hdomainExponent
+      actionCircuit.domainExponent_lt hdomainExponent
   refine
-    { gates := ActionConstraintBounds.constraintBounds
-      fixedEncoding := ?_
+    { fixedEncoding := ?_
       fixed := ?_
       copies := ?_
       lookups := ?_ }
@@ -138,10 +136,10 @@ def actionTopLevelCircuitCorrectness
       assignment
       (TopLevelAssignment.domainRowsInjective
         (top := actionCircuit)
-        ActionConstraintBounds.domainExponent_lt)
+        actionCircuit.domainExponent_lt)
       (TopLevelAssignment.domainRoot
         (top := actionCircuit)
-        ActionConstraintBounds.domainExponent_lt)
+        actionCircuit.domainExponent_lt)
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex
@@ -164,7 +162,7 @@ def actionTopLevelCircuitCorrectness
           actionCircuit.omega ^
             actionCircuit.n = 1 :=
         TopLevelAssignment.domainRoot
-          ActionConstraintBounds.domainExponent_lt
+          actionCircuit.domainExponent_lt
       have hn : actionCircuit.n ≠ 0 := by
         exact actionCircuit.n_ne_zero
       have hsatisfaction :=
@@ -186,8 +184,6 @@ def actionTopLevelCircuitCorrectness
                 actionCircuit.usableRowsAt_domainExponent_le_n
         have hexact :=
           lookup.inputSelectorLeafRowsExact actionCircuit
-            (selectorAnchor actionConfig)
-            actionCircuit_lookupSelectorAnchorRequirements_satisfied
             henabled
         have hvalues :=
           lookup.inputSelectorValuesRealized_or_bad

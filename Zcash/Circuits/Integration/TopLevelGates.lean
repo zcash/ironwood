@@ -1,4 +1,4 @@
-import Zcash.Arithmetic.Domain
+import Zcash.Circuits.Integration.FieldSupport
 import Zcash.Circuits.Integration.ResolverGates
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Circuits.Integration.SelectorCoherence
@@ -7,51 +7,81 @@ import Zcash.Circuits.Integration.TopLevelConstraintModel
 /-!
 # Generic top-level gate bridge
 
-This module packages the static facts needed to use a closed formal circuit's own
-derived verifying key. The package is circuit-independent and cannot be paired with
-an arbitrary key: every verifier-side object below uses
-`TopLevelCircuit.toVerifierKey`.
-
-Given that static package and realization of the circuit-derived packed selector
-rows by the decoded fixed polynomials, every enabled circuit gate receives the
-polynomial witness consumed by the generic constraint-satisfaction split.
+Field compatibility and realization of the circuit-derived packed selector rows
+by the decoded fixed polynomials give each enabled gate the polynomial witness
+consumed by the generic constraint-satisfaction split. Every verifier-side object
+uses the circuit's own derived key.
 -/
 
-namespace Zcash.Snark
+namespace Halo2.TopLevelCircuit
 
-open Zcash.Arithmetic (omegaOf scalarFieldOrder)
+open Zcash.Arithmetic (omegaOf scalarFieldOrder deltaFp)
+open Zcash Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial Keygen
-
-/-- Numerical bounds required by the polynomial bridge. Gate and lookup registration
-and selector allocation follow generically from the top-level circuit's packaged
-lawfulness; no placement, operation stream, selector map, or pinned constraint system
-is supplied by the caller. -/
-structure TopLevelConstraintBounds
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top] : Prop where
-  domainExponent_lt : top.domainExponent < 33
-  selectorDegree :
-    csDegree top.constraintSystem < scalarFieldOrder
-
-namespace TopLevelConstraintBounds
 
 variable
     {G : Type} [AddCommGroup G] [Inhabited G]
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
+    (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
+
+/-- The resolver feeds interpret the complete circuit-derived pinned query state. -/
+theorem resolverInterpretsPinned
+    [CircuitFieldSupport top top.omega deltaFp]
+    (poly : CommitmentId → CPoly)
+    (proofIndex : Fin pp.numProofs)
+    (usableRows row : ℕ) :
+    Interprets
+      (pinnedQueryState top.pinnedCS)
+      (fun query =>
+        (fixedQueryFeedOfResolver
+          (top.toVerifierKey urs) poly query).eval
+          (top.omega ^ row))
+      (fun query =>
+        (adviceQueryFeedOfResolver
+          (top.toVerifierKey urs) poly proofIndex query).eval
+          (top.omega ^ row))
+      (fun query =>
+        (instanceQueryFeedOfResolver
+          (top.toVerifierKey urs) poly proofIndex query).eval
+          (top.omega ^ row))
+      (Query.eval
+        (resolverEnvironment
+          (top.toVerifierKey urs) poly proofIndex usableRows)
+        (fun _ => 0) row) := by
+  have homega : top.omega ≠ 0 := by
+    have hk : top.domainExponent ≤ 32 :=
+      Nat.le_of_lt_succ (by
+        simpa using top.domainExponent_lt)
+    exact top.omega_ne_zero hk
+  have hfinal := resolverQueryFeeds_interpret
+    (top.toVerifierKey urs) poly proofIndex usableRows
+    (fun _ => 0) row
+    (by simpa only [top.toVerifierKey_omega] using homega)
+    (pinnedQueryState top.pinnedCS)
+    (by
+      simp only [top.toVerifierKey_adviceQueryLayout,
+        TopLevelCircuit.adviceQueryLayout, pinnedQueryState])
+    (by
+      simp only [top.toVerifierKey_fixedQueryLayout,
+        TopLevelCircuit.fixedQueryLayout, pinnedQueryState])
+    (by
+      simp only [top.toVerifierKey_instanceQueryLayout,
+        TopLevelCircuit.instanceQueryLayout, pinnedQueryState])
+    (top.toVerifierKey_adviceQueryCount urs)
+    (top.toVerifierKey_fixedQueryCount urs)
+    (top.toVerifierKey_instanceQueryCount urs)
+  simpa only [top.toVerifierKey_omega] using hfinal
 
 /--
 The final pinned query state interprets the resolver feeds, and restricts to the
 intermediate gate-erasure state because lookup erasure only appends query entries.
 -/
 theorem resolverInterpretsGates
-    (coherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
     (usableRows row : ℕ) :
@@ -75,7 +105,7 @@ theorem resolverInterpretsGates
         (fun _ => 0) row) := by
   have homega : top.omega ≠ 0 := by
     have hk : top.domainExponent ≤ 32 :=
-      Nat.le_of_lt_succ (by simpa using coherence.domainExponent_lt)
+      Nat.le_of_lt_succ (by simpa using top.domainExponent_lt)
     exact top.omega_ne_zero hk
   have hfinal := resolverQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
@@ -99,13 +129,13 @@ theorem resolverInterpretsGates
 
 /-- The circuit-derived selector map has the roots required by gate scaling. -/
 theorem selectorRootsWellFormed
-    (coherence : TopLevelConstraintBounds top) :
+    [CircuitFieldSupport top top.omega deltaFp] :
     SelectorRootsWellFormed top.selectorMap := by
   simp only [TopLevelCircuit.selectorMap]
   exact selectorRootsWellFormed_deriveSelCompressMap
     top.constraintSystem
     top.n
-    top.selectorActivations coherence.selectorDegree
+    top.selectorActivations top.csDegree_lt_scalarFieldOrder
 
 /-- Selector compression covers every configured gate expression. -/
 theorem gateSelectorsCovered :
@@ -126,7 +156,7 @@ resolver gate polynomial witness.
 -/
 opaque polynomialWitness
     {k : ℕ}
-    (coherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (sets : Fin pp.numProofs →
@@ -181,7 +211,7 @@ opaque polynomialWitness
   have hcompressed :
       top.selectorMap.lookup enabled.gate.selector.index =
         some compressed := (Option.some_get hlookupPresent).symm
-  have hinterpret := coherence.resolverInterpretsGates
+  have hinterpret := top.resolverInterpretsGates
     (pp := pp) (urs := urs)
     poly proofIndex usableRows
     (top.placement enabled.region + enabled.row)
@@ -196,7 +226,7 @@ opaque polynomialWitness
       top.selectorMap top.regionStarts (top.operations) 0
       (resolverEnvironment
         (top.toVerifierKey urs) poly proofIndex usableRows)
-      (fun _ => 0) coherence.selectorRootsWellFormed
+      (fun _ => 0) top.selectorRootsWellFormed
     · exact hfixed
     · exact henabled
     · exact hcompressed
@@ -252,7 +282,7 @@ resolver and circuit-owned verification key.
 -/
 theorem canonicalConstraints
     {k : ℕ}
-    (coherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -286,7 +316,7 @@ theorem canonicalConstraints
       top.omega
       (top.toVerifierKey_blindingFactors_lt_n urs)
   rw [top.constraintModel_eq_constraintModelOfResolver]
-  exact coherence.polynomialWitness ch poly
+  exact top.polynomialWitness ch poly
     (permutationSetsOfResolver
       (top.toVerifierKey urs) poly)
     (permutationChunksOfResolver
@@ -295,6 +325,4 @@ theorem canonicalConstraints
     proofIndex (top.usableRowsAt top.domainExponent)
     hfixed enabled henabled constraint hconstraint
 
-end TopLevelConstraintBounds
-
-end Zcash.Snark
+end Halo2.TopLevelCircuit

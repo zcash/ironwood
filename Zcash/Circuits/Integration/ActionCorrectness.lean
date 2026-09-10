@@ -1,5 +1,5 @@
 import Zcash.Circuits.Integration.ActionEncoding
-import Zcash.Circuits.Integration.ActionConstraintBounds
+import Zcash.Circuits.Action.FieldSupport
 import Zcash.Circuits.Integration.TopLevelCorrectness
 import Zcash.Circuits.Integration.TopLevelInstanceCommitment
 import Mathlib.Util.AssertNoSorry

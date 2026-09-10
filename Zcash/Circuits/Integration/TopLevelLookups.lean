@@ -20,7 +20,7 @@ packed-selector rows.
 
 namespace Zcash.Snark
 
-open Zcash.Arithmetic (omegaOf)
+open Zcash.Arithmetic (omegaOf deltaFp)
 
 open Halo2 CompPoly.CPolynomial Keygen
 
@@ -251,58 +251,6 @@ theorem ofInputSelectorValues
 
 end EnabledLookup.SelectorProjection
 
-namespace TopLevelConstraintBounds
-
-/-- The resolver feeds interpret the complete circuit-derived pinned query state. -/
-theorem resolverInterpretsPinned
-    (coherence : TopLevelConstraintBounds top)
-    (poly : CommitmentId → CPoly)
-    (proofIndex : Fin pp.numProofs)
-    (usableRows row : ℕ) :
-    Interprets
-      (pinnedQueryState top.pinnedCS)
-      (fun query =>
-        (fixedQueryFeedOfResolver
-          (top.toVerifierKey urs) poly query).eval
-          (top.omega ^ row))
-      (fun query =>
-        (adviceQueryFeedOfResolver
-          (top.toVerifierKey urs) poly proofIndex query).eval
-          (top.omega ^ row))
-      (fun query =>
-        (instanceQueryFeedOfResolver
-          (top.toVerifierKey urs) poly proofIndex query).eval
-          (top.omega ^ row))
-      (Query.eval
-        (resolverEnvironment
-          (top.toVerifierKey urs) poly proofIndex usableRows)
-        (fun _ => 0) row) := by
-  have homega : top.omega ≠ 0 := by
-    have hk : top.domainExponent ≤ 32 :=
-      Nat.le_of_lt_succ (by
-        simpa using coherence.domainExponent_lt)
-    exact top.omega_ne_zero hk
-  have hfinal := resolverQueryFeeds_interpret
-    (top.toVerifierKey urs) poly proofIndex usableRows
-    (fun _ => 0) row
-    (by simpa only [top.toVerifierKey_omega] using homega)
-    (pinnedQueryState top.pinnedCS)
-    (by
-      simp only [top.toVerifierKey_adviceQueryLayout,
-        TopLevelCircuit.adviceQueryLayout, pinnedQueryState])
-    (by
-      simp only [top.toVerifierKey_fixedQueryLayout,
-        TopLevelCircuit.fixedQueryLayout, pinnedQueryState])
-    (by
-      simp only [top.toVerifierKey_instanceQueryLayout,
-        TopLevelCircuit.instanceQueryLayout, pinnedQueryState])
-    (top.toVerifierKey_adviceQueryCount urs)
-    (top.toVerifierKey_fixedQueryCount urs)
-    (top.toVerifierKey_instanceQueryCount urs)
-  simpa only [top.toVerifierKey_omega] using hfinal
-
-end TopLevelConstraintBounds
-
 /-- Mapping a projected lookup tuple into `Expr` does not change its evaluations. -/
 theorem map_eval_toExpr
     (fixed advice instanceFeed : ℕ → Fp)
@@ -340,7 +288,7 @@ The circuit-derived verifying key's selected lookup tuples evaluate like the
 enabled Clean lookup's concrete input and table tuples.
 -/
 theorem projectedValues
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
     (lookup : EnabledLookup Fp)
@@ -424,7 +372,7 @@ theorem projectedValues
         (fun _ => 0) row)
       route.index
       hinputCoverage htableCoverage
-      (gateCoherence.resolverInterpretsPinned
+      (top.resolverInterpretsPinned
         (pp := pp) (urs := urs)
         poly proofIndex
         (top.usableRowsAt top.domainExponent) row)
@@ -477,7 +425,7 @@ Clean tuples compressed with the transcript challenge.
 -/
 theorem projectedPolynomialValues
     {k : ℕ}
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -510,7 +458,7 @@ theorem projectedPolynomialValues
   let route :=
     lookup.topLevelRoute (top := top) henabled
   have projected :=
-    projectedValues gateCoherence poly proofIndex
+    projectedValues poly proofIndex
       lookup henabled selectors
   constructor
   · rw [lookupInputPolyOfResolver_eq,
@@ -549,7 +497,7 @@ challenge exclusions are supplied.
 -/
 def deployedWitness
     {k : ℕ}
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -585,7 +533,7 @@ def deployedWitness
         (top.usableRowsAt top.domainExponent))
   ch.theta := by
   have projected :=
-    projectedPolynomialValues gateCoherence ch poly
+    projectedPolynomialValues ch poly
       proofIndex lookup henabled selectors
   generalize hvk : top.toVerifierKey urs = vk at *
   let environment :=
@@ -620,11 +568,11 @@ def deployedWitness
       fun row : Fin top.n =>
         top.omega ^ (row : ℕ) :=
     TopLevelAssignment.domainRowsInjective
-      gateCoherence.domainExponent_lt
+      top.domainExponent_lt
   have hroot :
       top.omega ^ top.n = 1 :=
     TopLevelAssignment.domainRoot
-      gateCoherence.domainExponent_lt
+      top.domainExponent_lt
   have harity' :
       lookup.argument.inputs.length =
         lookup.argument.tables.length :=
@@ -971,7 +919,7 @@ def WitnessConditions.ofChallengeExclusions
 /-- Construct the complete deployed-witness family for one top-level proof. -/
 def deployedWitnesses
     {k : ℕ}
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -998,7 +946,7 @@ def deployedWitnesses
       environment lookup
       (conditions.inputSelectorValues lookup henabled)
       (lookupTables_selectorFree lookup.argument)
-  exact deployedWitness gateCoherence ch poly proofIndex
+  exact deployedWitness ch poly proofIndex
     satisfaction lookup henabled
     selectorProjection
     (lookup.activationRow_lt_usableRows henabled)
@@ -1008,7 +956,7 @@ def deployedWitnesses
 /-- The deployed family discharges Clean's complete lookup constraint family. -/
 theorem constraints
     {k : ℕ}
-    (gateCoherence : TopLevelConstraintBounds top)
+    [CircuitFieldSupport top top.omega deltaFp]
     (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -1024,7 +972,7 @@ theorem constraints
         (top.usableRowsAt top.domainExponent))
       (top.operations) 0 := by
   apply lookup_constraints_of_deployed_witnesses
-  exact deployedWitnesses gateCoherence ch poly proofIndex
+  exact deployedWitnesses ch poly proofIndex
     satisfaction conditions
 
 end TopLevelLookup

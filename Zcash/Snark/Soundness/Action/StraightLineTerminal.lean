@@ -138,7 +138,6 @@ def action_bundleStatement_or_relation_of_decode
       (memberDecode := memberDecode) haccepts
   exact topLevelStatements_or_relation_of_decode
     actionCircuit pp urs hk inputs ps ch pU pW a decode hchar haccepts
-    ActionConstraintBounds.domainExponent_lt
     hxgood hgoodY
     (fun hsatisfied =>
       ActionCorrectness.ofAcceptedCircuitSat
@@ -309,7 +308,7 @@ def actionDecodedTerminal?
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
                   let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
                     TopLevelAssignment.domainSizeCastNeZero
-                      ActionConstraintBounds.domainExponent_lt
+                      actionCircuit.domainExponent_lt
                   let terminal :=
                     acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       (R := AlgebraicRelationWitness (F := Fp) basis)
@@ -331,10 +330,10 @@ def actionDecodedTerminal?
                     (actionCircuit.permutationChunkRoutingCoherent urs)
                   let outcome := terminal
                     (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                      urs ActionConstraintBounds.domainExponent_lt)
+                      urs actionCircuit.domainExponent_lt)
                   let outcome := outcome
                     (TopLevelAssignment.toVerifierKey_domainRoot
-                      urs ActionConstraintBounds.domainExponent_lt)
+                      urs actionCircuit.domainExponent_lt)
                   let outcome := outcome
                     (by simpa only [actionCircuit.toVerifierKey_n] using hnFp)
                   let outcome := outcome

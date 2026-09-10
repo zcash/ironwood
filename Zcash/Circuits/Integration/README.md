@@ -21,7 +21,7 @@ written during circuit integration:
 * pure verifier algebra, decoded constraint models, permutation/lookup semantics, and
   challenge arguments remain under `Zcash/Snark/`;
 * pure circuit definitions and semantics remain under `Zcash/Circuits/`, and reusable
-  Halo2 compiler facts should migrate upstream to Clean;
+  Halo2 compiler facts live locally in `Circuits/Halo2` pending upstreaming to Clean;
 * only code that genuinely translates between the two sides belongs here.
 
 The normative architecture rule and current migration guidance are in
@@ -32,8 +32,8 @@ The lookup bridge is split deliberately:
 * `LookupProjection.lean` proves the query-erasure and selector-substitution
   compiler semantics for configured lookups;
 * `LookupSelectorRows.lean` derives exact expression-level selector projection from
-  singleton packed-selector cells and the generic fixed-row realization theorem;
-  `ActionEncoding.lean` supplies Action's compositionally proved selector anchor;
+  singleton packed-selector cells and the generic fixed-row realization theorem.
+  TLC supplies the solution of its children's lookup-selector anchor requirements.
 * `TopLevelLookups.lean` routes synthesis-enabled lookups through the
   circuit-derived verifying key, derives selector coverage, table freedom, tuple
   arity, and activation-row fit from Clean's top-level keygen invariants, reduces
@@ -44,9 +44,10 @@ The lookup bridge is split deliberately:
   from the canonical circuit-owned constraint model and combines them with the
   fixed/table and copy-replay streams into `FullCircuitBridge`.
 * `TopLevelCorrectness.lean` is the interface exported to core soundness. It
-  packages the named gate, fixed/selector, copy, and lookup representation facts
+  packages fixed-polynomial encoding, fixed/selector, copy, and lookup representation facts
   for one canonical assignment, but contains neither the desired circuit statement
   nor an opaque encoding implication.
+  Static circuit/field compatibility is supplied separately by `CircuitFieldSupport`.
 * `TopLevelInstanceCommitment.lean` derives the verifier's instance commitments
   from any top-level circuit's public-input layout and binds accepted instance
   polynomials back to the supplied public inputs, for arbitrary column and proof

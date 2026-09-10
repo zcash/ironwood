@@ -252,9 +252,6 @@ placement supply the exact dense selector valuation used by lookup projection. -
 theorem EnabledLookup.inputSelectorLeafRowsExact
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
-    (anchor : ℕ → FloorPlanner.RegionColumn)
-    (hanchor : SelectorAnchorRequirementsSatisfied
-      top.lookupSelectorAnchorRequirements anchor)
     (lookup : EnabledLookup Fp)
     (henabled :
       lookup ∈ operationEnabledLookups (top.operations) 0) :
@@ -264,14 +261,13 @@ theorem EnabledLookup.inputSelectorLeafRowsExact
     (mem_operationEnabledLookups_iff lookup top.operations 0).mp henabled
   have hargument : lookup.argument ∈ top.constraintSystem.lookups :=
     OperationsKeygenCoherent.lookup top.keygenCoherent henabled
-  have hanchored := top.lookupSelectorsAnchoredBy anchor hanchor
   rw [EnabledLookup.InputSelectorLeafRowsExact,
     List.forall_iff_forall_mem]
   intro expression hexpression
   apply (ExpressionSelectorLeavesSatisfy.selectorIndex_mem expression).mono
   intro selector hselectorIndexMem
   obtain ⟨compressed, hlookupMap, hlength, hroot, hcolumn, hvalue⟩ :=
-    top.lookupInputSelectorFixedValue anchor hanchored hregion hlookup
+    top.lookupInputSelectorFixedValue hregion hlookup
       hargument expression hexpression selector.index hselectorIndexMem
   simp only [hlookupMap]
   refine ⟨hcolumn, ?_⟩

@@ -51,6 +51,7 @@ def topLevelStatements_or_relation_of_decode
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
+    [CircuitFieldSupport top top.omega Zcash.Arithmetic.deltaFp]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -68,7 +69,6 @@ def topLevelStatements_or_relation_of_decode
       DeployedAccepts (top.shape.withProofParams pp) urs hk
         (top.toVerifierKey urs)
         (top.instanceCommitment urs inputs) ps ch)
-    (domainExponent_lt : top.domainExponent < 33)
     (hxgood :
       let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
       let model :=
@@ -124,7 +124,7 @@ def topLevelStatements_or_relation_of_decode
     rfl
     (fun slot point hpoint =>
       PSum.inl (decode.memberBinding hchar slot point hpoint))
-    domainExponent_lt hxgood hgoodY correctness
+    hxgood hgoodY correctness
 
 /-- Transport the run's decode to any identified verifier artifacts. -/
 def straightLineRunDecodeAt
