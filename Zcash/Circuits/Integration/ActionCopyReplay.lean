@@ -66,8 +66,6 @@ def actionCopyReplayWitness_or_relation
       y ∉ szBadSet
         (foldSplitWitness relation.model.constraints
           actionCircuit.n j))
-    (fixedCoherence :
-      TopLevelFixedCoherence actionCircuit urs)
     (exclusions : ResolverPermutationChallengeExclusions
       pp.numProofs (actionCircuit.toVerifierKey urs) ch relation.polynomial actionActiveRows)
     (proofIndex : Fin pp.numProofs) :
@@ -79,8 +77,6 @@ def actionCopyReplayWitness_or_relation
         (FlatCell actionNumPermCols actionDomainSize)
         (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hkDomain : actionCircuit.domainExponent = urs.k :=
-    hk
   have hn : actionCircuit.n ≠ 0 :=
     actionCircuit.n_ne_zero
   have hsatisfaction :=
@@ -115,9 +111,6 @@ def actionCopyReplayWitness_or_relation
         pp urs ch relation.polynomial
         proofIndex hsatisfaction hdomain cycle hcycleSigma
         (exclusions.good proofIndex)
-    have hdomainSize :
-        actionCircuit.n = 2 ^ urs.k := by
-      rw [actionCircuit.n_eq_two_pow_domainExponent, hkDomain]
     have hfixedRead : ∀ {column row : ℕ} {value : Fp},
         (column, row, value) ∈
             topLevelRequiredFixedEntries actionCircuit →
@@ -130,9 +123,7 @@ def actionCopyReplayWitness_or_relation
       have source :=
         relation.topLevelFixedEntryRead_or_relation
           (top := actionCircuit) (pp := pp) (urs := urs)
-          fixedCoherence
-          (actionCircuit.domainRowsInjective_of_domainExponent_eq hkDomain)
-          hdomainSize proofIndex hentry
+          proofIndex hentry
       simpa only [actionActiveRows] using source
     exact
       actionCopyReplayWitness_ofPairValues_or_bad

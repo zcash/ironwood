@@ -105,9 +105,6 @@ def actionTopLevelCircuitCorrectness
   have hdomainExponent :
       actionCircuit.domainExponent = urs.k := by
     exact hk
-  have fixedCoherence :
-      TopLevelFixedCoherence actionCircuit urs :=
-    TopLevelFixedCoherence.ofDerived actionCircuit urs hdomainExponent
   have hdomainSize :
       actionCircuit.n = 2 ^ urs.k := by
     rw [actionCircuit.n_eq_two_pow_domainExponent]
@@ -124,8 +121,7 @@ def actionTopLevelCircuitCorrectness
       lookups := ?_ }
   · intro proofIndex
     refine bindOrRelationWitness
-      (relation.topLevelFixedColumns_eq_rowPolynomials_or_relation
-        fixedCoherence hfixedRows)
+      (relation.topLevelFixedColumns_eq_rowPolynomials_or_relation)
       fun hbinding => ?_
     let assignment :
         TopLevelAssignment actionCircuit
@@ -137,12 +133,11 @@ def actionTopLevelCircuitCorrectness
     intro column
     simpa only [assignment, hdomainSize] using hbinding column
   · intro proofIndex
-    exact relation.topLevelFixedConstraints_or_relation
-      fixedCoherence hfixedRows hdomainSize proofIndex
+    exact relation.topLevelFixedConstraints_or_relation proofIndex
   · intro proofIndex
     simpa only [actionActiveRows] using
       actionCopyReplayWitness_or_relation
-        pp urs hk relation hgoodY fixedCoherence
+        pp urs hk relation hgoodY
         permutationExclusions proofIndex
   · intro proofIndex
     · have hrows : Function.Injective
@@ -191,7 +186,7 @@ def actionTopLevelCircuitCorrectness
                 column
                 (LagrangeCommitmentKey.canonical urs actionCircuit.omega)
                 (actionCircuit.fixedRows.getD column [])
-                (fixedCoherence column hcolumn)
+                (actionCircuit.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn)
                 hfixedRows
                 (by
                   obtain ⟨rotation, hlayout⟩ :=

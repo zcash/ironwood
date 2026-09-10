@@ -297,99 +297,6 @@ theorem topLevelRequiredFixedEntry_realized
         assignment.2.2 :=
   topLevelCompilerFixedEntry_realized top assignment hassignment
 
-/--
-The fixed-row part of a top-level circuit's keygen boundary.
-
-The canonical Lagrange commitment key agrees with every circuit-derived fixed row.
-Fixed-row realization, query coverage, and bounds follow generically from the
-top-level compiler.
--/
-def TopLevelFixedCoherence
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G) : Prop :=
-  ∀ column, column < top.fixedColumnCount →
-    (top.fixedCommitments urs).getD column 0 =
-      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-        (top.fixedRows.getD column []) 1
-
-namespace TopLevelFixedCoherence
-
-omit [DecidableEq G] in
-/-- The circuit-derived VK's fixed commitment at one in-range column is the
-full-list commitment of the corresponding keygen row vector. -/
-theorem fixedCommitment_eq_commitInstance
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G)
-    (hk : top.domainExponent = urs.k)
-    (hlen : (derivedUrsGLagrange urs).length = 2 ^ urs.k)
-    (hgenerators : ∀ i : Fin (2 ^ urs.k),
-      (derivedUrsGLagrange urs).getD (i : ℕ) 0 =
-        commit urs (polynomialCoefficients (2 ^ urs.k)
-          (rowPolynomial top.omega
-            (Pi.single i (1 : Fp)))))
-    (column : ℕ) (hcolumn : column < top.fixedColumnCount) :
-    (top.fixedCommitments urs).getD column 0 =
-      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-          (top.fixedRows.getD column []) 1 := by
-  have hcolumnRows : column < top.fixedRows.length := by
-    simpa only [top.fixedRows_length] using hcolumn
-  have hget :
-      (top.fixedRows.map
-        (Fast.Msm.commitLagrangeFastWith
-          Fast.Msm.defaultWindow urs.w
-          (derivedUrsGLagrange urs))).getD column 0 =
-        Fast.Msm.commitLagrangeFastWith
-          Fast.Msm.defaultWindow urs.w
-          (derivedUrsGLagrange urs)
-          (top.fixedRows.getD column []) := by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_eq_getElem hcolumnRows,
-      List.getD_eq_getElem?_getD,
-      List.getElem?_eq_getElem hcolumnRows]
-    rfl
-  rw [TopLevelCircuit.fixedCommitments, List.parMap_eq_map, hget]
-  rw [show LagrangeCommitmentKey.canonical urs top.omega =
-      LagrangeCommitmentKey.ofFullList
-        urs top.omega (derivedUrsGLagrange urs) hgenerators from
-    Subsingleton.elim _ _]
-  apply Keygen.commitLagrangeFastWith_eq_ofFullList_commitInstance
-    urs top.omega hlen hgenerators
-  rw [top.fixedRows_getD_length column hcolumn]
-  simp only [TopLevelCircuit.n, hk]
-
-/-- Construct fixed coherence from the derived Lagrange basis of any top-level
-circuit whose domain is supported by the Pasta field. -/
-def ofDerived
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top] [CircuitFieldSupport top]
-    (urs : URS G)
-    (hk : top.domainExponent = urs.k) :
-    TopLevelFixedCoherence top urs := by
-  have hkUrs : urs.k ≤ 32 := by
-    rw [← hk]
-    exact Nat.le_of_lt_succ top.domainExponent_lt
-  have homega : top.omega = omegaOf urs.k := by
-    simp only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, hk]
-  apply fixedCommitment_eq_commitInstance top urs hk
-    (derivedUrsGLagrange_length urs)
-  intro i
-  simpa only [homega] using
-    Keygen.ofPrefix_setup_of_closed urs hkUrs
-      (Keygen.derivedUrsGLagrange_generator_eq urs hkUrs) i
-      (by
-        rw [derivedUrsGLagrange_length]
-        exact i.isLt)
-
-end TopLevelFixedCoherence
-
 omit [AddCommGroup G] [Inhabited G] [Module Fp G] [DecidableEq G] in
 /--
 Binding every fixed-column resolver polynomial to the circuit's dense keygen rows
@@ -763,14 +670,13 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
       urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
       batchOpenings memberDecode
         (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly deg)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) => top.omega ^ (i : ℕ)) :
+    [CircuitFieldSupport top] :
     (∀ column,
       relation.polynomial (.fixedCol column) =
         instanceRowPolynomial (2 ^ urs.k)
           top.omega (top.fixedRows.getD column [])) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
+  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
   have hrowsVk : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
         (top.toVerifierKey urs).omega ^ (i : ℕ) := by
@@ -785,7 +691,7 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
               (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
                 (top.fixedRows.getD column []) 1 := by
           rw [top.toVerifierKey_fixedCommitment]
-          exact coherence column hcolumn
+          exact top.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn
         have source :=
           relation.fixedColumn_eq_rowPolynomial_or_relation
             column (LagrangeCommitmentKey.canonical urs top.omega)
@@ -866,11 +772,7 @@ def topLevelFixedConstraints_or_relation
         urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
         batchOpenings memberDecode
           (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly top.n)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
+    [CircuitFieldSupport top]
     (proofIndex : Fin pp.numProofs) :
     (SelectorActivationsRealized
         top.selectorMap top.selectorActivations
@@ -883,6 +785,9 @@ def topLevelFixedConstraints_or_relation
           (top.usableRowsAt top.domainExponent))
         (top.operations) 0) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
+  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
+  have hn : top.n = 2 ^ urs.k := by
+    rw [top.n_eq_two_pow_domainExponent, hk]
   apply topLevelFixedConstraints_or_bad
     relation.polynomial
       hrows hn
@@ -892,7 +797,7 @@ def topLevelFixedConstraints_or_relation
           (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
             (top.fixedRows.getD column []) 1 := by
       rw [top.toVerifierKey_fixedCommitment]
-      exact coherence column hcolumn
+      exact top.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn
     exact relation.fixedColumn_eq_rowPolynomial_or_relation
       column (LagrangeCommitmentKey.canonical urs top.omega)
       (top.fixedRows.getD column [])
@@ -950,11 +855,7 @@ def topLevelFixedEntryRead_or_relation
         urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
         batchOpenings memberDecode
           (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly top.n)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
+    [CircuitFieldSupport top]
     (proofIndex : Fin pp.numProofs)
     {column row : ℕ} {value : Fp}
     (hentry :
@@ -964,6 +865,9 @@ def topLevelFixedEntryRead_or_relation
         (top.usableRowsAt top.domainExponent)).fixed
           ⟨column⟩ (row : ℤ) = value ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
+  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
+  have hn : top.n = 2 ^ urs.k := by
+    rw [top.n_eq_two_pow_domainExponent, hk]
   apply topLevelFixedEntryRead_or_bad
     relation.polynomial
       hrows hn
@@ -973,7 +877,7 @@ def topLevelFixedEntryRead_or_relation
           (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
             (top.fixedRows.getD fixedColumn []) 1 := by
       rw [top.toVerifierKey_fixedCommitment]
-      exact coherence fixedColumn hcolumn
+      exact top.fixedCommitments_getD_eq_commitInstance urs hk fixedColumn hcolumn
     exact relation.fixedColumn_eq_rowPolynomial_or_relation
       fixedColumn (LagrangeCommitmentKey.canonical urs top.omega)
       (top.fixedRows.getD fixedColumn [])

@@ -81,13 +81,6 @@ section DerivedKey
 variable (pp : ProofParams)
   (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
 
-/-- The Action circuit's Lagrange-basis fixed-column coherence package at one AGM basis. -/
-def adaptiveStatementFixedCoherence :
-    TopLevelFixedCoherence actionCircuit
-      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) :=
-  TopLevelFixedCoherence.ofDerived actionCircuit
-    (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
-
 /-- Rewrite the derived Lagrange generators into the monomial form used by permutation
 commitments. -/
 theorem adaptiveStatementLagrangePrefix :
@@ -123,7 +116,6 @@ def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCo
     1
     ((adaptiveActionStatementVk pp basis).fixedCommitment (column : ℕ))
     (by
-      have hcoh := adaptiveStatementFixedCoherence pp basis
       calc
         commit (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
               (instanceCoefficients (2 ^ (AdaptiveActionStatementShape pp).k) actionCircuit.omega
@@ -136,7 +128,9 @@ def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCo
           (LagrangeCommitmentKey.commitInstance_eq _ _ 1).symm
         _ = (actionCircuit.fixedCommitments
               (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)).getD (column : ℕ) 0 :=
-          (hcoh (column : ℕ) column.isLt).symm
+          (actionCircuit.fixedCommitments_getD_eq_commitInstance
+            (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
+            (ursOfAugmentedBasis_k _ _).symm (column : ℕ) column.isLt).symm
         _ = (adaptiveActionStatementVk pp basis).fixedCommitment (column : ℕ) :=
           (actionCircuit.toVerifierKey_fixedCommitment _ (column : ℕ)).symm)
 

@@ -193,3 +193,64 @@ theorem derivedUrsGLagrange_generator_eq {G : Type} [AddCommGroup G] [Inhabited 
   rw [derivedUrsGLagrange_getD urs hk i, commit, omegaInvOf_eq_inv urs.k hk]
 
 end Zcash.Snark.Keygen
+
+namespace Halo2.TopLevelCircuit
+
+open Zcash.Snark Zcash.Arithmetic CompElliptic.Curves.Pasta
+
+/-- The circuit-derived VK's fixed commitment at one in-range column is the
+full-list commitment of the corresponding keygen row vector. -/
+theorem fixedCommitments_getD_eq_commitInstance
+    {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
+    {Config : Type} {PublicInput : TypeMap}
+    [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] [CircuitFieldSupport top]
+    (urs : URS G)
+    (hk : top.domainExponent = urs.k)
+    (column : ℕ) (hcolumn : column < top.fixedColumnCount) :
+    (top.fixedCommitments urs).getD column 0 =
+      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
+          (top.fixedRows.getD column []) 1 := by
+  have hkUrs : urs.k ≤ 32 := by
+    rw [← hk]
+    exact Nat.le_of_lt_succ top.domainExponent_lt
+  have homega : top.omega = omegaOf urs.k := by
+    simp only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, hk]
+  have hlen := derivedUrsGLagrange_length urs
+  have hgenerators : ∀ i : Fin (2 ^ urs.k),
+      (derivedUrsGLagrange urs).getD (i : ℕ) 0 =
+        commit urs (polynomialCoefficients (2 ^ urs.k)
+          (rowPolynomial top.omega (Pi.single i (1 : Fp)))) := by
+    intro i
+    simpa only [homega] using
+      Keygen.ofPrefix_setup_of_closed urs hkUrs
+        (Keygen.derivedUrsGLagrange_generator_eq urs hkUrs) i
+        (by rw [hlen]; exact i.isLt)
+  have hcolumnRows : column < top.fixedRows.length := by
+    simpa only [top.fixedRows_length] using hcolumn
+  have hget :
+      (top.fixedRows.map
+        (Fast.Msm.commitLagrangeFastWith
+          Fast.Msm.defaultWindow urs.w
+          (derivedUrsGLagrange urs))).getD column 0 =
+        Fast.Msm.commitLagrangeFastWith
+          Fast.Msm.defaultWindow urs.w
+          (derivedUrsGLagrange urs)
+          (top.fixedRows.getD column []) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_getElem hcolumnRows,
+      List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem hcolumnRows]
+    rfl
+  rw [TopLevelCircuit.fixedCommitments, List.parMap_eq_map, hget]
+  rw [show LagrangeCommitmentKey.canonical urs top.omega =
+      LagrangeCommitmentKey.ofFullList
+        urs top.omega (derivedUrsGLagrange urs) hgenerators from
+    Subsingleton.elim _ _]
+  apply Keygen.commitLagrangeFastWith_eq_ofFullList_commitInstance
+    urs top.omega hlen hgenerators
+  rw [top.fixedRows_getD_length column hcolumn]
+  simp only [TopLevelCircuit.n, hk]
+
+end Halo2.TopLevelCircuit
