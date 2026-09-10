@@ -97,7 +97,6 @@ def topLevelStatements_or_relation_of_decode
               top.toVerifierKey_blindingFactors_lt_n urs)
             haccepts).constraints
           top.n j))
-    {cell : Type} [DecidableEq cell] [Fintype cell]
     (correctness :
       let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
       (CanonicalMemberConstraintRelation.acceptedModel
@@ -112,7 +111,6 @@ def topLevelStatements_or_relation_of_decode
       TopLevelCircuitCorrectness top pp urs ch
         (CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := memberDecode) haccepts)
-        cell
         (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by

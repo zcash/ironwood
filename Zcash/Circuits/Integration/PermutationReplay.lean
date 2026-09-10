@@ -678,93 +678,6 @@ theorem permPolysOf_getD_eq_chunkRowName {k : ℕ}
   rw [hrow, hcol]
   ring
 
-/-- **The copy-replay witness, generically.** Any cell valuation that is constant on the
-cycles of a permutation linking every encoded declared copy supplies the complete copy
-witness: the replayed cycles are the equivalence closure of the declared pairs, so they
-transport into the linking permutation's cycles. The Action instantiation supplies
-`encode` (the layout resolution, constants to their allocated constants-column cells),
-`value` (the resolver environment's cell reads), `hpairs` (each declared copy resolves
-into the keygen copy list), and `hvalue` (the σ-semantics copy theorem, with its priced
-exceptional branch as `Bad`). -/
-def CopyReplayWitness.ofPairCycles
-    {numCols n : ℕ} {place : RegionIndex → ℕ} {env : Environment Fp}
-    {ops : Operations Fp} {Bad : Type}
-    (encode : CopyEndpoint Fp → FlatCell numCols n)
-    (value : FlatCell numCols n → Fp)
-    (π : Perm (FlatCell numCols n))
-    (hpairs : ∀ p ∈ encodeDeclaredCopies encode (operationDeclaredCopies ops),
-      π.SameCycle p.1 p.2)
-    (hvalue : ∀ l r : FlatCell numCols n, π.SameCycle l r →
-      value l = value r ⊕' Bad)
-    (hread : ∀ copy ∈ operationDeclaredCopies ops,
-      copy.1.eval place env = value (encode copy.1) ∧
-        copy.2.eval place env = value (encode copy.2)) :
-    CopyReplayWitness place env ops (FlatCell numCols n) Bad where
-  encode := encode
-  value := value
-  read := hread
-  cycle := by
-    have htrans : ∀ x y : FlatCell numCols n,
-        Relation.EqvGen (fun u v =>
-          (u, v) ∈ encodeDeclaredCopies encode (operationDeclaredCopies ops)) x y →
-        π.SameCycle x y := by
-      intro x y hgen
-      induction hgen with
-      | rel u v huv => exact hpairs (u, v) huv
-      | refl u => exact Equiv.Perm.SameCycle.refl π u
-      | symm u v _ ih => exact ih.symm
-      | trans u v w _ _ ih1 ih2 => exact ih1.trans ih2
-    intro l r h
-    exact hvalue l r (htrans l r
-      ((replayKeygenPermutation_sameCycle_iff
-        (encodeDeclaredCopies encode (operationDeclaredCopies ops)) l r).mp h))
-
-/-- Value agreement (with a shared exceptional branch) extends from copy pairs to whole
-replayed cycles: the cycles are the equivalence closure of the pairs, and the closure
-induction carries the agreement through reflexivity, symmetry, and transitivity.
-
-The branch is data, so it cannot be threaded through that induction: `Relation.EqvGen` is
-`Prop`-valued, and eliminating it into `⊕' Bad` would be a large elimination. The search runs
-first instead — `listForallOrRelationWitness` walks the copy list and either returns a break or
-establishes pairwise agreement outright, after which the closure induction is entirely in
-`Prop`. -/
-def value_eq_or_bad_of_replay_sameCycle {cell : Type*} [DecidableEq cell]
-    [Fintype cell] {Bad : Type} (value : cell → Fp) (copies : List (cell × cell))
-    (hpair : ∀ p ∈ copies, value p.1 = value p.2 ⊕' Bad)
-    {l r : cell} (h : (replayKeygenPermutation copies).SameCycle l r) :
-    value l = value r ⊕' Bad :=
-  bindOrRelationWitness (listForallOrRelationWitness copies hpair) fun hall => by
-    have hgen := (replayKeygenPermutation_sameCycle_iff copies l r).mp h
-    clear h
-    induction hgen with
-    | rel u v huv => exact hall (u, v) huv
-    | refl u => rfl
-    | symm u v _ ih => exact ih.symm
-    | trans u v w _ _ ih1 ih2 => exact ih1.trans ih2
-
-/-- **The copy-replay witness from pairwise value agreement.** The strongest generic
-form: no linking permutation at all — each encoded declared copy pair agrees in value
-(or the shared exceptional branch fires), and the cycle field follows by closure. The
-Action instantiation discharges the pair fact per copy kind: two resolved cells agree
-through the σ-semantics copy theorem (their keygen copy links them), and a resolved
-cell agrees with its constant's allocated constants-column cell through the same link
-plus the fixed-column realization of the constants column. -/
-def CopyReplayWitness.ofPairValues
-    {numCols n : ℕ} {place : RegionIndex → ℕ} {env : Environment Fp}
-    {ops : Operations Fp} {Bad : Type}
-    (encode : CopyEndpoint Fp → FlatCell numCols n)
-    (value : FlatCell numCols n → Fp)
-    (hpair : ∀ p ∈ encodeDeclaredCopies encode (operationDeclaredCopies ops),
-      value p.1 = value p.2 ⊕' Bad)
-    (hread : ∀ copy ∈ operationDeclaredCopies ops,
-      copy.1.eval place env = value (encode copy.1) ∧
-        copy.2.eval place env = value (encode copy.2)) :
-    CopyReplayWitness place env ops (FlatCell numCols n) Bad where
-  encode := encode
-  value := value
-  read := hread
-  cycle := fun h => value_eq_or_bad_of_replay_sameCycle value _ hpair h
-
 /-- Same-cycle facts transport from the full-domain keygen permutation to its
 active-row restriction: the restriction equation pushes powers through the widening,
 and widening is injective. -/
@@ -1078,35 +991,6 @@ theorem chunkFlatten_symm_apply_column
       (cell.2 : ℕ) % chunkLen = (cell.2 : ℕ)
   rw [Nat.mul_comm]
   exact Nat.div_add_mod (cell.2 : ℕ) chunkLen
-
-/-- **The master copy-witness constructor.** Everything reduces to three leaf families
-over the keygen copy list: each copy pair agrees in value (or the shared branch fires,
-via `chunkRowValue_eq_of_mem_copies`), each declared copy's encoded endpoints are
-linked by the replayed list (via the membership lemmas), and the declared endpoints
-read back (resolution and the constants realization). -/
-def CopyReplayWitness.ofLinkedPairs
-    {numCols n : ℕ} {place : RegionIndex → ℕ} {env : Environment Fp}
-    {ops : Operations Fp} {Bad : Type}
-    (copies' : List (FlatCell numCols n × FlatCell numCols n))
-    (encode : CopyEndpoint Fp → FlatCell numCols n)
-    (value : FlatCell numCols n → Fp)
-    (hpairval : ∀ pr ∈ copies', value pr.1 = value pr.2 ⊕' Bad)
-    (hlink : ∀ copy ∈ operationDeclaredCopies ops,
-      (replayKeygenPermutation copies').SameCycle
-        (encode copy.1) (encode copy.2))
-    (hread : ∀ copy ∈ operationDeclaredCopies ops,
-      copy.1.eval place env = value (encode copy.1) ∧
-        copy.2.eval place env = value (encode copy.2)) :
-    CopyReplayWitness place env ops (FlatCell numCols n) Bad :=
-  CopyReplayWitness.ofPairCycles encode value
-    (replayKeygenPermutation copies')
-    (by
-      intro pr hpr
-      rw [encodeDeclaredCopies, List.mem_map] at hpr
-      obtain ⟨copy, hcopy, rfl⟩ := hpr
-      exact hlink copy hcopy)
-    (fun l r h => value_eq_or_bad_of_replay_sameCycle value copies' hpairval h)
-    hread
 
 end Layout.Asm
 

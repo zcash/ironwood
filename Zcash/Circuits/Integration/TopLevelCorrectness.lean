@@ -177,14 +177,12 @@ abbrev TopLevelCopies
     [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
     (poly : CommitmentId → CPoly)
-    (cell : Type) [DecidableEq cell] [Fintype cell]
-    (Bad : Type)
-    (proofIndex : Fin pp.numProofs) : Type :=
-  CopyReplayWitness top.placement
+    (proofIndex : Fin pp.numProofs) : Prop :=
+  CircuitConstraintFamily.constraints .copy top.placement
     (resolverEnvironment
       (top.toVerifierKey urs) poly proofIndex
       (top.usableRowsAt top.domainExponent))
-    top.operations cell Bad
+    top.operations 0
 
 abbrev TopLevelLookups
     {k : ℕ}
@@ -216,8 +214,6 @@ def bridgeWitness_of_components
     {pp : ProofParams} {urs : URS G}
     {k : ℕ} {ch : Challenges k Fp}
     {poly : CommitmentId → CPoly}
-    {cell : Type} [DecidableEq cell] [Fintype cell]
-    {Bad : Type}
     (proofIndex : Fin pp.numProofs)
     (satisfaction :
       ConstraintSatisfaction
@@ -243,11 +239,11 @@ def bridgeWitness_of_components
           (top.usableRowsAt top.domainExponent))
         top.operations 0)
     (copies :
-      CopyReplayWitness top.placement
+      CircuitConstraintFamily.constraints .copy top.placement
         (resolverEnvironment
           (top.toVerifierKey urs) poly proofIndex
           (top.usableRowsAt top.domainExponent))
-        top.operations cell Bad)
+        top.operations 0)
     (lookups :
       TopLevelLookup.WitnessConditions
         top pp urs ch poly proofIndex) :
@@ -255,19 +251,15 @@ def bridgeWitness_of_components
       (({ polynomial := poly } :
         TopLevelAssignment top
           pp.numProofs proofIndex).proofAssignment)
-      cell Bad := by
+      := by
   let assignment :
       TopLevelAssignment top pp.numProofs proofIndex :=
     { polynomial := poly }
-  change TopLevelBridgeWitness top assignment.proofAssignment cell Bad
-  have hroot :=
-    top.omega_pow_n
   let bridge :=
     FullCircuitBridge.ofTopLevelCanonical
       (top := top) (pp := pp) (urs := urs)
-      (cell := cell) (Bad := Bad)
       ch poly proofIndex satisfaction
-      hroot selectorActivations fixed copies lookups
+      selectorActivations fixed copies lookups
   clear_value bridge
   generalize henvironmentValue :
     resolverEnvironment
@@ -304,8 +296,6 @@ lookup constraints. Each component returns its witness or a `Bad` value, so
 commitment-binding failures can be joined without replacing the computed break
 with a claim that one exists.
 
-The copy field carries its witness directly because `Bad` is a type, keeping the
-terminal independent of choice.
 -/
 structure TopLevelCircuitCorrectness
     {G : Type} [AddCommGroup G] [Inhabited G]
@@ -316,14 +306,13 @@ structure TopLevelCircuitCorrectness
     (pp : ProofParams) (urs : URS G)
     {k : ℕ} (ch : Challenges k Fp)
     (poly : CommitmentId → CPoly)
-    (cell : Type) [DecidableEq cell] [Fintype cell]
     (Bad : Type) : Type where
   fixedEncoding : ∀ proofIndex,
     TopLevelFixedEncoding top pp poly proofIndex ⊕' Bad
   fixed : ∀ proofIndex,
     TopLevelFixed top pp urs poly proofIndex ⊕' Bad
   copies : ∀ proofIndex,
-    TopLevelCopies top pp urs poly cell Bad proofIndex ⊕' Bad
+    TopLevelCopies top pp urs poly proofIndex ⊕' Bad
   lookups : ∀ proofIndex,
     TopLevelLookups top pp urs ch poly proofIndex ⊕' Bad
 

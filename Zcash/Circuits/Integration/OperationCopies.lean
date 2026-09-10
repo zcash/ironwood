@@ -10,18 +10,14 @@ Clean operations—cell equality, instance equality, and constant equality—int
 and proves that satisfying the extracted list is exactly the `copy` field of
 `FullCircuitSatisfaction`.
 
-The final theorem is independent of a concrete layout.  A caller supplies an encoding of semantic
-endpoints into the finite keygen cell type.  If endpoint reads agree with encoded cell values and
-the permutation argument enforces equality on replayed cycles, every declared copy holds (or the
-single explicit bad event survives).
+The characterization is independent of the compiler's concrete copy-pair representation.
 -/
 
 namespace Zcash.Snark
 
 open Halo2
 
-/-- A semantic endpoint of a Clean copy operation.  Constants are represented by their value here;
-the floor planner's allocated constants-column cell belongs to the later concrete encoding. -/
+/-- A semantic endpoint of a Clean copy operation, with constants represented by value. -/
 inductive CopyEndpoint (F : Type) where
   | cell : Cell → CopyEndpoint F
   | instance : Column .instance → ℕ → CopyEndpoint F
@@ -119,72 +115,5 @@ theorem copy_constraints_iff_declaredCopies
           simp [operationDeclaredCopies]
 
 end CircuitConstraintFamily
-
-/-- Encode a semantic copy list into the finite cell type on which keygen replays its permutation. -/
-def encodeDeclaredCopies
-    {F cell : Type} (encode : CopyEndpoint F → cell)
-    (copies : List (DeclaredCopy F)) : List (cell × cell) :=
-  copies.map fun copy => (encode copy.1, encode copy.2)
-
-/-- **Generic copy bridge.** Equality on every replayed permutation cycle implies satisfaction of
-every declared Clean copy.  The caller's `Bad` is shared across all copies, so the result exposes one
-global exceptional branch rather than one branch per operation.
-
-The concrete layout layer only needs to provide `encode` and `hread`; constant endpoints may be
-encoded by the floor planner's allocated constants-column cells there. `hread` is required
-only at the DECLARED endpoints — an unconditional read fact is uninstantiable for any
-finite cell type, since a constant endpoint evaluates to an arbitrary field element.
-
-`hcycle` reports its exceptional branch as data, so this bridge cannot decide that branch once
-for all copies; it walks `copies` and returns the first break `hcycle` computes
-(`listForallOrRelationWitness`). -/
-def declaredCopies_satisfied_or_bad_of_replay
-    {F cell : Type} [FiniteField F] [DecidableEq cell] [Fintype cell]
-    (place : RegionIndex → ℕ) (env : Environment F)
-    (copies : List (DeclaredCopy F))
-    (encode : CopyEndpoint F → cell) (value : cell → F)
-    (hread : ∀ copy ∈ copies,
-      copy.1.eval place env = value (encode copy.1) ∧
-        copy.2.eval place env = value (encode copy.2))
-    (Bad : Type)
-    (hcycle : ∀ {left right : cell},
-      (replayKeygenPermutation (encodeDeclaredCopies encode copies)).SameCycle left right →
-        value left = value right ⊕' Bad) :
-    copies.Forall (DeclaredCopy.Satisfied place env) ⊕' Bad :=
-  bindOrRelationWitness
-    (listForallOrRelationWitness copies fun copy hcopy => by
-      have hencoded :
-          (encode copy.1, encode copy.2) ∈ encodeDeclaredCopies encode copies := by
-        exact List.mem_map.mpr ⟨copy, hcopy, rfl⟩
-      have hlinked :=
-        replayKeygenPermutation_pair_linked
-          (encodeDeclaredCopies encode copies) hencoded
-      rcases hcycle hlinked with heq | hbad
-      · refine PSum.inl ?_
-        obtain ⟨h1, h2⟩ := hread copy hcopy
-        simpa [DeclaredCopy.Satisfied, h1, h2] using heq
-      · exact PSum.inr hbad)
-    List.forall_iff_forall_mem.mpr
-
-/-- The generic replay bridge, phrased directly as the `copies` field of full circuit
-satisfaction. -/
-def copy_constraints_or_bad_of_replay
-    {F cell : Type} [FiniteField F] [DecidableEq cell] [Fintype cell]
-    (place : RegionIndex → ℕ) (env : Environment F)
-    (ops : Operations F) (i : RegionIndex)
-    (encode : CopyEndpoint F → cell) (value : cell → F)
-    (hread : ∀ copy ∈ operationDeclaredCopies ops,
-      copy.1.eval place env = value (encode copy.1) ∧
-        copy.2.eval place env = value (encode copy.2))
-    (Bad : Type)
-    (hcycle : ∀ {left right : cell},
-      (replayKeygenPermutation
-        (encodeDeclaredCopies encode (operationDeclaredCopies ops))).SameCycle left right →
-        value left = value right ⊕' Bad) :
-    CircuitConstraintFamily.constraints .copy place env ops i ⊕' Bad :=
-  bindOrRelationWitness
-    (declaredCopies_satisfied_or_bad_of_replay
-      place env (operationDeclaredCopies ops) encode value hread Bad hcycle)
-    (CircuitConstraintFamily.copy_constraints_iff_declaredCopies place env ops i).mpr
 
 end Zcash.Snark

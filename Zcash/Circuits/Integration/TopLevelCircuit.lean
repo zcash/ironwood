@@ -67,21 +67,17 @@ namespace FullCircuitBridge
 variable
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
-    {cell : Type} [DecidableEq cell] [Fintype cell]
-    {Bad : Type}
 
 /--
-The generic semantic last mile: reconstructed full constraints imply the top-level
-circuit's own statement, preserving the bridge's shared exceptional event.
+Reconstructed full constraints imply the top-level circuit's own statement.
 -/
-def topLevelSoundness_or_bad
+theorem topLevelSoundness
     (top : TopLevelCircuit Fp Config PublicInput)
     (assignment : ProofAssignment Fp)
     (bridge : FullCircuitBridge top.placement (top.environment assignment)
-      top.operations 0 cell Bad) :
-    top.Statement (top.extractPublicInput (top.environment assignment)) ⊕' Bad :=
-  bindOrRelationWitness bridge.satisfaction_or_bad
-    fun hsatisfied => hsatisfied.topLevelSoundness top assignment
+      top.operations 0) :
+    top.Statement (top.extractPublicInput (top.environment assignment)) :=
+  bridge.satisfaction.topLevelSoundness top assignment
 
 end FullCircuitBridge
 
@@ -97,47 +93,39 @@ variable
 
 structure TopLevelBridgeWitness
     (top : TopLevelCircuit Fp Config PublicInput)
-    (assignment : ProofAssignment Fp)
-    (cell : Type) [DecidableEq cell] [Fintype cell]
-    (Bad : Type) where
+    (assignment : ProofAssignment Fp) where
   environment : Environment Fp
   operations : Operations Fp
   environment_eq : environment = top.environment assignment
   operations_eq : top.operations = operations
   bridge : FullCircuitBridge top.placement environment
-    operations 0 cell Bad
+    operations 0
 
 namespace TopLevelBridgeWitness
 
-variable
-    {cell : Type} [DecidableEq cell] [Fintype cell]
-    {Bad : Type}
-
-def statement_or_bad
+theorem statement
     {top : TopLevelCircuit Fp Config PublicInput}
     {assignment : ProofAssignment Fp}
-    (witness : TopLevelBridgeWitness top assignment cell Bad) :
-    top.Statement (top.extractPublicInput (top.environment assignment)) ⊕' Bad :=
-  bindOrRelationWitness witness.bridge.satisfaction_or_bad fun hsatisfied =>
+    (witness : TopLevelBridgeWitness top assignment) :
+    top.Statement (top.extractPublicInput (top.environment assignment)) :=
     FullCircuitSatisfaction.topLevelSoundness top assignment
       (by
         rw [witness.operations_eq]
-        exact witness.environment_eq ▸ hsatisfied)
+        exact witness.environment_eq ▸ witness.bridge.satisfaction)
 
 /-- Preserve the circuit's extracted private witness on the successful bridge branch. -/
-def semanticWitness_or_bad
+def semanticWitness
     {top : TopLevelCircuit Fp Config PublicInput}
     {assignment : ProofAssignment Fp}
-    (witness : TopLevelBridgeWitness top assignment cell Bad) :
+    (witness : TopLevelBridgeWitness top assignment) :
     TopLevelSemanticWitness top
-      (top.extractPublicInput (top.environment assignment)) ⊕' Bad :=
-  bindOrRelationWitness witness.bridge.satisfaction_or_bad fun hsatisfied =>
+      (top.extractPublicInput (top.environment assignment)) :=
     { w := top.extractPrivateWitness (top.placedEnvironment assignment)
       satisfied := top.soundness assignment
         (by
           rw [witness.operations_eq]
           exact FullCircuitSatisfaction.constraints
-            (witness.environment_eq ▸ hsatisfied)) }
+            (witness.environment_eq ▸ witness.bridge.satisfaction)) }
 
 end TopLevelBridgeWitness
 

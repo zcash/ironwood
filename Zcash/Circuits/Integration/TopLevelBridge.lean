@@ -29,8 +29,6 @@ variable
     {top : TopLevelCircuit Fp Config PublicInput}
     [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
-    {cell : Type} [DecidableEq cell] [Fintype cell]
-    {Bad : Type}
 
 /--
 Assemble the complete operation bridge from the canonical circuit-derived
@@ -42,7 +40,7 @@ only the representation boundaries that genuinely come from other streams:
 * packed selector activation and exact lookup-selector values from fixed keygen
   rows;
 * the complete fixed/table family from those same rows;
-* copy replay from keygen's cell permutation;
+* copy constraints from keygen's cell permutation;
 * one bundle-wide record of lookup challenge exclusions.
 -/
 def ofTopLevelCanonical
@@ -55,9 +53,6 @@ def ofTopLevelCanonical
       ConstraintSatisfaction
         (top.constraintModel pp urs ch poly)
         top.n)
-    (hroot :
-      top.omega ^
-        top.n = 1)
     (selectorActivations :
       SelectorActivationsRealized top.selectorMap
         top.selectorActivations
@@ -71,11 +66,11 @@ def ofTopLevelCanonical
           (top.usableRowsAt top.domainExponent))
         (top.operations) 0)
     (copies :
-      CopyReplayWitness top.placement
+      CircuitConstraintFamily.constraints .copy top.placement
         (resolverEnvironment
           (top.toVerifierKey urs) poly proofIndex
           (top.usableRowsAt top.domainExponent))
-        (top.operations) cell Bad)
+        (top.operations) 0)
     (lookupConditions :
       TopLevelLookup.WitnessConditions
         top pp urs ch poly proofIndex) :
@@ -83,7 +78,7 @@ def ofTopLevelCanonical
       (resolverEnvironment
         (top.toVerifierKey urs) poly proofIndex
         (top.usableRowsAt top.domainExponent))
-      (top.operations) 0 cell Bad := by
+      (top.operations) 0 := by
   refine
     { gates := ?_
       fixed := fixed
@@ -93,34 +88,10 @@ def ofTopLevelCanonical
   · apply top.canonicalConstraints ch poly proofIndex
       satisfaction
     · intro row
-      rw [← pow_mul, Nat.mul_comm, pow_mul, hroot, one_pow]
+      rw [← pow_mul, Nat.mul_comm, pow_mul, top.omega_pow_n, one_pow]
     · exact selectorActivations
   · exact TopLevelLookup.deployedWitnesses ch poly proofIndex
       satisfaction lookupConditions
-
-/--
-Lift per-proof full bridges to a bundle of circuit-owned statements while
-preserving one shared exceptional event.
-
-This is the generic finite-family join used by the Action adapter: the proof does
-not inspect the circuit statement and introduces no encoding predicate of its own.
--/
-def bundleTopLevelSoundness_or_bad
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {numProofs : ℕ}
-    (assignment : Fin numProofs → ProofAssignment Fp)
-    (bridge : ∀ proofIndex,
-      FullCircuitBridge
-        top.placement
-        (top.environment (assignment proofIndex))
-        top.operations 0 cell Bad) :
-    (∀ proofIndex,
-      top.Statement
-        (top.extractPublicInput (top.environment (assignment proofIndex)))) ⊕' Bad :=
-  finForallOrRelationWitness fun proofIndex =>
-    FullCircuitBridge.topLevelSoundness_or_bad
-      top (assignment proofIndex) (bridge proofIndex)
 
 end FullCircuitBridge
 

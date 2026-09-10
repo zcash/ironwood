@@ -1339,11 +1339,10 @@ assert_computable Zcash.Snark.resolverLookupBundleExclusions? +choice
 assert_computable Zcash.Snark.EnabledLookup.thetaAvoidance? +choice
 assert_computable Zcash.Snark.TopLevelLookup.topLevelLookupChallengeExclusions? +choice
 assert_computable Zcash.Snark.FullCircuitSatisfaction.of_components_or_bad
-assert_computable Zcash.Snark.declaredCopies_satisfied_or_bad_of_replay +choice
-assert_computable Zcash.Snark.copy_constraints_or_bad_of_replay +choice
-assert_computable Zcash.Snark.CopyReplayWitness.constraints_or_bad +choice
-assert_computable Zcash.Snark.FullCircuitBridge.satisfaction_or_bad +choice
-assert_computable Zcash.Snark.FullCircuitBridge.constraints_or_bad +choice
+assert_computable Zcash.Snark.copyConstraints_of_rawPairValues_or_bad +choice
+assert_computable Zcash.Snark.topLevelCopyConstraints_of_rawPairValues_or_bad +choice
+assert_axioms Zcash.Snark.FullCircuitBridge.satisfaction
+assert_axioms Zcash.Snark.FullCircuitBridge.constraints
 assert_computable Zcash.Snark.decodedPolynomialResolver_opens_or_relation +choice
 
 -- The accepted-route terminal converts canonical `CircuitSat` into the circuit's statements with

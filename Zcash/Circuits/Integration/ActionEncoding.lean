@@ -99,7 +99,6 @@ def actionTopLevelCircuitCorrectness
         actionCircuit pp urs ch relation.polynomial) :
     TopLevelCircuitCorrectness
       actionCircuit pp urs ch relation.polynomial
-      (FlatCell actionNumPermCols actionDomainSize)
       (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) := by
   classical
   have hdomainExponent :
@@ -136,7 +135,7 @@ def actionTopLevelCircuitCorrectness
     exact relation.topLevelFixedConstraints_or_relation proofIndex
   · intro proofIndex
     simpa only [actionActiveRows] using
-      actionCopyReplayWitness_or_relation
+      actionCopyConstraints_or_relation
         pp urs hk relation hgoodY
         permutationExclusions proofIndex
   · intro proofIndex

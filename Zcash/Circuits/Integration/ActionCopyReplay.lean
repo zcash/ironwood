@@ -1,16 +1,17 @@
 import Zcash.Circuits.Integration.ActionPermutationCycle
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.FixedColumns
+import Zcash.Circuits.Integration.CopyConstraints
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
 
 /-!
-# Action copy witness from verifier permutation semantics
+# Action copy constraints from verifier permutation semantics
 
 This module is the final copy-family composition. Canonical constraint
 satisfaction, the generated Action σ cycle, and bundle-wide good permutation
-challenges give equal values on every keygen copy pair. Fixed-column provenance
-handles allocated constants, after which `ActionCopyWitness` constructs the
-complete Clean copy witness.
+challenges give equal values on every keygen copy pair. The generic raw-pair
+adapter combines these with fixed-column reads of allocated constants to prove
+Clean's copy constraints.
 -/
 
 
@@ -24,10 +25,10 @@ variable {G : Type} [AddCommGroup G] [Module Fp G]
   [DecidableEq G] [Inhabited G]
 
 /--
-Construct the complete Action copy witness for one proof from the accepted
+Prove the Action copy constraints for one proof from the accepted
 canonical relation, or retain the shared augmented-commitment relation branch.
 -/
-def actionCopyReplayWitness_or_relation
+def actionCopyConstraints_or_relation
     (pp : ProofParams) (urs : URS G)
     (hk : actionCircuit.domainExponent = urs.k)
     {instanceCommitment :
@@ -69,13 +70,11 @@ def actionCopyReplayWitness_or_relation
     (exclusions : ResolverPermutationChallengeExclusions
       pp.numProofs (actionCircuit.toVerifierKey urs) ch relation.polynomial actionActiveRows)
     (proofIndex : Fin pp.numProofs) :
-    CopyReplayWitness actionCircuit.placement
+    CircuitConstraintFamily.constraints .copy actionCircuit.placement
         (resolverEnvironment
           (actionCircuit.toVerifierKey urs) relation.polynomial proofIndex
             actionActiveRows)
-        (actionCircuit.operations)
-        (FlatCell actionNumPermCols actionDomainSize)
-        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w) ⊕'
+        actionCircuit.operations 0 ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hn : actionCircuit.n ≠ 0 :=
     actionCircuit.n_ne_zero
@@ -125,12 +124,13 @@ def actionCopyReplayWitness_or_relation
           (top := actionCircuit) (pp := pp) (urs := urs)
           proofIndex hentry
       simpa only [actionActiveRows] using source
-    exact
-      actionCopyReplayWitness_ofPairValues_or_bad
-        (resolverEnvironment
-          (actionCircuit.toVerifierKey urs) relation.polynomial proofIndex
-            actionActiveRows)
-        (fun pair hpair => PSum.inl (hpairval pair hpair))
-        hfixedRead
+    apply topLevelCopyConstraints_of_rawPairValues_or_bad actionCircuit _ ?_ hfixedRead
+    intro tuple htuple
+    apply PSum.inl
+    obtain ⟨pair, hpair, hleft, hright⟩ := exists_actionCopy_of_raw htuple
+    have heq := hpairval pair hpair
+    simp only [FlatCell.pair, Prod.mk.injEq] at hleft hright
+    simpa only [actionCopyValue, rawCopyValue, actionPermCols,
+      hleft.1, hleft.2, hright.1, hright.2] using heq
 
 end Zcash.Snark

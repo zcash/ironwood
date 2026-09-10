@@ -42,7 +42,9 @@ The lookup bridge is split deliberately:
   constructs the deployed witnesses consumed by the generic full-circuit bridge.
 * `TopLevelBridge.lean` is the generic join: it derives gate and lookup families
   from the canonical circuit-owned constraint model and combines them with the
-  fixed/table and copy-replay streams into `FullCircuitBridge`.
+  fixed/table and copy constraints into `FullCircuitBridge`.
+* `CopyConstraints.lean` derives Clean copy constraints directly from compiler
+  copy-pair equalities and fixed-cell reads, including allocated constants.
 * `TopLevelCorrectness.lean` is the interface exported to core soundness. It
   packages fixed-polynomial encoding, fixed/selector, copy, and lookup representation facts
   for one canonical assignment, but contains neither the desired circuit statement
