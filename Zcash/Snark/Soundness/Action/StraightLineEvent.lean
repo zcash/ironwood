@@ -145,7 +145,7 @@ def actionBetaFailureEvent :
         pp.numProofs (actionCircuit.toVerifierKey
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
         (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
-        actionActiveRows) ∧
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∧
       (straightLineRunRecord family q.1 q.2).beta ∉ allResolverLookupBetaBadSet
         pp.numProofs
         (actionCircuit.toVerifierKey
@@ -167,7 +167,7 @@ def actionGammaFailureEvent :
           (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k q.1))
         (straightLineRunRecord family q.1 q.2)
         (actionRunPolynomial pp family inputs hvk hI hchar q.1 q.2 h)
-        actionActiveRows) ∧
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∧
       (straightLineRunRecord family q.1 q.2).gamma ∉ allResolverLookupGammaBadSet
         pp.numProofs
         (actionCircuit.toVerifierKey
@@ -270,7 +270,8 @@ theorem actionKnowledgeOutcome_isSome_of_good
                   (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
                 (straightLineRunRecord family basis O)
                 (actionRunPolynomial pp family inputs hvk hI hchar
-                  basis O hdecoded) actionActiveRows := ⟨hgamma.1, hbeta.1⟩
+                  basis O hdecoded)
+                    (actionCircuit.usableRowsAt actionCircuit.domainExponent) := ⟨hgamma.1, hbeta.1⟩
         have hpermutationSome := resolverPermutationChallengeExclusions?_isSome_of
           pp.numProofs _ _ _ _ hpermutation'
         split
@@ -612,7 +613,7 @@ theorem actionBetaFailureEvent_subset_surface
           pp.numProofs (actionCircuit.toVerifierKey
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
           (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
-          actionActiveRows ∪
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent) ∪
         allResolverLookupBetaBadSet
           pp.numProofs
           (actionCircuit.toVerifierKey
@@ -652,7 +653,7 @@ theorem actionGammaFailureEvent_subset_surface
             (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis))
           (straightLineRunRecord family basis O)
           (actionRunPolynomial pp family inputs hvk hI hchar basis O h)
-          actionActiveRows ∪
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent) ∪
         allResolverLookupGammaBadSet
           pp.numProofs
           (actionCircuit.toVerifierKey

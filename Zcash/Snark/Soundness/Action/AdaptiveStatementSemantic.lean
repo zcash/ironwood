@@ -690,7 +690,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
       (∀ j, ch.y ∉ szBadSet (foldSplitWitness actionModel.constraints
         actionCircuit.n j)) ∧
       ResolverPermutationChallengeExclusions pp.numProofs (adaptiveActionStatementVk pp basis)
-        ch actionPoly actionActiveRows ∧
+        ch actionPoly (actionCircuit.usableRowsAt actionCircuit.domainExponent) ∧
       TopLevelLookup.ChallengeExclusions actionCircuit pp
         (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) ch actionPoly := by
   simp only
@@ -794,7 +794,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
   have hbetaSurface : nu 1 ∉
       (↑(allResolverPermutationBetaBadSet pp.numProofs (adaptiveActionStatementVk pp basis)
           (adaptiveActionCommitmentPolynomial pp basis inputs data.algebraicProof.erase
-            (stageSource 1) betaCh) actionActiveRows) : Set Fp) ∪
+            (stageSource 1) betaCh) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Set Fp) ∪
         (↑(allResolverLookupBetaBadSet
           pp.numProofs (adaptiveActionStatementVk pp basis)
           (ActionTerminal.semanticChRecord betaCh.theta 0
@@ -806,7 +806,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
     simpa [adaptiveActionSurfaceAt, betaNu, betaCh] using hs1
   have hbetaStage : nu 1 ∉
       (↑(allResolverPermutationBetaBadSet pp.numProofs (adaptiveActionStatementVk pp basis)
-          (stagePoly 1) actionActiveRows) : Set Fp) ∪
+          (stagePoly 1) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Set Fp) ∪
         (↑(allResolverLookupBetaBadSet
           pp.numProofs (adaptiveActionStatementVk pp basis)
           (ActionTerminal.semanticChRecord (nu 0) 0
@@ -817,12 +817,13 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
     simpa [stagePoly, stageCh] using hbetaSurface
   rw [Set.mem_union, not_or] at hbetaStage
   have hbetaPermSet := allResolverPermutationBetaBadSet_congr pp.numProofs
-    (adaptiveActionStatementVk pp basis) actionActiveRows
+    (adaptiveActionStatementVk pp basis) (actionCircuit.usableRowsAt actionCircuit.domainExponent)
       (poly₁ := actionPoly) (poly₂ := stagePoly 1) (fun id hid =>
       hpolySurface 1 id (hpermutationAvailable 1 (by omega) id hid)
           (hnonterminal id (Or.inr (Or.inl hid))))
   have hbetaPerm : ch.beta ∉ allResolverPermutationBetaBadSet pp.numProofs
-      (adaptiveActionStatementVk pp basis) actionPoly actionActiveRows := by
+      (adaptiveActionStatementVk pp basis) actionPoly
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent) := by
     rw [hbetaPermSet]
     simpa only [hbetaRead] using hbetaStage.1
   have hbetaLookupSet := allResolverLookupBetaBadSet_congr
@@ -859,7 +860,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
           (ActionTerminal.semanticChRecord gammaCh.theta gammaCh.beta
             (k := (AdaptiveActionStatementShape pp).k))
           (adaptiveActionCommitmentPolynomial pp basis inputs data.algebraicProof.erase
-            (stageSource 2) gammaCh) actionActiveRows) : Set Fp) ∪
+            (stageSource 2) gammaCh) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Set Fp) ∪
         (↑(allResolverLookupGammaBadSet
           pp.numProofs (adaptiveActionStatementVk pp basis)
           (ActionTerminal.semanticChRecord gammaCh.theta gammaCh.beta
@@ -873,7 +874,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
       (↑(allResolverPermutationGammaBadSet pp.numProofs (adaptiveActionStatementVk pp basis)
           (ActionTerminal.semanticChRecord (nu 0) (nu 1)
             (k := (AdaptiveActionStatementShape pp).k)) (stagePoly 2)
-          actionActiveRows) : Set Fp) ∪
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Set Fp) ∪
         (↑(allResolverLookupGammaBadSet
           pp.numProofs (adaptiveActionStatementVk pp basis)
           (ActionTerminal.semanticChRecord (nu 0) (nu 1)
@@ -884,7 +885,7 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
     simpa [stagePoly, stageCh] using hgammaSurface
   rw [Set.mem_union, not_or] at hgammaStage
   have hgammaPermSet := allResolverPermutationGammaBadSet_congr pp.numProofs
-    (adaptiveActionStatementVk pp basis) actionActiveRows
+    (adaptiveActionStatementVk pp basis) (actionCircuit.usableRowsAt actionCircuit.domainExponent)
       (ch₁ := ch) (ch₂ := ActionTerminal.semanticChRecord (nu 0) (nu 1)
         (k := (AdaptiveActionStatementShape pp).k))
       (by simpa using hbetaRead)
@@ -892,7 +893,8 @@ theorem statementExclusionsV_of_no_surface {pp : ProofParams}
         hpolySurface 2 id (hpermutationAvailable 2 (by omega) id hid)
           (hnonterminal id (Or.inr (Or.inl hid))))
   have hgammaPerm : ch.gamma ∉ allResolverPermutationGammaBadSet pp.numProofs
-      (adaptiveActionStatementVk pp basis) ch actionPoly actionActiveRows := by
+      (adaptiveActionStatementVk pp basis) ch actionPoly
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent) := by
     rw [hgammaPermSet]
     simpa only [hgammaRead] using hgammaStage.1
   have hgammaLookupSet := allResolverLookupGammaBadSet_congr

@@ -255,7 +255,8 @@ def preXIdentityOutcome?V {pp : ProofParams}
     | none => none
     | some hgoodYProof =>
       match hpermutation : resolverPermutationChallengeExclusions?
-          pp.numProofs (adaptiveActionStatementVk pp basis) ch polynomial actionActiveRows with
+          pp.numProofs (adaptiveActionStatementVk pp basis) ch polynomial
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent) with
       | none => none
       | some hpermutationProof =>
         match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
@@ -355,7 +356,7 @@ theorem preXIdentityOutcomeV_isSome_of {pp : ProofParams}
         (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds)
         (CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-        actionActiveRows)
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (hlookup :
       let decode := rawDecode.reRound (view.rounds)
       TopLevelLookup.ChallengeExclusions actionCircuit pp

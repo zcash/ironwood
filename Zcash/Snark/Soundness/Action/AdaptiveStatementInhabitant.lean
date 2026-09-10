@@ -1,4 +1,5 @@
 import Zcash.Snark.Soundness.Action.AdaptiveStatementModel
+import Zcash.Circuits.Integration.PermutationColumns
 import Zcash.Snark.Soundness.AGM.ZeroFamily
 
 /-!

@@ -1,5 +1,4 @@
-import Zcash.Circuits.Integration.ActionCorrectness
-import Zcash.Circuits.Integration.ActionPermutationDomain
+import Zcash.Circuits.Action.FieldSupport
 import Zcash.Snark.Soundness.AGM.DecodeToOpened
 import Zcash.Snark.Soundness.Composition.StraightLineDecodeSupply
 import Zcash.Snark.Soundness.StraightLine.Terminal
@@ -125,7 +124,7 @@ def action_bundleStatement_or_relation_of_decode
         pp.numProofs (actionCircuit.toVerifierKey urs) ch
         (CanonicalMemberConstraintRelation.acceptedPolynomial
           (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-        actionActiveRows)
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (lookupExclusions :
       TopLevelLookup.ChallengeExclusions
         actionCircuit pp urs ch
@@ -133,23 +132,10 @@ def action_bundleStatement_or_relation_of_decode
           (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     BundleStatement inputs ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
-  let polynomial :=
-    CanonicalMemberConstraintRelation.acceptedPolynomial
-      (memberDecode := memberDecode) haccepts
   exact topLevelStatements_or_relation_of_decode
     actionCircuit pp urs hk inputs ps ch pU pW a decode hchar haccepts
     hxgood hgoodY
-    (fun hsatisfied =>
-      ActionCorrectness.ofAcceptedCircuitSat
-        pp urs hk inputs ps ch pU pW a
-        (decode.toOpenedBatch hchar) memberDecode haccepts
-        (polynomial .vanishingH)
-        (by
-          simpa only [actionCircuit.toVerifierKey_n] using hsatisfied)
-        (by
-          simpa only [actionCircuit.toVerifierKey_n] using hgoodY)
-        permutationExclusions lookupExclusions)
+    permutationExclusions lookupExclusions
 
 /-- The Action endpoint when a pre-`x` constraint identity has already supplied canonical circuit
 satisfaction.  This avoids re-testing the `x`-dependent reassembled quotient polynomial. -/
@@ -188,7 +174,7 @@ def action_bundleStatement_or_relation_of_decode_circuitSat
       pp.numProofs (actionCircuit.toVerifierKey urs) ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-      actionActiveRows)
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (lookupExclusions : TopLevelLookup.ChallengeExclusions
       actionCircuit pp urs ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
@@ -202,10 +188,7 @@ def action_bundleStatement_or_relation_of_decode_circuitSat
     hpoly
     (by simpa only [actionCircuit.toVerifierKey_n] using hsatisfied)
     (by simpa only [actionCircuit.toVerifierKey_n] using hgoodY)
-    (ActionCorrectness.ofAcceptedCircuitSat pp urs hk inputs ps ch pU pW a
-      (decode.toOpenedBatch hchar)
-      (fun i hi => decode.toMemberDecode hchar i hi) haccepts hpoly hsatisfied hgoodY
-      permutationExclusions lookupExclusions)
+    permutationExclusions lookupExclusions
 
 /-- The pre-`x` Action endpoint retaining the extracted private witnesses as data. -/
 def action_bundleWitness_or_relation_of_decode_circuitSat
@@ -243,7 +226,7 @@ def action_bundleWitness_or_relation_of_decode_circuitSat
       pp.numProofs (actionCircuit.toVerifierKey urs) ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-      actionActiveRows)
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (lookupExclusions : TopLevelLookup.ChallengeExclusions
       actionCircuit pp urs ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
@@ -257,10 +240,7 @@ def action_bundleWitness_or_relation_of_decode_circuitSat
     hpoly
     (by simpa only [actionCircuit.toVerifierKey_n] using hsatisfied)
     (by simpa only [actionCircuit.toVerifierKey_n] using hgoodY)
-    (ActionCorrectness.ofAcceptedCircuitSat pp urs hk inputs ps ch pU pW a
-      (decode.toOpenedBatch hchar)
-      (fun i hi => decode.toMemberDecode hchar i hi) haccepts hpoly hsatisfied hgoodY
-      permutationExclusions lookupExclusions)
+    permutationExclusions lookupExclusions
 
 /-- Run the finite Action-terminal exclusions for an already decoded accepting
 execution. Keeping the URS and its basis abstract here prevents executable
@@ -301,7 +281,8 @@ def actionDecodedTerminal?
       match hgoodY : foldSplitAvoidance? model.constraints actionCircuit.n hn ch.y with
       | some hgoodYProof =>
           match hpermutation : resolverPermutationChallengeExclusions?
-              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial actionActiveRows with
+              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial
+                (actionCircuit.usableRowsAt actionCircuit.domainExponent) with
           | some hpermutationProof =>
               match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
                   actionCircuit pp urs ch polynomial with

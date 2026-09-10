@@ -1,4 +1,5 @@
-import Zcash.Circuits.Integration.ActionCorrectness
+import Zcash.Circuits.Action.FieldSupport
+import Zcash.Circuits.Integration.TopLevelInstanceCommitment
 import Zcash.Snark.Soundness.AGM.AdaptiveOnline
 import Zcash.Snark.Verifier.Deployed
 

@@ -103,9 +103,8 @@ theorem commitLagrangeFastWith_eq_ofFullList_commitInstance
 
 /-- **The derived σ commitments are Lagrange-key commitments of the derived σ rows**:
 the executable Pippenger pipeline (with halo2's default blind, the `w` generator) equals
-the abstract prefix-key commitment. The two hypotheses are the per-URS setup facts —
-the derived basis length and the generator identities, native-tier at a concrete URS
-through the closed coefficient form (`polynomialCoefficients_single_closed`). -/
+the abstract prefix-key commitment. The two hypotheses are the per-URS setup facts:
+the derived basis length and the generator identities in closed coefficient form. -/
 theorem permutationCommitmentsOf_getD_eq_commitInstance
     {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
     (urs : URS G) (cs : Halo2.ConstraintSystem Fp) (ops : Halo2.Operations Fp)
@@ -144,9 +143,7 @@ theorem permutationCommitmentsOf_getD_eq_commitInstance
   rw [← Nat.cast_smul_eq_nsmul Fp ((1 : Fp).val) urs.w,
     ZMod.natCast_rightInverse (1 : Fp), one_smul]
 
-/-- The `ofPrefix` setup obligation in fully computable form: the noncomputable
-interpolation coefficients are replaced by the closed form, so a concrete URS can
-discharge the per-generator identities by native evaluation. -/
+/-- The prefix setup follows from the closed formula for interpolation coefficients. -/
 theorem ofPrefix_setup_of_closed {G : Type} [AddCommGroup G] [Module Fp G]
     [Inhabited G] (urs : URS G) (hk : urs.k ≤ 32)
     (hgen : ∀ i : Fin (2 ^ urs.k),

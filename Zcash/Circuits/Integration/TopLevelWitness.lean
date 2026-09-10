@@ -2,12 +2,11 @@ import Zcash.Circuits.Integration.TopLevelBridge
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.TopLevelAssignment
 
-/-!
-# Top-level circuit correctness interface
+/-! # Circuit-owned witnesses for decoded polynomial assignments
 
-This module packages the named Clean/ironwood representation boundaries consumed
-by the generic soundness terminal.  It deliberately contains no final circuit
-statement and no opaque encoding implication.
+The bundle types retain executable private witnesses and connect their extracted
+public inputs to the supplied statement. The component constructor transports
+polynomial-environment constraints to the circuit's canonical proof assignment.
 -/
 
 
@@ -85,12 +84,9 @@ theorem of_publicInputEncoding
   let assignment : TopLevelAssignment top
       pp.numProofs proofIndex :=
     { polynomial := poly }
-  have hstatement := htop proofIndex
-  change top.Statement
-    (top.extractPublicInput assignment.environment) at hstatement
-  rw [assignment.extractPublicInput_eq
-    (inputs proofIndex) (hencoding proofIndex)] at hstatement
-  exact hstatement
+  rw [← assignment.extractPublicInput_eq
+    (inputs proofIndex) (hencoding proofIndex)]
+  exact htop proofIndex
 
 end TopLevelBundleStatement
 
@@ -135,68 +131,6 @@ theorem statement
   fun proofIndex => (witness proofIndex).statement
 
 end TopLevelBundleWitness
-
-abbrev TopLevelFixedEncoding
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams)
-    (poly : CommitmentId → CPoly)
-    (proofIndex : Fin pp.numProofs) : Prop :=
-  let assignment :
-      TopLevelAssignment top pp.numProofs proofIndex :=
-    { polynomial := poly }
-  assignment.FixedColumnEncoding
-
-abbrev TopLevelFixed
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly)
-    (proofIndex : Fin pp.numProofs) : Prop :=
-  (SelectorActivationsRealized
-      top.selectorMap top.selectorActivations
-      (resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent))
-    ∧ CircuitConstraintFamily.constraints .fixed top.placement
-      (resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent))
-      top.operations 0)
-
-abbrev TopLevelCopies
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly)
-    (proofIndex : Fin pp.numProofs) : Prop :=
-  CircuitConstraintFamily.constraints .copy top.placement
-    (resolverEnvironment
-      (top.toVerifierKey urs) poly proofIndex
-      (top.usableRowsAt top.domainExponent))
-    top.operations 0
-
-abbrev TopLevelLookups
-    {k : ℕ}
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    (ch : Challenges k Fp)
-    (poly : CommitmentId → CPoly)
-    (proofIndex : Fin pp.numProofs) : Prop :=
-  TopLevelLookup.WitnessConditions
-    top pp urs ch poly proofIndex
 
 namespace TopLevelAssignment
 
@@ -286,34 +220,5 @@ def bridgeWitness_of_components
   · exact bridge
 
 end TopLevelAssignment
-
-/--
-The representation-boundary data needed to interpret one canonical polynomial
-assignment as an execution of a top-level circuit.
-
-The fields describe fixed-polynomial interpretation and the fixed, copy, and
-lookup constraints. Each component returns its witness or a `Bad` value, so
-commitment-binding failures can be joined without replacing the computed break
-with a claim that one exists.
-
--/
-structure TopLevelCircuitCorrectness
-    {G : Type} [AddCommGroup G] [Inhabited G]
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    {k : ℕ} (ch : Challenges k Fp)
-    (poly : CommitmentId → CPoly)
-    (Bad : Type) : Type where
-  fixedEncoding : ∀ proofIndex,
-    TopLevelFixedEncoding top pp poly proofIndex ⊕' Bad
-  fixed : ∀ proofIndex,
-    TopLevelFixed top pp urs poly proofIndex ⊕' Bad
-  copies : ∀ proofIndex,
-    TopLevelCopies top pp urs poly proofIndex ⊕' Bad
-  lookups : ∀ proofIndex,
-    TopLevelLookups top pp urs ch poly proofIndex ⊕' Bad
 
 end Zcash.Snark

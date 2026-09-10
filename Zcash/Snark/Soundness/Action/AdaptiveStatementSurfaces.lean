@@ -1673,7 +1673,8 @@ noncomputable def adaptiveActionSurfaceAtOf {pp : ProofParams}
   if _h0 : (n : Nat) = 0 then
     ↑(TopLevelLookup.thetaBadSet actionCircuit pp urs poly)
   else if _h1 : (n : Nat) = 1 then
-    ↑(allResolverPermutationBetaBadSet pp.numProofs vk poly actionActiveRows) ∪
+    ↑(allResolverPermutationBetaBadSet pp.numProofs vk poly
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
       ↑(allResolverLookupBetaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta 0
           (k := (AdaptiveActionStatementShape pp).k)) poly
@@ -1681,7 +1682,8 @@ noncomputable def adaptiveActionSurfaceAtOf {pp : ProofParams}
   else if _h2 : (n : Nat) = 2 then
     ↑(allResolverPermutationGammaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta ch.beta
-          (k := (AdaptiveActionStatementShape pp).k)) poly actionActiveRows) ∪
+          (k := (AdaptiveActionStatementShape pp).k)) poly
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
       ↑(allResolverLookupGammaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta ch.beta
           (k := (AdaptiveActionStatementShape pp).k)) poly
@@ -1732,16 +1734,16 @@ theorem adaptiveActionBetaSurfaceAtOf_measure_le {pp : ProofParams}
         (adaptiveActionSurfaceAtOf basis instanceCommitment 1 ps source earlier) ≤
       ((∑ p : Fin pp.numProofs,
         (Fintype.card (ResolverPermutationCell (adaptiveActionStatementVk pp basis) poly p
-          actionActiveRows) + 1) *
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent)) + 1) *
           Fintype.card (ResolverPermutationCell (adaptiveActionStatementVk pp basis) poly p
-            actionActiveRows) : Nat) : ENNReal) / Fintype.card Fp +
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Nat) : ENNReal) / Fintype.card Fp +
       ((pp.numProofs * actionCircuit.lookupCount *
         ((actionCircuit.n - actionCircuit.blindingFactors - 2 + 2) *
           (actionCircuit.n - actionCircuit.blindingFactors - 2 + 1) +
           (actionCircuit.n - actionCircuit.blindingFactors - 2 + 1)) : Nat) : ENNReal) /
         Fintype.card Fp := by
   dsimp only
-  simpa [adaptiveActionSurfaceAtOf, actionActiveRows,
+  simpa [adaptiveActionSurfaceAtOf, Halo2.TopLevelCircuit.usableRowsAt,
     Halo2.CircuitShape.withProofParams_numProofs,
     Halo2.CircuitShape.withProofParams_numLookups] using
     (ActionTerminal.actionBetaBadSets_probability_bound pp basis (earlier 0)
@@ -1765,13 +1767,14 @@ theorem adaptiveActionGammaSurfaceAtOf_measure_le {pp : ProofParams}
         (adaptiveActionSurfaceAtOf basis instanceCommitment 2 ps source earlier) ≤
       ((∑ p : Fin pp.numProofs,
         2 * Fintype.card (ResolverPermutationCell
-          (adaptiveActionStatementVk pp basis) poly p actionActiveRows) : Nat) : ENNReal) /
+          (adaptiveActionStatementVk pp basis) poly p
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) : Nat) : ENNReal) /
           Fintype.card Fp +
       ((pp.numProofs * actionCircuit.lookupCount *
         (2 * (actionCircuit.n - actionCircuit.blindingFactors - 2 + 1)) : Nat) : ENNReal) /
           Fintype.card Fp := by
   dsimp only
-  simpa [adaptiveActionSurfaceAtOf, actionActiveRows,
+  simpa [adaptiveActionSurfaceAtOf, Halo2.TopLevelCircuit.usableRowsAt,
     Halo2.CircuitShape.withProofParams_numProofs,
     Halo2.CircuitShape.withProofParams_numLookups] using
     (ActionTerminal.actionGammaBadSets_probability_bound pp basis (earlier 0)

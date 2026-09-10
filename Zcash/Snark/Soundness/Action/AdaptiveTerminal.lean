@@ -95,7 +95,8 @@ def actionWitnessOrRelationOfDecode?
       | none => none
       | some hgoodYProof =>
           match hpermutation : resolverPermutationChallengeExclusions?
-              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial actionActiveRows with
+              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial
+                (actionCircuit.usableRowsAt actionCircuit.domainExponent) with
           | none => none
           | some hpermutationProof =>
               match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
@@ -186,7 +187,7 @@ theorem actionWitnessOrRelationOfDecode?_isSome_of
       ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-      actionActiveRows)
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (hlookup : TopLevelLookup.ChallengeExclusions actionCircuit pp
       (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial

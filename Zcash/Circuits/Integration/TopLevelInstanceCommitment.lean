@@ -1,6 +1,6 @@
 import Zcash.Circuits.Integration.InstanceColumns
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.TopLevelCorrectness
+import Zcash.Circuits.Integration.TopLevelWitness
 import Mathlib.Util.AssertNoSorry
 
 set_option maxHeartbeats 20000

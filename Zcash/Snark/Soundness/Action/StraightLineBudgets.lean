@@ -286,7 +286,8 @@ theorem actionGammaFailureEvent_subset
     topLevelGammaFailureEvent actionCircuit pp family inputs hvk hI hchar ⊆
       cut.surfaceEvent (fun basis s =>
         ↑(allResolverPermutationGammaBadSet pp.numProofs (vkAt basis)
-          (semanticChRecord (thetaOf s) (betaOf s)) (view s) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
+          (semanticChRecord (thetaOf s) (betaOf s)) (view s)
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) (betaOf s)
             (k := actionCircuit.domainExponent)) (view s)
@@ -332,7 +333,8 @@ theorem actionGammaFailure_probability_bound {T : Type*} [DecidableEq T]
     (hbad : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
       (s : cut.State), (PMF.uniformOfFintype Fp).toOuterMeasure
       (↑(allResolverPermutationGammaBadSet pp.numProofs (vkAt basis)
-          (semanticChRecord (thetaOf s) (betaOf s)) (view s) (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
+          (semanticChRecord (thetaOf s) (betaOf s)) (view s)
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
         ↑(allResolverLookupGammaBadSet pp.numProofs (vkAt basis)
           (semanticChRecord (thetaOf s) (betaOf s)
             (k := actionCircuit.domainExponent)) (view s)

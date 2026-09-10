@@ -1,10 +1,7 @@
-import Zcash.Circuits.Integration.ActionCopyWitness
-import Zcash.Circuits.Integration.ActionEncoding
-import Zcash.Circuits.Action.FieldSupport
-import Zcash.Circuits.Integration.ActionCorrectness
-import Zcash.Circuits.Integration.ActionPermutationDomain
-import Zcash.Circuits.Integration.ActionPermutationCycle
-import Zcash.Circuits.Integration.ActionCopyReplay
+import Zcash.Circuits.Integration.CopyPermutation
+import Zcash.Circuits.Integration.PermutationCycle
+import Zcash.Circuits.Integration.TopLevelCopyConstraints
+import Zcash.Circuits.Integration.TopLevelInterpretation
 import Zcash.Circuits.Integration.CircuitIntegration
 import Zcash.Circuits.Integration.CircuitSatisfaction
 import Zcash.Circuits.Integration.CopyListMembership
@@ -30,7 +27,7 @@ import Zcash.Circuits.Integration.TopLevelBridge
 import Zcash.Circuits.Integration.TopLevelCircuit
 import Zcash.Circuits.Integration.TopLevelCoherence
 import Zcash.Circuits.Integration.TopLevelConstraintModel
-import Zcash.Circuits.Integration.TopLevelCorrectness
+import Zcash.Circuits.Integration.TopLevelWitness
 import Zcash.Circuits.Integration.TopLevelGates
 import Zcash.Circuits.Integration.TopLevelInstanceCommitment
 import Zcash.Circuits.Integration.TopLevelLookups

@@ -65,7 +65,7 @@ noncomputable def actionKnowledgeContract (numProofs : ℕ) {T : Type*} [Decidab
   -- from the run's oracle table.
   Accepts r := family.accepts (orchardGeneratorROBasis query r.1) r.2
   -- The bundle witness type from `Soundness/Action/StraightLineTerminal`, which abbreviates
-  -- `Circuits/Integration/TopLevelCorrectness`'s external bundle witness.
+  -- `Circuits/Integration/TopLevelWitness`'s external bundle witness.
   Witness r :=
     ActionBundleWitness (family.runOutput (orchardGeneratorROBasis query r.1) r.2).inputs
   -- The executable witness projection from `Soundness/Action/AdaptiveStatementKnowledge`.

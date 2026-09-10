@@ -56,11 +56,12 @@ theorem resolverPermutationCell_card_eq
     (poly : CommitmentId → CPoly)
     (p : Fin pp.numProofs) :
     Fintype.card
-        (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p actionActiveRows) =
+        (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent)) =
       30630 := by
   rw [topLevelResolverPermutationCell_card,
     actionCircuit_permutationColumnCount_eq,
-    actionActiveRows_eq,
+    actionCircuit.usableRowsAt_domainExponent,
     actionCircuit.n_eq_two_pow_domainExponent,
     action_domainExponent_eq,
     actionCircuit_blindingFactors_eq]
@@ -72,7 +73,8 @@ theorem resolverPermutationCell_card_le
     (poly : CommitmentId → CPoly)
     (p : Fin pp.numProofs) :
     Fintype.card
-        (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p actionActiveRows) ≤
+        (ResolverPermutationCell (actionCircuit.toVerifierKey urs) poly p
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ≤
       2 ^ 16 := by
   rw [resolverPermutationCell_card_eq pp urs poly p]
   norm_num
@@ -98,13 +100,8 @@ theorem actionThetaBudget (numProofs : ℕ) :
       ≤ ∑ _index : TopLevelLookup.ActivationIndex
           actionCircuit (actionProofParamsFor numProofs), 2 ^ 11 * 4 := by
         gcongr with index
-        · change actionActiveRows ≤ 2 ^ 11
-          have hrows : actionActiveRows ≤ actionCircuit.n := by
-            simpa only [actionDomainSize] using actionActiveRows_le_domainSize
-          rw [actionCircuit.n_eq_two_pow_domainExponent,
-            action_domainExponent_eq] at hrows
-          norm_num at hrows ⊢
-          exact hrows
+        · simpa only [actionCircuit.n_eq_two_pow_domainExponent, action_domainExponent_eq]
+            using actionCircuit.usableRowsAt_domainExponent_le_n
         · exact actionLookupInputArity_le index.2
     _ ≤ numProofs * 2 ^ 25 := by
         simp only [TopLevelLookup.ActivationIndex,
@@ -129,9 +126,9 @@ theorem actionBetaBudget (numProofs : ℕ) :
       (poly : CommitmentId → CPoly),
       (∑ p : Fin (actionProofParamsFor numProofs).numProofs,
         (Fintype.card (ResolverPermutationCell
-            (vkAt basis) poly p actionActiveRows) + 1) *
+            (vkAt basis) poly p (actionCircuit.usableRowsAt actionCircuit.domainExponent)) + 1) *
           Fintype.card (ResolverPermutationCell
-            (vkAt basis) poly p actionActiveRows)) +
+            (vkAt basis) poly p (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       (actionProofParamsFor numProofs).numProofs *
         actionCircuit.lookupCount *
         ((actionCircuit.n -
@@ -145,7 +142,8 @@ theorem actionBetaBudget (numProofs : ℕ) :
   let pp := actionProofParamsFor numProofs
   let urs := ursOfAugmentedBasis actionCircuit.domainExponent basis
   have hcell : ∀ p : Fin pp.numProofs,
-      Fintype.card (ResolverPermutationCell (vkAt basis) poly p actionActiveRows) =
+      Fintype.card (ResolverPermutationCell (vkAt basis) poly p
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) =
         30630 := by
     intro p
     exact resolverPermutationCell_card_eq pp urs poly p
@@ -156,8 +154,10 @@ theorem actionBetaBudget (numProofs : ℕ) :
     omega
   change
     (∑ p : Fin pp.numProofs,
-      (Fintype.card (ResolverPermutationCell (vkAt basis) poly p actionActiveRows) + 1) *
-        Fintype.card (ResolverPermutationCell (vkAt basis) poly p actionActiveRows)) +
+      (Fintype.card (ResolverPermutationCell (vkAt basis) poly p
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) + 1) *
+        Fintype.card (ResolverPermutationCell (vkAt basis) poly p
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       pp.numProofs *
         actionCircuit.lookupCount *
         ((actionCircuit.n - actionCircuit.blindingFactors - 2 + 2) *
@@ -190,7 +190,7 @@ theorem actionGammaBudget (numProofs : ℕ) :
       (poly : CommitmentId → CPoly),
       (∑ p : Fin (actionProofParamsFor numProofs).numProofs,
         2 * Fintype.card (ResolverPermutationCell
-          (vkAt basis) poly p actionActiveRows)) +
+          (vkAt basis) poly p (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       (actionProofParamsFor numProofs).numProofs *
         actionCircuit.lookupCount *
         (2 * (actionCircuit.n -
@@ -200,7 +200,8 @@ theorem actionGammaBudget (numProofs : ℕ) :
   let pp := actionProofParamsFor numProofs
   let urs := ursOfAugmentedBasis actionCircuit.domainExponent basis
   have hcell : ∀ p : Fin pp.numProofs,
-      Fintype.card (ResolverPermutationCell (vkAt basis) poly p actionActiveRows) =
+      Fintype.card (ResolverPermutationCell (vkAt basis) poly p
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) =
         30630 := by
     intro p
     exact resolverPermutationCell_card_eq pp urs poly p
@@ -211,7 +212,8 @@ theorem actionGammaBudget (numProofs : ℕ) :
     omega
   change
     (∑ p : Fin pp.numProofs,
-      2 * Fintype.card (ResolverPermutationCell (vkAt basis) poly p actionActiveRows)) +
+      2 * Fintype.card (ResolverPermutationCell (vkAt basis) poly p
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       pp.numProofs *
         actionCircuit.lookupCount *
         (2 * (actionCircuit.n - actionCircuit.blindingFactors - 2 + 1)) ≤
@@ -251,13 +253,8 @@ theorem capturedActionThetaBudget :
       ≤ ∑ _index : TopLevelLookup.ActivationIndex
           actionCircuit actionProofParams, 2 ^ 11 * 4 := by
         gcongr with index
-        · change actionActiveRows ≤ 2 ^ 11
-          have hrows : actionActiveRows ≤ actionCircuit.n := by
-            simpa only [actionDomainSize] using actionActiveRows_le_domainSize
-          rw [actionCircuit.n_eq_two_pow_domainExponent,
-            action_domainExponent_eq] at hrows
-          norm_num at hrows ⊢
-          exact hrows
+        · simpa only [actionCircuit.n_eq_two_pow_domainExponent, action_domainExponent_eq]
+            using actionCircuit.usableRowsAt_domainExponent_le_n
         · exact actionLookupInputArity_le index.2
     _ ≤ 2 ^ 25 := by
         simp only [TopLevelLookup.ActivationIndex,
@@ -280,9 +277,9 @@ theorem capturedActionBetaBudget :
       (poly : CommitmentId → CPoly),
       (∑ p : Fin actionProofParams.numProofs,
         (Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-            actionActiveRows) + 1) *
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) + 1) *
           Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-            actionActiveRows)) +
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       actionProofParams.numProofs *
         actionCircuit.lookupCount *
         ((actionCircuit.n - actionCircuit.blindingFactors -
@@ -296,7 +293,7 @@ theorem capturedActionBetaBudget :
     actionCircuit.domainExponent basis
   have hcell : ∀ p : Fin actionProofParams.numProofs,
       Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-        actionActiveRows) ≤ 2 ^ 16 := by
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ≤ 2 ^ 16 := by
     intro p
     exact resolverPermutationCell_card_le actionProofParams urs poly p
   have hn : actionCircuit.n = 2 ^ 11 := by
@@ -308,9 +305,9 @@ theorem capturedActionBetaBudget :
   calc
     (∑ p : Fin actionProofParams.numProofs,
         (Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-            actionActiveRows) + 1) *
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) + 1) *
           Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-            actionActiveRows)) +
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
         actionProofParams.numProofs *
           actionCircuit.lookupCount *
           ((actionCircuit.n -
@@ -337,7 +334,7 @@ theorem capturedActionGammaBudget :
       (poly : CommitmentId → CPoly),
       (∑ p : Fin actionProofParams.numProofs,
         2 * Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-          actionActiveRows)) +
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
       actionProofParams.numProofs *
         actionCircuit.lookupCount *
         (2 * (actionCircuit.n - actionCircuit.blindingFactors -
@@ -347,7 +344,7 @@ theorem capturedActionGammaBudget :
     actionCircuit.domainExponent basis
   have hcell : ∀ p : Fin actionProofParams.numProofs,
       Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-        actionActiveRows) ≤ 2 ^ 16 := by
+        (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ≤ 2 ^ 16 := by
     intro p
     exact resolverPermutationCell_card_le actionProofParams urs poly p
   have hn : actionCircuit.n = 2 ^ 11 := by
@@ -359,7 +356,7 @@ theorem capturedActionGammaBudget :
   calc
     (∑ p : Fin actionProofParams.numProofs,
         2 * Fintype.card (ResolverPermutationCell (vkAt basis) poly p
-          actionActiveRows)) +
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent))) +
         actionProofParams.numProofs *
           actionCircuit.lookupCount *
           (2 * (actionCircuit.n -

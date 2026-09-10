@@ -7,8 +7,8 @@ import Zcash.Snark.Soundness.Circuit.Terminal
 
 This module transports the verifier artifacts produced by a straight-line AGM
 run to the derived key and public-input commitment of an arbitrary
-`TopLevelCircuit`. Circuit-specific gate, fixed, copy, and lookup work remains in
-the constructor of `TopLevelCircuitCorrectness`.
+`TopLevelCircuit`. Its compiler laws and the supplied challenge exclusions recover
+the gate, fixed, copy, and lookup constraints through the generic circuit terminal.
 -/
 
 
@@ -97,21 +97,15 @@ def topLevelStatements_or_relation_of_decode
               top.toVerifierKey_blindingFactors_lt_n urs)
             haccepts).constraints
           top.n j))
-    (correctness :
-      let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
-      (CanonicalMemberConstraintRelation.acceptedModel
-        (memberDecode := memberDecode)
-        (hblinding :=
-          top.toVerifierKey_blindingFactors_lt_n urs)
-        haccepts).CircuitSat
-          ch.y
-          (CanonicalMemberConstraintRelation.acceptedPolynomial
-            (memberDecode := memberDecode) haccepts .vanishingH)
-          top.n a →
-      TopLevelCircuitCorrectness top pp urs ch
-        (CanonicalMemberConstraintRelation.acceptedPolynomial
-          (memberDecode := memberDecode) haccepts)
-        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
+    (permutationExclusions : ResolverPermutationChallengeExclusions
+      pp.numProofs (top.toVerifierKey urs) ch
+      (CanonicalMemberConstraintRelation.acceptedPolynomial
+          (shape := top.shape.withProofParams pp)
+          (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts) (top.usableRowsAt top.domainExponent))
+    (lookupExclusions : TopLevelLookup.ChallengeExclusions top pp urs ch
+      (CanonicalMemberConstraintRelation.acceptedPolynomial
+          (shape := top.shape.withProofParams pp)
+          (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
@@ -123,7 +117,7 @@ def topLevelStatements_or_relation_of_decode
     rfl
     (fun slot point hpoint =>
       PSum.inl (decode.memberBinding hchar slot point hpoint))
-    hxgood hgoodY correctness
+    hxgood hgoodY permutationExclusions lookupExclusions
 
 /-- Transport the run's decode to any identified verifier artifacts. -/
 def straightLineRunDecodeAt

@@ -626,20 +626,22 @@ compatibility facts: the flattening preserves rows, and a cell's chunk/column re
 to its global column. -/
 theorem permPolysOf_getD_eq_chunkRowName {k : ℕ}
     (cs : ConstraintSystem Fp) (ops : Operations Fp)
-    (copies' : List (FlatCell (Keygen.permColsOf cs).length (2 ^ k) ×
-      FlatCell (Keygen.permColsOf cs).length (2 ^ k)))
+    {numCols n : ℕ} (hcount : numCols = (Keygen.permColsOf cs).length)
+    (hsize : n = 2 ^ k)
+    (copies' : List (FlatCell numCols n ×
+      FlatCell numCols n))
     (hcopies : Halo2.Layout.V1.copyList (Keygen.permColsOf cs)
         (Halo2.FloorPlanner.V1.starts ops) ops
         (Keygen.constantCopyEntries cs ops) =
       copies'.map fun p => (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2))
     {nc : ℕ} {width : ℕ → ℕ} (chunkLen : ℕ)
-    (flatten : ChunkCell nc (2 ^ k) width ≃
-      Fin (2 ^ k) × Fin (Keygen.permColsOf cs).length)
-    (hrow : ∀ rc : Fin (2 ^ k) × Fin (Keygen.permColsOf cs).length,
+    (flatten : ChunkCell nc n width ≃
+      Fin n × Fin numCols)
+    (hrow : ∀ rc : Fin n × Fin numCols,
       ((flatten.symm rc).2.1 : ℕ) = (rc.1 : ℕ))
-    (hcol : ∀ rc : Fin (2 ^ k) × Fin (Keygen.permColsOf cs).length,
+    (hcol : ∀ rc : Fin n × Fin numCols,
       ((flatten.symm rc).1 : ℕ) * chunkLen + ((flatten.symm rc).2.2 : ℕ) = (rc.2 : ℕ))
-    (chunk : Fin nc) (column : Fin (width chunk)) (i : Fin (2 ^ k)) :
+    (chunk : Fin nc) (column : Fin (width chunk)) (i : Fin n) :
     ((Keygen.permPolysOf k cs ops).getD
         ((flatten ⟨chunk, i, column⟩).2 : ℕ) []).getD (i : ℕ) 0 =
       chunkRowName (omegaOf k) deltaFp chunkLen
@@ -652,6 +654,7 @@ theorem permPolysOf_getD_eq_chunkRowName {k : ℕ}
         ((chunkPermutationOfFlat flatten
             ((Equiv.prodComm _ _).permCongr (replayKeygenPermutation copies'))
           ⟨chunk, i, column⟩).2.2 : ℕ) := by
+  subst numCols n
   have hfst : (flatten ⟨chunk, i, column⟩).1 = i := by
     have := hrow (flatten ⟨chunk, i, column⟩)
     rw [Equiv.symm_apply_apply] at this
