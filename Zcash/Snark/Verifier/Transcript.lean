@@ -26,9 +26,10 @@ The encoding, from halo2's `transcript.rs` and `pasta_curves`' `to_repr`/`coordi
 the deployed byte stream, element for element.
 
 Two facts make the byte layer a faithful carrier of the typed schedule. The encoding is
-injective and preserves and reflects prefixes: `encodeTranscript_prefix_iff` says one element
-list's bytes are a prefix of another's exactly when the list itself is a prefix. So distinct typed
-transcripts are distinct oracle queries, and byte-level prefix structure is typed prefix structure.
+injective, so distinct typed transcripts are distinct oracle queries.
+`encodeTranscript_prefix_iff` says one encoded transcript is a prefix of another exactly when the
+corresponding typed transcript is a prefix of the other. Extending a typed transcript therefore
+extends its byte encoding; the set of all transcript encodings is not prefix-free.
 That the tags carry this is checked rather than asserted: `Soundness/FiatShamir/TagMutation.lean`
 deletes them and exhibits the collisions that appear.
 
@@ -184,8 +185,8 @@ theorem encodeElt_append_inj {a b : TranscriptElt Fp VestaG} {s t : List UInt8}
   · exact absurd (List.cons.inj h).1 (by decide)
   · exact ⟨rfl, (List.cons.inj h).2⟩
 
-/-- **Prefix preservation and reflection of the transcript encoding.** One typed transcript's
-bytes are a prefix of another's exactly when the typed transcript is a prefix. -/
+/-- One encoded transcript is a prefix of another exactly when the corresponding typed transcript
+is a prefix of the other. -/
 theorem encodeTranscript_prefix_iff {s t : List (TranscriptElt Fp VestaG)} :
     encodeTranscript s <+: encodeTranscript t ↔ s <+: t := by
   constructor

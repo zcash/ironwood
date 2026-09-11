@@ -15,13 +15,14 @@ name: Fixtures
 # is platform-independent, so regeneration is bit-reproducible -- a diff means the
 # fixtures genuinely drifted from the pinned upstream, not run-to-run noise.
 #
-# Pins are single-sourced in `scripts/regenerate-fingerprint-fixtures.sh`: exact snapshots of
-# zcash/orchard#544 and zcash/halo2#933. The script fetches Orchard through the canonical PR ref
-# and asserts its Cargo.lock entry resolves the pinned zcash/halo2 commit through the canonical
-# URL before running Cargo `--locked`. The
-# base capture tooling remains the released halo2_proofs 0.3.5 / orchard 0.15.5 pipeline; these
-# draft follow-ups add direct proof-byte export, pinned-key preimage export, and deployed decoder
-# checks. All four families -- honest pair included -- regenerate from those exact snapshots.
+# Pins are single-sourced in `scripts/regenerate-fingerprint-fixtures.sh`: exact
+# snapshots of zcash/orchard#544 and zcash/halo2#933. The script fetches Orchard through
+# the canonical PR ref and asserts its Cargo.lock entry resolves the pinned
+# zcash/halo2 commit through the canonical URL before running Cargo `--locked`. The
+# base capture tooling remains the released halo2_proofs 0.3.5 / orchard 0.15.5
+# pipeline; these draft follow-ups add direct proof-byte export, pinned-key preimage
+# export, and deployed decoder checks. All four families -- honest pair included --
+# regenerate from those exact snapshots.
 
 # Always triggers, so the `Fixtures CI` gate always reports (a workflow skipped by
 # `on.paths` would leave a required check pending). The heavy regeneration is instead

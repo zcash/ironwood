@@ -29,10 +29,11 @@ the key-identification conjunct of `DeployedAcceptsBytes`
 (`Fixtures/*/Honest/ProofBytes.lean`); the keygen-only literals checked here have no key
 counterpart and stay fixture pins.
 
-What this does not give is cross-key binding: that no other key has this digest is collision
-resistance of the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, which two merely
-`p`-congruent digests defeat without a BLAKE2b collision (`challengeOfDigest_eq_iff_modEq`) —
-idealized like BLAKE2b's randomness (`Capstones/Action.lean`, *Key digest*).
+Cross-key binding remains outside these theorems. In the random-oracle model, collision
+resistance of the reduced digest `keyDigest` follows from modeling BLAKE2b as a random oracle
+with 512-bit output and reducing that output modulo `p`. The birthday bound is governed by the
+field size. This consequence of the random-oracle model is not formalized here
+(`Capstones/Action.lean`, *Key digest*).
 
 `DescriptionSyntaxCanonical` now requires the exact compact derived-`Debug` struct names and field
 sequences before `field?` is used, and field decoders require canonical lowercase, in-range

@@ -72,15 +72,16 @@ Lean-relevant change. All of them can be run locally from the repository root.
   its recorded digest and provenance entry in `Zcash/Snark/Fixtures/MANIFEST.tsv`.
   This binds the committed artifacts to their provenance on every run, with no Rust
   toolchain needed.
+
 ## Fixture regeneration
 
 **`scripts/regenerate-fingerprint-fixtures.sh`** proves the committed captures
-regenerate byte-for-byte from their sources: it checks out exact Orchard #544 and Halo2 #933
-snapshots through canonical URLs, asserts Orchard's lockfile resolves the pinned Halo2 commit,
-regenerates every capture family plus the proof-byte siblings, and diffs each committed
-artifact. CI runs the full
-regeneration when a fixture-relevant path changes; on every other run, the manifest
-check above still binds the artifacts to their recorded digests.
+regenerate byte-for-byte from their sources: it checks out exact Orchard #544 and
+Halo2 #933 snapshots through canonical URLs, asserts Orchard's lockfile resolves the
+pinned Halo2 commit, regenerates every capture family plus the proof-byte siblings,
+and diffs each committed artifact. CI runs the full regeneration when a
+fixture-relevant path changes; on every other run, the manifest check above still
+binds the artifacts to their recorded digests.
 
 The circuit-side layout dumps have no regeneration pipeline: their generator is
 unpublished one-off instrumentation in local halo2/orchard checkouts
