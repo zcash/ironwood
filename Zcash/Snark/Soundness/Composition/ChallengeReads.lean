@@ -298,13 +298,14 @@ theorem allResolverLookupGammaBadSet_congr
 /-! ## The `θ` layer -/
 
 /-- The row environment reads only the proof's query columns. -/
-theorem resolverEnvironment_congr
+theorem polynomialEnvironmentOfCommitments_congr
     {shape : CircuitShape}
     (vk : VerifyingKey shape Fp G) {poly₁ poly₂ : CommitmentId → CPoly}
     (p : ℕ) (usableRows : ℕ)
     (h : ∀ id, id.isColumnInput → poly₁ id = poly₂ id) :
-    resolverEnvironment vk poly₁ p usableRows = resolverEnvironment vk poly₂ p usableRows := by
-  unfold resolverEnvironment
+    polynomialEnvironmentOfCommitments vk poly₁ p usableRows =
+      polynomialEnvironmentOfCommitments vk poly₂ p usableRows := by
+  unfold polynomialEnvironmentOfCommitments
   rw [show (fun column => poly₁ (CommitmentId.fixedCol column)) =
     (fun column => poly₂ (CommitmentId.fixedCol column)) from funext fun _ => h _ trivial]
   rw [show (fun column => poly₁ (CommitmentId.adviceCol p column)) =
@@ -327,7 +328,7 @@ theorem TopLevelLookup.thetaBadSet_congr
       TopLevelLookup.comparisonValues top pp urs poly₂ := by
     funext index
     simp only [TopLevelLookup.comparisonValues,
-      resolverEnvironment_congr (top.toVerifierKey urs) index.1.1
+      polynomialEnvironmentOfCommitments_congr (top.toVerifierKey urs) index.1.1
         (top.usableRowsAt top.domainExponent) h]
   simp only [TopLevelLookup.thetaBadSet, hvalues]
 

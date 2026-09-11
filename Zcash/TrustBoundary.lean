@@ -1666,7 +1666,7 @@ assert_axioms Zcash.Snark.resolverLookupBetaBadSet_congr
 assert_axioms Zcash.Snark.resolverLookupGammaBadSet_congr
 assert_axioms Zcash.Snark.allResolverLookupBetaBadSet_congr
 assert_axioms Zcash.Snark.allResolverLookupGammaBadSet_congr
-assert_axioms Zcash.Snark.resolverEnvironment_congr
+assert_axioms Zcash.Snark.polynomialEnvironmentOfCommitments_congr
 assert_axioms Zcash.Snark.TopLevelLookup.thetaBadSet_congr
 -- Census the bundled sequential adversary and its resource arithmetic.
 assert_axioms Zcash.Snark.resolverPermutationCell_card

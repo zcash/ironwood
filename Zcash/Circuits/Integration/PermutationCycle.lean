@@ -1,6 +1,6 @@
 import Zcash.Circuits.Integration.CopyPermutation
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.PermutationColumns
+import Zcash.Snark.Soundness.Multiopen.PermutationColumns
 
 /-!
 # Circuit-generic permutation-cycle construction

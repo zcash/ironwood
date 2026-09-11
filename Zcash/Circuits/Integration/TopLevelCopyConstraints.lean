@@ -70,7 +70,8 @@ def CanonicalMemberConstraintRelation.copiesCompiled_or_relation
         pp urs ch relation.polynomial
         proofIndex satisfaction hcycle.cycle hcycle.sigma_eq
         (exclusions.good proofIndex)
-    rw [top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hvalues
+    rw [top.polynomialEnvironmentOfCommitments_eq_environment
+      urs relation.polynomial proofIndex hencoding] at hvalues
     exact PSum.inl (top.copiesCompiled_of_permutation _ hvalues)
   · exact PSum.inr hbad
 

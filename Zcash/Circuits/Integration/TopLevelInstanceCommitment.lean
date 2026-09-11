@@ -1,5 +1,5 @@
 import Zcash.Snark.Soundness.Multiopen.InstanceColumns
-import Zcash.Circuits.Integration.ResolverQueryEnvironment
+import Zcash.Circuits.Integration.PolynomialQueries
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.TopLevelWitness
 import Mathlib.Util.AssertNoSorry

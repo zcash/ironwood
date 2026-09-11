@@ -5,10 +5,10 @@ import Zcash.Snark.Soundness.Canonical.PermutationInstantiation
 import Zcash.Circuits.Integration.PolynomialEnvironment
 
 /-!
-# Resolver query feeds and Clean environments
+# Polynomial query feeds and Clean environments
 
 Verifier expressions index query-layout entries.  Clean expressions name the same
-queries as `(column, rotation)` pairs.  This module proves that the resolver-backed
+queries as `(column, rotation)` pairs. This module proves that the
 rotated polynomial feeds and the canonical row environment interpret those two
 representations identically on every evaluation-domain row.
 -/
@@ -44,30 +44,30 @@ theorem permutationColumnPolynomial_eval_environment
     (hcoherent : PermutationColumnRef.Coherent vk reference) :
     (permutationColumnPolynomialOfResolver
         vk poly proofIndex reference).eval (vk.omega ^ row) =
-      (resolverEnvironment vk poly proofIndex usableRows).get
+      (polynomialEnvironmentOfCommitments vk poly proofIndex usableRows).get
         (permutationColumnAddress vk reference) (row : ℤ) := by
   cases reference with
   | advice query =>
       rcases hcoherent with ⟨hcount, -, -⟩
       simp [permutationColumnPolynomialOfResolver, ColumnRef.resolve, finFn,
         permutationColumnCommitmentId, permutationColumnAddress,
-        resolverEnvironment, polynomialEnvironment, hcount]
+        polynomialEnvironmentOfCommitments, polynomialEnvironment, hcount]
   | fixed query =>
       rcases hcoherent with ⟨hcount, -, -⟩
       simp [permutationColumnPolynomialOfResolver, ColumnRef.resolve, finFn,
         permutationColumnCommitmentId, permutationColumnAddress,
-        resolverEnvironment, polynomialEnvironment, hcount]
+        polynomialEnvironmentOfCommitments, polynomialEnvironment, hcount]
   | «instance» query =>
       rcases hcoherent with ⟨hcount, -, -⟩
       simp [permutationColumnPolynomialOfResolver, ColumnRef.resolve, finFn,
         permutationColumnCommitmentId, permutationColumnAddress,
-        resolverEnvironment, polynomialEnvironment, hcount]
+        polynomialEnvironmentOfCommitments, polynomialEnvironment, hcount]
 
 /--
-One resolver permutation chunk value is the canonical environment read at the
+One polynomial permutation chunk value is the canonical environment read at the
 concrete column decoded from that chunk's query reference.
 -/
-theorem chunkRowValue_eq_resolverEnvironment
+theorem chunkRowValue_eq_polynomialEnvironment
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
@@ -82,7 +82,7 @@ theorem chunkRowValue_eq_resolverEnvironment
     chunkRowValue vk.omega
         (permutationChunkPairsOfResolver vk poly proofIndex)
         chunk row column =
-      (resolverEnvironment vk poly proofIndex usableRows).get
+      (polynomialEnvironmentOfCommitments vk poly proofIndex usableRows).get
         (permutationColumnAddress vk
           ((vk.permutationChunks.getD chunk []).getD
             column ((.advice 0), 0)).1)
@@ -108,7 +108,7 @@ theorem rotateOmega_domainPoint
   rw [zpow_add₀ homega]
   simp [rotateOmega, _root_.mul_comm]
 
-/-- A fixed query feed reads the same row as the canonical resolver environment. -/
+/-- A fixed query feed reads the same row as the polynomial environment. -/
 theorem fixedQueryFeedOfResolver_eval_environment
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
     (vk : VerifyingKey shape Fp G)
@@ -120,7 +120,7 @@ theorem fixedQueryFeedOfResolver_eval_environment
     (hentry : vk.fixedQueryLayout[query]? = some (column, rotation))
     (homega : vk.omega ≠ 0) (row : ℕ) :
     (fixedQueryFeedOfResolver vk poly query).eval (vk.omega ^ row) =
-      Query.eval (resolverEnvironment vk poly p usableRows)
+      Query.eval (polynomialEnvironmentOfCommitments vk poly p usableRows)
         selectors row (.fixed ⟨column⟩ rotation) := by
   rw [fixedQueryFeedOfResolver,
     resolverQueryFeed_eval vk.omega vk.fixedQueryLayout
@@ -129,10 +129,10 @@ theorem fixedQueryFeedOfResolver_eval_environment
       vk.fixedQueryLayout.getD query (0, 0) = (column, rotation) := by
     simp [List.getD_eq_getElem?_getD, hentry]
   rw [hget]
-  simp only [Query.eval, resolverEnvironment, polynomialEnvironment_fixed]
+  simp only [Query.eval, polynomialEnvironmentOfCommitments, polynomialEnvironment_fixed]
   rw [rotateOmega_domainPoint vk.omega homega row rotation]
 
-/-- An advice query feed reads the same row as the canonical resolver environment. -/
+/-- An advice query feed reads the same row as the polynomial environment. -/
 theorem adviceQueryFeedOfResolver_eval_environment
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
     (vk : VerifyingKey shape Fp G)
@@ -144,7 +144,7 @@ theorem adviceQueryFeedOfResolver_eval_environment
     (hentry : vk.adviceQueryLayout[query]? = some (column, rotation))
     (homega : vk.omega ≠ 0) (row : ℕ) :
     (adviceQueryFeedOfResolver vk poly p query).eval (vk.omega ^ row) =
-      Query.eval (resolverEnvironment vk poly p usableRows)
+      Query.eval (polynomialEnvironmentOfCommitments vk poly p usableRows)
         selectors row (.advice ⟨column⟩ rotation) := by
   rw [adviceQueryFeedOfResolver,
     resolverQueryFeed_eval vk.omega vk.adviceQueryLayout
@@ -153,10 +153,10 @@ theorem adviceQueryFeedOfResolver_eval_environment
       vk.adviceQueryLayout.getD query (0, 0) = (column, rotation) := by
     simp [List.getD_eq_getElem?_getD, hentry]
   rw [hget]
-  simp only [Query.eval, resolverEnvironment, polynomialEnvironment_advice]
+  simp only [Query.eval, polynomialEnvironmentOfCommitments, polynomialEnvironment_advice]
   rw [rotateOmega_domainPoint vk.omega homega row rotation]
 
-/-- An instance query feed reads the same row as the canonical resolver environment. -/
+/-- An instance query feed reads the same row as the polynomial environment. -/
 theorem instanceQueryFeedOfResolver_eval_environment
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
     (vk : VerifyingKey shape Fp G)
@@ -168,7 +168,7 @@ theorem instanceQueryFeedOfResolver_eval_environment
     (hentry : vk.instanceQueryLayout[query]? = some (column, rotation))
     (homega : vk.omega ≠ 0) (row : ℕ) :
     (instanceQueryFeedOfResolver vk poly p query).eval (vk.omega ^ row) =
-      Query.eval (resolverEnvironment vk poly p usableRows)
+      Query.eval (polynomialEnvironmentOfCommitments vk poly p usableRows)
         selectors row (.instance ⟨column⟩ rotation) := by
   rw [instanceQueryFeedOfResolver,
     resolverQueryFeed_eval vk.omega vk.instanceQueryLayout
@@ -177,14 +177,14 @@ theorem instanceQueryFeedOfResolver_eval_environment
       vk.instanceQueryLayout.getD query (0, 0) = (column, rotation) := by
     simp [List.getD_eq_getElem?_getD, hentry]
   rw [hget]
-  simp only [Query.eval, resolverEnvironment, polynomialEnvironment_instance]
+  simp only [Query.eval, polynomialEnvironmentOfCommitments, polynomialEnvironment_instance]
   rw [rotateOmega_domainPoint vk.omega homega row rotation]
 
 /--
-The three resolver query feeds interpret an arbitrary keygen query state whenever
+The three polynomial query feeds interpret an arbitrary keygen query state whenever
 the state layouts are the VK layouts and the shape counts those layouts exactly.
 -/
-theorem resolverQueryFeeds_interpret
+theorem polynomialQueryFeeds_interpret
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
@@ -211,7 +211,7 @@ theorem resolverQueryFeeds_interpret
         (adviceQueryFeedOfResolver vk poly p query).eval (vk.omega ^ row))
       (fun query =>
         (instanceQueryFeedOfResolver vk poly p query).eval (vk.omega ^ row))
-      (Query.eval (resolverEnvironment vk poly p usableRows)
+      (Query.eval (polynomialEnvironmentOfCommitments vk poly p usableRows)
         selectors row) where
   advice query column rotation hentry := by
     have hentryList :

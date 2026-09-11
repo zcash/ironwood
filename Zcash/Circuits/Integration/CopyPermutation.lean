@@ -353,7 +353,7 @@ theorem copyValue_eq_activeChunkRowValue
         vk poly proofIndex (top.usableRowsAt top.domainExponent) :=
       (activeChunkCell top) pp urs poly proofIndex flat hrow
     (top.permutationValue)
-        (resolverEnvironment vk poly proofIndex (top.usableRowsAt top.domainExponent)) flat =
+        (polynomialEnvironmentOfCommitments vk poly proofIndex (top.usableRowsAt top.domainExponent)) flat =
       chunkRowValue top.omega
         (ResolverPermutationPairs (shape := circuitShape)
           (numProofs := pp.numProofs) vk poly proofIndex)
@@ -416,7 +416,7 @@ theorem copyValue_eq_activeChunkRowValue
       chunkRowValue vk.omega
           (permutationChunkPairsOfResolver vk poly proofIndex)
           chunk row column =
-        (resolverEnvironment vk poly proofIndex (top.usableRowsAt top.domainExponent)).get
+        (polynomialEnvironmentOfCommitments vk poly proofIndex (top.usableRowsAt top.domainExponent)).get
           (permutationColumnAddress vk reference)
           (row : ℤ) := by
     rw [chunkRowValue, rowValue]
@@ -481,12 +481,12 @@ theorem permutationValues_of_constraintSatisfaction
       (r.2 : ℕ) < top.usableRowsAt top.domainExponent →
       top.copyPermutation.SameCycle l r →
       (top.permutationValue)
-          (resolverEnvironment
+          (polynomialEnvironmentOfCommitments
             (top.toVerifierKey urs)
             poly proofIndex (top.usableRowsAt top.domainExponent))
           l =
         (top.permutationValue)
-          (resolverEnvironment
+          (polynomialEnvironmentOfCommitments
             (top.toVerifierKey urs)
             poly proofIndex (top.usableRowsAt top.domainExponent))
         r := by
@@ -538,7 +538,7 @@ theorem permutationValues_of_constraintSatisfaction
             pp urs poly proofIndex r hr)
   calc
     (top.permutationValue)
-        (resolverEnvironment
+        (polynomialEnvironmentOfCommitments
           (top.toVerifierKey urs) poly proofIndex (top.usableRowsAt top.domainExponent))
         l =
       chunkRowValue top.omega
@@ -554,7 +554,7 @@ theorem permutationValues_of_constraintSatisfaction
         right.1 right.2.1 right.2.2 := by
           simpa only [top.toVerifierKey_omega] using hchunkValues
     _ = (top.permutationValue)
-        (resolverEnvironment
+        (polynomialEnvironmentOfCommitments
           (top.toVerifierKey urs) poly proofIndex (top.usableRowsAt top.domainExponent))
         r := by
           symm

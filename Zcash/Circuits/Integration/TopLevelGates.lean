@@ -1,8 +1,7 @@
 import Zcash.Circuits.Halo2.CompiledGates
 import Zcash.Circuits.Halo2.FieldSupport
 import Zcash.Snark.Soundness.Argument.PermutationRows
-import Zcash.Circuits.Integration.ResolverQueryEnvironment
-import Zcash.Circuits.Halo2.SelectorCompression
+import Zcash.Circuits.Integration.PolynomialQueries
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 
 /-!
@@ -30,8 +29,8 @@ variable
     [TopLevelShape top]
     {pp : ProofParams} {urs : URS G}
 
-/-- The resolver feeds interpret the complete circuit-derived pinned query state. -/
-theorem resolverInterpretsPinned
+/-- The polynomial query feeds interpret the circuit-derived pinned query state. -/
+theorem polynomialQueries_interpret_pinned
     [CircuitFieldSupport top]
     (poly : CommitmentId → CPoly)
     (proofIndex : Fin pp.numProofs)
@@ -51,11 +50,11 @@ theorem resolverInterpretsPinned
           (top.toVerifierKey urs) poly proofIndex query).eval
           (top.omega ^ row))
       (Query.eval
-        (resolverEnvironment
+        (polynomialEnvironmentOfCommitments
           (top.toVerifierKey urs) poly proofIndex usableRows)
         (fun _ => 0) row) := by
   have homega : top.omega ≠ 0 := CircuitFieldSupport.omega_ne_zero top
-  have hfinal := resolverQueryFeeds_interpret
+  have hfinal := polynomialQueryFeeds_interpret
     (top.toVerifierKey urs) poly proofIndex usableRows
     (fun _ => 0) row
     (by simpa only [top.toVerifierKey_omega] using homega)
@@ -112,7 +111,8 @@ theorem gatesCompiled_of_constraintSatisfaction
       rw [← pow_mul, Nat.mul_comm, pow_mul, top.omega_pow_n, one_pow])
   rw [eval_map_C, RichExpression.eval_toExpr] at hzero
   rw [top.pinnedCS_gates_eval_of_interprets _ _ _ _ _
-    (top.resolverInterpretsPinned poly proofIndex (top.usableRowsAt top.domainExponent) row)] at hzero
-  rwa [top.resolverEnvironment_eq_environment urs poly proofIndex hencoding] at hzero
+    (top.polynomialQueries_interpret_pinned poly proofIndex
+      (top.usableRowsAt top.domainExponent) row)] at hzero
+  rwa [top.polynomialEnvironmentOfCommitments_eq_environment urs poly proofIndex hencoding] at hzero
 
 end Halo2.TopLevelCircuit

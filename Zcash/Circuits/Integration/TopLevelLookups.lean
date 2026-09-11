@@ -62,7 +62,7 @@ def comparisonValues
     (pp : ProofParams) (urs : URS G) (poly : CommitmentId → CPoly)
     (index : ComparisonIndex top pp) : List Fp × List Fp :=
   let activation := top.lookupActivationRows.get index.1.2
-  let env := resolverEnvironment (top.toVerifierKey urs) poly index.1.1
+  let env := polynomialEnvironmentOfCommitments (top.toVerifierKey urs) poly index.1.1
     (top.usableRowsAt top.domainExponent)
   (((top.pinnedCS.lookupInputExprs.getD activation.1 []).map
       ((pinnedQueryState top.pinnedCS).eval env activation.2)),
@@ -178,9 +178,9 @@ theorem compressedValues
         ((pinnedQueryState top.pinnedCS).eval
           (top.environment (polynomialAssignment top.omega poly proofIndex)) row)) := by
   have hproject := top.pinnedCS_lookup_eval_of_interprets _ _ _ _ _
-    (top.resolverInterpretsPinned (urs := urs) poly proofIndex
+    (top.polynomialQueries_interpret_pinned (urs := urs) poly proofIndex
       (top.usableRowsAt top.domainExponent) row) index
-  rw [top.resolverEnvironment_eq_environment urs poly proofIndex hencoding] at hproject
+  rw [top.polynomialEnvironmentOfCommitments_eq_environment urs poly proofIndex hencoding] at hproject
   constructor
   · rw [lookupInputPolyOfResolver_eq, top.toVerifierKey_lookupInputExprs,
       compress_eval_eq_foldPoly, eval_foldPoly_eq_compressValues,
@@ -251,7 +251,7 @@ theorem lookupsCompiled_of_constraintSatisfaction
     have htheta := (not_mem_tupleCollisionSet_iff _ _ _).1 exclusions.theta
       ((proofIndex, ⟨i, hi⟩), ⟨row, hrow⟩)
     simpa only [comparisonValues, List.get_eq_getElem, hactivation,
-      top.resolverEnvironment_eq_environment urs poly proofIndex hencoding] using htheta
+      top.polynomialEnvironmentOfCommitments_eq_environment urs poly proofIndex hencoding] using htheta
 
 end TopLevelLookup
 

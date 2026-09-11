@@ -22,13 +22,13 @@ def FixedColumnEncoding (poly : CommitmentId → CPoly) : Prop :=
     (poly (.fixedCol column.index)).eval (top.omega ^ row) =
       top.fixedValue column row
 
-/-- Binding the fixed columns identifies the resolver's environment with the
+/-- Binding the fixed columns identifies the polynomial environment with the
 circuit-owned environment of the decoded proof assignment. -/
-theorem resolverEnvironment_eq_environment
+theorem polynomialEnvironmentOfCommitments_eq_environment
     {G : Type} [AddCommGroup G] [Inhabited G]
     (urs : URS G) (poly : CommitmentId → CPoly) (proofIndex : ℕ)
     (hfixed : top.FixedColumnEncoding poly) :
-    resolverEnvironment (top.toVerifierKey urs) poly proofIndex
+    polynomialEnvironmentOfCommitments (top.toVerifierKey urs) poly proofIndex
         (top.usableRowsAt top.domainExponent) =
       top.environment (polynomialAssignment top.omega poly proofIndex) := by
   apply congrArg₂ Environment.mk

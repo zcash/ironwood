@@ -1,4 +1,4 @@
-import Zcash.Circuits.Integration.ResolverQueryEnvironment
+import Zcash.Circuits.Integration.PolynomialQueries
 import Zcash.Common.ListChunks
 import Zcash.Snark.Keygen.Pipeline
 

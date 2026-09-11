@@ -55,7 +55,7 @@ def polynomialEnvironment
   usableRows := usableRows
 
 /--
-Resolve only the proof-varying part of a Clean top-level environment.
+Read the proof-varying columns of a Clean top-level environment from polynomials.
 
 Fixed columns and usable rows intentionally do not appear here: the
 `TopLevelCircuit` compiler supplies them when constructing its environment.
@@ -174,9 +174,8 @@ theorem polynomialEnvironment_query_instance
   congr 1
   rw [zpow_add₀ homega, _root_.mul_comm]
 
-/-- The canonical Clean environment selected by a commitment-ID polynomial resolver for one
-sub-proof. -/
-def resolverEnvironment
+/-- Read the column polynomials indexed by commitment ID for one sub-proof. -/
+def polynomialEnvironmentOfCommitments
     {shape : CircuitShape} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
@@ -187,38 +186,38 @@ def resolverEnvironment
     (fun column => poly (.adviceCol p column))
     (fun column => poly (.instanceCol p column))
 
-@[simp] theorem resolverEnvironment_fixed
+@[simp] theorem polynomialEnvironmentOfCommitments_fixed
     {shape : CircuitShape} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
     (p : ℕ) (usableRows : ℕ)
     (column : Column .fixed) (row : ℤ) :
-    (resolverEnvironment vk poly p usableRows).fixed column row =
+    (polynomialEnvironmentOfCommitments vk poly p usableRows).fixed column row =
       (poly (.fixedCol column.index)).eval (vk.omega ^ row) := rfl
 
-@[simp] theorem resolverEnvironment_advice
+@[simp] theorem polynomialEnvironmentOfCommitments_advice
     {shape : CircuitShape} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
     (p : ℕ) (usableRows : ℕ)
     (column : Column .advice) (row : ℤ) :
-    (resolverEnvironment vk poly p usableRows).advice column row =
+    (polynomialEnvironmentOfCommitments vk poly p usableRows).advice column row =
       (poly (.adviceCol p column.index)).eval (vk.omega ^ row) := rfl
 
-@[simp] theorem resolverEnvironment_instance
+@[simp] theorem polynomialEnvironmentOfCommitments_instance
     {shape : CircuitShape} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
     (p : ℕ) (usableRows : ℕ)
     (column : Column .instance) (row : ℤ) :
-    (resolverEnvironment vk poly p usableRows).inst column row =
+    (polynomialEnvironmentOfCommitments vk poly p usableRows).inst column row =
       (poly (.instanceCol p column.index)).eval (vk.omega ^ row) := rfl
 
 /--
 Once commitment binding identifies a resolved instance column with its canonical
 zero-padded row polynomial, the Clean environment reads the supplied public values.
 -/
-theorem resolverEnvironment_instance_of_rowPolynomial
+theorem polynomialEnvironmentOfCommitments_instance_of_rowPolynomial
     {shape : CircuitShape} {G : Type*}
     (vk : VerifyingKey shape Fp G)
     (poly : CommitmentId → CPoly)
@@ -229,9 +228,9 @@ theorem resolverEnvironment_instance_of_rowPolynomial
     (hrows : Function.Injective
       fun i : Fin (2 ^ shape.k) => vk.omega ^ (i : ℕ))
     (row : Fin (2 ^ shape.k)) :
-    (resolverEnvironment vk poly p usableRows).inst column (row : ℤ) =
+    (polynomialEnvironmentOfCommitments vk poly p usableRows).inst column (row : ℤ) =
       values.getD (row : ℕ) 0 := by
-  rw [resolverEnvironment_instance, hpoly]
+  rw [polynomialEnvironmentOfCommitments_instance, hpoly]
   simpa using instanceRowPolynomial_eval hrows row
 
 end Zcash.Snark

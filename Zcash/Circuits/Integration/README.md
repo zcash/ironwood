@@ -51,7 +51,7 @@ The semantic bridge is split by responsibility:
   `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
   `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.
   `TopLevelWitness.lean` provides the witness types;
-  `AssignmentEncoding.lean` identifies the polynomial resolver with the circuit's
+  `AssignmentEncoding.lean` identifies polynomial column reads with the circuit's
   canonical proof assignment and public-input layout.
   `CircuitFieldSupport top` supplies only numerical compatibility bounds;
   `Arithmetic.FieldDomainParams` derives roots and permutation-column separation
@@ -66,6 +66,9 @@ Fixed, permutation, and instance commitments share the verifier-native opening c
 in `Snark/Soundness/Multiopen/RowBinding.lean`; `Multiopen/InstanceColumns.lean` supplies
 the public-instance query routing. Integration supplies compiler provenance for fixed and
 permutation rows. Generic list chunking theory lives in `Common/ListChunks.lean`.
+`Multiopen/PermutationColumns.lean` provides the verifier-native σ-column commitment
+binding argument. `PolynomialQueries.lean` translates verifier query feeds to Clean
+column reads in the polynomial environment.
 
 The circuit-generic terminal lives outside this boundary.
 `Snark/Soundness/Circuit/Terminal` turns canonical constraint satisfaction and
