@@ -1,6 +1,4 @@
-import Zcash.Snark.Keygen.Pipeline
-import Zcash.Circuits.Integration.OperationLookups
-import Zcash.Circuits.Integration.ResolverQueryEnvironment
+import Zcash.Circuits.Halo2.RowEvaluation
 
 /-!
 # Lookup projection across the Clean boundary

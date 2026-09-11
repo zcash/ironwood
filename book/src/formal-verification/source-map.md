@@ -489,15 +489,16 @@ them as data (`SpecOrBreak`) rather than assuming them away.
 - **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
   `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
   `SelectorCompression`, `SelectorEvaluation`, and `QueryLayout` justify that translation.
+  `CompiledLookups` recovers source lookups from tuple membership at compiled activation rows;
+  `LookupSelectors` and `LookupProjection` justify exact selector substitution and query indexing.
   `FixedValues` derives fixed assignments and table constraints from the canonical environment, and
   `ConstraintFamilies` decomposes operation constraints by argument family.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
-  compiled gate evaluations (`TopLevelGates`), operation lookups and copies
+  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), tuple compression and copies
   (`OperationLookups`, `OperationCopies`), the permutation
   round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the
-  selector-row bridge (`LookupSelectorRows`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
   `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
   (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full

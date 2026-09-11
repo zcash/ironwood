@@ -8,8 +8,6 @@ import Zcash.Circuits.Integration.ExprRich
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Circuits.Integration.InstanceColumns
-import Zcash.Circuits.Integration.LookupProjection
-import Zcash.Circuits.Integration.LookupSelectorRows
 import Zcash.Circuits.Integration.OperationCopies
 import Zcash.Circuits.Halo2.FixedOperations
 import Zcash.Circuits.Integration.OperationLookups
@@ -20,7 +18,6 @@ import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Circuits.Halo2.SelectorCompression
 import Zcash.Circuits.Integration.AssignmentEncoding
-import Zcash.Circuits.Integration.TopLevelCoherence
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 import Zcash.Circuits.Integration.TopLevelWitness
 import Zcash.Circuits.Integration.TopLevelGates

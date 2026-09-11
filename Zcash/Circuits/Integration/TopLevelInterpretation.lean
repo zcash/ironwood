@@ -2,7 +2,6 @@ import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Halo2.Witness
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.InstanceColumns
-import Zcash.Circuits.Integration.LookupSelectorRows
 import Zcash.Circuits.Integration.TopLevelLookups
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Integration.TopLevelGates
@@ -92,7 +91,6 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   have hdomainSize : top.n = 2 ^ urs.k := by
     rw [top.n_eq_two_pow_domainExponent, hk]
-  have hfixedRows := top.domainRowsInjective_of_domainExponent_eq hk
   have hsatisfaction := relation.constraintSatisfaction top.n_ne_zero hgoodY
   have hmodel : relation.model = top.constraintModel pp urs ch relation.polynomial := by
     simp only [CanonicalMemberConstraintRelation.model]
@@ -123,28 +121,15 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
     top pp urs hk hgoodY permutationExclusions proofIndex
   swap
   · exact PSum.inr bad
-  refine bindOrRelationWitness
-    (listForallOrRelationWitness
-      (operationEnabledLookups top.operations 0)
-      fun lookup henabled => ?_)
-    fun lookupSelectorValues =>
-      { w := top.extractWitness assignment
-        satisfied := top.spec_of_constraints assignment (by
-          rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding,
-            CircuitConstraintFamily.operations_constraints_iff]
-          exact ⟨hgates,
-            hcopies,
-            TopLevelLookup.constraints ch relation.polynomial proofIndex
-              hsatisfaction (TopLevelLookup.WitnessConditions.ofChallengeExclusions
-                ch relation.polynomial proofIndex lookupSelectorValues lookupExclusions),
-            hfixed⟩) }
-  have hrow : top.placement lookup.region + lookup.row < top.n :=
-    (lookup.activationRow_lt_usableRows henabled).trans_le
-      top.usableRowsAt_domainExponent_le_n
-  exact lookup.inputSelectorValuesRealized_or_bad
-    relation.polynomial (fun column => top.fixedRows.getD column [])
-    hfixedRows hdomainSize
-    (fun column _ => PSum.inl (hbinding column))
-    proofIndex hrow (lookup.inputSelectorLeafRowsExact top henabled)
+  have hlookups := top.lookup_constraints_of_compiled assignment
+    (TopLevelLookup.lookupsCompiled_of_constraintSatisfaction ch relation.polynomial
+      proofIndex hsatisfaction hencoding lookupExclusions)
+  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hlookups
+  exact PSum.inl
+    { w := top.extractWitness assignment
+      satisfied := top.soundness assignment (by
+        rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding,
+          CircuitConstraintFamily.operations_constraints_iff]
+        exact ⟨hgates, hcopies, hlookups, hfixed⟩) }
 
 end Zcash.Snark

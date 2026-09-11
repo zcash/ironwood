@@ -27,26 +27,22 @@ written during circuit integration:
 The normative architecture rule and current migration guidance are in
 [`clean-boundary.md`](../../../book/src/formal-verification/clean-boundary.md).
 
-The lookup bridge is split deliberately:
+The semantic bridge is split by responsibility:
 
-* `LookupProjection.lean` proves the query-erasure and selector-substitution
-  compiler semantics for configured lookups;
-* `LookupSelectorRows.lean` derives exact expression-level selector projection from
-  singleton packed-selector cells and the generic fixed-row realization theorem.
-  TLC supplies the solution of its children's lookup-selector anchor requirements.
-* `TopLevelLookups.lean` routes synthesis-enabled lookups through the
-  circuit-derived verifying key, derives selector coverage, table freedom, tuple
-  arity, and activation-row fit from Clean's top-level keygen invariants, reduces
-  the remaining projection boundary to exact packed-selector values, packages the
-  bundle-wide `β`/`γ`/`θ` exclusions into the per-proof witness conditions, and
-  constructs the deployed witnesses consumed by the generic full-circuit bridge.
+* `Halo2/CompiledGates.lean` and `Halo2/CompiledLookups.lean` recover source
+  constraints from compiled row semantics. Query erasure, selector substitution,
+  activation routing, and fixed-row realization belong to that compiler layer.
+* `TopLevelGates.lean` derives compiled gate vanishing from polynomial divisibility.
+  `TopLevelLookups.lean` derives compiled tuple membership from the scalar lookup
+  argument and the existing `β`/`γ`/`θ` exclusions. Tuple decompression is required
+  only at compiler-derived activation rows, with every usable table row available.
 * `CopyConstraints.lean` derives Clean copy constraints directly from compiler
   copy-pair equalities and fixed-cell reads, including allocated constants.
 * `CopyPermutation.lean` and `PermutationCycle.lean` identify compiler copy replay
   with the verifier's sigma polynomials. `TopLevelCopyConstraints.lean` combines
   that identification with permutation challenge exclusions and constant reads.
 * `TopLevelInterpretation.lean` joins the four constraint families directly into
-  Clean's `Constraints` and applies `top.soundness` to extract executable private
+  Clean's `Constraints` and applies `top.soundness` to extract executable
   witnesses. `TopLevelWitness.lean` provides the witness types;
   `AssignmentEncoding.lean` identifies the polynomial resolver with the circuit's
   canonical proof assignment and public-input layout.

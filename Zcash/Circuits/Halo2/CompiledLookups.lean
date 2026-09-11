@@ -1,0 +1,108 @@
+import Zcash.Circuits.Halo2.LookupProjection
+import Zcash.Circuits.Halo2.LookupSelectors
+
+/-! # Soundness of compiled lookup row semantics
+
+The compiler exports configured lookup indices and their absolute activation rows.
+Membership compares uncompressed tuples at these rows with a table tuple at any
+usable row. Selector substitution and operation membership stay inside this layer.
+-/
+
+namespace Halo2.TopLevelCircuit
+
+open Zcash Zcash.Snark
+
+variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+
+/-- The canonical environment uses the published circuit's usable-row prefix. -/
+theorem environment_usableRows_eq (assignment : ProofAssignment Fp) :
+    (top.environment assignment).usableRows = top.usableRowsAt top.domainExponent := by
+  rw [top.environment_usableRows, ← top.domainExponent_eq_compiled,
+    top.usableRowsAt_domainExponent, top.n_eq_two_pow_domainExponent]
+
+/-- Lookup indices and absolute rows at which synthesis requests tuple membership. -/
+def lookupActivationRows : List (Fin top.lookupCount × ℕ) :=
+  (operationEnabledLookups top.operations 0).attach.map fun lookup =>
+    ((lookup.val.topLevelRoute lookup.property).index,
+      top.placement lookup.val.region + lookup.val.row)
+
+/-- Every activated compiled input tuple occurs in its compiled table. -/
+def LookupsCompiled (assignment : ProofAssignment Fp) : Prop :=
+  ∀ activation ∈ top.lookupActivationRows,
+    ∃ row < top.usableRowsAt top.domainExponent,
+      (top.pinnedCS.lookupInputExprs.getD activation.1 []).map
+          ((pinnedQueryState top.pinnedCS).eval (top.environment assignment) activation.2) =
+        (top.pinnedCS.lookupTableExprs.getD activation.1 []).map
+          ((pinnedQueryState top.pinnedCS).eval (top.environment assignment) row)
+
+/-- Compiled lookup evaluation depends only on the interpreted query coordinates. -/
+theorem pinnedCS_lookup_eval_of_interprets
+    (env : Environment Fp) (row : ℤ) (fixed advice instanceFeed : ℕ → Fp)
+    (hinterprets : Interprets (pinnedQueryState top.pinnedCS) fixed advice instanceFeed
+      (Query.eval env (fun _ => 0) row)) (index : Fin top.lookupCount) :
+    ((top.pinnedCS.lookupInputExprs.getD index []).map
+        (RichExpression.eval fixed advice instanceFeed) =
+      (top.pinnedCS.lookupInputExprs.getD index []).map
+        ((pinnedQueryState top.pinnedCS).eval env row)) ∧
+    ((top.pinnedCS.lookupTableExprs.getD index []).map
+        (RichExpression.eval fixed advice instanceFeed) =
+      (top.pinnedCS.lookupTableExprs.getD index []).map
+        ((pinnedQueryState top.pinnedCS).eval env row)) := by
+  have hcoverage := topLevelLookupInputs_selectorsCovered top (top.lookupAt index)
+    (top.lookupAt_mem_constraintSystem index)
+  have htables := TopLevelLookup.tablesCovered (top := top) (top.lookupAt index)
+  have hfeed := top.lookup_eval fixed advice instanceFeed _ index hcoverage htables hinterprets
+  have hrow := top.lookup_eval _ _ _ _ index hcoverage htables
+    ((pinnedQueryState top.pinnedCS).interprets env row)
+  exact ⟨hfeed.1.trans hrow.1.symm, hfeed.2.trans hrow.2.symm⟩
+
+/-- At a synthesized activation, compiled tuples are the source input/table tuples.
+The assignment carries no selector or fixed-column coherence hypothesis. -/
+theorem lookup_values_eq (assignment : ProofAssignment Fp)
+    (lookup : EnabledLookup Fp)
+    (henabled : lookup ∈ operationEnabledLookups top.operations 0) :
+    let index := (lookup.topLevelRoute henabled).index
+    ((top.pinnedCS.lookupInputExprs.getD index []).map
+        ((pinnedQueryState top.pinnedCS).eval (top.environment assignment)
+          (top.placement lookup.region + lookup.row : ℕ)) =
+      lookup.inputValues top.placement (top.environment assignment)) ∧
+    (∀ row < top.usableRowsAt top.domainExponent,
+      (top.pinnedCS.lookupTableExprs.getD index []).map
+          ((pinnedQueryState top.pinnedCS).eval (top.environment assignment) row) =
+        lookup.tableValues (top.environment assignment) row) := by
+  let route := lookup.topLevelRoute henabled
+  have project (row : ℤ) := top.lookup_eval _ _ _ _ route.index
+    (topLevelLookupInputs_selectorsCovered top _ (top.lookupAt_mem_constraintSystem route.index))
+    (TopLevelLookup.tablesCovered (top := top) _)
+    ((pinnedQueryState top.pinnedCS).interprets (top.environment assignment) row)
+  have selectors := EnabledLookup.SelectorProjection.ofInputSelectorValues
+    (top.environment assignment) lookup
+    (lookup.inputSelectorValuesRealized henabled assignment)
+    (lookupTables_selectorFree lookup.argument)
+  constructor
+  · have hinput := (project (top.placement lookup.region + lookup.row : ℕ)).1
+    rw [route.argument] at hinput
+    exact hinput.trans selectors.input
+  · intro row hrow
+    have htable := (project row).2
+    rw [route.argument] at htable
+    exact htable.trans (selectors.table row (by rwa [top.environment_usableRows_eq]))
+
+/-- Compiled tuple membership recovers every source lookup constraint. -/
+theorem lookup_constraints_of_compiled
+    (assignment : ProofAssignment Fp) (hlookups : top.LookupsCompiled assignment) :
+    CircuitConstraintFamily.constraints .lookup top.placement
+      (top.environment assignment) top.operations 0 := by
+  rw [CircuitConstraintFamily.lookup_constraints_iff_enabledLookups,
+    List.forall_iff_forall_mem]
+  intro lookup henabled
+  have hactivation : ((lookup.topLevelRoute henabled).index,
+      top.placement lookup.region + lookup.row) ∈ top.lookupActivationRows :=
+    List.mem_map.mpr ⟨⟨lookup, henabled⟩, List.mem_attach _ _, rfl⟩
+  obtain ⟨row, hrow, hvalues⟩ := hlookups _ hactivation
+  have hprojection := top.lookup_values_eq assignment lookup henabled
+  exact ⟨row, by rwa [top.environment_usableRows_eq],
+    hprojection.1.symm.trans (hvalues.trans (hprojection.2 row hrow))⟩
+
+end Halo2.TopLevelCircuit
