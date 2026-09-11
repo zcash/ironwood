@@ -8,9 +8,8 @@ Fixed assignments and lookup-table loads are the circuit-fixed part of Clean's
 authoritative semantics.  This file extracts both forms into one list and proves that
 their satisfaction is exactly the fixed constraint family.
 
-The result is useful twice: fixed-column polynomials can discharge the full fixed family
-without an operation-list proof walk, and Action environment assumptions can recover
-table contents from the same authoritative facts.
+The fixed-layout compiler uses this characterization to establish fixed constraints
+from its sparse assignments, including the default-fill rows of loaded tables.
 -/
 
 namespace Zcash.Snark

@@ -1,8 +1,8 @@
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Canonical.InstanceCommitment
-import Zcash.Circuits.Integration.FixedLayout
+import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
-import Zcash.Circuits.Integration.SelectorCoherence
+import Zcash.Circuits.Halo2.SelectorCompression
 import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Snark.Keygen.Lagrange
@@ -196,29 +196,6 @@ theorem topLevelFixedLayout_of_assembledQuery
   exact ⟨rotation, by
     simpa only [top.toVerifierKey_fixedQueryLayout] using hlayout⟩
 
-/-- Sparse table and region-local fixed assignments emitted by top-level keygen. -/
-def topLevelFixedOperationEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.tableAssignments
-      (top.usableRowsAt top.domainExponent) top.operations ++
-    Layout.regionAssignments top.regionStarts
-      (indexedRegions top.operations 0).1
-
-/--
-Sparse packed-selector assignments emitted by top-level keygen.
-
-The current full-circuit realization check also fails closed if two selector
-activations assign incompatible values to the same packed cell: the final dense
-cell cannot realize both sparse entries. That failure is intentionally safe but
-opaque. The structural replacement should instead derive non-overlap (or compatible
-composition) from selector packing and region-placement invariants.
--/
-def topLevelSelectorEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.selectorAssignments top.selectorMap top.selectorActivations
-
 /-- Fixed cells allocated for `constrainConstant` values by the V1 floor planner. -/
 def topLevelConstantEntries
     (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
@@ -235,16 +212,6 @@ def topLevelCompilerFixedEntries
     (top.usableRowsAt top.domainExponent)
     top.selectorMap top.constraintSystem top.operations
 
-theorem mem_topLevelCompilerFixedEntries_of_operation
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {assignment : Layout.FixedAssignment Fp}
-    (hassignment : assignment ∈ topLevelFixedOperationEntries top) :
-    assignment ∈ topLevelCompilerFixedEntries top := by
-  simp only [topLevelFixedOperationEntries, topLevelCompilerFixedEntries,
-    Layout.rawAssignments, List.mem_append] at hassignment ⊢
-  aesop
-
 theorem mem_topLevelCompilerFixedEntries_of_constant
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
@@ -254,15 +221,6 @@ theorem mem_topLevelCompilerFixedEntries_of_constant
   simp only [topLevelConstantEntries, topLevelCompilerFixedEntries,
     Layout.rawAssignments, List.mem_append] at hassignment ⊢
   aesop
-
-theorem mem_topLevelCompilerFixedEntries_of_selector
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {assignment : Layout.FixedAssignment Fp}
-    (hassignment : assignment ∈ topLevelSelectorEntries top) :
-    assignment ∈ topLevelCompilerFixedEntries top := by
-  simpa only [topLevelSelectorEntries, topLevelCompilerFixedEntries,
-    Layout.rawAssignments, List.mem_append] using Or.inl (Or.inr hassignment)
 
 /-- Every compiler-emitted fixed cell consumed by the semantic bridge. -/
 def topLevelRequiredFixedEntries
@@ -336,11 +294,9 @@ theorem topLevelFixedColumnEncoding_of_binding
 
 omit [Module Fp G] [DecidableEq G] in
 /--
-One required sparse fixed entry reads back from its canonically bound dense-row
-polynomial, or the caller's shared exceptional branch fires.
+One required sparse fixed entry reads back from its canonically bound dense-row polynomial.
 
-This is the pointwise form used by consumers such as constant-copy replay; the
-family theorem below merely applies it to selectors and fixed/table operations.
+This pointwise form supplies the allocated constant reads used by copy constraints.
 -/
 theorem topLevelFixedEntryRead_of_column
     {Config : Type} {PublicInput : TypeMap}
@@ -409,77 +365,6 @@ def topLevelFixedEntryRead_or_bad
     (binding column
       (topLevelRequiredFixedEntry_realized top (column, row, value) hentry).2.1)
     (topLevelFixedEntryRead_of_column poly hrows hn proofIndex hentry)
-
-omit [Module Fp G] [DecidableEq G] in
-/--
-Polynomial binding for every used fixed column supplies selector and fixed/table
-semantics. This lemma is independent of decoded-member provenance; callers choose
-the exceptional event carried by `binding`.
--/
-def topLevelFixedConstraints_or_bad
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams} {urs : URS G}
-    (poly : CommitmentId → CPoly)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    {Bad : Type}
-    (binding : ∀ column,
-      column < top.fixedColumnCount →
-        poly (.fixedCol column) =
-            instanceRowPolynomial (2 ^ urs.k)
-              top.omega (top.fixedRows.getD column []) ⊕'
-          Bad)
-    (proofIndex : Fin pp.numProofs) :
-    (SelectorActivationsRealized
-        top.selectorMap top.selectorActivations
-        (resolverEnvironment
-          (top.toVerifierKey urs) poly proofIndex
-          (top.usableRowsAt top.domainExponent)) ∧
-      CircuitConstraintFamily.constraints .fixed top.placement
-        (resolverEnvironment
-          (top.toVerifierKey urs) poly proofIndex
-          (top.usableRowsAt top.domainExponent))
-        (top.operations) 0) ⊕' Bad :=
-  bindOrRelationWitness
-    (boundedForallOrRelationWitness (n := top.fixedColumnCount) binding)
-    fun hbinding => by
-    let environment :=
-      resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent)
-    have fixedRead :
-        ∀ {column row value},
-          (column, row, value) ∈
-              topLevelRequiredFixedEntries top →
-            environment.fixed ⟨column⟩ (row : ℤ) = value := by
-      intro column row value hentry
-      exact
-        topLevelFixedEntryRead_of_column
-          poly hrows hn proofIndex hentry
-          (hbinding column
-            (topLevelRequiredFixedEntry_realized
-              top (column, row, value) hentry).2.1)
-    change
-      SelectorActivationsRealized
-          top.selectorMap top.selectorActivations environment ∧
-        CircuitConstraintFamily.constraints .fixed
-          (Layout.place top.regionStarts) environment
-          (top.operations) 0
-    constructor
-    · apply selectorActivationsRealized_of_selectorAssignments
-      intro assignment hentry
-      apply fixedRead
-      exact mem_topLevelCompilerFixedEntries_of_selector top hentry
-    · exact FixedLayout.constraints_of_entries
-        top.regionStarts (top.usableRowsAt top.domainExponent)
-        (top.operations) 0 environment rfl
-        (fun column row value hentry => fixedRead (by
-          exact mem_topLevelCompilerFixedEntries_of_operation top hentry))
 
 namespace CanonicalMemberConstraintRelation
 
@@ -726,92 +611,8 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
       simp [instanceRowPolynomial, zeroPaddedRows, rowPolynomial]
 
 /--
-Circuit-derived fixed rows discharge both consumers of fixed-column semantics:
-packed selector activations and explicit fixed/table operations. Commitment binding
-is retained as an explicit alternative.
--/
-def topLevelFixedConstraints_or_relation
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams}
-    {urs : URS G}
-    {hk : top.domainExponent = urs.k}
-    {instanceCommitment :
-      Fin pp.numProofs → ℕ → G}
-    {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.domainExponent Fp}
-    {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
-    {batchOpenings :
-      OpenedBatchOpenings urs (evalVector urs.k ch.x3)
-        (x4BatchCommitments
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          urs hk (top.toVerifierKey urs) ps ch)
-        (x4BatchEvals
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch)
-        a pU pW}
-    {memberDecode : ∀ i (hi : i <
-        deployedX4PairCount
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch),
-      OpenedMemberDecode
-        (shape := top.shape.withProofParams pp)
-        (instanceCommitment := instanceCommitment)
-        urs hk (top.toVerifierKey urs) ps ch batchOpenings i hi}
-    {y : Fp} {hpoly : CPoly}
-    (relation :
-      CanonicalMemberConstraintRelation
-        (shape := top.shape.withProofParams pp)
-        urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
-        batchOpenings memberDecode
-          (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly top.n)
-    [CircuitFieldSupport top]
-    (proofIndex : Fin pp.numProofs) :
-    (SelectorActivationsRealized
-        top.selectorMap top.selectorActivations
-        (resolverEnvironment
-          (top.toVerifierKey urs) relation.polynomial proofIndex
-          (top.usableRowsAt top.domainExponent)) ∧
-      CircuitConstraintFamily.constraints .fixed top.placement
-        (resolverEnvironment
-          (top.toVerifierKey urs) relation.polynomial proofIndex
-          (top.usableRowsAt top.domainExponent))
-        (top.operations) 0) ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
-  have hn : top.n = 2 ^ urs.k := by
-    rw [top.n_eq_two_pow_domainExponent, hk]
-  apply topLevelFixedConstraints_or_bad
-    relation.polynomial
-      hrows hn
-  · intro column hcolumn
-    have hcommitment :
-        (top.toVerifierKey urs).fixedCommitment column =
-          (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-            (top.fixedRows.getD column []) 1 := by
-      rw [top.toVerifierKey_fixedCommitment]
-      exact top.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn
-    exact relation.fixedColumn_eq_rowPolynomial_or_relation
-      column (LagrangeCommitmentKey.canonical urs top.omega)
-      (top.fixedRows.getD column [])
-      hcommitment hrows
-      (by
-        obtain ⟨rotation, hlayout⟩ :=
-          top.exists_rotation_mem_fixedQueryLayout_of_lt column hcolumn
-        exact fixedQuery_of_layout
-          (shape := top.shape.withProofParams pp)
-          (top.toVerifierKey urs) instanceCommitment ps ch
-          column rotation (top.toVerifierKey_fixedQueryCount urs) hlayout)
-
-/--
-Pointwise fixed-cell realization at the canonical decoded-member relation.
-Constants replay uses this theorem for the V1-allocated constants cells; selector
-and fixed/table family proofs use its bundled sibling above.
+Pointwise fixed-cell realization at the canonical decoded-member relation,
+used to read the V1-allocated constant cells in copy constraints.
 -/
 def topLevelFixedEntryRead_or_relation
     {Config : Type} {PublicInput : TypeMap}

@@ -489,18 +489,18 @@ them as data (`SpecOrBreak`) rather than assuming them away.
 - **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
   `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
   `SelectorCompression`, `SelectorEvaluation`, and `QueryLayout` justify that translation.
-  `FixedValues` realizes compiler-owned fixed data in the canonical environment, and
+  `FixedValues` derives fixed assignments and table constraints from the canonical environment, and
   `ConstraintFamilies` decomposes operation constraints by argument family.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
-  mathematics stays in `Zcash/Snark/`. It compiles the circuit's declared structure into what the
-  verifier's soundness model quantifies over: gates and lookups from the operation stream
-  (`TopLevelGates`, `OperationLookups`, `OperationFixed`, `OperationCopies`), the permutation
-  round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the layout and
-  selector bridges (`FixedLayout`, `SelectorCoherence`, `LookupSelectorRows`),
+  mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
+  compiled gate evaluations (`TopLevelGates`), operation lookups and copies
+  (`OperationLookups`, `OperationCopies`), the permutation
+  round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the
+  selector-row bridge (`LookupSelectorRows`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
-  `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments (
-  `ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
+  `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
+  (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
   circuit satisfaction (`TopLevelInterpretation`). These arguments
   apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
   `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and

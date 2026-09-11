@@ -2,7 +2,7 @@ import Zcash.Circuits.Halo2.CompiledGates
 import Zcash.Circuits.Halo2.FieldSupport
 import Zcash.Snark.Soundness.Argument.PermutationRows
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
-import Zcash.Circuits.Integration.SelectorCoherence
+import Zcash.Circuits.Halo2.SelectorCompression
 import Zcash.Circuits.Integration.TopLevelConstraintModel
 
 /-!

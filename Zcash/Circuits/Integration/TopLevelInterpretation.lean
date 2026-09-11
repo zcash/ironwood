@@ -117,9 +117,8 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
     (top.gatesCompiled_of_constraintSatisfaction ch relation.polynomial proofIndex
       hsatisfaction hencoding)
   rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hgates
-  obtain hfixed | bad := relation.topLevelFixedConstraints_or_relation proofIndex
-  swap
-  · exact PSum.inr bad
+  have hfixed := top.fixed_constraints assignment
+  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hfixed
   obtain hcopies | bad := relation.topLevelCopyConstraints_or_relation
     top pp urs hk hgoodY permutationExclusions proofIndex
   swap
@@ -138,7 +137,7 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
             TopLevelLookup.constraints ch relation.polynomial proofIndex
               hsatisfaction (TopLevelLookup.WitnessConditions.ofChallengeExclusions
                 ch relation.polynomial proofIndex lookupSelectorValues lookupExclusions),
-            hfixed.2⟩) }
+            hfixed⟩) }
   have hrow : top.placement lookup.region + lookup.row < top.n :=
     (lookup.activationRow_lt_usableRows henabled).trans_le
       top.usableRowsAt_domainExponent_le_n
