@@ -1,5 +1,5 @@
 import Zcash.Snark.Soundness.Canonical.PolynomialEnvironment
-import Zcash.Circuits.Integration.CircuitSatisfaction
+import Zcash.Circuits.Halo2.ConstraintFamilies
 import Clean.Halo2.TopLevel
 
 /-!

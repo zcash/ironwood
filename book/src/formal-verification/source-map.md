@@ -486,17 +486,22 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   allocated by that same program; the per-check modules are `ValueCommit`, `DeriveNullifier`,
   `SpendAuthority`, and `AddressIntegrity`; `Bundle` is the end-to-end statement against protocol
   spec §4.17.4; and `TopLevel` presents the whole thing as a closed `TopLevelCircuit`.
-- **`Integration/`** — the Clean-to-Ironwood boundary, and the largest directory in the tree. Only
+- **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
+  `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
+  `SelectorCompression`, `SelectorEvaluation`, and `QueryLayout` justify that translation.
+  `FixedValues` realizes compiler-owned fixed data in the canonical environment, and
+  `ConstraintFamilies` decomposes operation constraints by argument family.
+- **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It compiles the circuit's declared structure into what the
   verifier's soundness model quantifies over: gates and lookups from the operation stream
-  (`OperationGates`, `OperationLookups`, `OperationFixed`, `OperationCopies`), the permutation
+  (`TopLevelGates`, `OperationLookups`, `OperationFixed`, `OperationCopies`), the permutation
   round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the layout and
-  selector compilers (`FixedLayout`, `SelectorCoherence`, `LookupSelectorRows`, `QueryLayouts`),
+  selector bridges (`FixedLayout`, `SelectorCoherence`, `LookupSelectorRows`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
-  `PermutationColumns`, `InstanceColumns`), the resolver-backed environments (`ResolverGates`,
+  `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments (
   `ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
-  circuit satisfaction (`CircuitSatisfaction`, `TopLevelInterpretation`). These arguments
+  circuit satisfaction (`TopLevelInterpretation`). These arguments
   apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
   `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and
   `Soundness/Action/StraightLineEvent` bounds the probability loss from the challenge exclusions it

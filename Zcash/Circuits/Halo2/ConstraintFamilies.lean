@@ -1,9 +1,5 @@
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 import Clean.Halo2.Operations
-import Zcash.Arithmetic
+import Mathlib.Tactic.Tauto
 
 /-!
 # Full Halo2 circuit satisfaction, split by constraint family

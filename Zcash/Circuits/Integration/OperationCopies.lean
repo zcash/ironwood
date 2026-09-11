@@ -1,4 +1,4 @@
-import Zcash.Circuits.Integration.CircuitSatisfaction
+import Zcash.Circuits.Halo2.ConstraintFamilies
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Canonical.PermutationSemantics
 

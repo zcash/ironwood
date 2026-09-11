@@ -1,4 +1,4 @@
-import Zcash.Circuits.Integration.CircuitSatisfaction
+import Zcash.Circuits.Halo2.ConstraintFamilies
 import Zcash.Snark.Soundness.Constraint.FoldSplit
 import Zcash.Snark.Soundness.Pricing.GoodChallenge
 import Zcash.Snark.Soundness.Canonical.LookupRows

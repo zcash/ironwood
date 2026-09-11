@@ -2,7 +2,7 @@ import Zcash.Circuits.Integration.CopyPermutation
 import Zcash.Circuits.Integration.PermutationCycle
 import Zcash.Circuits.Integration.TopLevelCopyConstraints
 import Zcash.Circuits.Integration.TopLevelInterpretation
-import Zcash.Circuits.Integration.CircuitSatisfaction
+import Zcash.Circuits.Halo2.ConstraintFamilies
 import Zcash.Circuits.Integration.CopyListMembership
 import Zcash.Circuits.Integration.ExprRich
 import Zcash.Circuits.Integration.FixedColumns
@@ -12,13 +12,11 @@ import Zcash.Circuits.Integration.LookupProjection
 import Zcash.Circuits.Integration.LookupSelectorRows
 import Zcash.Circuits.Integration.OperationCopies
 import Zcash.Circuits.Integration.OperationFixed
-import Zcash.Circuits.Integration.OperationGates
 import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Circuits.Integration.PermutationColumns
 import Zcash.Circuits.Integration.PermutationCompiler
 import Zcash.Circuits.Integration.PermutationReplay
 import Zcash.Circuits.Integration.PolynomialEnvironment
-import Zcash.Circuits.Integration.ResolverGates
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Circuits.Integration.SelectorCoherence
 import Zcash.Circuits.Integration.AssignmentEncoding

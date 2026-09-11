@@ -1,4 +1,5 @@
-import Zcash.Circuits.Integration.CircuitSatisfaction
+import Zcash.Circuits.Halo2.ConstraintFamilies
+import Zcash.Arithmetic
 
 /-!
 # Fixed-data requirements in the operation stream

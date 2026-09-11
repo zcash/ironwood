@@ -1,3 +1,4 @@
+import Zcash.Circuits.Halo2.QueryLayout
 import Clean.Halo2.Keygen.Semantics
 import Zcash.Snark.Soundness.Canonical.LookupInstantiation
 import Zcash.Snark.Soundness.Canonical.PermutationInstantiation
@@ -98,84 +99,6 @@ theorem chunkRowValue_eq_resolverEnvironment
   exact permutationColumnPolynomial_eval_environment
     vk poly proofIndex usableRows row
       ((vk.permutationChunks.getD chunk [])[column]).1 hcoherent
-
-/-- Repackage a pinned constraint system's three query layouts as a query state. -/
-def pinnedQueryState
-    {F : Type} (pinned : PinnedConstraintSystem F) : QueryState where
-  advice := pinned.adviceQueryLayout.toArray
-  fixed := pinned.fixedQueryLayout.toArray
-  inst := pinned.instanceQueryLayout.toArray
-
-/--
-The pinned query layouts are exactly the authoritative query state used by the
-read-only expression projection.
--/
-theorem PinnedConstraintSystem.derive_queryState_eq
-    {F : Type} [Field F] [DecidableEq F]
-    (cs : ConstraintSystem F) (map : SelCompressMap) :
-    pinnedQueryState (PinnedConstraintSystem.derive cs map) =
-      queryWalkInit map cs := by
-  apply QueryState.ext
-  · apply Array.toList_inj.mp
-    simp [pinnedQueryState, PinnedConstraintSystem.derive, projectCS]
-  · apply Array.toList_inj.mp
-    simp [pinnedQueryState, PinnedConstraintSystem.derive, projectCS]
-  · apply Array.toList_inj.mp
-    simp [pinnedQueryState, PinnedConstraintSystem.derive, projectCS]
-
-/-- Every configure-registered fixed query remains present in the derived pinned
-fixed-query layout. -/
-theorem PinnedConstraintSystem.mem_fixedQueryLayout_derive_of_mem
-    {F : Type} [Field F] [DecidableEq F]
-    (cs : ConstraintSystem F) (map : SelCompressMap)
-    (column : Column .fixed) (rotation : Rotation)
-    (hquery : (column, rotation) ∈ cs.fixedQueries) :
-    (column.index, rotation) ∈
-      (PinnedConstraintSystem.derive cs map).fixedQueryLayout := by
-  have hresolved := queryWalkInit_resolves_fixed_of_mem map hquery
-  have hstate := PinnedConstraintSystem.derive_queryState_eq cs map
-  rw [← hstate] at hresolved
-  simpa [QueryState.ResolvesQuery, pinnedQueryState] using hresolved
-
-/-- Every configure-registered instance query remains present in the derived pinned
-instance-query layout. -/
-theorem PinnedConstraintSystem.mem_instanceQueryLayout_derive_of_mem
-    {F : Type} [Field F] [DecidableEq F]
-    (cs : ConstraintSystem F) (map : SelCompressMap)
-    (column : Column .instance) (rotation : Rotation)
-    (hquery : (column, rotation) ∈ cs.instanceQueries) :
-    (column.index, rotation) ∈
-      (PinnedConstraintSystem.derive cs map).instanceQueryLayout := by
-  have hregistered :
-      (column.index, rotation) ∈
-        cs.instanceQueries.map fun query => (query.1.index, query.2) :=
-    List.mem_map.mpr ⟨(column, rotation), hquery, by simp⟩
-  rw [← queryWalkInit_instance cs map] at hregistered
-  have hstate := PinnedConstraintSystem.derive_queryState_eq cs map
-  rw [← hstate] at hregistered
-  simpa [pinnedQueryState] using hregistered
-
-/-- The circuit-owned pinned layouts are its authoritative query state. -/
-theorem _root_.Halo2.TopLevelCircuit.pinnedQueryState_eq_gateQueryState
-    {F : Type} [FiniteField F]
-    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top] :
-    pinnedQueryState top.pinnedCS = top.gateQueryState := by
-  simpa only [TopLevelCircuit.pinnedCS, TopLevelCircuit.gateQueryState] using
-    PinnedConstraintSystem.derive_queryState_eq
-      top.constraintSystem top.selectorMap
-
-/-- Every top-level configured instance query remains in its circuit-owned layout. -/
-theorem _root_.Halo2.TopLevelCircuit.mem_instanceQueryLayout_of_mem_constraintSystem
-    {F : Type} [FiniteField F]
-    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : TopLevelCircuit F Config PublicInput)
-    [TopLevelShape top]
-    (column : Column .instance) (rotation : Rotation)
-    (hquery : (column, rotation) ∈ top.constraintSystem.instanceQueries) :
-    (column.index, rotation) ∈ top.instanceQueryLayout := by
-  exact PinnedConstraintSystem.mem_instanceQueryLayout_derive_of_mem
-    top.constraintSystem top.selectorMap column rotation hquery
 
 /-- Rotating a domain point is addition of its row and query rotation. -/
 theorem rotateOmega_domainPoint

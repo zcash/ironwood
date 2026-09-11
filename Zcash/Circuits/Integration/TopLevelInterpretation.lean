@@ -1,4 +1,5 @@
 import Zcash.Circuits.Integration.FixedColumns
+import Zcash.Circuits.Halo2.Witness
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.InstanceColumns
 import Zcash.Circuits.Integration.LookupSelectorRows
@@ -14,7 +15,7 @@ import Mathlib.Util.AssertNoSorry
 
 Commitment binding identifies fixed and permutation polynomials with the circuit's
 compiler output. Together with the challenge exclusions, these identifications
-recover Clean constraints and executable private witnesses for any TLC.
+recover Clean constraints and executable witnesses for any TLC.
 -/
 
 open Zcash.Arithmetic (omegaOf)
@@ -32,7 +33,7 @@ variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
 variable {G : Type} [AddCommGroup G] [Module Fp G]
   [DecidableEq G] [Inhabited G]
 
-/-- Recover the circuit's private witnesses from the canonical relation, or compute
+/-- Recover the circuit's witnesses from the canonical relation, or compute
 an augmented-basis relation when fixed/permutation commitments have conflicting openings. -/
 def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
     (pp : ProofParams) (urs : URS G)
@@ -112,6 +113,10 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
           (resolverAssignment top.omega relation.polynomial proofIndex))))
     fun proofIndex => ?_
   let assignment := resolverAssignment top.omega relation.polynomial proofIndex
+  have hgates := top.gate_constraints_of_compiled assignment
+    (top.gatesCompiled_of_constraintSatisfaction ch relation.polynomial proofIndex
+      hsatisfaction hencoding)
+  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hgates
   obtain hfixed | bad := relation.topLevelFixedConstraints_or_relation proofIndex
   swap
   · exact PSum.inr bad
@@ -124,12 +129,11 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
       (operationEnabledLookups top.operations 0)
       fun lookup henabled => ?_)
     fun lookupSelectorValues =>
-      { w := top.extractPrivateWitness (top.placedEnvironment assignment)
-        satisfied := top.soundness assignment (by
+      { w := top.extractWitness assignment
+        satisfied := top.spec_of_constraints assignment (by
           rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding,
             CircuitConstraintFamily.operations_constraints_iff]
-          exact ⟨top.canonicalConstraints ch relation.polynomial proofIndex
-              hsatisfaction hfixed.1,
+          exact ⟨hgates,
             hcopies,
             TopLevelLookup.constraints ch relation.polynomial proofIndex
               hsatisfaction (TopLevelLookup.WitnessConditions.ofChallengeExclusions

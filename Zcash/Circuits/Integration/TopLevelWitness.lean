@@ -3,7 +3,7 @@ import Zcash.Common.Satisfying
 
 /-! # Circuit-owned witnesses for decoded polynomial assignments
 
-These types retain executable private witnesses and their specification proofs,
+These types retain executable witnesses and their specification proofs,
 at either decoded or externally supplied public inputs.
 -/
 
@@ -11,7 +11,7 @@ namespace Zcash.Snark
 
 open Halo2 CompPoly.CPolynomial
 
-/-- A circuit's private witness as executable data, with its specification proof. -/
+/-- A circuit's witness as executable data, with its specification proof. -/
 abbrev TopLevelSemanticWitness
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
@@ -33,7 +33,7 @@ theorem statement
 
 end TopLevelSemanticWitness
 
-/-- Executable private witnesses for externally supplied bundle inputs. -/
+/-- Executable witnesses for externally supplied bundle inputs. -/
 def TopLevelExternalBundleWitness
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
@@ -42,7 +42,7 @@ def TopLevelExternalBundleWitness
     (inputs : Fin numProofs → PublicInput Fp) : Type :=
   ∀ proofIndex, TopLevelSemanticWitness top (inputs proofIndex)
 
-/-- Private witnesses at the public inputs decoded from the polynomial resolver. -/
+/-- Witnesses at the public inputs decoded from the polynomial resolver. -/
 def TopLevelBundleWitness
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
