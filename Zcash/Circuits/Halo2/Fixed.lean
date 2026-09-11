@@ -101,16 +101,6 @@ theorem fixed_constraints_iff_requirements
 
 end CircuitConstraintFamily
 
-/-- Build the full fixed family from one witness per extracted requirement. -/
-theorem fixed_constraints_of_requirements
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (ops : Operations Fp) (i : RegionIndex)
-    (witness : ∀ requirement ∈ operationFixedRequirements ops i,
-      requirement.Satisfied place env) :
-    CircuitConstraintFamily.constraints .fixed place env ops i := by
-  rw [CircuitConstraintFamily.fixed_constraints_iff_requirements]
-  exact List.forall_iff_forall_mem.mpr witness
-
 end Halo2
 
 /-!
@@ -405,7 +395,8 @@ theorem constraints_of_entries
       env.fixed ⟨column⟩ (row : ℤ) = value) :
     CircuitConstraintFamily.constraints .fixed
       (Layout.place starts) env ops i := by
-  apply fixed_constraints_of_requirements
+  rw [CircuitConstraintFamily.fixed_constraints_iff_requirements,
+    List.forall_iff_forall_mem]
   intro requirement hrequirement
   exact requirement_satisfied_of_entries
     starts usable ops i env husable hentries requirement hrequirement

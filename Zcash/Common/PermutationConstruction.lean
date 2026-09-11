@@ -335,4 +335,83 @@ theorem replayKeygenPermutation_preserves
       ((replayKeygenPermutation_sameCycle_iff copies _ _).mp hsame)).mp
         hcell
 
+/-- The abstract replay is the copy-order fold of the merge step. -/
+theorem replayKeygenPermutation_eq_foldl {cell : Type*} [DecidableEq cell] [Fintype cell]
+    (copies : List (cell × cell)) :
+    replayKeygenPermutation copies = copies.foldl PermConstruction.step 1 := by
+  have hbuild : ∀ l : List (cell × cell),
+      PermConstruction.build l = l.foldr (fun ab π => PermConstruction.step π ab) 1 := by
+    intro l
+    induction l with
+    | nil => rfl
+    | cons ab rest ih => simp [PermConstruction.build, ih]
+  rw [replayKeygenPermutation, hbuild, List.foldr_reverse]
+
 end Zcash
+
+namespace Equiv.Perm
+
+/-- Every cell has a first return time under a permutation of a finite type, bounded by
+the type's cardinality. -/
+theorem exists_minimal_return {α : Type*} [Fintype α] (π : Perm α)
+    (rep : α) :
+    ∃ s, (1 ≤ s ∧ (π ^ s) rep = rep) ∧ s ≤ Fintype.card α ∧
+      ∀ t, 0 < t → t < s → (π ^ t) rep ≠ rep := by
+  classical
+  have hex : ∃ t, 1 ≤ t ∧ (π ^ t) rep = rep := by
+    refine ⟨orderOf π, orderOf_pos π, ?_⟩
+    rw [pow_orderOf_eq_one]
+    rfl
+  let s := Nat.find hex
+  have hfind := Nat.find_spec hex
+  have hmin : ∀ t, 0 < t → t < s → (π ^ t) rep ≠ rep := by
+    intro t ht hts habs
+    exact Nat.find_min hex hts ⟨ht, habs⟩
+  refine ⟨s, hfind, ?_, hmin⟩
+  -- `t ↦ π ^ t rep` is injective below the first return, so `s` is at most the cell count
+  have hinj : Set.InjOn (fun t => (π ^ t) rep) (Finset.range s) := by
+    intro x hx y hy hxy
+    simp only [Finset.coe_range, Set.mem_Iio] at hx hy
+    by_contra hne
+    -- w.l.o.g. x < y; then `π ^ (y - x) rep = rep` strictly before `s`
+    rcases Nat.lt_or_ge x y with hlt | hge
+    · have : (π ^ (y - x)) rep = rep := by
+        apply (Equiv.injective (π ^ x))
+        rw [← Equiv.Perm.mul_apply, ← pow_add]
+        rw [Nat.add_sub_cancel' (Nat.le_of_lt hlt)]
+        exact hxy.symm
+      exact hmin (y - x) (by omega) (by omega) this
+    · have hlt' : y < x := by omega
+      have : (π ^ (x - y)) rep = rep := by
+        apply (Equiv.injective (π ^ y))
+        rw [← Equiv.Perm.mul_apply, ← pow_add]
+        rw [Nat.add_sub_cancel' (Nat.le_of_lt hlt')]
+        exact hxy
+      exact hmin (x - y) (by omega) (by omega) this
+  have hcard := Finset.card_le_card_of_injOn (fun t => (π ^ t) rep)
+    (fun x _ => Finset.mem_univ _) hinj
+  simpa using hcard
+
+/-- Below the first return time, the orbit segment of a cell is exactly its cycle. -/
+theorem sameCycle_iff_exists_pow_lt {α : Type*} [Fintype α] {π : Perm α}
+    {rep : α} {s : ℕ} (hs1 : 1 ≤ s) (hs : (π ^ s) rep = rep)
+    (d : α) :
+    π.SameCycle rep d ↔ ∃ t, t < s ∧ (π ^ t) rep = d := by
+  classical
+  constructor
+  · intro h
+    obtain ⟨i, _, hi⟩ := h.exists_pow_eq'
+    have hq : ∀ q, (π ^ (s * q)) rep = rep := by
+      intro q
+      induction q with
+      | zero => rfl
+      | succ q ih =>
+          rw [Nat.mul_succ, pow_add, Equiv.Perm.mul_apply, hs]
+          exact ih
+    refine ⟨i % s, Nat.mod_lt _ (by omega), ?_⟩
+    conv_rhs => rw [← hi, ← Nat.mod_add_div i s]
+    rw [pow_add, Equiv.Perm.mul_apply, hq]
+  · rintro ⟨t, _, rfl⟩
+    exact ⟨(t : ℤ), by simp⟩
+
+end Equiv.Perm

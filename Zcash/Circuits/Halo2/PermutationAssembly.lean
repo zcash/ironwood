@@ -192,68 +192,6 @@ theorem getPair_repoint_aux {numCols n : ℕ} {a : Asm} {π : Perm (FlatCell num
           · rw [if_pos hc, if_pos (hcond.mpr hc)]
           · rw [if_neg hc, if_neg (fun h => hc (hcond.mp h))]
 
-/-- Every cell has a first return time under a permutation of the flat cells, bounded by
-the cell count. -/
-theorem exists_minimal_return {numCols n : ℕ} (π : Perm (FlatCell numCols n))
-    (rep : FlatCell numCols n) :
-    ∃ s, (1 ≤ s ∧ (π ^ s) rep = rep) ∧ s ≤ numCols * n ∧
-      ∀ t, 0 < t → t < s → (π ^ t) rep ≠ rep := by
-  classical
-  have hex : ∃ t, 1 ≤ t ∧ (π ^ t) rep = rep := by
-    refine ⟨orderOf π, orderOf_pos π, ?_⟩
-    rw [pow_orderOf_eq_one]
-    rfl
-  let s := Nat.find hex
-  have hfind := Nat.find_spec hex
-  have hmin : ∀ t, 0 < t → t < s → (π ^ t) rep ≠ rep := by
-    intro t ht hts habs
-    exact Nat.find_min hex hts ⟨ht, habs⟩
-  refine ⟨s, hfind, ?_, hmin⟩
-  -- `t ↦ π ^ t rep` is injective below the first return, so `s` is at most the cell count
-  have hinj : Set.InjOn (fun t => (π ^ t) rep) (Finset.range s) := by
-    intro x hx y hy hxy
-    simp only [Finset.coe_range, Set.mem_Iio] at hx hy
-    by_contra hne
-    -- w.l.o.g. x < y; then `π ^ (y - x) rep = rep` strictly before `s`
-    rcases Nat.lt_or_ge x y with hlt | hge
-    · have : (π ^ (y - x)) rep = rep := by
-        apply (Equiv.injective (π ^ x))
-        rw [← Equiv.Perm.mul_apply, ← pow_add]
-        rw [Nat.add_sub_cancel' (Nat.le_of_lt hlt)]
-        exact hxy.symm
-      exact hmin (y - x) (by omega) (by omega) this
-    · have hlt' : y < x := by omega
-      have : (π ^ (x - y)) rep = rep := by
-        apply (Equiv.injective (π ^ y))
-        rw [← Equiv.Perm.mul_apply, ← pow_add]
-        rw [Nat.add_sub_cancel' (Nat.le_of_lt hlt')]
-        exact hxy
-      exact hmin (x - y) (by omega) (by omega) this
-  have hcard := Finset.card_le_card_of_injOn (fun t => (π ^ t) rep)
-    (fun x _ => Finset.mem_univ _) hinj
-  simpa [Fintype.card_prod] using hcard
-
-/-- Below the first return time, the orbit segment of a cell is exactly its cycle. -/
-theorem sameCycle_iff_exists_pow_lt {numCols n : ℕ} {π : Perm (FlatCell numCols n)}
-    {rep : FlatCell numCols n} {s : ℕ} (hs1 : 1 ≤ s) (hs : (π ^ s) rep = rep)
-    (d : FlatCell numCols n) :
-    π.SameCycle rep d ↔ ∃ t, t < s ∧ (π ^ t) rep = d := by
-  constructor
-  · intro h
-    obtain ⟨i, _, hi⟩ := h.exists_pow_eq'
-    have hq : ∀ q, (π ^ (s * q)) rep = rep := by
-      intro q
-      induction q with
-      | zero => rfl
-      | succ q ih =>
-          rw [Nat.mul_succ, pow_add, Equiv.Perm.mul_apply, hs]
-          exact ih
-    refine ⟨i % s, Nat.mod_lt _ (by omega), ?_⟩
-    conv_rhs => rw [← hi, ← Nat.mod_add_div i s]
-    rw [pow_add, Equiv.Perm.mul_apply, hq]
-  · rintro ⟨t, _, rfl⟩
-    exact ⟨(t : ℤ), by simp⟩
-
 /-- The walk reads only `mapping` and writes only `aux`, so a `sizes` update commutes
 away. -/
 theorem repoint_aux_sizes {a : Asm} (sz : Array (Array ℕ)) (fuel : ℕ)
@@ -351,7 +289,9 @@ theorem Sim.copy {numCols n : ℕ} {a : Asm} {π : Perm (FlatCell numCols n)}
       · exact fun h => hsame h.symm
     have hRCLC : ¬ π.SameCycle RC LC :=
       fun h => huv (hRCcyc.trans (h.trans hLCcyc.symm))
-    obtain ⟨sN, ⟨hs1, hsret⟩, hsle, hsmin⟩ := exists_minimal_return π RC
+    obtain ⟨sN, ⟨hs1, hsret⟩, hsle, hsmin⟩ := π.exists_minimal_return RC
+    have hsle : sN ≤ numCols * n := by
+      simpa only [Fintype.card_prod, Fintype.card_fin] using hsle
     -- the aux component after the merge, cycle by cycle
     have haux2 : ∀ d : FlatCell numCols n,
         getPair (Halo2.Layout.Asm.merge a (n * numCols)
@@ -363,8 +303,8 @@ theorem Sim.copy {numCols n : ℕ} {a : Asm} {π : Perm (FlatCell numCols n)}
         hsret hs1 hsmin (n * numCols)
         (le_trans hsle (le_of_eq (Nat.mul_comm _ _))) d]
       by_cases hcyc : π.SameCycle RC d
-      · rw [if_pos ((sameCycle_iff_exists_pow_lt hs1 hsret d).mp hcyc), if_pos hcyc]
-      · rw [if_neg (fun h => hcyc ((sameCycle_iff_exists_pow_lt hs1 hsret d).mpr h)),
+      · rw [if_pos ((Equiv.Perm.sameCycle_iff_exists_pow_lt hs1 hsret d).mp hcyc), if_pos hcyc]
+      · rw [if_neg (fun h => hcyc ((Equiv.Perm.sameCycle_iff_exists_pow_lt hs1 hsret d).mpr h)),
           if_neg hcyc]
     have hlr : l ≠ r := fun h => hsame (h ▸ Equiv.Perm.SameCycle.refl π l)
     have hlrpair : l.pair ≠ r.pair := fun h => hlr (FlatCell.pair_injective h)
@@ -530,18 +470,6 @@ theorem Sim.foldl {numCols n : ℕ}
   induction copies generalizing a π with
   | nil => exact sim
   | cons p rest ih => exact ih (sim.copy p.1 p.2)
-
-/-- The abstract replay is the copy-order fold of the merge step. -/
-theorem replayKeygenPermutation_eq_foldl {cell : Type*} [DecidableEq cell] [Fintype cell]
-    (copies : List (cell × cell)) :
-    replayKeygenPermutation copies = copies.foldl PermConstruction.step 1 := by
-  have hbuild : ∀ l : List (cell × cell),
-      PermConstruction.build l = l.foldr (fun ab π => PermConstruction.step π ab) 1 := by
-    intro l
-    induction l with
-    | nil => rfl
-    | cons ab rest ih => simp [PermConstruction.build, ih]
-  rw [replayKeygenPermutation, hbuild, List.foldr_reverse]
 
 /-- **The executable keygen assembly is the abstract replay**: on every cell, the final
 `mapping` is the action of `replayKeygenPermutation` over the same copies. -/

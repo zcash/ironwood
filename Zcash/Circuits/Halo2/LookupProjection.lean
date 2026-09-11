@@ -17,6 +17,28 @@ namespace Halo2
 
 set_option maxHeartbeats 20000
 
+/-- Query projection preserves evaluation of a selector-substituted expression list. -/
+theorem eraseGates_substSelectorMap_eval
+    {F : Type} [Field F] [DecidableEq F]
+    (map : SelCompressMap) (queries : QueryState)
+    (fixed advice instanceFeed : ℕ → F) (valuation : Query → F)
+    (expressions : List (Expression F Query))
+    (hcoverage : ∀ expression ∈ expressions,
+      expression.selectorsCovered (fun selector => (map.lookup selector).isSome) = true)
+    (hresolved : (expressions.map (substSelectorMap map.lookup)).Forall
+      (·.QueriesResolved queries))
+    (hinterprets : Interprets queries fixed advice instanceFeed valuation) :
+    (eraseGates (expressions.map (substSelectorMap map.lookup)) queries).map
+        (RichExpression.eval fixed advice instanceFeed) =
+      expressions.map (Expression.eval (substValuation map.lookup valuation)) := by
+  simp only [eraseGates, List.map_map]
+  apply List.map_congr_left
+  intro expression hmem
+  exact eraseExpr_substSelectorMap_eval map.lookup fixed advice instanceFeed valuation
+    expression queries (hcoverage expression hmem)
+    (List.forall_iff_forall_mem.mp hresolved _ (List.mem_map.mpr ⟨expression, hmem, rfl⟩))
+    hinterprets
+
 /-- A selected pinned lookup evaluates like its selector-substituted source argument
 whenever all of that argument's queries resolve against the compiler layout. -/
 theorem PinnedConstraintSystem.derive_lookup_eval
@@ -56,73 +78,15 @@ theorem PinnedConstraintSystem.derive_lookup_eval
       cs.lookups[lookupIndex].tables.map
         (Expression.eval
           (substValuation map.lookup valuation))) := by
-  let argument := cs.lookups[lookupIndex]
-  have hinterpretsQueries :
-      Interprets (queryWalkInit map cs)
-        fixed advice instanceFeed valuation := by
-    rw [← PinnedConstraintSystem.derive_queryState_eq cs map]
-    exact hinterprets
-  have hinputFree :
-      ∀ expression ∈ argument.inputs.map
-          (substSelectorMap map.lookup),
-        expression.SelectorFree := by
-    intro expression hexpression
-    obtain ⟨source, hsource, hexpression⟩ := List.mem_map.mp hexpression
-    subst expression
-    exact (substSelectorMap_selectorFree _ source).2
-      (hinputCoverage source hsource)
-  have htableFree :
-      ∀ expression ∈ argument.tables.map
-          (substSelectorMap map.lookup),
-        expression.SelectorFree := by
-    intro expression hexpression
-    obtain ⟨source, hsource, hexpression⟩ := List.mem_map.mp hexpression
-    subst expression
-    exact (substSelectorMap_selectorFree _ source).2
-      (htableCoverage source hsource)
-  have hinputs := eraseGates_eval fixed advice instanceFeed valuation
-    (argument.inputs.map (substSelectorMap map.lookup))
-    (queryWalkInit map cs) hinputFree
-    (List.forall_iff_forall_mem.mp hinputResolved) hinterpretsQueries
-  have htables := eraseGates_eval fixed advice instanceFeed valuation
-    (argument.tables.map (substSelectorMap map.lookup))
-    (queryWalkInit map cs) htableFree
-    (List.forall_iff_forall_mem.mp htableResolved) hinterpretsQueries
-  have hpinnedInputs :
-      (PinnedConstraintSystem.derive cs map).lookupInputExprs.getD
-          lookupIndex [] =
-        eraseGates
-          (argument.inputs.map (substSelectorMap map.lookup))
-          (queryWalkInit map cs) := by
-    simpa only [argument] using
-      PinnedConstraintSystem.derive_lookupInputExprs_getD
-        cs map lookupIndex hlookup
-  have hpinnedTables :
-      (PinnedConstraintSystem.derive cs map).lookupTableExprs.getD
-          lookupIndex [] =
-        eraseGates
-          (argument.tables.map (substSelectorMap map.lookup))
-          (queryWalkInit map cs) := by
-    simpa only [argument] using
-      PinnedConstraintSystem.derive_lookupTableExprs_getD
-        cs map lookupIndex hlookup
-  constructor
-  · rw [hpinnedInputs]
-    apply List.ext_getElem
-    · simp only [List.length_map, eraseGates_length, argument]
-    · intro index hleft hright
-      simp only [List.getElem_map]
-      have heval := hinputs index (by simpa using hleft) (by simpa using hright)
-      rw [List.getElem_map, substSelectorMap_eval] at heval
-      exact heval
-  · rw [hpinnedTables]
-    apply List.ext_getElem
-    · simp only [List.length_map, eraseGates_length, argument]
-    · intro index hleft hright
-      simp only [List.getElem_map]
-      have heval := htables index (by simpa using hleft) (by simpa using hright)
-      rw [List.getElem_map, substSelectorMap_eval] at heval
-      exact heval
+  have hinterpretsQueries : Interprets (queryWalkInit map cs)
+      fixed advice instanceFeed valuation := by
+    rwa [← PinnedConstraintSystem.derive_queryState_eq cs map]
+  rw [PinnedConstraintSystem.derive_lookupInputExprs_getD cs map lookupIndex hlookup,
+    PinnedConstraintSystem.derive_lookupTableExprs_getD cs map lookupIndex hlookup]
+  exact ⟨eraseGates_substSelectorMap_eval map _ _ _ _ _ _
+      hinputCoverage hinputResolved hinterpretsQueries,
+    eraseGates_substSelectorMap_eval map _ _ _ _ _ _
+      htableCoverage htableResolved hinterpretsQueries⟩
 
 /-- Project one lookup directly through a top-level circuit's owned compilation. -/
 theorem _root_.Halo2.TopLevelCircuit.lookup_eval

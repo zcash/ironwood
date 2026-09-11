@@ -109,16 +109,6 @@ theorem topLevelLookupInputs_selectorsCovered
   · exact sourceCoverage
 
 /--
-Every configured lookup table expression of a top-level circuit is selector-free.
-This is intrinsic to `LookupArgument`, not an additional coherence assumption.
--/
-theorem lookupTables_selectorFree
-    (argument : LookupArgument Fp) :
-    argument.tables.Forall Expression.SelectorFree :=
-  List.forall_iff_forall_mem.mpr
-    (fun table htable => argument.tablesFree table htable)
-
-/--
 Selector-free expressions cannot distinguish selector substitution from an
 arbitrary selector valuation. Fixed, advice, and instance queries retain the
 same environment and row on both sides.
@@ -132,25 +122,7 @@ theorem Expression.eval_substValuation_eq_queryEval_of_selectorFree
         (substValuation map.lookup
           (Query.eval environment (fun _ => 0) row)) =
       expression.eval (Query.eval environment selectors row) := by
-  induction expression with
-  | var query =>
-      cases query with
-      | selector selector =>
-          simp [Expression.SelectorFree] at hfree
-      | fixed column rotation =>
-          rfl
-      | advice column rotation =>
-          rfl
-      | «instance» column rotation =>
-          rfl
-  | const value =>
-      rfl
-  | add left right ihLeft ihRight =>
-      simp only [Expression.SelectorFree] at hfree
-      simp only [Expression.eval, ihLeft hfree.1, ihRight hfree.2]
-  | mul left right ihLeft ihRight =>
-      simp only [Expression.SelectorFree] at hfree
-      simp only [Expression.eval, ihLeft hfree.1, ihRight hfree.2]
+  apply expression.eval_eq_of_selectorFree hfree <;> intros <;> rfl
 
 namespace TopLevelLookup
 
@@ -166,9 +138,7 @@ theorem tablesCovered
     (fun selector =>
       (top.selectorMap.lookup selector).isSome)
     expression
-    (List.forall_iff_forall_mem.mp
-      (lookupTables_selectorFree argument)
-      expression hexpression)
+    (argument.tablesFree expression hexpression)
 
 end TopLevelLookup
 

@@ -488,10 +488,10 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   spec §4.17.4; and `TopLevel` presents the whole thing as a closed `TopLevelCircuit`.
 - **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
   `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
-  `SelectorCompression`, `SelectorEvaluation`, and `QueryLayout` justify that translation.
+  `SelectorCompression`, `SelectorEvaluation`, and `Queries` justify that translation.
   `CompiledLookups` recovers source lookups from tuple membership at compiled activation rows;
   `LookupSelectors` and `LookupProjection` justify exact selector substitution and query indexing.
-  `FixedValues` derives fixed assignments and table constraints from the canonical environment, and
+  `Fixed` derives fixed assignments and table constraints from the canonical environment, and
   `CompiledCopies` recovers source copy constraints from resolved column/row equalities.
   `CopyPermutation` derives those equalities from compiled cycles; `PermutationAssembly`
   proves the executable mapping correct, and `PermutationRows` supplies its row vectors to Keygen.

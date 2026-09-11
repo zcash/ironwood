@@ -37,45 +37,6 @@ theorem Expression.selectorsCovered_mono
       exact ⟨ihLeft hcovered.1, ihRight hcovered.2⟩
 
 /--
-The inner greedy scan only transfers selector descriptions between the chosen
-combination and the remainder.
--/
-theorem extendCombination_length_conservation
-    (maxDegree d : ℕ) (comb selectors : List SelectorDescription) :
-    let result := extendCombination maxDegree d comb selectors
-    result.1.length + result.2.length =
-      comb.length + selectors.length := by
-  induction selectors generalizing d comb with
-  | nil =>
-      simp [extendCombination]
-  | cons selector rest ih =>
-      simp only [extendCombination]
-      split
-      · simp
-      · split
-        · generalize hresult :
-            extendCombination maxDegree d comb rest = result
-          rcases result with ⟨chosen, remaining⟩
-          have hlength := ih d comb
-          rw [hresult] at hlength
-          simp only [List.length_cons] at hlength ⊢
-          omega
-        · let nextDegree :=
-            max d (selector.maxDegree - 1)
-          split
-          · generalize hresult :
-              extendCombination maxDegree d comb rest = result
-            rcases result with ⟨chosen, remaining⟩
-            have hlength := ih d comb
-            rw [hresult] at hlength
-            simp only [List.length_cons] at hlength ⊢
-            omega
-          · have hlength :=
-              ih nextDegree (comb ++ [selector])
-            simpa [nextDegree, Nat.add_assoc, Nat.add_left_comm,
-              Nat.add_comm] using hlength
-
-/--
 The inner greedy scan partitions the initial combination and candidate list:
 it neither drops nor invents selector descriptions.
 -/
@@ -303,42 +264,6 @@ theorem extendCombination_length_le
             simp only [List.length_append, List.length_singleton]
             omega
 
-/-- Every combination returned by the outer packing loop fits in its input list. -/
-theorem length_le_of_mem_buildCombinations
-    (maxDegree fuel : ℕ) (selectors combination :
-      List SelectorDescription)
-    (hcombination :
-      combination ∈ buildCombinations maxDegree fuel selectors) :
-    combination.length ≤ selectors.length := by
-  induction fuel generalizing selectors with
-  | zero =>
-      simp [buildCombinations] at hcombination
-  | succ fuel ih =>
-      cases selectors with
-      | nil =>
-          simp [buildCombinations] at hcombination
-      | cons selector rest =>
-          simp only [buildCombinations] at hcombination
-          generalize hresult :
-              extendCombination maxDegree
-                (selector.maxDegree - 1) [selector] rest =
-                result at hcombination
-          rcases result with ⟨chosen, remaining⟩
-          simp only [List.mem_cons] at hcombination
-          have hlength :=
-            extendCombination_length_conservation maxDegree
-              (selector.maxDegree - 1) [selector] rest
-          rw [hresult] at hlength
-          simp only [List.length_cons, List.length_nil,
-            Nat.zero_add] at hlength
-          rcases hcombination with rfl | hcombination
-          · simp only [List.length_cons]
-            omega
-          · have hrecursive :=
-              ih remaining hcombination
-            simp only [List.length_cons]
-            omega
-
 /--
 Every combination returned by the outer packing loop fits in the selector
 compression degree budget.
@@ -372,68 +297,6 @@ theorem length_le_maxDegree_of_mem_buildCombinations
                 (by simpa using hpositive)
             simpa [hresult] using hchosen
           · exact ih remaining hcombination
-
-/--
-Every `process` entry receives a positive root within its combination, and the
-combination cannot be larger than the input selector list.
--/
-theorem process_entry_root_bounds
-    (selectors : List SelectorDescription) (maxDegree : ℕ)
-    (entry : ℕ × SelCompress)
-    (hentry : entry ∈ (process selectors maxDegree).entries) :
-    1 ≤ entry.2.assignedRoot ∧
-      entry.2.assignedRoot ≤ entry.2.combinationLen ∧
-      entry.2.combinationLen ≤ selectors.length := by
-  let degreeZero := selectors.filter (·.maxDegree = 0)
-  let remaining := selectors.filter (·.maxDegree ≠ 0)
-  let combinations :=
-    buildCombinations maxDegree remaining.length remaining
-  change entry ∈
-    (degreeZero.zipIdx.map fun (description, column) =>
-      (description.selector, SelCompress.mk column 1 1)) ++
-    (combinations.zipIdx.flatMap fun (combination, column) =>
-      combination.zipIdx.map fun (description, position) =>
-        (description.selector,
-          SelCompress.mk (degreeZero.length + column)
-            combination.length (position + 1))) at hentry
-  rw [List.mem_append] at hentry
-  rcases hentry with hdegreeZero | hcombination
-  · obtain ⟨indexed, hindexed, rfl⟩ :=
-      List.mem_map.mp hdegreeZero
-    have hdescription : indexed.1 ∈ selectors := by
-      have hfiltered :=
-        List.fst_mem_of_mem_zipIdx hindexed
-      exact (List.mem_filter.mp hfiltered).1
-    have hselectorsPositive : 1 ≤ selectors.length := by
-      have := List.length_pos_of_mem hdescription
-      omega
-    simpa using hselectorsPositive
-  · rw [List.mem_flatMap] at hcombination
-    obtain ⟨indexedCombination, hindexedCombination,
-      hcombinationEntry⟩ := hcombination
-    rcases indexedCombination with ⟨combination, column⟩
-    obtain ⟨indexedDescription, hindexedDescription, rfl⟩ :=
-      List.mem_map.mp hcombinationEntry
-    rcases indexedDescription with ⟨description, position⟩
-    have hposition :
-        position < combination.length := by
-      simpa using
-        List.snd_lt_of_mem_zipIdx hindexedDescription
-    have hcombinationMem :
-        combination ∈ combinations :=
-      List.fst_mem_of_mem_zipIdx hindexedCombination
-    have hcombinationLength :
-        combination.length ≤ remaining.length :=
-      length_le_of_mem_buildCombinations maxDegree remaining.length
-        remaining combination hcombinationMem
-    have hremainingLength :
-        remaining.length ≤ selectors.length := by
-      exact List.length_filter_le _ _
-    change 1 ≤ position + 1 ∧
-      position + 1 ≤ combination.length ∧
-      combination.length ≤ selectors.length
-    refine ⟨by omega, by omega, ?_⟩
-    exact hcombinationLength.trans hremainingLength
 
 /--
 Every `process` entry's assigned root is bounded by the compression degree,
@@ -561,96 +424,17 @@ theorem process_lookup_isSome_of_mem
   exact SelCompressMap.lookup_isSome_of_mem
     (process selectors maxDegree) hentry
 
-/--
-A degree-zero selector is looked up with the dedicated degree-zero packing datum.
-No uniqueness hypothesis on selector indices is needed: all degree-zero entries form
-the prefix of `process.entries`, and every datum in that prefix has length/root `1`.
--/
-theorem process_lookup_degreeZero_of_mem
-    (selectors : List SelectorDescription) (maxDegree : ℕ)
-    {description : SelectorDescription}
-    (hdescription : description ∈ selectors)
-    (hdegree : description.maxDegree = 0) :
-    ∃ compressed,
-      (process selectors maxDegree).lookup description.selector =
-        some compressed ∧
-      compressed.combinationLen = 1 ∧
-      compressed.assignedRoot = 1 := by
-  let degreeZero := selectors.filter (·.maxDegree = 0)
-  let remaining := selectors.filter (·.maxDegree ≠ 0)
-  let degreeZeroEntries :=
-    degreeZero.zipIdx.map fun (source, column) =>
-      (source.selector, SelCompress.mk column 1 1)
-  let combinations :=
-    buildCombinations maxDegree remaining.length remaining
-  let combinationEntries :=
-    combinations.zipIdx.flatMap fun (combination, column) =>
-      combination.zipIdx.map fun (source, position) =>
-        (source.selector,
-          SelCompress.mk (degreeZero.length + column)
-            combination.length (position + 1))
-  have hdegreeZero : description ∈ degreeZero :=
-    List.mem_filter.mpr ⟨hdescription, by simp [hdegree]⟩
-  obtain ⟨column, hzip⟩ :=
-    exists_mem_zipIdx_of_mem hdegreeZero
-  have hentry :
-      (description.selector, SelCompress.mk column 1 1) ∈
-        degreeZeroEntries := by
-    exact List.mem_map.mpr
-      ⟨(description, column), hzip, rfl⟩
-  have hfindSome :
-      (degreeZeroEntries.find?
-        (fun entry => entry.1 = description.selector)).isSome = true := by
-    rw [List.find?_isSome]
-    exact ⟨(description.selector, SelCompress.mk column 1 1),
-      hentry, by simp⟩
-  obtain ⟨entry, hfind⟩ :=
-    Option.isSome_iff_exists.mp hfindSome
-  have hentryMem : entry ∈ degreeZeroEntries :=
-    List.mem_of_find?_eq_some hfind
-  obtain ⟨indexed, hindexed, hentryEq⟩ :=
-    List.mem_map.mp hentryMem
-  rcases indexed with ⟨source, sourceColumn⟩
-  subst entry
-  let compressed := SelCompress.mk sourceColumn 1 1
-  refine ⟨compressed, ?_, rfl, rfl⟩
-  change
-    Option.map Prod.snd
-      (List.find? (fun entry => entry.1 = description.selector)
-        (degreeZeroEntries ++ combinationEntries)) =
-      some compressed
-  rw [List.find?_append, hfind, Option.some_or]
-  rfl
-
-/-- Mapping a fixed-column offset over every entry preserves successful lookup. -/
-private theorem SelCompressMap.lookup_mapPackedOffset
-    (map : SelCompressMap) (offset selector : ℕ)
-    {source : SelCompress}
-    (hlookup : map.lookup selector = some source) :
-    ({ newFixedCols := map.newFixedCols
-       entries := map.entries.map fun (key, compressed) =>
-         (key, { compressed with
-           packedCol := compressed.packedCol + offset }) } :
-        SelCompressMap).lookup selector =
-      some { source with
-        packedCol := source.packedCol + offset } := by
-  rcases map with ⟨newFixedCols, entries⟩
-  simp only [SelCompressMap.lookup] at hlookup ⊢
-  induction entries with
-  | nil =>
-      simp at hlookup
-  | cons entry rest ih =>
-      rcases entry with ⟨key, compressed⟩
-      simp only [List.map_cons, List.find?_cons] at hlookup ⊢
-      by_cases heq : key = selector
-      · simp only [heq, decide_true] at hlookup ⊢
-        simp only [Option.map_some] at hlookup ⊢
-        have hsource : compressed = source :=
-          Option.some.inj hlookup
-        subst compressed
-        rfl
-      · simp only [heq, decide_false] at hlookup ⊢
-        exact ih hlookup
+/-- Selector lookup commutes with the compiler's packed-column offset. -/
+theorem deriveSelCompressMap_lookup_eq {F : Type}
+    (cs : ConstraintSystem F) (n : ℕ) (activations : List (ℕ × ℕ)) (selector : ℕ) :
+    (deriveSelCompressMap cs n activations).lookup selector =
+      ((process ((List.range cs.numSelectors).map fun index =>
+        SelectorDescription.mk index
+          (activationTable n cs.numSelectors activations)[index]!
+          (selectorMaxDegrees cs)[index]!) (csDegree cs)).lookup selector).map
+        (fun source => { source with packedCol := source.packedCol + cs.numFixedColumns }) := by
+  simp only [deriveSelCompressMap, SelCompressMap.lookup, List.find?_map,
+    Function.comp_def, Option.map_map]
 
 /--
 The circuit-derived compression map covers every allocated selector index.
@@ -662,33 +446,9 @@ theorem deriveSelCompressMap_lookup_isSome_of_lt
     (hselector : selector < cs.numSelectors) :
     ((deriveSelCompressMap cs n activations).lookup selector).isSome =
       true := by
-  let table := activationTable n cs.numSelectors activations
-  let degrees := selectorMaxDegrees cs
-  let descriptions :=
-    (List.range cs.numSelectors).map fun index =>
-      SelectorDescription.mk index table[index]! degrees[index]!
-  let packing := process descriptions (csDegree cs)
-  let description :=
-    SelectorDescription.mk selector
-      table[selector]! degrees[selector]!
-  have hdescription : description ∈ descriptions := by
-    apply List.mem_map.mpr
-    exact ⟨selector, List.mem_range.mpr hselector, rfl⟩
-  obtain ⟨source, hsource⟩ :=
-    exists_mem_process_entries descriptions (csDegree cs)
-      hdescription
-  let compressed : SelCompress :=
-    { source with
-      packedCol := source.packedCol + cs.numFixedColumns }
-  apply SelCompressMap.lookup_isSome_of_mem
-  change (selector, compressed) ∈
-    packing.entries.map (fun (sourceSelector, sourceCompressed) =>
-      (sourceSelector,
-        { sourceCompressed with
-          packedCol :=
-            sourceCompressed.packedCol + cs.numFixedColumns }))
-  exact List.mem_map.mpr
-    ⟨(selector, source), hsource, rfl⟩
+  rw [deriveSelCompressMap_lookup_eq, Option.isSome_map]
+  exact process_lookup_isSome_of_mem _ _ (description := ⟨selector, _, _⟩)
+    (List.mem_map.mpr ⟨selector, List.mem_range.mpr hselector, rfl⟩)
 
 /--
 A selector with no gate degree is packed alone by the circuit-derived map. Its
@@ -705,39 +465,10 @@ theorem deriveSelCompressMap_lookup_degreeZero_of_lt
       compressed.combinationLen = 1 ∧
       compressed.assignedRoot = 1 ∧
       cs.numFixedColumns ≤ compressed.packedCol := by
-  let table := activationTable n cs.numSelectors activations
-  let degrees := selectorMaxDegrees cs
-  let descriptions :=
-    (List.range cs.numSelectors).map fun index =>
-      SelectorDescription.mk index table[index]! degrees[index]!
-  let packing := process descriptions (csDegree cs)
-  let description :=
-    SelectorDescription.mk selector table[selector]! degrees[selector]!
-  have hdescription : description ∈ descriptions := by
-    apply List.mem_map.mpr
-    exact ⟨selector, List.mem_range.mpr hselector, rfl⟩
-  have hdescriptionDegree : description.maxDegree = 0 :=
-    hdegree
-  obtain ⟨source, hsource, hlength, hroot⟩ :=
-    process_lookup_degreeZero_of_mem descriptions (csDegree cs)
-      hdescription hdescriptionDegree
-  let compressed : SelCompress :=
-    { source with
-      packedCol := source.packedCol + cs.numFixedColumns }
-  refine ⟨compressed, ?_, hlength, hroot, by
-    simp only [compressed]
-    omega⟩
-  have hsource' : packing.lookup selector = some source := by
-    simpa only [packing, descriptions, description, degrees, table] using
-      hsource
-  change
-    ({ newFixedCols := packing.newFixedCols
-       entries := packing.entries.map fun (key, source) =>
-         (key, { source with
-           packedCol := source.packedCol + cs.numFixedColumns }) } :
-      SelCompressMap).lookup selector = some compressed
-  exact SelCompressMap.lookup_mapPackedOffset
-    packing cs.numFixedColumns selector hsource'
+  obtain ⟨compressed, hlookup, hlength, hroot⟩ :=
+    deriveSelCompressMap_lookup_singleton_of_degree_zero cs n activations selector hselector hdegree
+  obtain ⟨index, _, hcolumn⟩ := deriveSelCompressMap_lookup_packedColumn cs n activations hlookup
+  exact ⟨compressed, hlookup, hlength, hroot, by omega⟩
 
 /--
 The circuit-derived compression map covers every selector atom of every configured
@@ -812,31 +543,12 @@ theorem selectorRootsWellFormed_deriveSelCompressMap
     (hdegree : csDegree cs < scalarFieldOrder) :
     SelectorRootsWellFormed
       (deriveSelCompressMap cs n activations) := by
-  let table := activationTable n cs.numSelectors activations
-  let degrees := selectorMaxDegrees cs
-  let descriptions :=
-    (List.range cs.numSelectors).map fun index =>
-      SelectorDescription.mk index table[index]! degrees[index]!
-  let packing := process descriptions (csDegree cs)
   intro selector compressed hlookup
-  obtain ⟨entry, hentry, hcompressed⟩ :=
-    SelCompressMap.exists_mem_entries_of_lookup
-      (deriveSelCompressMap cs n activations) hlookup
-  change entry ∈ packing.entries.map (fun (sourceSelector, source) =>
-    (sourceSelector,
-      { source with
-        packedCol := source.packedCol + cs.numFixedColumns })) at hentry
-  obtain ⟨⟨sourceSelector, source⟩, hsource, rfl⟩ :=
-    List.mem_map.mp hentry
-  have hbounds :=
-    process_entry_root_degree_bounds descriptions (csDegree cs)
-      (by
-        unfold csDegree
-        exact le_trans (by omega) (Nat.le_max_left _ _))
-      (sourceSelector, source) hsource
-  rw [← hcompressed]
-  exact ⟨hbounds.1, hbounds.2.1,
-    hbounds.2.2.trans_lt hdegree⟩
+  rw [deriveSelCompressMap_lookup_eq] at hlookup
+  obtain ⟨source, hsource, rfl⟩ := Option.map_eq_some_iff.mp hlookup
+  have hroots := selectorRootsWellFormed_process _ (csDegree cs)
+    (by unfold csDegree; exact le_trans (by omega) (Nat.le_max_left _ _)) hdegree hsource
+  exact hroots
 
 /-- It is enough to realize the packed assignments emitted by the canonical fixed
 compiler to realize every selector activation expected by the gate resolver. -/
