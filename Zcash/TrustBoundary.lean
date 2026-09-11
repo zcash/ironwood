@@ -2361,8 +2361,8 @@ assert_axioms Zcash.Circuits.Action.Separation.crossAddressBinding_nontrivial
 
 -- The Fiat–Shamir byte layer (`Verifier/Transcript.lean`): halo2's transcript encoding, an
 -- executable BLAKE2b (`Common/Hash/Blake2b.lean`), and the concrete oracle `halo2Transcript` the
--- capture families run the schedule through, with the encoding's injectivity and prefix
--- reflection/preservation.
+-- capture families run the schedule through. The encoding is injective, and one encoded
+-- transcript is a prefix of another exactly when the corresponding typed transcript is.
 assert_computable Zcash.Common.Blake2b.digest64
 assert_computable Zcash.Snark.encodeTranscript +choice
 assert_computable Zcash.Snark.halo2Transcript +choice
@@ -2431,16 +2431,10 @@ assert_axioms Zcash.Snark.deployedAcceptsRawBytes_not_of_wrong_column_count +nat
 assert_axioms Zcash.Snark.deployedAcceptsRawBytes_not_of_oversized_column +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
--- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`): the schedule's
--- oracle locality, the disjointness of the pre-`θ` cones at different counts — typed and
--- byte-level — and the reprogramming corollary.
-assert_axioms Zcash.Snark.deriveChallenges_congr_of_agree_on_cone
-assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
-assert_axioms Zcash.Snark.preTheta_cones_disjoint
-assert_axioms Zcash.Snark.preTheta_prefixFree_of_numProofs_ne
+-- Byte-level separation across action counts (`Soundness/FiatShamir/ActionCount.lean`),
+-- extending the typed separation checked above.
 assert_axioms Zcash.Snark.encodeTranscript_cones_disjoint
 assert_axioms Zcash.Snark.encodeTranscript_prefixFree_of_numProofs_ne
-assert_axioms Zcash.Snark.deriveChallenges_reprogram_other_count
 
 -- The tags are load-bearing (`Soundness/FiatShamir/TagMutation.lean`): with them deleted, the
 -- encoding collides a point with two scalars and a transcript with its pre-squeeze extension,
