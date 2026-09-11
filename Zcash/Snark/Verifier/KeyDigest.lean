@@ -27,13 +27,12 @@ input: the fixture checks that hashing that exact string reproduces the captured
 `Describes` below relates its represented fields to a designated canonical key and the key used by
 the verifier. It does not reconstruct Rust's unique `Debug` output from a key. In particular,
 proof-reader dimensions and printed keygen-only values have separate provenance, stated below
-and checked for the capture in `Fixtures/PinnedKey.lean`. What the digest cannot give is cross-key
-binding — that no other key hashes to it. That is collision resistance of the *reduced*
-digest `keyDigest`, BLAKE2b's 512-bit output taken modulo `p`: two descriptions whose digests are
-merely congruent modulo `p` share a key digest with no BLAKE2b collision
-(`challengeOfDigest_eq_iff_modEq`), so bare BLAKE2b collision resistance does not imply it. Under
-the random-oracle idealization the squeeze already takes, it holds at the usual birthday bound; it
-is idealized like BLAKE2b's randomness, not proved.
+and checked for the capture in `Fixtures/PinnedKey.lean`. Cross-key binding remains outside these
+theorems. Collision resistance of the reduced digest `keyDigest` follows in the random-oracle
+model: BLAKE2b's 512-bit random-oracle output is reduced modulo `p`, with a birthday bound
+governed by the field size. This consequence of the random-oracle model is not formalized here.
+Equal key digests mean the unreduced outputs are congruent modulo `p`, not necessarily equal
+(`challengeOfDigest_eq_iff_modEq`).
 -/
 
 namespace Zcash.Snark

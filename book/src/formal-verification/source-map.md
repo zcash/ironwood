@@ -120,8 +120,8 @@ The pure function that assembles the fingerprint MSM in the exact order of halo2
 - `FiatShamir` models halo2's challenge schedule over an abstract `squeeze`.
 - `Transcript` is the byte layer beneath it: halo2's tagged transcript encoding, an executable
   BLAKE2b (`Common/Hash/Blake2b`), and the concrete oracle `halo2Transcript` every capture family
-  runs the schedule through, with the encoding proved injective and shown to preserve and reflect
-  prefixes.
+  runs the schedule through. The encoding is proved injective. One encoded transcript is a
+  prefix of another exactly when the corresponding typed transcript is a prefix of the other.
 - `ProofBytes` is the proof-string codec: canonical `read_point`/`read_scalar` decoders (a read
   succeeds exactly on the element's own encoding), the reader in the verifier's read order, and
   the serializer, checked against the random captures' raw bytes.
@@ -202,15 +202,19 @@ honest lane does not depend on compiling the random data modules. (The join betw
 instance commitments and the circuit-derived family lives in `Keygen/InstanceCapture`.)
 
 `SingleAction/Honest/` and `MultiAction/Honest/` hold the captured honest single- and
-multi-action proofs, each
-with its **Fiat–Shamir** schedule check, its `Transcript` recomputation of every captured
-challenge from transcript bytes, its `ProofBytes` exact parse of the generated proof bytes into
-`DeployedAcceptsBytes` and `DeployedAcceptsRawBytes`, its `Boundary` statement of record at the
-Lean-derived key and schedule, its per-slot tamper sweep (`Negative/Sweep`), and its checked `TrustBoundary`
-turning the fingerprint match into
-build-time obligations; `SingleAction/Honest/VkMatch` computes the capture's constraint-system fields equal
-to the ones derived end to end from the ported `configure` as a standalone diagnostic, not a
-soundness or fixture-trust input. The multi-action capture additionally
+multi-action proofs. Examples of the checks in both families:
+
+- **Fiat–Shamir** checks the schedule, and `Transcript` recomputes every captured challenge from
+  transcript bytes.
+- `ProofBytes` parses the generated proof bytes exactly and establishes `DeployedAcceptsBytes`
+  and `DeployedAcceptsRawBytes`.
+- `Boundary` states the fingerprint match at the Lean-derived key and schedule.
+- `Negative/Sweep` runs the per-slot tamper checks.
+- `TrustBoundary` turns the fingerprint match into build-time obligations.
+
+`SingleAction/Honest/VkMatch` checks that the capture's constraint-system fields equal those
+derived end to end from the ported `configure`. It is a standalone diagnostic, not a soundness
+or fixture-trust input. The multi-action capture additionally
 carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree,
 schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
 conditionally staged-certified `2^125` adversary-work one and the modeled `2^123` one, with the

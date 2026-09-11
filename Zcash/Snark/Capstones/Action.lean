@@ -84,9 +84,10 @@ rather than proved, with its known strengthening named where one exists:
   string, `Describes` reads its fields against the captured key, which is certified equal to the
   derived key, and `Fixtures/PinnedKey.lean` states that reading field by field. The fixture
   inputs remain trusted. `Describes` is a deployment-record coherence obligation, not a premise
-  consumed by the modeled probability bound. Cross-key binding would need collision resistance of
-  the reduced digest `keyDigest` — BLAKE2b's output modulo `p`, which bare BLAKE2b collision
-  resistance does not give (`challengeOfDigest_eq_iff_modEq`).
+  consumed by the modeled probability bound. Collision resistance of the reduced digest
+  `keyDigest` follows in the random-oracle model from reducing BLAKE2b's 512-bit random-oracle
+  output modulo `p`, with a birthday bound governed by the field size. This consequence of the
+  random-oracle model is not formalized here.
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
   challenge schedule into it, under `Describes` and halo2's refusal of identity instance

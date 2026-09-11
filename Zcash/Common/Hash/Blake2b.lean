@@ -4,12 +4,12 @@ import Mathlib.Tactic.TypeStar
 /-!
 # BLAKE2b
 
-An executable BLAKE2b (RFC 7693) over `UInt64` words, in the one parameter configuration halo2's
-Fiat–Shamir transcript uses: the full 64-byte digest, a 16-byte personalization, no key, no salt,
-and the sequential (fanout 1, depth 1) mode. The deployed transcript hashes with `blake2b_simd`; this module
-lets Lean recompute those digests, so the byte layer beneath the typed challenge schedule can be
-checked against the captured runs instead of idealized away. That check is pointwise: that
-`blake2b_simd` agrees with this module beyond the captured transcripts and the known-answer
+An executable BLAKE2b (RFC 7693) over byte strings, using `UInt64` words internally, in the
+parameter configuration halo2's Fiat–Shamir transcript uses: the full 64-byte digest, a 16-byte
+personalization, no key, no salt, and the sequential (fanout 1, depth 1) mode. The deployed
+transcript hashes with `blake2b_simd`; this module lets Lean recompute those digests, so the byte
+layer beneath the typed challenge schedule can be checked against the captured runs instead of
+idealized away. Agreement with `blake2b_simd` beyond the captured transcripts and the known-answer
 vectors below is trusted, not proved.
 
 Everything here is a total function on lists and fixed-length vectors — no `IO`, no `extern`, no
@@ -108,19 +108,6 @@ Keeping `t` as a natural until these two projections avoids silently discarding 
 def compress (h : Vector UInt64 8) (m : Vector UInt64 16) (t : ℕ) (last : Bool) :
     Vector UInt64 8 :=
   compressWords h m (counterLow t) (counterHigh t) last
-
-/-- The former low-word-only compression behavior, retained only to state the exact range on which
-it agrees with the corrected 128-bit-counter implementation. -/
-def compressLowCounter (h : Vector UInt64 8) (m : Vector UInt64 16)
-    (t : UInt64) (last : Bool) : Vector UInt64 8 :=
-  compressWords h m t 0 last
-
-/-- Below `2^64` bytes, the high counter word is zero and the corrected compression function is
-identical to the former low-word-only implementation. -/
-theorem compress_eq_compressLowCounter_of_lt (h : Vector UInt64 8) (m : Vector UInt64 16)
-    (t : ℕ) (last : Bool) (ht : t < 2 ^ 64) :
-    compress h m t last = compressLowCounter h m (UInt64.ofNat t) last := by
-  simp [compress, compressLowCounter, counterLow, counterHigh, Nat.div_eq_of_lt ht]
 
 /-- The little-endian word held by the first eight bytes of `bs`; missing bytes read as zero. -/
 def wordLE (bs : List UInt8) : UInt64 :=

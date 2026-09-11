@@ -33,7 +33,7 @@ instance by checking that the formalized objects are consistent with the specifi
 (where possible) that they match the same test vectors as the production implementation and
 the unoptimized reference.
 
-So, modelling gaps and the long-term task of closing them, gaining more and more confidence
+So, modeling gaps and the long-term task of closing them, gaining more and more confidence
 as we go —and then maintaining the formalization in sync with the spec as the protocol
 evolves— are not a side-issue; that process is the entire point. It is a process that finds bugs
 just like any other assurance technique, but it is deeply more thorough than conventional
@@ -73,7 +73,7 @@ fit together. They don't quite do so yet.
 ## Scope at the ledger layer
 
 The formalization of *Spendability* and *Spend authority* properties is not yet
-finished. It needs significant attention to the way honest parties are modelled: the
+finished. It needs significant attention to the way honest parties are modeled: the
 properties need to be strengthened by giving the adversary oracles that allow it to
 control how the honest parties create transactions, generate keys (without telling the
 adversary those keys), etc. That is how these properties were originally defined at
@@ -91,12 +91,12 @@ and Spend Authority games still consume annotations directly
 ([#155](https://github.com/zcash/ironwood/issues/155)). Additional caveats are stated on
 the [Ledger Security Games](ledger-security-games.md) page.
 
-For tractability, the modelled ledger also abstracts away from the real protocol in
+For tractability, the modeled ledger also abstracts away from the real protocol in
 several directions:
 
 * The real protocol has, at the time of writing, six chain value pools: the transparent pool;
   the lockbox (also transparent), and four shielded pools for Sprout, Sapling, Orchard, and
-  Ironwood. The modelled ledger has one transparent pool, and one Orchard-protocol shielded
+  Ironwood. The modeled ledger has one transparent pool, and one Orchard-protocol shielded
   pool (similar to either Orchard or Ironwood). We argue that this simplification is enough
   to capture realistic attacks, because the interaction of all other pools with a given
   shielded pool is as though the other pools are transparent. (It is a bit of an
@@ -108,7 +108,7 @@ several directions:
   depend on diversified address generation using $\mathsf{DiversifyHash}$, and so a realistic
   adversary has to be able to invoke the hash-to-curve. The first step is delivered: the
   deployed hash-to-curve is proven indifferentiable from a random oracle onto the group,
-  with a concrete advantage bound, modelling the underlying field-element hash as a random
+  with a concrete advantage bound, modeling the underlying field-element hash as a random
   oracle — see [Group-Hash Indifferentiability](group-hash-indifferentiability.md). What
   remains is to give the games' adversaries oracle access to it
   ([#188](https://github.com/zcash/ironwood/issues/188)).
@@ -121,7 +121,7 @@ The verifier knowledge-soundness proof for the Orchard protocol (and therefore t
 Ironwood pool) can be followed with one idea from cryptography — that a proof system lets
 someone convince you of a claim without showing you the data behind it. Understanding that
 idea needs no Lean, no Halo 2, and no background in formal or succinct proof systems. The
-rest of this page tries to explain the modelling assumptions and heuristics the verifier
+rest of this page tries to explain the modeling assumptions and heuristics the verifier
 soundness claim rests on that are not established by a formal theorem, and therefore have
 to be assessed by other means.
 
@@ -287,13 +287,14 @@ be missed.
   read off a theorem. An attacker that does not play along is outside the claim entirely — not
   covered with a weaker bound.
 * **Attacks do not depend on specific encodings**. The formalization covers the byte-level
-  encodings of the proof string and of the Fiat–Shamir transcript — canonical decoding of curve
-  points and field elements, and the bytes the hash sees — and checks them against captured
-  runs, down to the verifying-key digest that opens the transcript, which is recomputed from
-  the pinned key description. The encodings of other transmitted protocol messages (notes,
-  keys, transaction fields) are still expressed through the specification's abstract types. This is a potentially
-  significant category of gap, because (despite substantial attention to this area in audits
-  and code review) Zcash implementations have had quite a few significant security bugs due to
+  encodings used in the SNARK: canonical decoding of curve points and field elements from the
+  proof string, and encoding absorbed elements into the Fiat–Shamir transcript bytes that the
+  hash sees. Both are checked against captured runs, down to the verifying-key digest that
+  opens the transcript, which is recomputed from the pinned key description. The encodings of
+  other transmitted protocol messages (e.g. note plaintexts, keys, and transaction fields) are
+  still expressed through the specification's abstract types. This is a potentially significant
+  category of gap, because (despite substantial attention to this area in audits and code
+  review) Zcash implementations have had quite a few significant security bugs due to
   unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
   It is a longer-term goal to extend the formalization to the remaining byte-level encodings.
 
@@ -312,7 +313,7 @@ transaction or one user. [Security
 Models](security-models.md#fixed-bases-the-group-hash-and-the-reference-string) develops this at
 length.
 
-### How Fiat–Shamir is modelled
+### How Fiat–Shamir is modeled
 
 Lean models the hashing schedule exactly — what gets hashed, in what order, matching Halo 2's
 verifier. The order is load-bearing and it is checked: each round's message is hashed in
@@ -320,12 +321,14 @@ verifier. The order is load-bearing and it is checked: each round's message is h
 challenge, which is what makes it harmless that the prover can compute challenges too. Lean
 proves this of its own model, and captured fixtures check that model against real transcripts.
 
-The byte layer beneath is modelled too: how each absorbed element becomes bytes, the running
+The byte layer of the SNARK is modeled too: how each absorbed element becomes bytes, the running
 BLAKE2b state, and the reduction of the digest to a field element are executable Lean, and every
-captured challenge is recomputed from bytes. The encoding is injective and preserves and reflects
-prefixes, so distinct typed transcripts are distinct hash inputs. Even the verifying-key digest
-that opens the transcript is recomputed, from a pinned key description whose represented fields
-are checked against the derived key.
+captured challenge is recomputed from bytes. The encoding is injective, so distinct typed
+transcripts are distinct hash inputs. Lean also proves that one encoded transcript is a prefix
+of another exactly when the corresponding typed transcript is a prefix of the other. Extending
+a typed transcript therefore extends its byte encoding; the set of all transcript encodings is
+not prefix-free. Even the verifying-key digest that opens the transcript is recomputed, from a
+pinned key description whose represented fields are checked against the derived key.
 
 Four boundaries remain outside the universal proof. The security argument idealizes the
 BLAKE2b digest as uniform; `blake2b_simd` is not
@@ -379,7 +382,7 @@ Everything above, collected.
 5. **The deployed list of curve points is as good as a sampled one.** Security is proved for
    protocols that sample it; the real one is hashed into existence and baked in.
 6. **Encodings outside the proof.** The proof string and the transcript, key digest included,
-   are modelled to the byte; the encodings of other protocol messages are not.
+   are modeled to the byte; the encodings of other protocol messages are not.
 7. **Facts established by running code trust the compiler.** Each is pinned to its
    owning declaration at build time, and each is independently re-checkable — but the
    compiled code they run is the whole fast native arithmetic, proven correct in the
