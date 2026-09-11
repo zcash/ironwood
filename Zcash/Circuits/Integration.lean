@@ -3,12 +3,12 @@ import Zcash.Circuits.Integration.PermutationCycle
 import Zcash.Circuits.Integration.TopLevelCopyConstraints
 import Zcash.Circuits.Integration.TopLevelInterpretation
 import Zcash.Circuits.Halo2.ConstraintFamilies
-import Zcash.Circuits.Integration.CopyListMembership
+import Zcash.Circuits.Halo2.CopyListMembership
 import Zcash.Circuits.Integration.ExprRich
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Circuits.Integration.InstanceColumns
-import Zcash.Circuits.Integration.OperationCopies
+import Zcash.Circuits.Halo2.CopyOperations
 import Zcash.Circuits.Halo2.FixedOperations
 import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Circuits.Integration.PermutationColumns

@@ -34,11 +34,11 @@ variable {G : Type} [AddCommGroup G] [Module Fp G]
 
 theorem copyList_decoded :
     Halo2.Layout.V1.copyList
-        (Keygen.permColsOf top.constraintSystem)
+        (Halo2.Layout.permColsOf top.constraintSystem)
         (Halo2.FloorPlanner.V1.starts
           (top.operations))
         (top.operations)
-        (Keygen.constantCopyEntries top.constraintSystem
+        (Halo2.Layout.constantCopyEntries top.constraintSystem
           (top.operations)) =
       (pairs top).map fun pair =>
         (pair.1.pair.1, pair.1.pair.2,
@@ -47,9 +47,9 @@ theorem copyList_decoded :
     (Zcash.Snark.decodeCopies_map
       top.permutationColumnCount
       top.n
-      (rawPairs top)
+      top.copyPairs
       (copyBounds top)).symm
-  simpa only [rawPairs,
+  simpa only [TopLevelCircuit.copyPairs,
     columns, constants,
     TopLevelCircuit.regionStarts] using hdecode
 

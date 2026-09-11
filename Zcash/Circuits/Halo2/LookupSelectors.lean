@@ -119,32 +119,6 @@ theorem lookupTables_selectorFree
     (fun table htable => argument.tablesFree table htable)
 
 /--
-The exact selector-substitution facts needed by one enabled lookup.
-
-This is stronger than gate activation realization: every source expression must
-evaluate with the packed-selector substitution exactly as it does with the
-operation's zero/one selector valuation. Tables usually discharge the second
-field structurally because Halo 2 tables are selector-free.
--/
-structure EnabledLookup.SelectorProjection
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (environment : Environment Fp) (lookup : EnabledLookup Fp) : Prop where
-  input :
-    lookup.argument.inputs.map
-        (Expression.eval
-          (substValuation top.selectorMap.lookup
-            (Query.eval environment (fun _ => 0)
-              (top.placement lookup.region + lookup.row)))) =
-      lookup.inputValues top.placement environment
-  table : ∀ row < environment.usableRows,
-    lookup.argument.tables.map
-        (Expression.eval
-          (substValuation top.selectorMap.lookup
-            (Query.eval environment (fun _ => 0) row))) =
-      lookup.tableValues environment row
-
-/--
 Selector-free expressions cannot distinguish selector substitution from an
 arbitrary selector valuation. Fixed, advice, and instance queries retain the
 same environment and row on both sides.
@@ -177,57 +151,6 @@ theorem Expression.eval_substValuation_eq_queryEval_of_selectorFree
   | mul left right ihLeft ihRight =>
       simp only [Expression.SelectorFree] at hfree
       simp only [Expression.eval, ihLeft hfree.1, ihRight hfree.2]
-
-/--
-At one enabled lookup's input row, selector substitution agrees with the
-operation's zero/one selector valuation on every input expression.
-
-This deliberately does not require the two valuations to agree on unrelated
-selectors. A gate selector can legitimately be active on the same absolute row
-without occurring in this lookup's inputs.
--/
-def EnabledLookup.InputSelectorValuesRealized
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (environment : Environment Fp) (lookup : EnabledLookup Fp) : Prop :=
-  ∀ expression ∈ lookup.argument.inputs,
-    expression.eval
-        (substValuation top.selectorMap.lookup
-          (Query.eval environment (fun _ => 0)
-            (top.placement lookup.region + lookup.row))) =
-      expression.eval
-        (Query.eval environment lookup.selectorValue
-          (top.placement lookup.region + lookup.row))
-
-namespace EnabledLookup.SelectorProjection
-
-/--
-Exact selector values at the activation row, together with selector-free table
-expressions, supply the full lookup selector-projection boundary.
--/
-theorem ofInputSelectorValues
-    (environment : Environment Fp)
-    (lookup : EnabledLookup Fp)
-    (realized :
-      lookup.InputSelectorValuesRealized top environment)
-    (tablesFree :
-      lookup.argument.tables.Forall Expression.SelectorFree) :
-    lookup.SelectorProjection top environment := by
-  constructor
-  · unfold EnabledLookup.inputValues
-    apply List.map_congr_left
-    intro expression hexpression
-    exact realized expression hexpression
-  · intro row hrow
-    unfold EnabledLookup.tableValues
-    apply List.map_congr_left
-    intro expression hexpression
-    exact
-      Expression.eval_substValuation_eq_queryEval_of_selectorFree
-        top.selectorMap environment lookup.selectorValue row expression
-        (List.forall_iff_forall_mem.mp tablesFree expression hexpression)
-
-end EnabledLookup.SelectorProjection
 
 namespace TopLevelLookup
 
@@ -271,14 +194,18 @@ theorem Expression.eval_substValuation_eq_of_selectorIndices
 
 /-- Singleton packing and the circuit-owned fixed columns realize every selector
 used by an activated lookup, independently of the proving assignment. -/
-theorem EnabledLookup.inputSelectorValuesRealized
+theorem EnabledLookup.inputValues_eq
     (lookup : EnabledLookup Fp)
     (henabled : lookup ∈ operationEnabledLookups top.operations 0)
     (assignment : ProofAssignment Fp) :
-    lookup.InputSelectorValuesRealized top (top.environment assignment) := by
+    lookup.argument.inputs.map (Expression.eval (substValuation top.selectorMap.lookup
+      (Query.eval (top.environment assignment) (fun _ => 0)
+        (top.placement lookup.region + lookup.row : ℕ)))) =
+      lookup.inputValues top.placement (top.environment assignment) := by
   obtain ⟨body, hregion, hlookup⟩ :=
     (mem_operationEnabledLookups_iff lookup top.operations 0).mp henabled
   have hargument := OperationsKeygenCoherent.lookup top.keygenCoherent henabled
+  apply List.map_congr_left
   intro expression hexpression
   apply Expression.eval_substValuation_eq_of_selectorIndices
   intro selector hselector
@@ -298,7 +225,7 @@ theorem EnabledLookup.inputSelectorValuesRealized
     subst length
     subst root
     rfl
-  simp only [substValuation, hmap, ← Nat.cast_add]
+  simp only [substValuation, hmap]
   rw [hsingle, TopLevelCircuit.environment_fixed, top.fixedValue_eq_fixedRows_getD]
   rw [Int.natMod, ← Int.natCast_mod, Int.toNat_natCast, Nat.mod_eq_of_lt hrow]
   simpa only [TopLevelCircuit.placement_apply, EnabledLookup.selectorValue] using hvalue

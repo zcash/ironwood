@@ -23,6 +23,8 @@ arithmetic tier does not import it.
 
 namespace Zcash.Snark.Keygen
 
+open Halo2.Layout (permColsOf)
+
 open Zcash.Arithmetic (derivedUrsGLagrange derivedUrsGLagrange_getD domainSize_cast_ne_zero
   lagrangeBasisClosed lagrangeBasisClosed_coeff lagrangeBasisClosed_eval
   lagrangeBasisClosed_natDegree_lt omegaInvOf_eq_inv omegaOf omegaOf_isPrimitiveRoot

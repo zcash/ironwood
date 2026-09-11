@@ -1,19 +1,14 @@
 import Zcash.Circuits.Integration.PermutationCycle
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.FixedColumns
-import Zcash.Circuits.Integration.CopyConstraints
+import Zcash.Circuits.Halo2.CompiledCopies
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
 
-/-!
-# circuit copy constraints from verifier permutation semantics
+/-! # Compiled copy equality from the verifier permutation argument
 
-This module is the final copy-family composition. Canonical constraint
-satisfaction, the generated circuit σ cycle, and bundle-wide good permutation
-challenges give equal values on every keygen copy pair. The generic raw-pair
-adapter combines these with fixed-column reads of allocated constants to prove
-Clean's copy constraints.
+Commitment binding identifies the generated σ cycle. The permutation argument then
+gives equal values on every resolved compiler copy pair.
 -/
-
 
 namespace Zcash.Snark
 
@@ -26,11 +21,8 @@ variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
 variable {G : Type} [AddCommGroup G] [Module Fp G]
   [DecidableEq G] [Inhabited G]
 
-/--
-Prove the circuit copy constraints for one proof from the accepted
-canonical relation, or retain the shared augmented-commitment relation branch.
--/
-def CanonicalMemberConstraintRelation.topLevelCopyConstraints_or_relation
+/-- Recover compiled copy equality, or an augmented-commitment relation. -/
+def CanonicalMemberConstraintRelation.copiesCompiled_or_relation
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     {instanceCommitment :
@@ -65,31 +57,14 @@ def CanonicalMemberConstraintRelation.topLevelCopyConstraints_or_relation
       batchOpenings memberDecode
         (top.toVerifierKey_blindingFactors_lt_n urs)
         y hpoly top.n)
-    (hgoodY : ∀ j,
-      y ∉ szBadSet
-        (foldSplitWitness relation.model.constraints
-          top.n j))
+    (satisfaction : ConstraintSatisfaction
+      (top.constraintModel pp urs ch relation.polynomial) top.n)
     (exclusions : ResolverPermutationChallengeExclusions
       pp.numProofs (top.toVerifierKey urs) ch relation.polynomial (top.usableRowsAt top.domainExponent))
-    (proofIndex : Fin pp.numProofs) :
-    CircuitConstraintFamily.constraints .copy top.placement
-        (resolverEnvironment
-          (top.toVerifierKey urs) relation.polynomial proofIndex
-            (top.usableRowsAt top.domainExponent))
-        top.operations 0 ⊕'
+    (proofIndex : Fin pp.numProofs)
+    (hencoding : top.FixedColumnEncoding relation.polynomial) :
+    top.CopiesCompiled (resolverAssignment top.omega relation.polynomial proofIndex) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hn : top.n ≠ 0 :=
-    top.n_ne_zero
-  have hsatisfaction :=
-    relation.constraintSatisfaction hn hgoodY
-  have hmodel :
-      relation.model =
-        top.constraintModel pp urs ch relation.polynomial := by
-    simp only [CanonicalMemberConstraintRelation.model]
-    exact
-      (top.constraintModel_eq_toVerifierKey_constraintModel
-        pp urs ch relation.polynomial).symm
-  rw [hmodel] at hsatisfaction
   have hdomain : ResolverPermutationDomain
       (top.toVerifierKey urs)
       (top.constraintModel pp urs ch relation.polynomial).l0
@@ -109,25 +84,11 @@ def CanonicalMemberConstraintRelation.topLevelCopyConstraints_or_relation
     have hpairval :=
       (copyPairValue_of_resolverPermutation top)
         pp urs ch relation.polynomial
-        proofIndex hsatisfaction hdomain cycle hcycleSigma
+        proofIndex satisfaction hdomain cycle hcycleSigma
         (exclusions.good proofIndex)
-    have hfixedRead : ∀ {column row : ℕ} {value : Fp},
-        (column, row, value) ∈
-            topLevelRequiredFixedEntries top →
-          (resolverEnvironment
-            (top.toVerifierKey urs) relation.polynomial proofIndex
-              (top.usableRowsAt top.domainExponent)).fixed
-              ⟨column⟩ (row : ℤ) = value ⊕'
-            AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-      intro column row value hentry
-      have source :=
-        relation.topLevelFixedEntryRead_or_relation
-          (top := top) (pp := pp) (urs := urs)
-          proofIndex hentry
-      exact source
-    apply topLevelCopyConstraints_of_rawPairValues_or_bad top _ ?_ hfixedRead
-    intro tuple htuple
+    rw [top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hpairval
     apply PSum.inl
+    intro tuple htuple
     obtain ⟨pair, hpair, hleft, hright⟩ := (exists_pair_of_raw top) htuple
     have heq := hpairval pair hpair
     simp only [FlatCell.pair, Prod.mk.injEq] at hleft hright

@@ -1,5 +1,5 @@
 import Zcash.Circuits.Integration.FixedColumns
-import Zcash.Circuits.Halo2.Witness
+import Zcash.Circuits.Halo2.ConstraintsCompiled
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.InstanceColumns
 import Zcash.Circuits.Integration.TopLevelLookups
@@ -111,25 +111,17 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
           (resolverAssignment top.omega relation.polynomial proofIndex))))
     fun proofIndex => ?_
   let assignment := resolverAssignment top.omega relation.polynomial proofIndex
-  have hgates := top.gate_constraints_of_compiled assignment
-    (top.gatesCompiled_of_constraintSatisfaction ch relation.polynomial proofIndex
-      hsatisfaction hencoding)
-  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hgates
-  have hfixed := top.fixed_constraints assignment
-  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hfixed
-  obtain hcopies | bad := relation.topLevelCopyConstraints_or_relation
-    top pp urs hk hgoodY permutationExclusions proofIndex
+  obtain hcopies | bad := relation.copiesCompiled_or_relation
+    top pp urs hk hsatisfaction permutationExclusions proofIndex hencoding
   swap
   · exact PSum.inr bad
-  have hlookups := top.lookup_constraints_of_compiled assignment
-    (TopLevelLookup.lookupsCompiled_of_constraintSatisfaction ch relation.polynomial
-      proofIndex hsatisfaction hencoding lookupExclusions)
-  rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hlookups
   exact PSum.inl
     { w := top.extractWitness assignment
-      satisfied := top.soundness assignment (by
-        rw [← top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding,
-          CircuitConstraintFamily.operations_constraints_iff]
-        exact ⟨hgates, hcopies, hlookups, hfixed⟩) }
+      satisfied := top.soundness_compiled assignment
+        { gates := top.gatesCompiled_of_constraintSatisfaction ch relation.polynomial
+            proofIndex hsatisfaction hencoding
+          copies := hcopies
+          lookups := TopLevelLookup.lookupsCompiled_of_constraintSatisfaction ch relation.polynomial
+            proofIndex hsatisfaction hencoding lookupExclusions } }
 
 end Zcash.Snark

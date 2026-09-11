@@ -1,4 +1,5 @@
 import Zcash.Circuits.Integration.PermutationColumns
+import Zcash.Circuits.Halo2.CopyCells
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Keygen.Lagrange
 
@@ -27,19 +28,6 @@ open Halo2 Halo2.Layout
 open Equiv (Perm swap)
 
 set_option maxHeartbeats 400000
-
-/-- A flat permutation-table cell: a permutation column and a row. -/
-abbrev FlatCell (numCols n : ℕ) := Fin numCols × Fin n
-
-/-- The `(column, row)` pair the assembly arrays index by. -/
-def FlatCell.pair {numCols n : ℕ} (c : FlatCell numCols n) : ℕ × ℕ :=
-  ((c.1 : ℕ), (c.2 : ℕ))
-
-theorem FlatCell.pair_injective {numCols n : ℕ} :
-    Function.Injective (FlatCell.pair (numCols := numCols) (n := n)) := by
-  intro c d h
-  simp only [FlatCell.pair, Prod.mk.injEq] at h
-  exact Prod.ext_iff.mpr ⟨Fin.ext h.1, Fin.ext h.2⟩
 
 namespace Layout.Asm
 
@@ -591,18 +579,18 @@ theorem runAssembly_getPair {numCols n : ℕ}
 the executable pipeline reads the assembly mapping at `(column, row)`, and the mapping's
 action is the abstract replay. -/
 theorem permPolysOf_getD_eq {k : ℕ} (cs : ConstraintSystem Fp) (ops : Operations Fp)
-    (copies' : List (FlatCell (Keygen.permColsOf cs).length (2 ^ k) ×
-      FlatCell (Keygen.permColsOf cs).length (2 ^ k)))
-    (hcopies : Halo2.Layout.V1.copyList (Keygen.permColsOf cs)
+    (copies' : List (FlatCell (Halo2.Layout.permColsOf cs).length (2 ^ k) ×
+      FlatCell (Halo2.Layout.permColsOf cs).length (2 ^ k)))
+    (hcopies : Halo2.Layout.V1.copyList (Halo2.Layout.permColsOf cs)
         (Halo2.FloorPlanner.V1.starts ops) ops
-        (Keygen.constantCopyEntries cs ops) =
+        (Halo2.Layout.constantCopyEntries cs ops) =
       copies'.map fun p => (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2))
-    (g : Fin (Keygen.permColsOf cs).length) (j : Fin (2 ^ k)) :
+    (g : Fin (Halo2.Layout.permColsOf cs).length) (j : Fin (2 ^ k)) :
     ((Keygen.permPolysOf k cs ops).getD (g : ℕ) []).getD (j : ℕ) 0 =
       deltaFp ^ ((replayKeygenPermutation copies' (g, j)).1 : ℕ) *
         omegaOf k ^ ((replayKeygenPermutation copies' (g, j)).2 : ℕ) := by
   have hmap' : ((Halo2.Layout.runAssembly (2 ^ k)
-      (Keygen.permColsOf cs).length (copies'.map fun p =>
+      (Halo2.Layout.permColsOf cs).length (copies'.map fun p =>
         (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2)))[(g : ℕ)]!)[(j : ℕ)]! =
       (replayKeygenPermutation copies' (g, j)).pair :=
     Layout.Asm.runAssembly_getPair copies' (g, j)
@@ -625,13 +613,13 @@ compatibility facts: the flattening preserves rows, and a cell's chunk/column re
 to its global column. -/
 theorem permPolysOf_getD_eq_chunkRowName {k : ℕ}
     (cs : ConstraintSystem Fp) (ops : Operations Fp)
-    {numCols n : ℕ} (hcount : numCols = (Keygen.permColsOf cs).length)
+    {numCols n : ℕ} (hcount : numCols = (Halo2.Layout.permColsOf cs).length)
     (hsize : n = 2 ^ k)
     (copies' : List (FlatCell numCols n ×
       FlatCell numCols n))
-    (hcopies : Halo2.Layout.V1.copyList (Keygen.permColsOf cs)
+    (hcopies : Halo2.Layout.V1.copyList (Halo2.Layout.permColsOf cs)
         (Halo2.FloorPlanner.V1.starts ops) ops
-        (Keygen.constantCopyEntries cs ops) =
+        (Halo2.Layout.constantCopyEntries cs ops) =
       copies'.map fun p => (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2))
     {nc : ℕ} {width : ℕ → ℕ} (chunkLen : ℕ)
     (flatten : ChunkCell nc n width ≃

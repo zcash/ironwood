@@ -492,17 +492,18 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   `CompiledLookups` recovers source lookups from tuple membership at compiled activation rows;
   `LookupSelectors` and `LookupProjection` justify exact selector substitution and query indexing.
   `FixedValues` derives fixed assignments and table constraints from the canonical environment, and
+  `CompiledCopies` recovers source copy constraints from resolved column/row equalities.
+  `ConstraintsCompiled` assembles these row-level semantics into TLC soundness;
   `ConstraintFamilies` decomposes operation constraints by argument family.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
-  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), tuple compression and copies
-  (`OperationLookups`, `OperationCopies`), the permutation
-  round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the
+  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), tuple compression
+  (`OperationLookups`), the permutation round trip (`PermutationCompiler`, `PermutationReplay`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
   `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
   (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
-  circuit satisfaction (`TopLevelInterpretation`). These arguments
+  compiled satisfaction (`TopLevelInterpretation`). These arguments
   apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
   `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and
   `Soundness/Action/StraightLineEvent` bounds the probability loss from the challenge exclusions it

@@ -1,5 +1,7 @@
-import Zcash.Circuits.Integration.PermutationReplay
-import Zcash.Circuits.Integration.OperationCopies
+import Zcash.Circuits.Halo2.CopyCells
+import Zcash.Circuits.Halo2.CopyOperations
+import Zcash.Circuits.Halo2.CopyLayout
+import Clean.Halo2.Keygen.Domain
 
 /-!
 # Declared copies resolve into the keygen copy list
@@ -198,9 +200,9 @@ theorem regionCopiesSplit_fst_columns_lt
     (starts : List ℕ) (consts : List (ℕ × ℕ × ℕ))
     (tuple : ℕ × ℕ × ℕ × ℕ)
     (htuple : tuple ∈ (regionCopiesSplit
-      (Keygen.permColsOf cs) starts body consts).1) :
-    tuple.1 < (Keygen.permColsOf cs).length ∧
-      tuple.2.2.1 < (Keygen.permColsOf cs).length := by
+      (Halo2.Layout.permColsOf cs) starts body consts).1) :
+    tuple.1 < (Halo2.Layout.permColsOf cs).length ∧
+      tuple.2.2.1 < (Halo2.Layout.permColsOf cs).length := by
   simp only [regionCopiesSplit] at htuple
   rw [List.mem_filterMap] at htuple
   obtain ⟨operation, hoperation, htuple⟩ := htuple
@@ -212,7 +214,7 @@ theorem regionCopiesSplit_fst_columns_lt
       obtain rfl := Option.some.inj htuple
       constructor <;>
         apply permIndex_lt_length_of_mem <;>
-        rw [Keygen.permColsOf_map_toAny]
+        rw [Halo2.Layout.permColsOf_map_toAny]
       · exact hoperationRegistered.1
       · exact hoperationRegistered.2
   | constrainInstance cell column row =>
@@ -220,7 +222,7 @@ theorem regionCopiesSplit_fst_columns_lt
       obtain rfl := Option.some.inj htuple
       constructor <;>
         apply permIndex_lt_length_of_mem <;>
-        rw [Keygen.permColsOf_map_toAny]
+        rw [Halo2.Layout.permColsOf_map_toAny]
       · exact hoperationRegistered.1
       · exact hoperationRegistered.2
   | constrainConstant cell value => simp at htuple
@@ -237,9 +239,9 @@ theorem V1_go_fst_columns_lt
     (starts : List ℕ) (consts : List (ℕ × ℕ × ℕ))
     (tuple : ℕ × ℕ × ℕ × ℕ)
     (htuple : tuple ∈ (V1.go
-      (Keygen.permColsOf cs) starts ops consts).1.1) :
-    tuple.1 < (Keygen.permColsOf cs).length ∧
-      tuple.2.2.1 < (Keygen.permColsOf cs).length := by
+      (Halo2.Layout.permColsOf cs) starts ops consts).1.1) :
+    tuple.1 < (Halo2.Layout.permColsOf cs).length ∧
+      tuple.2.2.1 < (Halo2.Layout.permColsOf cs).length := by
   induction ops generalizing consts with
   | nil => simp [V1.go] at htuple
   | cons operation rest inductionHypothesis =>
@@ -248,10 +250,10 @@ theorem V1_go_fst_columns_lt
           obtain ⟨hbody, hrest⟩ :=
             (OperationsKeygenCoherent.region_cons cs name body rest).mp
               hregistered
-          rcases hsplit : regionCopiesSplit (Keygen.permColsOf cs)
+          rcases hsplit : regionCopiesSplit (Halo2.Layout.permColsOf cs)
               starts body consts with
             ⟨equalities, constants, remainingConstants⟩
-          rcases hgo : V1.go (Keygen.permColsOf cs) starts
+          rcases hgo : V1.go (Halo2.Layout.permColsOf cs) starts
               rest remainingConstants with
             ⟨⟨restEqualities, restConstants⟩, finalConstants⟩
           simp only [V1.go, hsplit, hgo] at htuple
@@ -265,13 +267,13 @@ theorem V1_go_fst_columns_lt
           obtain ⟨hcell, hcolumn, hrest⟩ :=
             (OperationsKeygenCoherent.constrainInstance_cons
               cs cell column row rest).mp hregistered
-          rcases hgo : V1.go (Keygen.permColsOf cs) starts rest consts with
+          rcases hgo : V1.go (Halo2.Layout.permColsOf cs) starts rest consts with
             ⟨⟨restEqualities, restConstants⟩, finalConstants⟩
           simp only [V1.go, hgo, List.mem_cons] at htuple
           rcases htuple with rfl | htuple
           · constructor <;>
               apply permIndex_lt_length_of_mem <;>
-              rw [Keygen.permColsOf_map_toAny]
+              rw [Halo2.Layout.permColsOf_map_toAny]
             · exact hcell
             · exact hcolumn
           · exact inductionHypothesis hrest consts (by rwa [hgo])
@@ -1097,15 +1099,15 @@ theorem V1_copyList_columns_lt
       (AnyColumn.mk .fixed entry.2.1) ∈ cs.permutationColumns)
     (tuple : ℕ × ℕ × ℕ × ℕ)
     (htuple : tuple ∈ V1.copyList
-      (Keygen.permColsOf cs) starts operations constants) :
-    tuple.1 < (Keygen.permColsOf cs).length ∧
-      tuple.2.2.1 < (Keygen.permColsOf cs).length := by
+      (Halo2.Layout.permColsOf cs) starts operations constants) :
+    tuple.1 < (Halo2.Layout.permColsOf cs).length ∧
+      tuple.2.2.1 < (Halo2.Layout.permColsOf cs).length := by
   rw [V1.copyList, List.mem_append] at htuple
   rcases htuple with hequality | hconstant
   · exact V1_go_fst_columns_lt cs operations hregistered
       starts constants tuple hequality
   · have hconstants :=
-      (V1_go_snd_eq (Keygen.permColsOf cs) starts
+      (V1_go_snd_eq (Halo2.Layout.permColsOf cs) starts
         operations constants hfit).1
     rw [hconstants, List.mem_map] at hconstant
     obtain ⟨⟨⟨cell, value⟩, entry⟩, hallocation, htuple⟩ := hconstant
@@ -1116,7 +1118,7 @@ theorem V1_copyList_columns_lt
     obtain rfl := htuple
     constructor <;>
       apply permIndex_lt_length_of_mem <;>
-      rw [Keygen.permColsOf_map_toAny]
+      rw [Halo2.Layout.permColsOf_map_toAny]
     · exact hconstantColumns entry hentry
     · exact operationConstSite_column_mem_permutationColumns
         cs operations hregistered hsite

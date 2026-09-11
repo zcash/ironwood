@@ -76,18 +76,19 @@ theorem lookup_values_eq (assignment : ProofAssignment Fp)
     (topLevelLookupInputs_selectorsCovered top _ (top.lookupAt_mem_constraintSystem route.index))
     (TopLevelLookup.tablesCovered (top := top) _)
     ((pinnedQueryState top.pinnedCS).interprets (top.environment assignment) row)
-  have selectors := EnabledLookup.SelectorProjection.ofInputSelectorValues
-    (top.environment assignment) lookup
-    (lookup.inputSelectorValuesRealized henabled assignment)
-    (lookupTables_selectorFree lookup.argument)
   constructor
   · have hinput := (project (top.placement lookup.region + lookup.row : ℕ)).1
     rw [route.argument] at hinput
-    exact hinput.trans selectors.input
+    exact hinput.trans (lookup.inputValues_eq henabled assignment)
   · intro row hrow
     have htable := (project row).2
     rw [route.argument] at htable
-    exact htable.trans (selectors.table row (by rwa [top.environment_usableRows_eq]))
+    apply htable.trans
+    apply List.map_congr_left
+    intro expression hexpression
+    exact Expression.eval_substValuation_eq_queryEval_of_selectorFree
+      top.selectorMap (top.environment assignment) lookup.selectorValue row expression
+      (lookup.argument.tablesFree expression hexpression)
 
 /-- Compiled tuple membership recovers every source lookup constraint. -/
 theorem lookup_constraints_of_compiled

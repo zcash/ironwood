@@ -1,9 +1,10 @@
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.PermutationCompiler
+import Zcash.Circuits.Integration.PermutationReplay
 import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Circuits.Integration.TopLevelConstraintModel
-import Zcash.Circuits.Integration.CopyListMembership
+import Zcash.Circuits.Halo2.CompiledCopies
 
 /-! # Circuit-generic keygen permutation semantics
 
@@ -30,7 +31,7 @@ def columns : List ColRef :=
 /-- The copy compiler and the published shape use the same column count. -/
 theorem columns_length : (columns top).length = top.permutationColumnCount := by
   rw [top.permutationColumnCount_eq_permutationColumns_length]
-  simp only [columns, Keygen.permColsOf, List.length_map, TopLevelCircuit.permutationColumns]
+  simp only [columns, Halo2.Layout.permColsOf, List.length_map, TopLevelCircuit.permutationColumns]
 
 /-- The V1 constants allocation of the circuit operation stream. -/
 def constants : List (ℕ × ℕ × ℕ) :=
@@ -43,15 +44,9 @@ theorem constantSites_fit :
     (operationConstSites
         (top.operations)).length ≤
       (constants top).length := by
-  rw [constants, Keygen.constantCopyEntries, List.length_map,
+  rw [constants, Halo2.Layout.constantCopyEntries, List.length_map,
     operationConstSites_length]
   exact top.constantValues_length_le_constantAssignments_length
-
-/-- The keygen copy list of the circuit operation stream. -/
-def rawPairs : List (ℕ × ℕ × ℕ × ℕ) :=
-  Halo2.Layout.V1.copyList (columns top)
-    top.regionStarts
-    (top.operations) (constants top)
 
 theorem usedRows_le_domainSize :
     Halo2.usedRows top.operations ≤ top.n :=
@@ -66,14 +61,14 @@ theorem const_column_mem_permutationColumns
     (entry : ℕ × ℕ × ℕ) (hentry : entry ∈ (constants top)) :
     (AnyColumn.mk .fixed entry.2.1) ∈
       top.constraintSystem.permutationColumns := by
-  rw [constants, Keygen.constantCopyEntries, List.mem_map] at hentry
+  rw [constants, Halo2.Layout.constantCopyEntries, List.mem_map] at hentry
   obtain ⟨⟨value, column, row⟩, hassignment, rfl⟩ := hentry
   exact top.constantAssignmentColumn_mem_permutationColumns
     hassignment
 
 /-- Every keygen copy tuple names two circuit permutation columns. Row bounds are
 proved generically from the compiler below. -/
-theorem copyColumnBounds : ∀ t ∈ (rawPairs top),
+theorem copyColumnBounds : ∀ t ∈ top.copyPairs,
     t.1 < top.permutationColumnCount ∧ t.2.2.1 < top.permutationColumnCount := by
   intro tuple htuple
   rw [← columns_length top]
@@ -81,7 +76,7 @@ theorem copyColumnBounds : ∀ t ∈ (rawPairs top),
     top.operations top.keygenCoherent
     top.regionStarts (constants top) (constantSites_fit top)
     (const_column_mem_permutationColumns top) tuple
-  simpa only [rawPairs, columns] using htuple
+  simpa only [TopLevelCircuit.copyPairs, columns] using htuple
 
 omit [TopLevelShape top] in
 /-- Every V1 circuit constant allocation lies below the compiler-derived operation
@@ -89,7 +84,7 @@ footprint. -/
 theorem const_row_lt_usedRows
     (entry : ℕ × ℕ × ℕ) (hentry : entry ∈ (constants top)) :
     entry.2.2 < Halo2.usedRows top.operations := by
-  rw [constants, Keygen.constantCopyEntries, List.mem_map] at hentry
+  rw [constants, Halo2.Layout.constantCopyEntries, List.mem_map] at hentry
   obtain ⟨⟨value, column, row⟩, hassignment, rfl⟩ := hentry
   exact V1_constantAssignments_row_lt_usedRows
     top.operations
@@ -100,17 +95,17 @@ omit [TopLevelShape top] in
 /-- Every raw circuit keygen copy endpoint lies below the compiler-derived operation
 footprint. -/
 theorem copyRaw_rows_lt_usedRows
-    (tuple : ℕ × ℕ × ℕ × ℕ) (htuple : tuple ∈ (rawPairs top)) :
+    (tuple : ℕ × ℕ × ℕ × ℕ) (htuple : tuple ∈ top.copyPairs) :
     tuple.2.1 < Halo2.usedRows top.operations ∧
       tuple.2.2.2 < Halo2.usedRows top.operations := by
   apply V1_copyList_rows_lt_usedRows top.operations
     (columns top) (constants top) (constantSites_fit top)
     (const_row_lt_usedRows top) tuple
-  simpa only [rawPairs, TopLevelCircuit.regionStarts,
+  simpa only [TopLevelCircuit.copyPairs, TopLevelCircuit.regionStarts,
     TopLevelCompilation.regionStarts] using htuple
 
 /-- Registration and the compiler footprint bound both coordinates of each copy. -/
-theorem copyBounds : ∀ t ∈ (rawPairs top), t.1 < top.permutationColumnCount ∧
+theorem copyBounds : ∀ t ∈ top.copyPairs, t.1 < top.permutationColumnCount ∧
     t.2.1 < top.n ∧ t.2.2.1 < top.permutationColumnCount ∧
     t.2.2.2 < top.n := by
   intro tuple htuple
@@ -123,7 +118,7 @@ theorem copyBounds : ∀ t ∈ (rawPairs top), t.1 < top.permutationColumnCount 
 def pairs :
     List (FlatCell top.permutationColumnCount top.n ×
       FlatCell top.permutationColumnCount top.n) :=
-  decodeCopies top.permutationColumnCount top.n (rawPairs top) (copyBounds top)
+  decodeCopies top.permutationColumnCount top.n top.copyPairs (copyBounds top)
 
 /-- Every decoded copy pair lies in the compiler-derived usable-row prefix. -/
 theorem copyRowsActive
@@ -133,10 +128,10 @@ theorem copyRowsActive
     (pair.1.2 : ℕ) < (top.usableRowsAt top.domainExponent) ∧
       (pair.2.2 : ℕ) < (top.usableRowsAt top.domainExponent) := by
   have hrawMap := decodeCopies_map top.permutationColumnCount top.n
-    (rawPairs top) (copyBounds top)
+    top.copyPairs (copyBounds top)
   have hraw :
       (pair.1.pair.1, pair.1.pair.2,
-        pair.2.pair.1, pair.2.pair.2) ∈ (rawPairs top) := by
+        pair.2.pair.1, pair.2.pair.2) ∈ top.copyPairs := by
     rw [← hrawMap]
     exact List.mem_map.mpr ⟨pair, hpair, rfl⟩
   have hrows := (copyRaw_rows_lt_usedRows top) _ hraw
@@ -714,17 +709,17 @@ theorem copyPairValue_of_resolverPermutation
 
 /-- Decode membership in the raw circuit copy list to a typed copy pair. -/
 theorem exists_pair_of_raw
-    {tuple : ℕ × ℕ × ℕ × ℕ} (hraw : tuple ∈ (rawPairs top)) :
+    {tuple : ℕ × ℕ × ℕ × ℕ} (hraw : tuple ∈ top.copyPairs) :
     ∃ pair ∈ (pairs top),
       pair.1.pair = (tuple.1, tuple.2.1) ∧
         pair.2.pair = (tuple.2.2.1, tuple.2.2.2) := by
   have hrawMap :
-      (rawPairs top) = (pairs top).map
+      top.copyPairs = (pairs top).map
         (fun pair =>
           (pair.1.pair.1, pair.1.pair.2,
             pair.2.pair.1, pair.2.pair.2)) :=
     (decodeCopies_map top.permutationColumnCount top.n
-      (rawPairs top) (copyBounds top)).symm
+      top.copyPairs (copyBounds top)).symm
   rw [hrawMap, List.mem_map] at hraw
   obtain ⟨pair, hpair, htuple⟩ := hraw
   refine ⟨pair, hpair, ?_, ?_⟩

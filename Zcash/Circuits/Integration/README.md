@@ -36,14 +36,15 @@ The semantic bridge is split by responsibility:
   `TopLevelLookups.lean` derives compiled tuple membership from the scalar lookup
   argument and the existing `β`/`γ`/`θ` exclusions. Tuple decompression is required
   only at compiler-derived activation rows, with every usable table row available.
-* `CopyConstraints.lean` derives Clean copy constraints directly from compiler
-  copy-pair equalities and fixed-cell reads, including allocated constants.
+* `Halo2/CompiledCopies.lean` derives source copy constraints from equality on
+  resolved copy pairs. The circuit-owned environment realizes allocated constants.
 * `CopyPermutation.lean` and `PermutationCycle.lean` identify compiler copy replay
   with the verifier's sigma polynomials. `TopLevelCopyConstraints.lean` combines
-  that identification with permutation challenge exclusions and constant reads.
-* `TopLevelInterpretation.lean` joins the four constraint families directly into
-  Clean's `Constraints` and applies `top.soundness` to extract executable
-  witnesses. `TopLevelWitness.lean` provides the witness types;
+  that identification with permutation challenge exclusions to prove compiled copy equality.
+* `TopLevelInterpretation.lean` assembles `ConstraintsCompiled` and applies
+  `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
+  `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.
+  `TopLevelWitness.lean` provides the witness types;
   `AssignmentEncoding.lean` identifies the polynomial resolver with the circuit's
   canonical proof assignment and public-input layout.
   `CircuitFieldSupport top` supplies only numerical compatibility bounds;

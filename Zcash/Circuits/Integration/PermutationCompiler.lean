@@ -445,7 +445,7 @@ theorem topLevelPermutationColumnAddresses_eq
     top.verifierCS.permutationChunks.flatten.map
           (fun reference =>
             permutationColumnAddress (top.toVerifierKey urs) reference.1) =
-      (Keygen.permColsOf top.constraintSystem).map
+      (Halo2.Layout.permColsOf top.constraintSystem).map
         Halo2.Layout.ColRef.toAny := by
   rw [verifierCS_permutationChunks_flatten]
   change
@@ -454,7 +454,7 @@ theorem topLevelPermutationColumnAddresses_eq
         _ =
       _
   rw [← List.map_map, List.zipIdx_map_fst]
-  simp only [Keygen.permColsOf, List.map_map]
+  simp only [Halo2.Layout.permColsOf, List.map_map]
   apply List.map_congr_left
   intro column hcolumn
   simp only [Function.comp_apply]

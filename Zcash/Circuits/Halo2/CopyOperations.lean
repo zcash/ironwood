@@ -1,6 +1,4 @@
 import Zcash.Circuits.Halo2.ConstraintFamilies
-import Zcash.Common.RelationWitness
-import Zcash.Snark.Soundness.Canonical.PermutationSemantics
 
 /-!
 # Declared operation copies and permutation-cycle satisfaction

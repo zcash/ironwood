@@ -150,10 +150,10 @@ theorem commitment_ofKeygen
           (topLevelPermutationRows top column) 1 := by
   unfold topLevelPermutationCommitment
   have hcolumn' :
-      column < (Keygen.permColsOf top.constraintSystem).length := by
+      column < (Halo2.Layout.permColsOf top.constraintSystem).length := by
     rw [top.permutationColumnCount_eq_permutationColumns_length] at hcolumn
     simpa only [TopLevelCircuit.permutationColumns,
-      Keygen.permColsOf, List.length_map] using hcolumn
+      Halo2.Layout.permColsOf, List.length_map] using hcolumn
   have hcommit :=
     Keygen.permutationCommitmentsOf_getD_eq_commitInstance
       urs top.constraintSystem (top.operations)

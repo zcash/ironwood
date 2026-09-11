@@ -1,6 +1,7 @@
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Clean.Halo2.Keygen.Layout
+import Zcash.Circuits.Halo2.CopyLayout
 import Zcash.Arithmetic
 import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft
@@ -17,7 +18,7 @@ namespace Zcash.Snark.Keygen
 
 open Zcash.Snark
 open Zcash.Arithmetic (deltaFp omegaOf)
-open Halo2
+open Halo2 Halo2.Layout
 -- The concrete fast MSM lives in the CompElliptic pin; opening `Curves.Pasta` is what makes its
 -- `Fast.Msm.*` spellings resolve here.
 open CompElliptic.Curves.Pasta
@@ -36,13 +37,6 @@ def commitLagrangeWith (blind : G) (basis : List G) (coeffs : List Fp) : G :=
     (fun i => (coeffs.getD i 0).val • basis.getD i 0)).sum + blind
 
 /-! ## Commitment helpers over Clean-compiled fixed rows -/
-
-/-- V1 constant allocations in the legacy copy-list tuple order. Values remain
-field-valued in Clean; only this permutation-copy adapter reads their canonical `Fp.val`. -/
-def constantCopyEntries (cs : ConstraintSystem Fp) (ops : Operations Fp) :
-    List (ℕ × ℕ × ℕ) :=
-  (FloorPlanner.V1.constantAssignments ops (cs.constants.map (·.index))).map
-    fun (value, column, row) => (value.val, column, row)
 
 /-- Commit Clean-compiled fixed rows with one task per column. -/
 def fixedCommitmentsWith (commit : List Fp → G)
@@ -77,29 +71,6 @@ def fixedCommitmentsOf (blind : G) (lagrange : List G)
     (Fast.Msm.commitLagrangeFastWith Fast.Msm.defaultWindow blind lagrange) rows
 
 /-! ## Derived permutation commitments (`plonk/permutation/keygen.rs:102-152`) -/
-
-/-- The permutation columns as `ColRef`s in `enable_equality` order
-(`cs.permutationColumns`) — the order the keygen `Assembly` mapping and the `δ^i` scaling
-are indexed by, and the column shape `V1.copyList` resolves cells against. -/
-def permColsOf (cs : ConstraintSystem Fp) : List Halo2.Layout.ColRef :=
-  cs.permutationColumns.map fun c =>
-    match c.kind with
-    | .advice => .advice c.index
-    | .fixed => .fixed c.index
-    | .instance => .instance c.index
-
-/-- Translating the keygen permutation columns back to Clean columns is lossless. -/
-theorem permColsOf_map_toAny (cs : ConstraintSystem Fp) :
-    (permColsOf cs).map Halo2.Layout.ColRef.toAny =
-      cs.permutationColumns := by
-  rw [permColsOf, List.map_map]
-  induction cs.permutationColumns with
-  | nil => rfl
-  | cons column rest ih =>
-      simp only [List.map_cons]
-      rw [ih]
-      rcases column with ⟨kind, index⟩
-      cases kind <;> rfl
 
 /-- `[ω^0, ω^1, …, ω^(n−1)]` (`build_vk`'s `omega_powers`, `permutation/keygen.rs:108-116`;
 map form rather than iterated multiplication so entries are `getElem`-transparent for the
