@@ -34,20 +34,19 @@ compressed-constraint `x` term, so it upper-bounds the bare-adaptive remainder.
 
 /-- The Action circuit enables at most `2^12` lookup activations. -/
 theorem actionLookupActivationCount_le :
-    (operationEnabledLookups actionCircuit.operations 0).length ≤ 2 ^ 12 := by
-  rw [operationEnabledLookups_length,
-    ← actionCircuit.synthesisSummary_eq_operations,
+    actionCircuit.lookupActivationRows.length ≤ 2 ^ 12 := by
+  rw [actionCircuit.lookupActivationRows_length,
     actionCircuit_lookupActivationCount_eq]
   norm_num
 
-/-- Every enabled Action lookup has at most four inputs. -/
+/-- Every compiled Action lookup has at most four inputs. -/
 theorem actionLookupInputArity_le :
-    ∀ i : Fin (operationEnabledLookups actionCircuit.operations 0).length,
-      ((operationEnabledLookups actionCircuit.operations 0).get i).argument.inputs.length ≤ 4 := by
+    ∀ i : Fin actionCircuit.lookupCount,
+      (actionCircuit.pinnedCS.lookupInputExprs.getD i []).length ≤ 4 := by
   intro i
+  rw [actionCircuit.lookupInputExprs_length]
   apply actionCircuit_lookupInputArity_le
-  apply OperationsKeygenCoherent.lookup actionCircuit.keygenCoherent
-  exact List.get_mem _ i
+  exact actionCircuit.lookupAt_mem_constraintSystem i
 
 /-- The exact per-Action permutation-cell count.  Unlike the old `2^16` envelope, this
 tight value keeps the consensus-maximum β budget below `2^46`. -/
@@ -81,37 +80,31 @@ theorem resolverPermutationCell_card_le
 
 /-- The θ budget is linear in the number of Actions. -/
 theorem actionThetaBudget (numProofs : ℕ) :
-    ∀ (basis : AugmentedIndex
-        actionCircuit.n → VestaG)
-      (poly : CommitmentId → CPoly),
-      TopLevelLookup.thetaBudget actionCircuit
-        (actionProofParamsFor numProofs)
-        (ursOfAugmentedBasis
-          actionCircuit.domainExponent basis) poly ≤
+    TopLevelLookup.thetaBudget actionCircuit
+        (actionProofParamsFor numProofs) ≤
         numProofs * 2 ^ 25 := by
-  intro basis poly
-  rw [TopLevelLookup.thetaBudget_eq]
+  unfold TopLevelLookup.thetaBudget
   calc
     ∑ index : TopLevelLookup.ActivationIndex
           actionCircuit (actionProofParamsFor numProofs),
         actionCircuit.usableRowsAt actionCircuit.domainExponent *
-          ((operationEnabledLookups actionCircuit.operations 0).get
-            index.2).argument.inputs.length
+          (actionCircuit.pinnedCS.lookupInputExprs.getD
+            (actionCircuit.lookupActivationRows.get index.2).1 []).length
       ≤ ∑ _index : TopLevelLookup.ActivationIndex
           actionCircuit (actionProofParamsFor numProofs), 2 ^ 11 * 4 := by
         gcongr with index
         · simpa only [actionCircuit.n_eq_two_pow_domainExponent, action_domainExponent_eq]
             using actionCircuit.usableRowsAt_domainExponent_le_n
-        · exact actionLookupInputArity_le index.2
+        · exact actionLookupInputArity_le _
     _ ≤ numProofs * 2 ^ 25 := by
         simp only [TopLevelLookup.ActivationIndex,
           Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_fin,
           nsmul_eq_mul]
         have hscaled :
-            (operationEnabledLookups actionCircuit.operations 0).length *
+            actionCircuit.lookupActivationRows.length *
                 (2 ^ 11 * 4) ≤ 2 ^ 25 := by
           calc
-            (operationEnabledLookups actionCircuit.operations 0).length * (2 ^ 11 * 4)
+            actionCircuit.lookupActivationRows.length * (2 ^ 11 * 4)
                 ≤ 2 ^ 12 * (2 ^ 11 * 4) :=
               Nat.mul_le_mul_right _ actionLookupActivationCount_le
             _ = 2 ^ 25 := by norm_num
@@ -237,39 +230,8 @@ theorem actionGammaBudget (numProofs : ℕ) :
 
 /-- The captured `θ` surface budget is at most `2^25`. -/
 theorem capturedActionThetaBudget :
-    ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
-      (poly : CommitmentId → CPoly),
-      TopLevelLookup.thetaBudget actionCircuit actionProofParams
-        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly ≤
-        2 ^ 25 := by
-  intro basis poly
-  rw [TopLevelLookup.thetaBudget_eq]
-  calc
-    ∑ index : TopLevelLookup.ActivationIndex
-          actionCircuit actionProofParams,
-        actionCircuit.usableRowsAt actionCircuit.domainExponent *
-          ((operationEnabledLookups actionCircuit.operations 0).get
-            index.2).argument.inputs.length
-      ≤ ∑ _index : TopLevelLookup.ActivationIndex
-          actionCircuit actionProofParams, 2 ^ 11 * 4 := by
-        gcongr with index
-        · simpa only [actionCircuit.n_eq_two_pow_domainExponent, action_domainExponent_eq]
-            using actionCircuit.usableRowsAt_domainExponent_le_n
-        · exact actionLookupInputArity_le index.2
-    _ ≤ 2 ^ 25 := by
-        simp only [TopLevelLookup.ActivationIndex,
-          Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_fin,
-          nsmul_eq_mul]
-        have hscaled :
-            (operationEnabledLookups actionCircuit.operations 0).length *
-                (2 ^ 11 * 4) ≤ 2 ^ 25 := by
-          calc
-            (operationEnabledLookups actionCircuit.operations 0).length * (2 ^ 11 * 4)
-                ≤ 2 ^ 12 * (2 ^ 11 * 4) :=
-              Nat.mul_le_mul_right _ actionLookupActivationCount_le
-            _ = 2 ^ 25 := by norm_num
-        simpa only [Halo2.CircuitShape.withProofParams, actionProofParams, actionProofParamsFor,
-          _root_.one_mul, Nat.cast_id] using hscaled
+    TopLevelLookup.thetaBudget actionCircuit actionProofParams ≤ 2 ^ 25 := by
+  simpa only [actionProofParams, Nat.one_mul] using actionThetaBudget 1
 
 /-- The captured `β` surface budget is at most `2^35`. -/
 theorem capturedActionBetaBudget :
@@ -1247,10 +1209,7 @@ theorem orchard_adaptiveActionStatementSurface_measure_le_for
   · refine le_trans
       (adaptiveActionThetaSurfaceAtOf_measure_le basis instanceCommitment ps source earlier) ?_
     gcongr
-    exact_mod_cast actionThetaBudget numProofs basis
-      (adaptiveActionCommitmentPolynomialOf
-        (adaptiveActionStatementVk (actionProofParamsFor numProofs) basis)
-        instanceCommitment ps source (chRecord (fun _ => 0) (fun _ => 0)))
+    exact_mod_cast actionThetaBudget numProofs
   · have h := adaptiveActionBetaSurfaceAtOf_measure_le
       basis instanceCommitment ps source earlier
     dsimp only at h

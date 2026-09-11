@@ -3,7 +3,6 @@ import Zcash.Snark.Soundness.Canonical.InstanceCommitment
 import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Halo2.SelectorCompression
-import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Circuits.Integration.AssignmentEncoding
 import Zcash.Snark.Keygen.Lagrange
 

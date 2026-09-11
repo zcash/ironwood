@@ -1,17 +1,14 @@
-import Zcash.Circuits.Halo2.LookupOperations
 import Zcash.Snark.Soundness.Constraint.FoldSplit
 import Zcash.Snark.Soundness.Pricing.GoodChallenge
 import Zcash.Snark.Soundness.Canonical.LookupRows
-import Clean.Halo2.Keygen.FloorPlanner.RegionShape
 import Zcash.Common.RelationWitness
 
 /-!
-# Tuple compression and activation-indexed collision budgets
+# Tuple compression and finite collision families
 
 Outside the roots of the compression-polynomial difference, equality of compressed
-values implies equality of the original tuples. Each activation's collision set
-ranges over usable table rows; the polynomial bridge transports these budgets to
-the compiler's row semantics.
+values implies equality of the original tuples. The collision family is indexed by arbitrary tuple comparisons, independent of
+circuit compilation.
 -/
 
 namespace Zcash.Snark
@@ -124,95 +121,36 @@ theorem tupleCompressionBadSet_card_le_length
       _ ≤ left.length := Nat.zero_le _
   · exact (tupleCompressionBadSet_card_lt hlength heq).le
 
-/-- All `θ` collisions between one enabled input tuple and the usable table rows. -/
-def EnabledLookup.thetaBadSet
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp) : Finset Fp :=
-  (Finset.range env.usableRows).biUnion fun row =>
-    tupleCompressionBadSet
-      (lookup.inputValues place env) (lookup.tableValues env row)
 
-/-- Avoiding an enabled lookup's combined set is exactly avoiding every usable-row tuple
-collision. -/
-theorem EnabledLookup.not_mem_thetaBadSet_iff
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp) (theta : Fp) :
-    theta ∉ lookup.thetaBadSet place env ↔
-      ∀ row < env.usableRows,
-        theta ∉ tupleCompressionBadSet
-          (lookup.inputValues place env) (lookup.tableValues env row) := by
-  simp [EnabledLookup.thetaBadSet]
+/-- The shared challenge must avoid collisions in every tuple comparison. -/
+def tupleCollisionSet {ι : Type*} [Fintype ι]
+    (left right : ι → List Fp) : Finset Fp :=
+  Finset.univ.biUnion fun i => tupleCompressionBadSet (left i) (right i)
 
-/-- Compute avoidance of one enabled lookup's `θ` surface by checking its finite usable rows.
-No root set is enumerated. -/
-def EnabledLookup.thetaAvoidance?
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp) (theta : Fp) :
-    Option (PLift (theta ∉ lookup.thetaBadSet place env)) :=
-  match hrows : finForallOption (fun row : Fin env.usableRows =>
-      szBadSetAvoidance?
-        (foldPoly (lookup.inputValues place env)
-          - foldPoly (lookup.tableValues env row.1)) theta) with
-  | none => none
-  | some rows => some ⟨(lookup.not_mem_thetaBadSet_iff place env theta).2
-      fun row hrow => by
-        simpa [tupleCompressionBadSet, tupleCompressionBadSet] using
-          (rows ⟨row, hrow⟩).down⟩
+theorem not_mem_tupleCollisionSet_iff {ι : Type*} [Fintype ι]
+    (left right : ι → List Fp) (theta : Fp) :
+    theta ∉ tupleCollisionSet left right ↔
+      ∀ i, theta ∉ tupleCompressionBadSet (left i) (right i) := by
+  classical
+  simp [tupleCollisionSet]
 
-theorem EnabledLookup.thetaAvoidance?_isSome_of
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp) (theta : Fp)
-    (hgood : theta ∉ lookup.thetaBadSet place env) :
-    (lookup.thetaAvoidance? place env theta).isSome := by
-  have hrowsSpec := (lookup.not_mem_thetaBadSet_iff place env theta).1 hgood
-  have hrows : ∀ row : Fin env.usableRows,
-      (szBadSetAvoidance?
-        (foldPoly (lookup.inputValues place env)
-          - foldPoly (lookup.tableValues env row.1)) theta).isSome :=
-    fun row => (szBadSetAvoidance?_isSome_iff _ _).2 (by
-      simpa [tupleCompressionBadSet] using hrowsSpec row.1 row.2)
-  have hall := finForallOption_isSome_of _ hrows
-  unfold EnabledLookup.thetaAvoidance?
-  generalize hresult : finForallOption (fun row : Fin env.usableRows =>
-      szBadSetAvoidance?
-        (foldPoly (lookup.inputValues place env)
-          - foldPoly (lookup.tableValues env row.1)) theta) = result at hall ⊢
-  cases result <;> simp_all
 
-/-- One enabled lookup's tuple-collision budget is at most
-`usableRows × inputArity`. -/
-theorem EnabledLookup.thetaBadSet_card_le
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp)
-    (hlength : ∀ row < env.usableRows,
-      (lookup.inputValues place env).length = (lookup.tableValues env row).length) :
-    (lookup.thetaBadSet place env).card ≤
-      env.usableRows * (lookup.inputValues place env).length := by
-  refine le_trans Finset.card_biUnion_le ?_
-  calc
-    ∑ row ∈ Finset.range env.usableRows,
-        (tupleCompressionBadSet
-          (lookup.inputValues place env) (lookup.tableValues env row)).card
-      ≤ ∑ _row ∈ Finset.range env.usableRows,
-          (lookup.inputValues place env).length := by
-            exact Finset.sum_le_sum fun row hrow =>
-              tupleCompressionBadSet_card_le_length
-                (hlength row (Finset.mem_range.mp hrow))
-    _ = env.usableRows * (lookup.inputValues place env).length := by simp
+/-- Union-bound cost of equal-length tuple comparisons. -/
+theorem tupleCollisionSet_card_le {ι : Type*} [Fintype ι]
+    (left right : ι → List Fp)
+    (hlength : ∀ i, (left i).length = (right i).length) :
+    (tupleCollisionSet left right).card ≤ ∑ i, (left i).length := by
+  classical
+  exact Finset.card_biUnion_le.trans
+    (Finset.sum_le_sum fun i _ => tupleCompressionBadSet_card_le_length (hlength i))
 
-/-- Uniform `θ` hits one enabled lookup's tuple-collision set with probability at most
-`usableRows × inputArity / |Fp|`. -/
-theorem uniformChallenge_enabledLookupThetaBadSet
-    (place : RegionIndex → ℕ) (env : Environment Fp)
-    (lookup : EnabledLookup Fp)
-    (hlength : ∀ row < env.usableRows,
-      (lookup.inputValues place env).length = (lookup.tableValues env row).length) :
-    uniformChallenge.toOuterMeasure (lookup.thetaBadSet place env)
-      ≤ (env.usableRows * (lookup.inputValues place env).length : ℝ≥0∞) /
-          (Fintype.card Fp : ℝ≥0∞) := by
+theorem uniformChallenge_tupleCollisionSet {ι : Type*} [Fintype ι]
+    (left right : ι → List Fp)
+    (hlength : ∀ i, (left i).length = (right i).length) :
+    uniformChallenge.toOuterMeasure (tupleCollisionSet left right) ≤
+      (∑ i, (left i).length : ℕ) / (Fintype.card Fp : ℝ≥0∞) := by
   rw [uniformChallenge_badSet]
   gcongr
-  exact_mod_cast lookup.thetaBadSet_card_le place env hlength
-
+  exact_mod_cast tupleCollisionSet_card_le left right hlength
 
 end Zcash.Snark

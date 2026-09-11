@@ -498,8 +498,9 @@ them as data (`SpecOrBreak`) rather than assuming them away.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
-  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), tuple compression
-  (`OperationLookups`), the permutation round trip (`PermutationCompiler`, `PermutationReplay`),
+  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), using the tuple
+  collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation round trip
+  (`PermutationCompiler`, `PermutationReplay`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
   `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
   (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full

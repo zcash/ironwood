@@ -1,5 +1,5 @@
 import Zcash.Circuits.Halo2.CompiledLookups
-import Zcash.Circuits.Integration.OperationLookups
+import Zcash.Snark.Soundness.Pricing.TupleCompression
 import Zcash.Snark.Soundness.Canonical.ConstraintModel
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
 import Zcash.Circuits.Integration.AssignmentEncoding
@@ -43,190 +43,125 @@ theorem map_eval_toExpr
 
 namespace TopLevelLookup
 
-/--
-Index every lookup activation in every proof of a top-level bundle. The activation
-list is shared by all proofs, while the resolver environment is proof-indexed.
--/
+/-- A lookup activation in one proof of the bundle. -/
 abbrev ActivationIndex
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
     (pp : ProofParams) :=
-  Fin pp.numProofs ×
-    Fin (operationEnabledLookups (top.operations) 0).length
+  Fin pp.numProofs × Fin top.lookupActivationRows.length
 
-/--
-The exact bundle-wide `θ` collision surface for a top-level circuit. A single
-transcript challenge is shared by every proof and every enabled lookup activation,
-so the event must be unioned across both indices.
--/
+/-- A comparison of an activated input with one usable table row. -/
+abbrev ComparisonIndex
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (pp : ProofParams) :=
+  ActivationIndex top pp × Fin (top.usableRowsAt top.domainExponent)
+
+/-- Evaluate a compiled input/table comparison using only column polynomials.
+Neither tuple depends on the compression challenge. -/
+def comparisonValues
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (pp : ProofParams) (urs : URS G) (poly : CommitmentId → CPoly)
+    (index : ComparisonIndex top pp) : List Fp × List Fp :=
+  let activation := top.lookupActivationRows.get index.1.2
+  let env := resolverEnvironment (top.toVerifierKey urs) poly index.1.1
+    (top.usableRowsAt top.domainExponent)
+  (((top.pinnedCS.lookupInputExprs.getD activation.1 []).map
+      ((pinnedQueryState top.pinnedCS).eval env activation.2)),
+    ((top.pinnedCS.lookupTableExprs.getD activation.1 []).map
+      ((pinnedQueryState top.pinnedCS).eval env index.2)))
+
+/-- All tuple-compression collisions at compiled activation rows across the bundle. -/
 def thetaBadSet
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly) : Finset Fp :=
-  enabledLookupThetaBadSetFamily
-    (ι := ActivationIndex top pp)
-    (fun _ => top.placement)
-    (fun index =>
-      resolverEnvironment
-        (top.toVerifierKey urs) poly index.1
-        (top.usableRowsAt top.domainExponent))
-    (fun index =>
-      (operationEnabledLookups (top.operations) 0).get index.2)
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (pp : ProofParams) (urs : URS G) (poly : CommitmentId → CPoly) : Finset Fp :=
+  tupleCollisionSet
+    (fun index : ComparisonIndex top pp => (comparisonValues top pp urs poly index).1)
+    (fun index => (comparisonValues top pp urs poly index).2)
 
-/-- The row-by-arity root budget for the top-level bundle's `θ` surface. -/
+/-- Row-by-arity cost, determined entirely by compilation and the proof count. -/
 def thetaBudget
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (pp : ProofParams) (urs : URS G)
-    (poly : CommitmentId → CPoly) : ℕ :=
-  ∑ index : ActivationIndex top pp,
-    (resolverEnvironment
-      (top.toVerifierKey urs) poly index.1
-      (top.usableRowsAt top.domainExponent)).usableRows *
-    (EnabledLookup.inputValues
-      top.placement
-      (resolverEnvironment
-        (top.toVerifierKey urs) poly index.1
-        (top.usableRowsAt top.domainExponent))
-      ((operationEnabledLookups
-        (top.operations) 0).get index.2)).length
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (pp : ProofParams) : ℕ :=
+  ∑ index : ActivationIndex top pp, top.usableRowsAt top.domainExponent *
+    (top.pinnedCS.lookupInputExprs.getD (top.lookupActivationRows.get index.2).1 []).length
 
-/--
-The bundle-wide top-level `θ` surface has exactly the generic
-`usableRows × tupleArity` union-bound budget, summed over every proof and
-activation.
--/
-theorem uniformChallenge_thetaBadSet
-    (poly : CommitmentId → CPoly) :
-    uniformChallenge.toOuterMeasure
-        (thetaBadSet top pp urs poly)
-      ≤ (thetaBudget top pp urs poly : ENNReal) /
-        (Fintype.card Fp : ENNReal) := by
-  unfold thetaBadSet thetaBudget
-  apply uniformChallenge_enabledLookupThetaBadSetFamily
-  intro index row _hrow
-  let lookup :=
-    (operationEnabledLookups (top.operations) 0).get index.2
-  have harity := lookup.argument.arity
-  unfold EnabledLookup.inputValues EnabledLookup.tableValues
-  simpa only [List.length_map] using harity
+theorem comparisonValues_length (poly : CommitmentId → CPoly)
+    (index : ComparisonIndex top pp) :
+    (comparisonValues top pp urs poly index).1.length =
+      (comparisonValues top pp urs poly index).2.length := by
+  simp only [comparisonValues, List.length_map]
+  exact top.lookupInputExprs_length_eq_table _
 
-/--
-The three lookup challenge exclusions at their natural bundle-wide granularity.
-These are transcript/probability-layer facts, independent of fixed-column selector
-realization.
--/
+/-- Only compiled activation rows are priced, not every possible input row. -/
+theorem uniformChallenge_thetaBadSet (poly : CommitmentId → CPoly) :
+    uniformChallenge.toOuterMeasure (thetaBadSet top pp urs poly) ≤
+      (thetaBudget top pp : ENNReal) / (Fintype.card Fp : ENNReal) := by
+  have h := uniformChallenge_tupleCollisionSet _ _
+    (comparisonValues_length (top := top) (pp := pp) (urs := urs) poly)
+  simpa only [comparisonValues, List.length_map, Fintype.sum_prod_type,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+    thetaBadSet, thetaBudget] using h
+
+/-- The three lookup challenge exclusions for the whole bundle. -/
 structure ChallengeExclusions
     {k : ℕ}
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
-    (ch : Challenges k Fp)
-    (poly : CommitmentId → CPoly) : Prop where
-  gamma :
-    ch.gamma ∉ allResolverLookupGammaBadSet
-      pp.numProofs (top.toVerifierKey urs) ch poly
-      (top.n -
-        top.blindingFactors - 2)
-  beta :
-    ch.beta ∉ allResolverLookupBetaBadSet
-      pp.numProofs (top.toVerifierKey urs) ch poly
-      (top.n -
-        top.blindingFactors - 2)
-  theta :
-    ch.theta ∉ thetaBadSet top pp urs poly
+    (ch : Challenges k Fp) (poly : CommitmentId → CPoly) : Prop where
+  gamma : ch.gamma ∉ allResolverLookupGammaBadSet
+    pp.numProofs (top.toVerifierKey urs) ch poly (top.n - top.blindingFactors - 2)
+  beta : ch.beta ∉ allResolverLookupBetaBadSet
+    pp.numProofs (top.toVerifierKey urs) ch poly (top.n - top.blindingFactors - 2)
+  theta : ch.theta ∉ thetaBadSet top pp urs poly
 
-/-- Compute the three bundle-wide lookup exclusions from finite point checks.  The `β`/`γ`
-adapter traverses configured lookup arguments; the `θ` adapter traverses synthesized lookup
-activations and their usable rows. -/
+/-- Check tuple collisions at the sampled challenge without enumerating roots. -/
+def thetaChecks?
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (pp : ProofParams) (urs : URS G) (poly : CommitmentId → CPoly) (theta : Fp) :=
+  finForallOption (fun p : Fin pp.numProofs =>
+    finForallOption (fun activation : Fin top.lookupActivationRows.length =>
+      finForallOption (fun row : Fin (top.usableRowsAt top.domainExponent) =>
+        let values := comparisonValues top pp urs poly ((p, activation), row)
+        szBadSetAvoidance? (foldPoly values.1 - foldPoly values.2) theta)))
+
+/-- Compute the exclusions over configured arguments and compiled activations. -/
 def topLevelLookupChallengeExclusions?
     {k : ℕ}
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
-    (ch : Challenges k Fp)
-    (poly : CommitmentId → CPoly) :
+    (ch : Challenges k Fp) (poly : CommitmentId → CPoly) :
     Option (PLift (ChallengeExclusions top pp urs ch poly)) :=
-  let vk := top.toVerifierKey urs
-  let u := top.n - top.blindingFactors - 2
-  match hresolver : resolverLookupBundleExclusions? pp.numProofs vk ch poly u with
+  match resolverLookupBundleExclusions? pp.numProofs (top.toVerifierKey urs) ch poly
+      (top.n - top.blindingFactors - 2) with
   | none => none
   | some resolver =>
-      match htheta : finForallOption
-          (fun p : Fin pp.numProofs =>
-            finForallOption (fun l : Fin (operationEnabledLookups (top.operations) 0).length =>
-              let environment := resolverEnvironment vk poly p
-                (top.usableRowsAt top.domainExponent)
-              let lookup := (operationEnabledLookups (top.operations) 0).get l
-              lookup.thetaAvoidance? top.placement environment ch.theta)) with
+      match thetaChecks? top pp urs poly ch.theta with
       | none => none
-      | some theta => some ⟨
-          { gamma := resolver.down.1
-            beta := resolver.down.2
-            theta := by
-              apply (not_mem_enabledLookupThetaBadSetFamily_iff
-                (ι := ActivationIndex top pp)
-                (fun _ => top.placement)
-                (fun index => resolverEnvironment vk poly index.1
-                  (top.usableRowsAt top.domainExponent))
-                (fun index =>
-                  (operationEnabledLookups (top.operations) 0).get index.2)
-                ch.theta).2
-              intro index
-              exact (theta index.1 index.2).down }⟩
+      | some theta => some ⟨{
+          gamma := resolver.down.1
+          beta := resolver.down.2
+          theta := (not_mem_tupleCollisionSet_iff _ _ _).2
+            fun index => (theta index.1.1 index.1.2 index.2).down }⟩
 
 theorem topLevelLookupChallengeExclusions?_isSome_of
     {k : ℕ}
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
     (pp : ProofParams) (urs : URS G)
-    (ch : Challenges k Fp)
-    (poly : CommitmentId → CPoly)
+    (ch : Challenges k Fp) (poly : CommitmentId → CPoly)
     (hexclusions : ChallengeExclusions top pp urs ch poly) :
     (topLevelLookupChallengeExclusions? top pp urs ch poly).isSome := by
-  let vk := top.toVerifierKey urs
-  let u := top.n - top.blindingFactors - 2
+  have htheta := (not_mem_tupleCollisionSet_iff _ _ _).1 hexclusions.theta
+  have hchecks : (thetaChecks? top pp urs poly ch.theta).isSome :=
+    finForallOption_isSome_of _ fun p =>
+      finForallOption_isSome_of _ fun activation =>
+        finForallOption_isSome_of _ fun row =>
+          (szBadSetAvoidance?_isSome_iff _ _).2 (htheta ((p, activation), row))
+  obtain ⟨checks, hchecks⟩ := Option.isSome_iff_exists.mp hchecks
   obtain ⟨resolver, hresolver⟩ := Option.isSome_iff_exists.mp
-    (resolverLookupBundleExclusions?_isSome_of pp.numProofs vk ch poly u
-      hexclusions.gamma hexclusions.beta)
-  have hthetaSpec : ∀ index : ActivationIndex top pp,
-      ch.theta ∉ ((operationEnabledLookups (top.operations) 0).get index.2).thetaBadSet
-        top.placement
-        (resolverEnvironment vk poly index.1
-          (top.usableRowsAt top.domainExponent)) := by
-    apply (not_mem_enabledLookupThetaBadSetFamily_iff
-      (ι := ActivationIndex top pp)
-      (fun _ => top.placement)
-      (fun index => resolverEnvironment vk poly index.1
-        (top.usableRowsAt top.domainExponent))
-      (fun index => (operationEnabledLookups (top.operations) 0).get index.2)
-      ch.theta).1
-    exact hexclusions.theta
-  have hthetaSome : ∀ index : ActivationIndex top pp,
-      (((operationEnabledLookups (top.operations) 0).get index.2).thetaAvoidance?
-        top.placement
-        (resolverEnvironment vk poly index.1
-          (top.usableRowsAt top.domainExponent)) ch.theta).isSome :=
-    fun index => EnabledLookup.thetaAvoidance?_isSome_of _ _ _ _ (hthetaSpec index)
-  obtain ⟨theta, htheta⟩ := Option.isSome_iff_exists.mp
-    (finForallOption_isSome_of _ (fun p =>
-      finForallOption_isSome_of _ (fun l => hthetaSome (p, l))))
-  unfold topLevelLookupChallengeExclusions?
-  simp only
-  rw [hresolver]
-  generalize hresult : finForallOption
-      (fun p : Fin pp.numProofs =>
-        finForallOption (fun l : Fin (operationEnabledLookups (top.operations) 0).length =>
-          let environment := resolverEnvironment vk poly p
-            (top.usableRowsAt top.domainExponent)
-          let lookup := (operationEnabledLookups (top.operations) 0).get l
-          lookup.thetaAvoidance? top.placement environment ch.theta)) = result at htheta ⊢
-  cases result <;> simp_all
+    (resolverLookupBundleExclusions?_isSome_of pp.numProofs (top.toVerifierKey urs) ch poly
+      (top.n - top.blindingFactors - 2) hexclusions.gamma hexclusions.beta)
+  simp only [topLevelLookupChallengeExclusions?, hresolver, hchecks, Option.isSome_some]
 
-
-/-- Query-feed evaluation transports each compressed polynomial to the compiler's
-uncompressed tuple evaluated in the circuit-owned environment. -/
+/-- Query-feed evaluation identifies the compressed polynomials with compiled row tuples. -/
 theorem compressedValues
     {k : ℕ} [CircuitFieldSupport top]
     (ch : Challenges k Fp) (poly : CommitmentId → CPoly)
@@ -302,35 +237,21 @@ theorem lookupsCompiled_of_constraintSatisfaction
     (exclusions : ChallengeExclusions top pp urs ch poly) :
     top.LookupsCompiled (resolverAssignment top.omega poly proofIndex) := by
   intro activation hactivation
-  obtain ⟨⟨lookup, henabled⟩, _, rfl⟩ := List.mem_map.mp hactivation
-  let index := (lookup.topLevelRoute henabled).index
   have hgood := resolverLookupGoodChallenges_of_not_mem
     pp.numProofs (top.toVerifierKey urs) ch poly
     (top.n - top.blindingFactors - 2)
-    exclusions.gamma exclusions.beta proofIndex index
-  obtain ⟨row, hrow, heq⟩ := scalarSubset ch poly proofIndex index satisfaction hgood
-    _ (lookup.activationRow_lt_usableRows henabled)
-  rw [(compressedValues ch poly proofIndex hencoding index _).1,
-    (compressedValues ch poly proofIndex hencoding index row).2] at heq
-  refine ⟨row, hrow, ?_⟩
-  have hprojection := top.lookup_values_eq
-    (resolverAssignment top.omega poly proofIndex) lookup henabled
-  rw [hprojection.1, hprojection.2 row hrow] at heq ⊢
-  apply eq_of_compressValues_eq_of_not_mem _ _ heq
-  · simpa only [EnabledLookup.inputValues, EnabledLookup.tableValues, List.length_map] using
-      lookup.argument.arity
-  · obtain ⟨lookupIndex, hindex, hlookup⟩ := List.mem_iff_getElem.mp henabled
-    have htheta := (not_mem_enabledLookupThetaBadSetFamily_iff
-      (ι := ActivationIndex top pp)
-      (fun _ => top.placement)
-      (fun index => resolverEnvironment (top.toVerifierKey urs) poly index.1
-        (top.usableRowsAt top.domainExponent))
-      (fun index => (operationEnabledLookups top.operations 0).get index.2)
-      ch.theta).mp exclusions.theta (proofIndex, ⟨lookupIndex, hindex⟩)
-    simp only [List.get_eq_getElem, hlookup] at htheta
-    rw [top.resolverEnvironment_eq_environment urs poly proofIndex hencoding] at htheta
-    exact (lookup.not_mem_thetaBadSet_iff _ _ _).mp htheta row
-      (by rwa [top.environment_usableRows_eq])
+    exclusions.gamma exclusions.beta proofIndex activation.1
+  obtain ⟨row, hrow, heq⟩ := scalarSubset ch poly proofIndex activation.1 satisfaction hgood
+    _ (top.lookupActivationRows_row_lt hactivation)
+  rw [(compressedValues ch poly proofIndex hencoding activation.1 _).1,
+    (compressedValues ch poly proofIndex hencoding activation.1 row).2] at heq
+  refine ⟨row, hrow, eq_of_compressValues_eq_of_not_mem ?_ ?_ heq⟩
+  · simpa only [List.length_map] using top.lookupInputExprs_length_eq_table activation.1
+  · obtain ⟨i, hi, hactivation⟩ := List.mem_iff_getElem.mp hactivation
+    have htheta := (not_mem_tupleCollisionSet_iff _ _ _).1 exclusions.theta
+      ((proofIndex, ⟨i, hi⟩), ⟨row, hrow⟩)
+    simpa only [comparisonValues, List.get_eq_getElem, hactivation,
+      top.resolverEnvironment_eq_environment urs poly proofIndex hencoding] using htheta
 
 end TopLevelLookup
 

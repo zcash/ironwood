@@ -36,6 +36,9 @@ The semantic bridge is split by responsibility:
   `TopLevelLookups.lean` derives compiled tuple membership from the scalar lookup
   argument and the existing `β`/`γ`/`θ` exclusions. Tuple decompression is required
   only at compiler-derived activation rows, with every usable table row available.
+  The `θ` event and its executable checks compare compiled tuples; their budget
+  depends only on the compiled arities, activation count, usable rows, and proof count.
+  Finite-family tuple collision mathematics lives in `Snark/Soundness/Pricing/TupleCompression`.
 * `Halo2/CompiledCopies.lean` derives source copy constraints from equality on
   resolved copy pairs. The circuit-owned environment realizes allocated constants.
 * `CopyPermutation.lean` and `PermutationCycle.lean` identify compiler copy replay

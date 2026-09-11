@@ -101,7 +101,7 @@ theorem allResolverLookupBetaBadSet_measure_le
 /-- **The Action-level semantic challenge remainder.**  The `y` fold-split term, the permutation
 `β`/`γ` terms and the lookup `β`/`γ` terms, each as a count over `|Fp|`.
 
-`θ` is not folded in here: `enabledLookupThetaBadSetFamily_card_le` prices it against an
+`θ` is not folded in here: `tupleCollisionSet_card_le` prices it against an
 environment family rather than a verifying key, so it is charged where that family is fixed. -/
 noncomputable def semanticChallengeRemainder
     (numProofs : ℕ) (vk : VerifyingKey shape Fp G)

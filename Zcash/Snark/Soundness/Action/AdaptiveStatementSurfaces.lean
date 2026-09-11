@@ -1708,10 +1708,7 @@ theorem adaptiveActionThetaSurfaceAtOf_measure_le {pp : ProofParams}
     (source : List (AlgebraicPoint (F := Fp) basis)) (earlier : Fin 0 → Fp) :
     uniformChallenge.toOuterMeasure
         (adaptiveActionSurfaceAtOf basis instanceCommitment 0 ps source earlier) ≤
-      (TopLevelLookup.thetaBudget actionCircuit pp
-        (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
-        (adaptiveActionCommitmentPolynomialOf (adaptiveActionStatementVk pp basis)
-          instanceCommitment ps source (chRecord (fun _ => 0) (fun _ => 0))) : ENNReal) /
+      (TopLevelLookup.thetaBudget actionCircuit pp : ENNReal) /
         Fintype.card Fp := by
   simpa [adaptiveActionSurfaceAtOf] using
     (ActionTerminal.actionThetaBadSet_probability_bound pp basis

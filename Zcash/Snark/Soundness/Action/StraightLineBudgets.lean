@@ -466,8 +466,7 @@ theorem actionThetaBadSet_probability_bound
     (PMF.uniformOfFintype Fp).toOuterMeasure
       ↑(TopLevelLookup.thetaBadSet actionCircuit pp
         (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly) ≤
-      (TopLevelLookup.thetaBudget actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly : ℝ≥0∞) /
+      (TopLevelLookup.thetaBudget actionCircuit pp : ℝ≥0∞) /
         (Fintype.card Fp : ℝ≥0∞) :=
   TopLevelLookup.uniformChallenge_thetaBadSet
     poly
@@ -758,10 +757,7 @@ theorem ActionSequentialCuts.theta_probability_bound {T : Type*} [DecidableEq T]
     (query : AugmentedIndex actionCircuit.n → T)
     {Dx L : ℕ} (cuts : ActionSequentialCuts pp family inputs hvk hI hchar Dx L)
     {Ntheta : ℕ}
-    (hbudget : ∀ (basis : AugmentedIndex actionCircuit.n → VestaG)
-      (poly : CommitmentId → CPoly),
-      TopLevelLookup.thetaBudget actionCircuit pp
-        (ursOfAugmentedBasis actionCircuit.domainExponent basis) poly ≤ Ntheta) :
+    (hbudget : TopLevelLookup.thetaBudget actionCircuit pp ≤ Ntheta) :
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype (BTranscript Fp VestaG
         (preIpaLen (actionCircuit.shape.withProofParams pp) family.init.length 10
@@ -773,7 +769,6 @@ theorem ActionSequentialCuts.theta_probability_bound {T : Type*} [DecidableEq T]
     cuts.cut0 cuts.view0 cuts.hview0 (fun basis s => ?_)
   refine le_trans (actionThetaBadSet_probability_bound pp basis (cuts.view0 s)) ?_
   gcongr
-  exact_mod_cast hbudget basis (cuts.view0 s)
 
 /-- Probability bound for the bundle's `β` event: `(Q + 1) · Nβ / |Fp|`, with `Nβ` capping cells
 plus lookup pairs. -/

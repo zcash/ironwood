@@ -1322,7 +1322,6 @@ assert_computable Zcash.Snark.resolverPermutationGoodChallenges? +choice
 assert_computable Zcash.Snark.resolverPermutationChallengeExclusions? +choice
 assert_computable Zcash.Snark.resolverLookupGoodChallenges? +choice
 assert_computable Zcash.Snark.resolverLookupBundleExclusions? +choice
-assert_computable Zcash.Snark.EnabledLookup.thetaAvoidance? +choice
 assert_computable Zcash.Snark.TopLevelLookup.topLevelLookupChallengeExclusions? +choice
 assert_computable Zcash.Snark.CanonicalMemberConstraintRelation.copiesCompiled_or_relation +choice
 assert_computable Zcash.Snark.decodedPolynomialResolver_opens_or_relation +choice
@@ -1671,7 +1670,6 @@ assert_axioms Zcash.Snark.resolverEnvironment_congr
 assert_axioms Zcash.Snark.TopLevelLookup.thetaBadSet_congr
 -- Census the bundled sequential adversary and its resource arithmetic.
 assert_axioms Zcash.Snark.resolverPermutationCell_card
-assert_axioms Zcash.Snark.TopLevelLookup.thetaBudget_eq
 assert_axioms Zcash.Snark.ActionTerminal.ActionSequentialCuts +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ActionTerminal.ActionSequentialCuts.theta_probability_bound +native(

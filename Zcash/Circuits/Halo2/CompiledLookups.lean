@@ -27,6 +27,46 @@ def lookupActivationRows : List (Fin top.lookupCount × ℕ) :=
     ((lookup.val.topLevelRoute lookup.property).index,
       top.placement lookup.val.region + lookup.val.row)
 
+/-- The compiled schedule preserves the compositional activation count. -/
+theorem lookupActivationRows_length :
+    top.lookupActivationRows.length = top.synthesisSummary.lookupActivationCount := by
+  simp only [lookupActivationRows, List.length_map, List.length_attach,
+    operationEnabledLookups_length, ← top.synthesisSummary_eq_operations]
+
+/-- Query compilation does not change input tuple arity. -/
+theorem lookupInputExprs_length
+    {F : Type} [FiniteField F] (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top] (index : Fin top.lookupCount) :
+    (top.pinnedCS.lookupInputExprs.getD index []).length = (top.lookupAt index).inputs.length := by
+  have hi : index.val < top.constraintSystem.lookups.length := by
+    rw [← top.lookupCount_eq_constraintSystem]
+    exact index.isLt
+  rw [top.pinnedCS_eq_derive,
+    PinnedConstraintSystem.derive_lookupInputExprs_getD _ _ _ hi,
+    eraseGates_length, List.length_map, lookupAt]
+
+/-- Every compiled activation is within the usable domain. -/
+theorem lookupActivationRows_row_lt {activation : Fin top.lookupCount × ℕ}
+    (h : activation ∈ top.lookupActivationRows) :
+    activation.2 < top.usableRowsAt top.domainExponent := by
+  obtain ⟨⟨lookup, henabled⟩, _, rfl⟩ := List.mem_map.mp h
+  exact lookup.activationRow_lt_usableRows henabled
+
+/-- Selector substitution and query indexing preserve lookup tuple arities. -/
+theorem lookupInputExprs_length_eq_table
+    {F : Type} [FiniteField F] (top : TopLevelCircuit F Config PublicInput)
+    [TopLevelShape top] (index : Fin top.lookupCount) :
+    (top.pinnedCS.lookupInputExprs.getD index []).length =
+      (top.pinnedCS.lookupTableExprs.getD index []).length := by
+  have hi : index.val < top.constraintSystem.lookups.length := by
+    rw [← top.lookupCount_eq_constraintSystem]
+    exact index.isLt
+  rw [top.pinnedCS_eq_derive,
+    PinnedConstraintSystem.derive_lookupInputExprs_getD _ _ _ hi,
+    PinnedConstraintSystem.derive_lookupTableExprs_getD _ _ _ hi,
+    eraseGates_length, eraseGates_length, List.length_map, List.length_map]
+  exact top.constraintSystem.lookups[index.val].arity
+
 /-- Every activated compiled input tuple occurs in its compiled table. -/
 def LookupsCompiled (assignment : ProofAssignment Fp) : Prop :=
   ∀ activation ∈ top.lookupActivationRows,

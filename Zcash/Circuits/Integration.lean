@@ -10,7 +10,6 @@ import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Circuits.Integration.InstanceColumns
 import Zcash.Circuits.Halo2.CopyOperations
 import Zcash.Circuits.Halo2.FixedOperations
-import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Circuits.Integration.PermutationColumns
 import Zcash.Circuits.Integration.PermutationCompiler
 import Zcash.Circuits.Integration.PermutationReplay
