@@ -10,7 +10,7 @@ usable row. Selector substitution and operation membership stay inside this laye
 
 namespace Halo2.TopLevelCircuit
 
-open Zcash Zcash.Snark
+open Zcash
 
 variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]

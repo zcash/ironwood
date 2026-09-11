@@ -5,9 +5,9 @@ import Zcash.Circuits.Halo2.CopyListMembership
 Allocated constants and resolved cell equalities recover the source copy constraints.
 -/
 
-namespace Zcash.Snark
+namespace Halo2
 
-open Halo2 Halo2.Layout
+open Zcash Halo2.Layout
 
 /-- Read a raw keygen coordinate through its permutation-column layout. -/
 def rawCopyValue (columns : List ColRef) (env : Environment Fp) (cell : ℕ × ℕ) : Fp :=
@@ -131,4 +131,4 @@ theorem copy_constraints_of_rawPairValues
       · simp [resolveDeclared] at hresolve
       · simp at hshape
 
-end Zcash.Snark
+end Halo2

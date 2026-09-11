@@ -1,4 +1,4 @@
-import Zcash.Circuits.Integration.InstanceColumns
+import Zcash.Snark.Soundness.Multiopen.InstanceColumns
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Common.RelationWitness
 import Zcash.Circuits.Integration.TopLevelWitness

@@ -18,9 +18,7 @@ decomposition does not weaken or replace Clean semantics:
 `CircuitConstraintFamily.operations_constraints_iff` proves exact equivalence.
 -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 /-- The four semantic families carried by a complete circuit-satisfaction result. -/
 inductive CircuitConstraintFamily where
@@ -142,4 +140,4 @@ theorem operations_constraints_iff
 
 end CircuitConstraintFamily
 
-end Zcash.Snark
+end Halo2

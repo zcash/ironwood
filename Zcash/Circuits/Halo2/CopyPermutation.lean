@@ -11,7 +11,7 @@ assembly implements their permutation, whose cycles enforce the source equalitie
 
 namespace Halo2.TopLevelCircuit
 
-open Zcash Zcash.Snark Halo2.Layout
+open Zcash Halo2.Layout
 
 variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
   (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]

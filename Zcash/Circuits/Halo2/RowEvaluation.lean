@@ -53,7 +53,7 @@ theorem pinnedCS_gates_eval_subst (fixed advice instanceFeed : ℕ → F)
     (valuation : Query → F)
     (hcoverage : ∀ expression ∈ flatGates top.constraintSystem,
       expression.selectorsCovered (fun selector => (top.selectorMap.lookup selector).isSome) = true)
-    (hinterprets : Interprets (Zcash.Snark.pinnedQueryState top.pinnedCS)
+    (hinterprets : Interprets (pinnedQueryState top.pinnedCS)
       fixed advice instanceFeed valuation)
     (index : ℕ) (hcompiled : index < top.pinnedCS.gates.length)
     (hsource : index < (flatGates top.constraintSystem).length) :
@@ -71,11 +71,11 @@ theorem pinnedCS_gates_eval (env : Environment F) (row : ℤ)
       expression.selectorsCovered (fun selector => (top.selectorMap.lookup selector).isSome) = true)
     (index : ℕ) (hcompiled : index < top.pinnedCS.gates.length)
     (hsource : index < (flatGates top.constraintSystem).length) :
-    (Zcash.Snark.pinnedQueryState top.pinnedCS).eval env row top.pinnedCS.gates[index] =
+    (pinnedQueryState top.pinnedCS).eval env row top.pinnedCS.gates[index] =
       (flatGates top.constraintSystem)[index].eval
         (substValuation top.selectorMap.lookup (Query.eval env (fun _ => 0) row)) :=
   top.pinnedCS_gates_eval_subst _ _ _ _ hcoverage
-    ((Zcash.Snark.pinnedQueryState top.pinnedCS).interprets env row) index hcompiled hsource
+    ((pinnedQueryState top.pinnedCS).interprets env row) index hcompiled hsource
 
 end TopLevelCircuit
 

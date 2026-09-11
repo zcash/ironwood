@@ -50,6 +50,6 @@ def TopLevelBundleWitness
     [TopLevelShape top]
     (numProofs : ℕ) (poly : CommitmentId → CPoly) : Type :=
   TopLevelExternalBundleWitness top fun proofIndex : Fin numProofs =>
-    top.extractPublicInput (top.environment (resolverAssignment top.omega poly proofIndex))
+    top.extractPublicInput (top.environment (polynomialAssignment top.omega poly proofIndex))
 
 end Zcash.Snark

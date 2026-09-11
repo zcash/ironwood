@@ -12,9 +12,9 @@ The fixed-layout compiler uses this characterization to establish fixed constrai
 from its sparse assignments, including the default-fill rows of loaded tables.
 -/
 
-namespace Zcash.Snark
+namespace Halo2
 
-open Halo2
+open Zcash
 
 set_option maxHeartbeats 20000
 
@@ -109,4 +109,4 @@ theorem fixed_constraints_of_requirements
   rw [CircuitConstraintFamily.fixed_constraints_iff_requirements]
   exact List.forall_iff_forall_mem.mpr witness
 
-end Zcash.Snark
+end Halo2

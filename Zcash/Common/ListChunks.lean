@@ -1,4 +1,7 @@
-import Zcash.Snark.Keygen.Pipeline
+import Mathlib.Data.List.Basic
+import Mathlib.Data.List.GetD
+import Mathlib.Data.List.TakeDrop
+import Mathlib.Tactic.NormNum
 
 /-!
 # Structural laws for `List.toChunks`
@@ -8,13 +11,13 @@ array-accumulator implementation used by the permutation compiler. They are
 generic list facts and never evaluate a concrete circuit.
 -/
 
-namespace Zcash.Snark
+namespace List
 
 set_option maxHeartbeats 20000
 
 /-- Flattening the accumulator implementation of `List.toChunks` preserves its
 processed prefix and unprocessed suffix. -/
-theorem listToChunksGo_flatten {α : Type} (n : ℕ)
+theorem toChunksGo_flatten {α : Type} (n : ℕ)
     (xs : List α) (current : Array α) (chunks : Array (List α)) :
     (List.toChunks.go n xs current chunks).flatten =
       chunks.toList.flatten ++ current.toList ++ xs := by
@@ -31,7 +34,7 @@ theorem listToChunksGo_flatten {α : Type} (n : ℕ)
 
 /-- Splitting a list into chunks and flattening it is the identity, including
 the `chunkSize = 0` convention. -/
-theorem listToChunks_flatten {α : Type} (chunkSize : ℕ) (xs : List α) :
+theorem toChunks_flatten {α : Type} (chunkSize : ℕ) (xs : List α) :
     (xs.toChunks chunkSize).flatten = xs := by
   cases chunkSize with
   | zero =>
@@ -41,11 +44,11 @@ theorem listToChunks_flatten {α : Type} (chunkSize : ℕ) (xs : List α) :
       | nil => simp [List.toChunks]
       | cons x xs =>
           rw [List.toChunks]
-          rw [listToChunksGo_flatten]
+          rw [toChunksGo_flatten]
           simp_all
           all_goals omega
 
-theorem listToChunksGo_length {α : Type} (n : ℕ)
+theorem toChunksGo_length {α : Type} (n : ℕ)
     (xs : List α) (current : Array α) (chunks : Array (List α))
     (hn : 0 < n) (hcurrentPos : 0 < current.size)
     (hcurrent : current.size ≤ n) :
@@ -91,7 +94,7 @@ theorem listToChunksGo_length {α : Type} (n : ℕ)
         congr 1
         omega
 
-theorem listToChunks_length {α : Type} (n : ℕ) (xs : List α) (hn : 0 < n) :
+theorem toChunks_length {α : Type} (n : ℕ) (xs : List α) (hn : 0 < n) :
     (xs.toChunks n).length = (xs.length + n - 1) / n := by
   cases xs with
   | nil =>
@@ -102,7 +105,7 @@ theorem listToChunks_length {α : Type} (n : ℕ) (xs : List α) (hn : 0 < n) :
       | zero => omega
       | succ n =>
           simp only [List.toChunks]
-          rw [listToChunksGo_length (n + 1) xs #[x] #[] (by omega)
+          rw [toChunksGo_length (n + 1) xs #[x] #[] (by omega)
             (by simp) (by simp)]
           simp only [Array.size_empty]
           norm_num
@@ -113,7 +116,7 @@ theorem listToChunks_length {α : Type} (n : ℕ) (xs : List α) (hn : 0 < n) :
           simp only [List.length_cons]
           omega
 
-theorem listToChunksGo_dropLast_full {α : Type} (n : ℕ)
+theorem toChunksGo_dropLast_full {α : Type} (n : ℕ)
     (xs : List α) (current : Array α) (chunks : Array (List α))
     (hn : 0 < n) (hcurrentPos : 0 < current.size)
     (hcurrent : current.size ≤ n)
@@ -142,7 +145,7 @@ theorem listToChunksGo_dropLast_full {α : Type} (n : ℕ)
         · simpa using (show current.size < n by omega)
         · exact hchunks
 
-theorem listToChunksGo_all_le {α : Type} (n : ℕ)
+theorem toChunksGo_all_le {α : Type} (n : ℕ)
     (xs : List α) (current : Array α) (chunks : Array (List α))
     (hn : 0 < n) (hcurrent : current.size ≤ n)
     (hchunks : chunks.toList.Forall fun chunk => chunk.length ≤ n) :
@@ -168,7 +171,7 @@ theorem listToChunksGo_all_le {α : Type} (n : ℕ)
         · simpa using (show current.size < n by omega)
         · exact hchunks
 
-theorem listToChunks_all_le {α : Type} (n : ℕ) (xs : List α)
+theorem toChunks_all_le {α : Type} (n : ℕ) (xs : List α)
     (hn : 0 < n) :
     (xs.toChunks n).Forall fun chunk => chunk.length ≤ n := by
   cases xs with
@@ -178,13 +181,13 @@ theorem listToChunks_all_le {α : Type} (n : ℕ) (xs : List α)
       | zero => omega
       | succ n =>
           simp only [List.toChunks]
-          apply listToChunksGo_all_le
+          apply toChunksGo_all_le
           · omega
           · simp
           · change List.Forall (fun chunk : List α => chunk.length ≤ n + 1) []
             simp
 
-theorem listToChunks_dropLast_full {α : Type} (n : ℕ) (xs : List α)
+theorem toChunks_dropLast_full {α : Type} (n : ℕ) (xs : List α)
     (hn : 0 < n) :
     (xs.toChunks n).dropLast.Forall fun chunk => chunk.length = n := by
   cases xs with
@@ -194,7 +197,7 @@ theorem listToChunks_dropLast_full {α : Type} (n : ℕ) (xs : List α)
       | zero => omega
       | succ n =>
           simp only [List.toChunks]
-          apply listToChunksGo_dropLast_full
+          apply toChunksGo_dropLast_full
           · omega
           · simp
           · simp
@@ -285,14 +288,14 @@ theorem getD_length_eq_min_of_chunk_shape {α : Type}
       exact (List.forall_iff_forall_mem.mp hfull) chunks[i] hmem
     rw [hchunkFull, min_eq_left hnle]
 
-theorem listToChunks_getD_length {α : Type} (n : ℕ) (xs : List α)
+theorem toChunks_getD_length {α : Type} (n : ℕ) (xs : List α)
     (hn : 0 < n) (i : ℕ) (hi : i < (xs.toChunks n).length) :
     ((xs.toChunks n).getD i []).length =
       min n (xs.length - i * n) := by
   apply getD_length_eq_min_of_chunk_shape
-  · simp only [listToChunks_flatten]
-  · exact listToChunks_dropLast_full n xs hn
-  · exact listToChunks_all_le n xs hn
+  · simp only [toChunks_flatten]
+  · exact toChunks_dropLast_full n xs hn
+  · exact toChunks_all_le n xs hn
   · exact hi
 
 /-- A list of at most `n`-wide chunks contains at most `chunks.length * n`
@@ -310,4 +313,92 @@ theorem flatten_length_le_mul_of_forall {α : Type}
         Nat.add_le_add hall.1 (ih hall.2)
       simpa only [Nat.add_mul, one_mul, Nat.add_comm] using hsum
 
-end Zcash.Snark
+/-- An in-range `findIdx` decodes to the element it searched for. -/
+theorem getD_findIdx_eq_target
+    {α : Type} [DecidableEq α]
+    (xs : List α) (target fallback : α)
+    (hin : xs.findIdx (· = target) < xs.length) :
+    xs.getD (xs.findIdx (· = target)) fallback = target := by
+  rw [List.getD_eq_getElem _ _ hin]
+  have hfound :=
+    List.findIdx_getElem
+      (xs := xs) (p := fun value => value = target) (w := hin)
+  simpa using hfound
+
+/-- Reading one inner list is the same as reading the flattened list after the
+complete prefix of earlier inner lists. -/
+theorem flatten_getD_at_chunk
+    {α : Type*} (fallback : α) (chunks : List (List α))
+    (chunk column : ℕ)
+    (hchunk : chunk < chunks.length)
+    (hcolumn : column < (chunks.getD chunk []).length) :
+    chunks.flatten.getD
+        ((chunks.take chunk).flatten.length + column) fallback =
+      (chunks.getD chunk []).getD column fallback := by
+  induction chunks generalizing chunk with
+  | nil =>
+      simp at hchunk
+  | cons head tail ih =>
+      cases chunk with
+      | zero =>
+          simp only [List.take_zero, List.flatten_nil, List.length_nil,
+            Nat.zero_add, List.getD_cons_zero, List.flatten_cons]
+          exact List.getD_append head tail.flatten fallback column hcolumn
+      | succ chunk =>
+          have hchunkTail : chunk < tail.length := by
+            simpa only [List.length_cons, Nat.succ_lt_succ_iff] using hchunk
+          have hcolumnTail :
+              column < (tail.getD chunk []).length := by
+            simpa only [List.getD_cons_succ] using hcolumn
+          simp only [List.take_succ_cons, List.flatten_cons,
+            List.length_append, List.getD_cons_succ]
+          rw [List.getD_append_right]
+          · have hindex :
+                head.length +
+                    (tail.take chunk).flatten.length + column -
+                    head.length =
+                  (tail.take chunk).flatten.length + column := by
+                omega
+            rw [hindex]
+            exact ih chunk hchunkTail hcolumnTail
+          · omega
+
+/--
+If decoding flattened compiler chunks yields the source-column list, a local
+`(chunk,column)` reference decodes to the source column at its flattened index.
+-/
+theorem decodedChunkAddress_eq_sourceColumn
+    {Reference Address : Type*}
+    (decode : Reference → Address)
+    (referenceFallback : Reference) (addressFallback : Address)
+    (chunks : List (List Reference)) (columns : List Address)
+    (hdecoded : chunks.flatten.map decode = columns)
+    (chunk column global : ℕ)
+    (hchunk : chunk < chunks.length)
+    (hcolumn : column < (chunks.getD chunk []).length)
+    (hglobal : global < columns.length)
+    (hindex :
+      (chunks.take chunk).flatten.length + column = global) :
+    decode ((chunks.getD chunk []).getD column referenceFallback) =
+      columns.getD global addressFallback := by
+  have hflatGlobal : global < chunks.flatten.length := by
+    have hlength := congrArg List.length hdecoded
+    have : chunks.flatten.length = columns.length := by
+      simpa only [List.length_map] using hlength
+    omega
+  have hmapGlobal : global < (chunks.flatten.map decode).length := by
+    simpa only [List.length_map] using hflatGlobal
+  have hlocal :=
+    flatten_getD_at_chunk referenceFallback chunks chunk column hchunk hcolumn
+  calc
+    decode ((chunks.getD chunk []).getD column referenceFallback) =
+        decode (chunks.flatten.getD global referenceFallback) := by
+          rw [hindex] at hlocal
+          exact congrArg decode hlocal.symm
+    _ = (chunks.flatten.map decode).getD global addressFallback := by
+          rw [List.getD_eq_getElem _ _ hflatGlobal,
+            List.getD_eq_getElem _ _ hmapGlobal]
+          simp only [List.getElem_map]
+    _ = columns.getD global addressFallback := by rw [hdecoded]
+
+end List

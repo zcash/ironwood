@@ -93,7 +93,7 @@ theorem gatesCompiled_of_constraintSatisfaction
     (proofIndex : Fin pp.numProofs)
     (satisfaction : ConstraintSatisfaction (top.constraintModel pp urs ch poly) top.n)
     (hencoding : top.FixedColumnEncoding poly) :
-    top.GatesCompiled (resolverAssignment top.omega poly proofIndex) := by
+    top.GatesCompiled (polynomialAssignment top.omega poly proofIndex) := by
   intro expression hmember row _
   obtain ⟨index, hindex, rfl⟩ := List.mem_iff_getElem.mp hmember
   let gate := top.pinnedCS.gates[index].toExpr

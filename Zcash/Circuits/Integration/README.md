@@ -62,6 +62,11 @@ The semantic bridge is split by responsibility:
   polynomials back to the supplied public inputs, for arbitrary column and proof
   counts.
 
+Fixed, permutation, and instance commitments share the verifier-native opening comparison
+in `Snark/Soundness/Multiopen/RowBinding.lean`; `Multiopen/InstanceColumns.lean` supplies
+the public-instance query routing. Integration supplies compiler provenance for fixed and
+permutation rows. Generic list chunking theory lives in `Common/ListChunks.lean`.
+
 The circuit-generic terminal lives outside this boundary.
 `Snark/Soundness/Circuit/Terminal` turns canonical constraint satisfaction and
 challenge exclusions into circuit-owned witnesses at the verifier's supplied public

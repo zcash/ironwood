@@ -12,7 +12,7 @@ representatives agree exactly on cycles; union-by-size does not change the mappi
 
 namespace Halo2.Layout.Asm
 
-open Zcash Zcash.Snark Equiv
+open Zcash Equiv
 
 /-- The rectangular shape invariant of the assembly's cell arrays. -/
 def Shaped (numCols n : ℕ) (a : Array (Array (ℕ × ℕ))) : Prop :=

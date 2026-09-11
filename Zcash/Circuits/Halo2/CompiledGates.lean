@@ -8,7 +8,7 @@ import Zcash.Circuits.Halo2.SelectorCompression
 
 namespace Halo2.TopLevelCircuit
 
-open Zcash Zcash.Snark
+open Zcash
 
 set_option maxHeartbeats 20000
 

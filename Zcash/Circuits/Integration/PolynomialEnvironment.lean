@@ -60,7 +60,7 @@ Resolve only the proof-varying part of a Clean top-level environment.
 Fixed columns and usable rows intentionally do not appear here: the
 `TopLevelCircuit` compiler supplies them when constructing its environment.
 -/
-def resolverAssignment
+def polynomialAssignment
     (omega : Fp) (poly : CommitmentId → CPoly)
     (proofIndex : ℕ) : ProofAssignment Fp where
   advice := fun column row =>
@@ -68,17 +68,17 @@ def resolverAssignment
   inst := fun column row =>
     (poly (.instanceCol proofIndex column.index)).eval (omega ^ row)
 
-@[simp] theorem resolverAssignment_advice
+@[simp] theorem polynomialAssignment_advice
     (omega : Fp) (poly : CommitmentId → CPoly)
     (proofIndex : ℕ) (column : Column .advice) (row : ℤ) :
-    (resolverAssignment omega poly proofIndex).advice column row =
+    (polynomialAssignment omega poly proofIndex).advice column row =
       (poly (.adviceCol proofIndex column.index)).eval (omega ^ row) :=
   rfl
 
-@[simp] theorem resolverAssignment_instance
+@[simp] theorem polynomialAssignment_instance
     (omega : Fp) (poly : CommitmentId → CPoly)
     (proofIndex : ℕ) (column : Column .instance) (row : ℤ) :
-    (resolverAssignment omega poly proofIndex).inst column row =
+    (polynomialAssignment omega poly proofIndex).inst column row =
       (poly (.instanceCol proofIndex column.index)).eval (omega ^ row) :=
   rfl
 

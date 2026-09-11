@@ -4,7 +4,7 @@ import Zcash.Snark.Keygen.Pipeline
 
 /-! # Encoding compiled fixed values and public inputs in polynomial assignments
 
-`resolverAssignment` supplies the proof-varying advice and instance values.
+`polynomialAssignment` supplies the proof-varying advice and instance values.
 Fixed-column binding identifies its polynomial environment with the circuit-owned
 environment; instance-column binding identifies the extracted public input.
 -/
@@ -30,16 +30,16 @@ theorem resolverEnvironment_eq_environment
     (hfixed : top.FixedColumnEncoding poly) :
     resolverEnvironment (top.toVerifierKey urs) poly proofIndex
         (top.usableRowsAt top.domainExponent) =
-      top.environment (resolverAssignment top.omega poly proofIndex) := by
+      top.environment (polynomialAssignment top.omega poly proofIndex) := by
   apply congrArg₂ Environment.mk
   · funext column row
     cases column.kind with
     | advice =>
-        simp only [top.toVerifierKey_omega, resolverAssignment_advice]
+        simp only [top.toVerifierKey_omega, polynomialAssignment_advice]
     | fixed =>
         simpa only [top.toVerifierKey_omega] using hfixed ⟨column.index⟩ row
     | «instance» =>
-        simp only [top.toVerifierKey_omega, resolverAssignment_instance]
+        simp only [top.toVerifierKey_omega, polynomialAssignment_instance]
   · simp only [TopLevelCircuit.usableRowsAt]
     rw [top.domainExponent_eq_compiled]
     rfl
@@ -48,7 +48,7 @@ theorem resolverEnvironment_eq_environment
 def PublicInputEncoding (poly : CommitmentId → CPoly) (proofIndex : ℕ)
     (input : PublicInput Fp) : Prop :=
   ∀ index,
-    (resolverAssignment top.omega poly proofIndex).inst
+    (polynomialAssignment top.omega poly proofIndex).inst
         (top.publicInputLayout.cells index).1
         (top.publicInputLayout.cells index).2 =
       (toElements input)[index]
@@ -57,7 +57,7 @@ def PublicInputEncoding (poly : CommitmentId → CPoly) (proofIndex : ℕ)
 theorem extractPublicInput_eq_of_encoding
     (poly : CommitmentId → CPoly) (proofIndex : ℕ)
     (input : PublicInput Fp) (hencoding : top.PublicInputEncoding poly proofIndex input) :
-    top.extractPublicInput (top.environment (resolverAssignment top.omega poly proofIndex)) =
+    top.extractPublicInput (top.environment (polynomialAssignment top.omega poly proofIndex)) =
       input := by
   apply top.publicInputLayout.extract_eq
   intro index
@@ -79,7 +79,7 @@ theorem publicInputEncoding_of_publicInputRowPolynomials
   let domainRow : Fin top.n :=
     ⟨cell.2, (top.publicInputLayout_cells_snd_lt_usableRowsAt_domainExponent index).trans_le
       top.usableRowsAt_domainExponent_le_n⟩
-  rw [resolverAssignment_instance, hpoly index]
+  rw [polynomialAssignment_instance, hpoly index]
   have hrow := instanceRowPolynomial_eval
     (values := top.publicInputRows input cell.1) top.domainRowsInjective domainRow
   calc

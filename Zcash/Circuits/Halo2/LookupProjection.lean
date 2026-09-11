@@ -13,9 +13,7 @@ zero/one values; unlike a custom gate, an arbitrary nonzero selector scale is no
 enough for tuple membership.
 -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 set_option maxHeartbeats 20000
 
@@ -167,4 +165,4 @@ theorem _root_.Halo2.TopLevelCircuit.lookup_eval
     lookup.val hlookup hinputCoverage htableCoverage hresolved.1 hresolved.2
     hinterprets
 
-end Zcash.Snark
+end Halo2

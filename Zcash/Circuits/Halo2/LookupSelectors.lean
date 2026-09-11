@@ -4,9 +4,9 @@ import Zcash.Circuits.Halo2.FixedValues
 
 /-! # Exact lookup selector substitution in the circuit-owned environment -/
 
-namespace Zcash.Snark
+namespace Halo2
 
-open Halo2
+open Zcash
 
 variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
   {top : TopLevelCircuit Fp Config PublicInput} [TopLevelShape top]
@@ -230,4 +230,4 @@ theorem EnabledLookup.inputValues_eq
   rw [Int.natMod, ← Int.natCast_mod, Int.toNat_natCast, Nat.mod_eq_of_lt hrow]
   simpa only [TopLevelCircuit.placement_apply, EnabledLookup.selectorValue] using hvalue
 
-end Zcash.Snark
+end Halo2

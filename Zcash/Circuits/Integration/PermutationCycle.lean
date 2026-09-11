@@ -125,7 +125,7 @@ theorem chunkCommonIndex
     simp only [vk, global,
       top.toVerifierKey_chunkLen]
   have hlocal :=
-    Zcash.Snark.flatten_getD_at_chunk
+    List.flatten_getD_at_chunk
       ((.advice 0), 0) vk.permutationChunks
       chunk column
       hchunk

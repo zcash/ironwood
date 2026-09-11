@@ -503,8 +503,10 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), using the tuple
   collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation interpretation
   (`PermutationCompiler`, `CopyPermutation`, `PermutationCycle`),
-  the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
-  `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
+  the compiler provenance of fixed and σ columns (`FixedColumns`, `PermutationColumns`),
+  and public inputs (`TopLevelInstanceCommitment`). Their shared opening comparison and
+  public-instance routing live in `Snark/Soundness/Multiopen/RowBinding` and `InstanceColumns`.
+  Integration also provides the polynomial-backed environments
   (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
   compiled satisfaction (`TopLevelInterpretation`). These arguments
   apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.

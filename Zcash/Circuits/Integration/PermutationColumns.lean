@@ -1,4 +1,5 @@
-import Zcash.Circuits.Integration.FixedColumns
+import Zcash.Snark.Soundness.Multiopen.RowBinding
+import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Keygen.Lagrange
 import Zcash.Snark.Soundness.Canonical.PermutationSemantics
@@ -8,10 +9,10 @@ import Zcash.Snark.Soundness.Canonical.PermutationSemantics
 
 The verifying key's common-permutation commitments are the Lagrange commitments of the
 keygen σ columns, while the multiopen extractor returns augmented monomial-basis
-openings for the very same commitment slots. This module crosses that representation
-boundary exactly as `Integration/FixedColumns` does for the fixed family: a routed
-decoded σ polynomial is the polynomial interpolating its keygen σ rows, or the two
-openings compute a nontrivial relation among the augmented URS generators.
+openings for the very same commitment slots. The shared `Multiopen/RowBinding`
+argument identifies the decoded polynomial with its keygen rows, or computes a
+relation among the augmented URS generators. This module supplies σ-column provenance
+and identifies the interpolated rows with the permutation argument's column model.
 
 The keygen side speaks a third spelling — `keygenSigmaColumn`, the interpolation of the
 replayed cell names. `instanceRowPolynomial_eq_keygenSigmaColumn` closes that gap: both
@@ -132,90 +133,6 @@ variable
     {y : Fp} {hpoly : CPoly} {deg : ℕ}
 
 /--
-A canonically routed σ-column opening is the polynomial interpolating its keygen σ
-rows, or it exhibits an augmented commitment relation.
-
-`hcommit` is the circuit-keygen side of the boundary: the common-permutation commitment
-stored in the derived VK is the Lagrange commitment to `rows` with Halo 2's default
-blind `1`. It is independent of the proof and can be established once for the generic
-`TopLevelCircuit.toVerifierKey` construction. Query coverage is unconditional: every σ
-commitment is opened by the assembled queries.
--/
-def permCommon_eq_rowPolynomial_or_relation
-    (relation : CanonicalMemberConstraintRelation
-      urs hk vk instanceCommitment ps ch pU pW a
-      batchOpenings memberDecode hblinding y hpoly deg)
-    (c : Fin shape.numPermutationColumns)
-    (key : LagrangeCommitmentKey urs vk.omega)
-    (rows : List Fp)
-    (hcommit :
-      vk.permutationCommonCommitment c =
-        key.commitInstance rows 1)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) => vk.omega ^ (i : ℕ)) :
-    relation.polynomial (.permCommon (c : ℕ)) =
-        instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hquery := assembleQueries_permCommon_query vk instanceCommitment ps ch c
-  have hsome : (relation.route (.permCommon (c : Nat))).isSome := by
-    obtain ⟨q, hq, hqid⟩ := hquery
-    have routed := assembledQueryMemberRoute_faithful
-      (instanceCommitment := instanceCommitment) vk ps ch relation.groupingCount
-      relation.noDuplicateQueries q hq
-    unfold CanonicalMemberConstraintRelation.route
-    rw [← hqid, routed.route_eq]
-    rfl
-  let slot := (relation.route (.permCommon (c : Nat))).get hsome
-  have routedCommon :
-      relation.route (.permCommon (c : ℕ)) = some slot := (Option.some_get hsome).symm
-  have hid :
-      (deployedSetCommIds (instanceCommitment := instanceCommitment)
-        vk ps ch slot.setIndex).getD
-          (slot.memberIndex : ℕ) .vanishingH =
-        .permCommon (c : ℕ) := by
-    apply assembledQueryMemberRoute_id
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount relation.noDuplicateQueries
-      (.permCommon (c : ℕ)) slot
-    simpa [CanonicalMemberConstraintRelation.route] using routedCommon
-  have href :=
-    deployedMemberRef_eq_permCommonCommitment
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount slot c hid
-  let decoded :=
-    memberDecode slot.setIndex slot.setIndex_lt
-  have hopen :
-      commit urs (decoded.cols slot.memberIndex) +
-          decoded.uComp slot.memberIndex • urs.u +
-          decoded.wComp slot.memberIndex • urs.w =
-        key.commitInstance rows 1 := by
-    calc
-      commit urs (decoded.cols slot.memberIndex) +
-            decoded.uComp slot.memberIndex • urs.u +
-            decoded.wComp slot.memberIndex • urs.w =
-          ((deployedSetQueries
-              (instanceCommitment := instanceCommitment)
-              vk ps ch slot.setIndex).getD
-            (slot.memberIndex : ℕ) (.point 0, [])).1.eval
-              ⟨shape.k, hk ▸ urs.g, urs.w, urs.u⟩ :=
-        decoded.commitment slot.memberIndex
-      _ = vk.permutationCommonCommitment c := by
-        rw [href]
-        rfl
-      _ = key.commitInstance rows 1 := hcommit
-  have hbound :=
-    coeffsToPoly_eq_instanceRowPolynomial_or_relation
-      key rows 1
-      (decoded.cols slot.memberIndex)
-      (decoded.uComp slot.memberIndex)
-      (decoded.wComp slot.memberIndex)
-      hrows hopen
-  refine bindOrRelationWitness hbound fun heq => ?_
-  rw [CanonicalMemberConstraintRelation.polynomial,
-    decodedPolynomialResolver, routedCommon]
-  exact heq
-
-/--
 **The σ-column identification.** A canonically routed common-permutation opening is the
 generated keygen σ column — the `hcolumns` premise of
 `ResolverPermutationCycle.ofKeygenColumns` — or it exhibits an augmented commitment
@@ -244,12 +161,18 @@ def permCommon_eq_keygenSigmaColumn_or_relation
         (sigma ⟨chunk, i, column⟩).2.2) :
     relation.polynomial (.permCommon (c : ℕ)) =
         keygenSigmaColumn vk.omega vk.delta vk.chunkLen sigma chunk column ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w :=
-  bindOrRelationWitness
-    (relation.permCommon_eq_rowPolynomial_or_relation c key rows hcommit hrows)
-    fun heq => heq.trans
-      (instanceRowPolynomial_eq_keygenSigmaColumn
-        vk.omega vk.delta vk.chunkLen sigma chunk column rows hval)
+      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
+  have hbound := decodedPolynomialResolver_eq_rowPolynomial_or_relation
+    (memberDecode := memberDecode) relation.groupingCount relation.noDuplicateQueries
+    (.permCommon c) key rows 1
+    (fun q hq hid => (assembleQueries_permCommon_commitment
+      vk instanceCommitment ps ch q hq c hid).trans (congrArg _ hcommit))
+    hrows (assembleQueries_permCommon_query vk instanceCommitment ps ch c)
+  refine bindOrRelationWitness hbound fun heq => ?_
+  have hrowsEq := instanceRowPolynomial_eq_keygenSigmaColumn
+    vk.omega vk.delta vk.chunkLen sigma chunk column rows hval
+  simpa only [CanonicalMemberConstraintRelation.polynomial,
+    CanonicalMemberConstraintRelation.route, hrowsEq] using heq
 
 end CanonicalMemberConstraintRelation
 

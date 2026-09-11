@@ -10,7 +10,7 @@ The permutation argument may enforce these equalities without exposing source op
 
 namespace Halo2.TopLevelCircuit
 
-open Zcash Zcash.Snark Halo2.Layout
+open Zcash Halo2.Layout
 
 variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]

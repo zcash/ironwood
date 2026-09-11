@@ -15,9 +15,9 @@ allocation; their membership couples to the allocation walk and lives with the
 constants instantiation.)
 -/
 
-namespace Zcash.Snark
+namespace Halo2
 
-open Halo2
+open Zcash
 open Halo2.Layout
 
 /-- Resolve a non-constant declared copy to the keygen copy tuple: region cells through
@@ -1192,4 +1192,4 @@ theorem exists_constantSite_of_mem_declaredEndpoints
           mem_operationConstSites_of_declared_constant ops cell foundValue hcopy⟩
       · simp at hnil
 
-end Zcash.Snark
+end Halo2

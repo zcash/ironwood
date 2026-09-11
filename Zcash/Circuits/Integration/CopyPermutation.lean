@@ -312,7 +312,7 @@ theorem activeChunkCell_columnAddress
         urs cell.1 hchunk
     rw [hprefix]
     exact hcoordinate
-  have hdecoded := decodedChunkAddress_eq_sourceColumn
+  have hdecoded := List.decodedChunkAddress_eq_sourceColumn
     (fun reference =>
       permutationColumnAddress vk reference.1)
     ((.advice 0), 0)

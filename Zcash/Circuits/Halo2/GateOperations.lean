@@ -3,9 +3,7 @@ import Clean.Halo2.TopLevel
 
 /-! # Gate activations and their operation semantics -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 /-- One custom-gate activation in the placed operation stream. -/
 structure EnabledGate (F : Type) where
@@ -227,4 +225,4 @@ theorem mem_activations_of_mem_operationEnabledGate
       | loadTable table values =>
           exact ih (i := i) henabled
 
-end Zcash.Snark
+end Halo2

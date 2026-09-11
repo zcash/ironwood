@@ -1,5 +1,5 @@
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
-import Zcash.Circuits.Integration.ListChunks
+import Zcash.Common.ListChunks
 import Zcash.Snark.Keygen.Pipeline
 
 /-!
@@ -20,94 +20,6 @@ namespace Zcash.Snark
 open Halo2
 
 set_option maxHeartbeats 20000
-
-/-- An in-range `findIdx` decodes to the element it searched for. -/
-theorem getD_findIdx_eq_target
-    {α : Type} [DecidableEq α]
-    (xs : List α) (target fallback : α)
-    (hin : xs.findIdx (· = target) < xs.length) :
-    xs.getD (xs.findIdx (· = target)) fallback = target := by
-  rw [List.getD_eq_getElem _ _ hin]
-  have hfound :=
-    List.findIdx_getElem
-      (xs := xs) (p := fun value => value = target) (w := hin)
-  simpa using hfound
-
-/-- Reading one inner list is the same as reading the flattened list after the
-complete prefix of earlier inner lists. -/
-theorem flatten_getD_at_chunk
-    {α : Type*} (fallback : α) (chunks : List (List α))
-    (chunk column : ℕ)
-    (hchunk : chunk < chunks.length)
-    (hcolumn : column < (chunks.getD chunk []).length) :
-    chunks.flatten.getD
-        ((chunks.take chunk).flatten.length + column) fallback =
-      (chunks.getD chunk []).getD column fallback := by
-  induction chunks generalizing chunk with
-  | nil =>
-      simp at hchunk
-  | cons head tail ih =>
-      cases chunk with
-      | zero =>
-          simp only [List.take_zero, List.flatten_nil, List.length_nil,
-            Nat.zero_add, List.getD_cons_zero, List.flatten_cons]
-          exact List.getD_append head tail.flatten fallback column hcolumn
-      | succ chunk =>
-          have hchunkTail : chunk < tail.length := by
-            simpa only [List.length_cons, Nat.succ_lt_succ_iff] using hchunk
-          have hcolumnTail :
-              column < (tail.getD chunk []).length := by
-            simpa only [List.getD_cons_succ] using hcolumn
-          simp only [List.take_succ_cons, List.flatten_cons,
-            List.length_append, List.getD_cons_succ]
-          rw [List.getD_append_right]
-          · have hindex :
-                head.length +
-                    (tail.take chunk).flatten.length + column -
-                    head.length =
-                  (tail.take chunk).flatten.length + column := by
-                omega
-            rw [hindex]
-            exact ih chunk hchunkTail hcolumnTail
-          · omega
-
-/--
-If decoding flattened compiler chunks yields the source-column list, a local
-`(chunk,column)` reference decodes to the source column at its flattened index.
--/
-theorem decodedChunkAddress_eq_sourceColumn
-    {Reference Address : Type*}
-    (decode : Reference → Address)
-    (referenceFallback : Reference) (addressFallback : Address)
-    (chunks : List (List Reference)) (columns : List Address)
-    (hdecoded : chunks.flatten.map decode = columns)
-    (chunk column global : ℕ)
-    (hchunk : chunk < chunks.length)
-    (hcolumn : column < (chunks.getD chunk []).length)
-    (hglobal : global < columns.length)
-    (hindex :
-      (chunks.take chunk).flatten.length + column = global) :
-    decode ((chunks.getD chunk []).getD column referenceFallback) =
-      columns.getD global addressFallback := by
-  have hflatGlobal : global < chunks.flatten.length := by
-    have hlength := congrArg List.length hdecoded
-    have : chunks.flatten.length = columns.length := by
-      simpa only [List.length_map] using hlength
-    omega
-  have hmapGlobal : global < (chunks.flatten.map decode).length := by
-    simpa only [List.length_map] using hflatGlobal
-  have hlocal :=
-    flatten_getD_at_chunk referenceFallback chunks chunk column hchunk hcolumn
-  calc
-    decode ((chunks.getD chunk []).getD column referenceFallback) =
-        decode (chunks.flatten.getD global referenceFallback) := by
-          rw [hindex] at hlocal
-          exact congrArg decode hlocal.symm
-    _ = (chunks.flatten.map decode).getD global addressFallback := by
-          rw [List.getD_eq_getElem _ _ hflatGlobal,
-            List.getD_eq_getElem _ _ hmapGlobal]
-          simp only [List.getElem_map]
-    _ = columns.getD global addressFallback := by rw [hdecoded]
 
 /-- The verifier query reference assigned by the permutation compiler to one
 concrete column. -/
@@ -132,7 +44,7 @@ theorem verifierCS_permutationChunks_flatten
         (permutationQueryReference top.adviceQueryLayout
           top.fixedQueryLayout top.instanceQueryLayout)).zipIdx := by
   unfold TopLevelCircuit.verifierCS
-  rw [listToChunks_flatten]
+  rw [List.toChunks_flatten]
   congr 2
   funext column
   rcases column with ⟨kind, index⟩
@@ -169,7 +81,7 @@ theorem permutationQueryReference_coherent
         exact hcount
       · simpa only [top.toVerifierKey_adviceQueryLayout] using hin
       · rw [top.toVerifierKey_adviceQueryLayout,
-          getD_findIdx_eq_target top.adviceQueryLayout
+          List.getD_findIdx_eq_target top.adviceQueryLayout
             (index, 0) (0, 0) hin]
   | fixed =>
       have hin :
@@ -187,7 +99,7 @@ theorem permutationQueryReference_coherent
         exact hcount
       · simpa only [top.toVerifierKey_fixedQueryLayout] using hin
       · rw [top.toVerifierKey_fixedQueryLayout,
-          getD_findIdx_eq_target top.fixedQueryLayout
+          List.getD_findIdx_eq_target top.fixedQueryLayout
             (index, 0) (0, 0) hin]
   | «instance» =>
       have hin :
@@ -205,7 +117,7 @@ theorem permutationQueryReference_coherent
         exact hcount
       · simpa only [top.toVerifierKey_instanceQueryLayout] using hin
       · rw [top.toVerifierKey_instanceQueryLayout,
-          getD_findIdx_eq_target top.instanceQueryLayout
+          List.getD_findIdx_eq_target top.instanceQueryLayout
             (index, 0) (0, 0) hin]
 
 /-- Every permutation reference produced by a top-level circuit's compiler is
@@ -253,7 +165,7 @@ theorem verifierCS_permutationChunks_length
   simp only [TopLevelCircuit.verifierCS]
   have hchunkLen : 0 < top.chunkLen :=
     constraintSystem_chunkLen_pos top.constraintSystem
-  rw [listToChunks_length _ _
+  rw [List.toChunks_length _ _
     hchunkLen]
   simp only [List.length_zipIdx, List.length_map]
   rw [top.permutationSetCount_eq,
@@ -284,7 +196,7 @@ theorem verifierCS_permutationChunks_getD_length
   simp only [TopLevelCircuit.verifierCS] at hi ⊢
   have hchunkLen : 0 < top.chunkLen := by
     exact constraintSystem_chunkLen_pos top.constraintSystem
-  rw [listToChunks_getD_length top.chunkLen _ hchunkLen i hi]
+  rw [List.toChunks_getD_length top.chunkLen _ hchunkLen i hi]
   simp only [List.length_zipIdx, List.length_map]
   rw [top.permutationColumnCount_eq_permutationColumns_length]
 
@@ -339,8 +251,8 @@ theorem verifierCS_permutationChunks_take_flatten_length
     (top.verifierCS.permutationChunks.take i).flatten.length =
       i * top.chunkLen := by
   unfold TopLevelCircuit.verifierCS at hi ⊢
-  apply take_flatten_length_of_dropLast_full
-  · exact listToChunks_dropLast_full _ _
+  apply List.take_flatten_length_of_dropLast_full
+  · exact List.toChunks_dropLast_full _ _
       (constraintSystem_chunkLen_pos top.constraintSystem)
   · exact hi
 
@@ -373,12 +285,12 @@ theorem permutationColumns_length_le_chunks_mul
   have hall :
       (source.toChunks top.chunkLen).Forall
         fun chunk => chunk.length ≤ top.chunkLen :=
-    listToChunks_all_le top.chunkLen source
+    List.toChunks_all_le top.chunkLen source
       (constraintSystem_chunkLen_pos top.constraintSystem)
   have hbound :=
-    flatten_length_le_mul_of_forall
+    List.flatten_length_le_mul_of_forall
       (source.toChunks top.chunkLen) top.chunkLen hall
-  rw [listToChunks_flatten] at hbound
+  rw [List.toChunks_flatten] at hbound
   have hchunks :
       top.verifierCS.permutationChunks =
         source.toChunks top.chunkLen := by
@@ -417,19 +329,19 @@ theorem permutationColumnAddress_queryReference
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hadvice] at hin ⊢
-      rw [getD_findIdx_eq_target adviceQueryLayout
+      rw [List.getD_findIdx_eq_target adviceQueryLayout
         (index, 0) (0, 0) hin]
   | fixed =>
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hfixed] at hin ⊢
-      rw [getD_findIdx_eq_target fixedQueryLayout
+      rw [List.getD_findIdx_eq_target fixedQueryLayout
         (index, 0) (0, 0) hin]
   | «instance» =>
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hinstance] at hin ⊢
-      rw [getD_findIdx_eq_target instanceQueryLayout
+      rw [List.getD_findIdx_eq_target instanceQueryLayout
         (index, 0) (0, 0) hin]
 
 /--

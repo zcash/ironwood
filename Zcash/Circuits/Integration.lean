@@ -7,7 +7,7 @@ import Zcash.Circuits.Halo2.CopyListMembership
 import Zcash.Circuits.Integration.ExprRich
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Halo2.FixedConstraints
-import Zcash.Circuits.Integration.InstanceColumns
+import Zcash.Snark.Soundness.Multiopen.InstanceColumns
 import Zcash.Circuits.Halo2.CopyOperations
 import Zcash.Circuits.Halo2.FixedOperations
 import Zcash.Circuits.Integration.PermutationColumns

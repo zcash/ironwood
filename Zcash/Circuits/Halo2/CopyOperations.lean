@@ -10,9 +10,7 @@ and proves that satisfying the extracted list is exactly the copy constraint fam
 The characterization is independent of the compiler's concrete copy-pair representation.
 -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 /-- A semantic endpoint of a Clean copy operation, with constants represented by value. -/
 inductive CopyEndpoint (F : Type) where
@@ -113,4 +111,4 @@ theorem copy_constraints_iff_declaredCopies
 
 end CircuitConstraintFamily
 
-end Zcash.Snark
+end Halo2

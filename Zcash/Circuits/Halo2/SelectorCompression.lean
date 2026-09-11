@@ -774,10 +774,10 @@ theorem gateSelectorsCovered_deriveSelCompressMap
 
 end Halo2
 
-namespace Zcash.Snark
+namespace Halo2
 
 open Zcash.Arithmetic (scalarFieldOrder)
-open Halo2
+open Zcash
 open Halo2.Layout
 
 set_option maxHeartbeats 20000
@@ -854,4 +854,4 @@ theorem selectorActivationsRealized_of_selectorAssignments
     (Layout.mem_selectorAssignments_of_activation (F := Fp) map activationRows
       hactivation hlookup)
 
-end Zcash.Snark
+end Halo2

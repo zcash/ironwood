@@ -1,5 +1,5 @@
 import Zcash.Common.RelationWitness
-import Zcash.Snark.Soundness.Canonical.InstanceCommitment
+import Zcash.Snark.Soundness.Multiopen.RowBinding
 import Zcash.Circuits.Halo2.FixedConstraints
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Halo2.SelectorCompression
@@ -291,90 +291,6 @@ theorem polynomial_eq_zero_of_not_assembled
   rw [hnone]
 
 /--
-A canonically routed fixed-column opening is the polynomial interpolating its
-keygen rows, or it exhibits an augmented commitment relation.
-
-`hcommit` is the circuit-keygen side of the boundary: the fixed commitment stored
-in the derived VK is the Lagrange commitment to `rows` with Halo 2's default blind
-`1`. It is independent of the proof and can be established once for the generic
-`TopLevelCircuit.toVerifierKey` construction.
--/
-def fixedColumn_eq_rowPolynomial_or_relation
-    (relation : CanonicalMemberConstraintRelation
-      urs hk vk instanceCommitment ps ch pU pW a
-      batchOpenings memberDecode hblinding y hpoly deg)
-    (column : ℕ)
-    (key : LagrangeCommitmentKey urs vk.omega)
-    (rows : List Fp)
-    (hcommit :
-      vk.fixedCommitment column =
-        key.commitInstance rows 1)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) => vk.omega ^ (i : ℕ))
-    (hquery : ∃ q ∈ assembleQueries vk instanceCommitment ps ch,
-      q.commId = .fixedCol column) :
-    relation.polynomial (.fixedCol column) =
-        instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hsome : (relation.route (.fixedCol column)).isSome := by
-    obtain ⟨q, hq, hqid⟩ := hquery
-    have routed := assembledQueryMemberRoute_faithful
-      (instanceCommitment := instanceCommitment) vk ps ch relation.groupingCount
-      relation.noDuplicateQueries q hq
-    unfold CanonicalMemberConstraintRelation.route
-    rw [← hqid, routed.route_eq]
-    rfl
-  let slot := (relation.route (.fixedCol column)).get hsome
-  have routedFixed :
-      relation.route (.fixedCol column) = some slot := (Option.some_get hsome).symm
-  have hid :
-      (deployedSetCommIds (instanceCommitment := instanceCommitment)
-        vk ps ch slot.setIndex).getD
-          (slot.memberIndex : ℕ) .vanishingH =
-        .fixedCol column := by
-    apply assembledQueryMemberRoute_id
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount relation.noDuplicateQueries
-      (.fixedCol column) slot
-    simpa [CanonicalMemberConstraintRelation.route] using routedFixed
-  have href :=
-    deployedMemberRef_eq_fixedCommitment
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount slot column hid
-  let decoded :=
-    memberDecode slot.setIndex slot.setIndex_lt
-  have hopen :
-      commit urs (decoded.cols slot.memberIndex) +
-          decoded.uComp slot.memberIndex • urs.u +
-          decoded.wComp slot.memberIndex • urs.w =
-        key.commitInstance rows 1 := by
-    calc
-      commit urs (decoded.cols slot.memberIndex) +
-            decoded.uComp slot.memberIndex • urs.u +
-            decoded.wComp slot.memberIndex • urs.w =
-          ((deployedSetQueries
-              (instanceCommitment := instanceCommitment)
-              vk ps ch slot.setIndex).getD
-            (slot.memberIndex : ℕ) (.point 0, [])).1.eval
-              ⟨shape.k, hk ▸ urs.g, urs.w, urs.u⟩ :=
-        decoded.commitment slot.memberIndex
-      _ = vk.fixedCommitment column := by
-        rw [href]
-        rfl
-      _ = key.commitInstance rows 1 := hcommit
-  have hbound :=
-    coeffsToPoly_eq_instanceRowPolynomial_or_relation
-      key rows 1
-      (decoded.cols slot.memberIndex)
-      (decoded.uComp slot.memberIndex)
-      (decoded.wComp slot.memberIndex)
-      hrows hopen
-  refine bindOrRelationWitness hbound fun heq => ?_
-  rw [CanonicalMemberConstraintRelation.polynomial,
-    decodedPolynomialResolver, routedFixed]
-  exact heq
-
-/--
 All fixed-column resolver polynomials encode the circuit's complete dense fixed
 rows, or commitment binding has produced the shared nontrivial relation.
 
@@ -442,16 +358,24 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
           rw [top.toVerifierKey_fixedCommitment]
           exact top.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn
         have source :=
-          relation.fixedColumn_eq_rowPolynomial_or_relation
-            column (LagrangeCommitmentKey.canonical urs top.omega)
-            (top.fixedRows.getD column [])
-            hcommitment hrowsVk
+          decodedPolynomialResolver_eq_rowPolynomial_or_relation
+            (shape := top.shape.withProofParams pp) (urs := urs) (hk := hk)
+            (vk := top.toVerifierKey urs) (ps := ps) (ch := ch)
+            (instanceCommitment := instanceCommitment) (memberDecode := memberDecode)
+            relation.groupingCount relation.noDuplicateQueries
+            (.fixedCol column) (LagrangeCommitmentKey.canonical urs top.omega)
+            (top.fixedRows.getD column []) 1
+            (fun q hq hid => (assembleQueries_fixed_commitment
+              (shape := top.shape.withProofParams pp)
+              (top.toVerifierKey urs) instanceCommitment ps ch q hq column hid).trans
+                (congrArg _ hcommitment)) hrowsVk
             (by
               obtain ⟨rotation, hlayout⟩ :=
                 top.exists_rotation_mem_fixedQueryLayout_of_lt column hcolumn
               exact topLevelFixedQuery_of_layout top urs pp
                 instanceCommitment ps ch column rotation hlayout)
-        simpa only [top.toVerifierKey_omega] using source))
+        simpa only [CanonicalMemberConstraintRelation.polynomial,
+          CanonicalMemberConstraintRelation.route, top.toVerifierKey_omega] using source))
     fun hinrange => by
     intro column
     by_cases hcolumn : column < top.fixedColumnCount

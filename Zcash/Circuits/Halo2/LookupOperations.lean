@@ -3,9 +3,7 @@ import Clean.Halo2.TopLevel
 
 /-! # Source lookup activations and configure membership -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 set_option maxHeartbeats 20000
 
@@ -262,4 +260,4 @@ theorem lookup
 
 end OperationsKeygenCoherent
 
-end Zcash.Snark
+end Halo2

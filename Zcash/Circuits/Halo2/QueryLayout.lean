@@ -3,9 +3,7 @@ import Clean.Halo2.Keygen.Semantics
 
 /-! # Compiled query layouts and their interpretation -/
 
-namespace Zcash.Snark
-
-open Halo2
+namespace Halo2
 
 /-- Repackage a pinned constraint system's three query layouts as a query state. -/
 def pinnedQueryState
@@ -85,4 +83,4 @@ theorem _root_.Halo2.TopLevelCircuit.mem_instanceQueryLayout_of_mem_constraintSy
   exact PinnedConstraintSystem.mem_instanceQueryLayout_derive_of_mem
     top.constraintSystem top.selectorMap column rotation hquery
 
-end Zcash.Snark
+end Halo2

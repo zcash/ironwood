@@ -11,9 +11,9 @@ soundness.  Selector entries and constant-copy allocation are separate compiler
 products; they are not needed for the explicit fixed requirements extracted here.
 -/
 
-namespace Zcash.Snark
+namespace Halo2
 
-open Halo2
+open Zcash
 
 set_option maxHeartbeats 20000
 
@@ -300,4 +300,4 @@ theorem constraints_of_entries
 
 end FixedLayout
 
-end Zcash.Snark
+end Halo2

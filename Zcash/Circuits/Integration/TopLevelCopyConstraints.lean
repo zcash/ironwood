@@ -63,7 +63,7 @@ def CanonicalMemberConstraintRelation.copiesCompiled_or_relation
       pp.numProofs (top.toVerifierKey urs) ch relation.polynomial (top.usableRowsAt top.domainExponent))
     (proofIndex : Fin pp.numProofs)
     (hencoding : top.FixedColumnEncoding relation.polynomial) :
-    top.CopiesCompiled (resolverAssignment top.omega relation.polynomial proofIndex) ⊕'
+    top.CopiesCompiled (polynomialAssignment top.omega relation.polynomial proofIndex) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   rcases resolverPermutationCycle_or_relation top pp urs hk relation proofIndex with hcycle | hbad
   · have hvalues := permutationValues_of_constraintSatisfaction top

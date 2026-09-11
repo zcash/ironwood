@@ -171,12 +171,12 @@ theorem compressedValues
         (top.omega ^ row) =
       compressValues ch.theta ((top.pinnedCS.lookupInputExprs.getD index []).map
         ((pinnedQueryState top.pinnedCS).eval
-          (top.environment (resolverAssignment top.omega poly proofIndex)) row)) ∧
+          (top.environment (polynomialAssignment top.omega poly proofIndex)) row)) ∧
     (lookupTablePolyOfResolver (top.toVerifierKey urs) ch poly proofIndex index).eval
         (top.omega ^ row) =
       compressValues ch.theta ((top.pinnedCS.lookupTableExprs.getD index []).map
         ((pinnedQueryState top.pinnedCS).eval
-          (top.environment (resolverAssignment top.omega poly proofIndex)) row)) := by
+          (top.environment (polynomialAssignment top.omega poly proofIndex)) row)) := by
   have hproject := top.pinnedCS_lookup_eval_of_interprets _ _ _ _ _
     (top.resolverInterpretsPinned (urs := urs) poly proofIndex
       (top.usableRowsAt top.domainExponent) row) index
@@ -235,7 +235,7 @@ theorem lookupsCompiled_of_constraintSatisfaction
     (satisfaction : ConstraintSatisfaction (top.constraintModel pp urs ch poly) top.n)
     (hencoding : top.FixedColumnEncoding poly)
     (exclusions : ChallengeExclusions top pp urs ch poly) :
-    top.LookupsCompiled (resolverAssignment top.omega poly proofIndex) := by
+    top.LookupsCompiled (polynomialAssignment top.omega poly proofIndex) := by
   intro activation hactivation
   have hgood := resolverLookupGoodChallenges_of_not_mem
     pp.numProofs (top.toVerifierKey urs) ch poly

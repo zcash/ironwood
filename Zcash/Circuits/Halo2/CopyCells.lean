@@ -2,7 +2,7 @@ import Clean.Halo2.Keygen.Layout
 
 /-! # Bounded copy-table coordinates -/
 
-namespace Zcash.Snark
+namespace Halo2
 
 /-- A flat permutation-table cell: a permutation column and a row. -/
 abbrev FlatCell (numCols n : ℕ) := Fin numCols × Fin n
@@ -17,4 +17,4 @@ theorem FlatCell.pair_injective {numCols n : ℕ} :
   simp only [FlatCell.pair, Prod.mk.injEq] at h
   exact Prod.ext_iff.mpr ⟨Fin.ext h.1, Fin.ext h.2⟩
 
-end Zcash.Snark
+end Halo2

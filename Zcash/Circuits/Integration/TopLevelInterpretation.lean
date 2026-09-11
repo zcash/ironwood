@@ -1,7 +1,7 @@
 import Zcash.Circuits.Integration.FixedColumns
 import Zcash.Circuits.Halo2.ConstraintsCompiled
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.InstanceColumns
+import Zcash.Snark.Soundness.Multiopen.InstanceColumns
 import Zcash.Circuits.Integration.TopLevelLookups
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Integration.TopLevelGates
@@ -108,9 +108,9 @@ def CanonicalMemberConstraintRelation.topLevelWitnesses_or_relation
     (A := fun proofIndex : Fin pp.numProofs =>
       TopLevelSemanticWitness top
         (top.extractPublicInput (top.environment
-          (resolverAssignment top.omega relation.polynomial proofIndex))))
+          (polynomialAssignment top.omega relation.polynomial proofIndex))))
     fun proofIndex => ?_
-  let assignment := resolverAssignment top.omega relation.polynomial proofIndex
+  let assignment := polynomialAssignment top.omega relation.polynomial proofIndex
   obtain hcopies | bad := relation.copiesCompiled_or_relation
     top pp urs hk hsatisfaction permutationExclusions proofIndex hencoding
   swap

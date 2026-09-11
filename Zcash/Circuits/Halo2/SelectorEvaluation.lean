@@ -4,10 +4,10 @@ import Zcash.Arithmetic
 
 /-! # Semantics of packed selectors in a row assignment -/
 
-namespace Zcash.Snark
+namespace Halo2
 
 open Zcash.Arithmetic (scalarFieldOrder)
-open Halo2
+open Zcash
 
 set_option maxHeartbeats 20000
 
@@ -106,4 +106,4 @@ theorem selectorScale_ne_zero_of_enabledGate
     (starts.getD enabled.region 0 + enabled.row)
     hvalue hpositive hrootBound hlengthBound
 
-end Zcash.Snark
+end Halo2
