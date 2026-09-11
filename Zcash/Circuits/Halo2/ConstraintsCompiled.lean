@@ -1,9 +1,27 @@
+import Clean.Halo2.TopLevel
 import Zcash.Circuits.Halo2.CompiledGates
 import Zcash.Circuits.Halo2.CompiledCopies
 import Zcash.Circuits.Halo2.CompiledLookups
-import Zcash.Circuits.Halo2.Witness
 
 /-! # Semantic soundness of the Halo2 compiler
+
+Compiled gate vanishing, copy equality, and lookup membership establish the source
+constraints and hence the specification for the extracted witness.
+-/
+
+namespace Halo2.TopLevelCircuit
+
+variable {F : Type} [FiniteField F]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit F Config PublicInput)
+
+/-- Extract the witness used by the circuit specification. No secrecy is assumed. -/
+def extractWitness (assignment : ProofAssignment F) : top.PrivateWitness :=
+  top.extractPrivate top.config (top.placedEnvironment assignment)
+
+end Halo2.TopLevelCircuit
+
+/-! ## Compiled constraints
 
 The public boundary consists of compiled gate evaluations, resolved copy equality,
 and tuple membership at compiled lookup activations. Selector compression, query

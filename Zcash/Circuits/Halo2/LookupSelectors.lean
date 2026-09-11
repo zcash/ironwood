@@ -1,6 +1,6 @@
 import Zcash.Circuits.Halo2.LookupOperations
 import Zcash.Circuits.Halo2.SelectorCompression
-import Zcash.Circuits.Halo2.FixedValues
+import Zcash.Circuits.Halo2.Fixed
 
 /-! # Exact lookup selector substitution in the circuit-owned environment -/
 

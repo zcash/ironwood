@@ -1,6 +1,6 @@
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Multiopen.RowBinding
-import Zcash.Circuits.Halo2.FixedConstraints
+import Zcash.Circuits.Halo2.Fixed
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Halo2.SelectorCompression
 import Zcash.Circuits.Integration.Assignment

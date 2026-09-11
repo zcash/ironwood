@@ -1,7 +1,7 @@
 import Zcash.Circuits.Halo2.FieldSupport
 import Zcash.Arithmetic.Domain
-import Zcash.Circuits.Halo2.FixedValues
-import Zcash.Circuits.Halo2.RowEvaluation
+import Zcash.Circuits.Halo2.Fixed
+import Zcash.Circuits.Halo2.Queries
 import Zcash.Circuits.Halo2.SelectorCompression
 
 /-! # Soundness of compiled gate row semantics -/

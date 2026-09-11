@@ -1,4 +1,4 @@
-import Zcash.Circuits.Halo2.RowEvaluation
+import Zcash.Circuits.Halo2.Queries
 
 /-!
 # Lookup projection across the Clean boundary

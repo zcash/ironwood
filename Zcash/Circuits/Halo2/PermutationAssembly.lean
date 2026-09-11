@@ -1,5 +1,5 @@
 import Zcash.Common.PermutationConstruction
-import Zcash.Circuits.Halo2.CopyCells
+import Zcash.Circuits.Halo2.CopyLayout
 import Zcash.Circuits.Halo2.PermutationRows
 import Clean.Halo2.Keygen.Layout
 import Mathlib.Tactic.IntervalCases

@@ -1,7 +1,7 @@
 import Zcash.Snark.Soundness.Canonical.PolynomialEnvironment
 import Zcash.Circuits.Halo2.ConstraintFamilies
 import Clean.Halo2.TopLevel
-import Zcash.Circuits.Halo2.QueryLayout
+import Zcash.Circuits.Halo2.Queries
 import Clean.Halo2.Keygen.Semantics
 import Zcash.Snark.Soundness.Canonical.LookupInstantiation
 import Zcash.Snark.Soundness.Canonical.PermutationInstantiation

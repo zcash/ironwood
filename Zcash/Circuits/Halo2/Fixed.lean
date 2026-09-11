@@ -1,8 +1,120 @@
+import Zcash.Circuits.Halo2.ConstraintFamilies
+import Zcash.Arithmetic
 import Clean.Halo2.Keygen.Layout
-import Zcash.Circuits.Halo2.FixedOperations
+import Clean.Halo2.TopLevel
 
 /-!
-# Fixed-layout compiler bridge
+# Fixed-data compilation and its semantics
+
+Fixed assignments and lookup-table loads are the circuit-fixed part of Clean's
+authoritative semantics.  This file extracts both forms into one list and proves that
+their satisfaction is exactly the fixed constraint family.
+
+The fixed-layout compiler uses this characterization to establish fixed constraints
+from its sparse assignments, including the default-fill rows of loaded tables.
+-/
+
+namespace Halo2
+
+open Zcash
+
+set_option maxHeartbeats 20000
+
+/-- One fixed-data obligation declared by synthesis. -/
+inductive FixedRequirement (F : Type) where
+  | assignment (region : RegionIndex) (column : Column .fixed) (row : ℕ) (value : F)
+  | table (column : TableColumn) (values : List F)
+
+namespace FixedRequirement
+
+variable {F : Type} [FiniteField F]
+
+/-- The exact Clean semantics of one extracted fixed-data obligation. -/
+def Satisfied (place : RegionIndex → ℕ) (env : Environment F) :
+    FixedRequirement F → Prop
+  | .assignment region column row value =>
+      env.fixed column (place region + row : ℕ) = value
+  | .table column values =>
+      (∀ row : ℕ, row < values.length →
+        env.fixed column.inner (row : ℤ) = values[row]!) ∧
+      (values ≠ [] → ∀ row : ℕ, values.length ≤ row → row < env.usableRows →
+        env.fixed column.inner (row : ℤ) = values[0]!)
+
+end FixedRequirement
+
+/-- Fixed assignments in one region. -/
+def regionFixedRequirements {F : Type} (self : RegionIndex) :
+    RegionOperations F → List (FixedRequirement F)
+  | [] => []
+  | .assignFixed column row value :: rest =>
+      .assignment self column row value :: regionFixedRequirements self rest
+  | _ :: rest => regionFixedRequirements self rest
+
+/-- Fixed assignments and table loads in one complete operation stream. -/
+def operationFixedRequirements {F : Type} :
+    Operations F → RegionIndex → List (FixedRequirement F)
+  | [], _ => []
+  | .region _ body :: rest, i =>
+      regionFixedRequirements i body ++ operationFixedRequirements rest (i + 1)
+  | .constrainInstance _ _ _ :: rest, i => operationFixedRequirements rest i
+  | .loadTable column values :: rest, i =>
+      .table column values :: operationFixedRequirements rest i
+
+namespace CircuitConstraintFamily
+
+variable {F : Type} [FiniteField F]
+
+/-- One region's fixed-family projection is exactly its extracted assignments. -/
+theorem region_fixed_constraints_iff
+    (place : RegionIndex → ℕ) (self : RegionIndex) (env : Environment F)
+    (ops : RegionOperations F) :
+    regionConstraints .fixed place self env ops ↔
+      (regionFixedRequirements self ops).Forall
+        (FixedRequirement.Satisfied place env) := by
+  induction ops with
+  | nil => simp [regionConstraints, regionFixedRequirements]
+  | cons op rest ih =>
+      cases op <;>
+        simp_all [regionConstraints, regionConstraint, RegionOperation.Constraints,
+          regionFixedRequirements, FixedRequirement.Satisfied, Environment.get_fixed]
+
+/-- The complete fixed-family projection is satisfaction of every extracted requirement. -/
+theorem fixed_constraints_iff_requirements
+    (place : RegionIndex → ℕ) (env : Environment F)
+    (ops : Operations F) (i : RegionIndex) :
+    constraints .fixed place env ops i ↔
+      (operationFixedRequirements ops i).Forall
+        (FixedRequirement.Satisfied place env) := by
+  induction ops generalizing i with
+  | nil => simp [constraints, operationFixedRequirements]
+  | cons op rest ih =>
+      cases op with
+      | region name body =>
+          rw [constraints, ih, region_fixed_constraints_iff]
+          simp [operationFixedRequirements, List.forall_append]
+      | constrainInstance cell col row =>
+          rw [constraints, ih]
+          simp [operationFixedRequirements]
+      | loadTable column values =>
+          rw [constraints, ih]
+          simp [operationFixedRequirements, FixedRequirement.Satisfied]
+
+end CircuitConstraintFamily
+
+/-- Build the full fixed family from one witness per extracted requirement. -/
+theorem fixed_constraints_of_requirements
+    (place : RegionIndex → ℕ) (env : Environment Fp)
+    (ops : Operations Fp) (i : RegionIndex)
+    (witness : ∀ requirement ∈ operationFixedRequirements ops i,
+      requirement.Satisfied place env) :
+    CircuitConstraintFamily.constraints .fixed place env ops i := by
+  rw [CircuitConstraintFamily.fixed_constraints_iff_requirements]
+  exact List.forall_iff_forall_mem.mpr witness
+
+end Halo2
+
+/-!
+## Fixed-layout compiler bridge
 
 The keygen layout compiler emits sparse fixed-column entries from table loads and
 region-local fixed assignments.  This module proves, generically, that realizing
@@ -301,3 +413,61 @@ theorem constraints_of_entries
 end FixedLayout
 
 end Halo2
+
+/-! ## Canonical environments realize compiler-owned fixed data -/
+
+namespace Halo2.TopLevelCircuit
+
+variable {F : Type} [FiniteField F]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit F Config PublicInput) [TopLevelShape top]
+
+/-- Every emitted fixed assignment is already true in the canonical environment. -/
+theorem environment_fixed_of_mem_raw (assignment : ProofAssignment F)
+    {entry : Layout.FixedAssignment F}
+    (hentry : entry ∈ Layout.rawAssignments (top.usableRowsAt top.domainExponent)
+      top.selectorMap top.constraintSystem top.operations) :
+    (top.environment assignment).fixed ⟨entry.1⟩ (entry.2.1 : ℤ) = entry.2.2 := by
+  have hbounds := top.fixedAssignment_bounds_of_mem_raw entry hentry
+  rw [top.environment_fixed, top.fixedValue_eq_fixedRows_getD]
+  rw [Int.natMod, Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr hbounds.2),
+    Int.toNat_natCast]
+  exact top.fixedRows_getD_getD_eq_of_mem_raw entry hentry
+
+/-- A packed selector assignment is part of the compiler's fixed output. -/
+theorem selectorAssignment_mem_raw {entry : Layout.FixedAssignment F}
+    (hentry : entry ∈ Layout.selectorAssignments top.selectorMap top.selectorActivations) :
+    entry ∈ Layout.rawAssignments (top.usableRowsAt top.domainExponent)
+      top.selectorMap top.constraintSystem top.operations := by
+  simpa only [Layout.rawAssignments, List.mem_append] using Or.inl (Or.inr hentry)
+
+end Halo2.TopLevelCircuit
+
+namespace Halo2.TopLevelCircuit
+
+open Zcash
+
+variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+
+/-- Fixed assignments and table contents require no proof-varying hypothesis:
+the compiler supplies them when constructing the environment. -/
+theorem fixed_constraints (assignment : ProofAssignment Fp) :
+    CircuitConstraintFamily.constraints .fixed top.placement
+      (top.environment assignment) top.operations 0 := by
+  have hplace : Layout.place top.regionStarts = top.placement := by
+    funext region
+    exact (top.placement_apply region).symm
+  rw [← hplace]
+  apply FixedLayout.constraints_of_entries top.regionStarts
+    (top.usableRowsAt top.domainExponent) top.operations 0
+  · rw [top.environment_usableRows, top.usableRowsAt_domainExponent,
+      top.n_eq_two_pow_domainExponent, top.domainExponent_eq_compiled]
+  · intro column row value hentry
+    apply top.environment_fixed_of_mem_raw assignment (entry := (column, row, value))
+    simp only [Layout.rawAssignments, List.mem_append] at hentry ⊢
+    rcases hentry with htable | hregion
+    · exact Or.inl (Or.inl (Or.inl htable))
+    · exact Or.inr hregion
+
+end Halo2.TopLevelCircuit
