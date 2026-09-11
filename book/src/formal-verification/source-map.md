@@ -493,14 +493,16 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   `LookupSelectors` and `LookupProjection` justify exact selector substitution and query indexing.
   `FixedValues` derives fixed assignments and table constraints from the canonical environment, and
   `CompiledCopies` recovers source copy constraints from resolved column/row equalities.
+  `CopyPermutation` derives those equalities from compiled cycles; `PermutationAssembly`
+  proves the executable mapping correct, and `PermutationRows` supplies its row vectors to Keygen.
   `ConstraintsCompiled` assembles these row-level semantics into TLC soundness;
   `ConstraintFamilies` decomposes operation constraints by argument family.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
   compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), using the tuple
-  collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation round trip
-  (`PermutationCompiler`, `PermutationReplay`),
+  collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation interpretation
+  (`PermutationCompiler`, `CopyPermutation`, `PermutationCycle`),
   the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
   `PermutationColumns`, `InstanceColumns`), the polynomial-backed environments
   (`ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full

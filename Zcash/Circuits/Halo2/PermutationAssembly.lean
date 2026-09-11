@@ -1,37 +1,18 @@
-import Zcash.Circuits.Integration.PermutationColumns
+import Zcash.Common.PermutationConstruction
 import Zcash.Circuits.Halo2.CopyCells
-import Zcash.Common.RelationWitness
-import Zcash.Snark.Keygen.Lagrange
+import Zcash.Circuits.Halo2.PermutationRows
+import Clean.Halo2.Keygen.Layout
+import Mathlib.Tactic.IntervalCases
 
-/-!
-# The executable keygen assembly replay is the abstract permutation replay
+/-! # Correctness of executable permutation assembly
 
-`Layout.runAssembly` replays halo2's `Assembly::copy` over the derived copy list with
-arrays and union-find bookkeeping; the permutation semantics
-(`ResolverPermutationCycle.ofKeygenColumns`, `keygenSigmaColumn`) speak about the
-abstract swap-composition replay `replayKeygenPermutation`. This module proves they are
-the same permutation: the assembly's `mapping` is the abstract permutation's action, and
-its `aux` classes are exactly the cycles.
-
-The simulation invariant `Asm.Sim` carries three facts through the copy fold: `mapping`
-acts as the permutation, every `aux` entry is an in-cycle representative, and `aux`
-entries agree exactly on cycles. The union-find size heuristic needs no invariant — it
-only selects which representative survives a merge, and the cycle partition is
-representative-agnostic.
+The array mapping implements cycle merging in source order. Its auxiliary union-find
+representatives agree exactly on cycles; union-by-size does not change the mapping.
 -/
 
-namespace Zcash.Snark
+namespace Halo2.Layout.Asm
 
-open Zcash.Arithmetic (deltaFp omegaOf)
-
-open Halo2 Halo2.Layout
-open Equiv (Perm swap)
-
-set_option maxHeartbeats 400000
-
-namespace Layout.Asm
-
-open Halo2.Layout.Asm
+open Zcash Zcash.Snark Equiv
 
 /-- The rectangular shape invariant of the assembly's cell arrays. -/
 def Shaped (numCols n : ℕ) (a : Array (Array (ℕ × ℕ))) : Prop :=
@@ -575,413 +556,37 @@ theorem runAssembly_getPair {numCols n : ℕ}
   rw [replayKeygenPermutation_eq_foldl]
   exact (Sim.foldl copies (Sim.new numCols n)).map_eq c
 
+open Zcash.Arithmetic (deltaFp omegaOf)
+
 /-- A generated σ-table entry is the δ/ω name of the replayed permutation's image cell:
 the executable pipeline reads the assembly mapping at `(column, row)`, and the mapping's
 action is the abstract replay. -/
-theorem permPolysOf_getD_eq {k : ℕ} (cs : ConstraintSystem Fp) (ops : Operations Fp)
-    (copies' : List (FlatCell (Halo2.Layout.permColsOf cs).length (2 ^ k) ×
-      FlatCell (Halo2.Layout.permColsOf cs).length (2 ^ k)))
+theorem permutationRows_getD_eq {k numCols n : ℕ} (cs : ConstraintSystem Fp) (ops : Operations Fp)
+    (hcount : numCols = (Halo2.Layout.permColsOf cs).length) (hsize : n = 2 ^ k)
+    (copies' : List (FlatCell numCols n × FlatCell numCols n))
     (hcopies : Halo2.Layout.V1.copyList (Halo2.Layout.permColsOf cs)
         (Halo2.FloorPlanner.V1.starts ops) ops
         (Halo2.Layout.constantCopyEntries cs ops) =
       copies'.map fun p => (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2))
-    (g : Fin (Halo2.Layout.permColsOf cs).length) (j : Fin (2 ^ k)) :
-    ((Keygen.permPolysOf k cs ops).getD (g : ℕ) []).getD (j : ℕ) 0 =
+    (g : Fin numCols) (j : Fin n) :
+    ((Halo2.Layout.permutationRows k cs ops).getD (g : ℕ) []).getD (j : ℕ) 0 =
       deltaFp ^ ((replayKeygenPermutation copies' (g, j)).1 : ℕ) *
         omegaOf k ^ ((replayKeygenPermutation copies' (g, j)).2 : ℕ) := by
+  subst numCols n
   have hmap' : ((Halo2.Layout.runAssembly (2 ^ k)
       (Halo2.Layout.permColsOf cs).length (copies'.map fun p =>
         (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2)))[(g : ℕ)]!)[(j : ℕ)]! =
       (replayKeygenPermutation copies' (g, j)).pair :=
-    Layout.Asm.runAssembly_getPair copies' (g, j)
-  simp only [Keygen.permPolysOf]
+    Halo2.Layout.Asm.runAssembly_getPair copies' (g, j)
+  simp only [Halo2.Layout.permutationRows]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_range g.isLt, List.getElem?_range j.isLt,
     Option.map_some, Option.getD_some]
   rw [hcopies, hmap']
   simp only [FlatCell.pair]
-  rw [Keygen.deltaPowersArr_getElem! _
+  rw [Halo2.Layout.deltaPowersArr_getElem! _
       (replayKeygenPermutation copies' (g, j)).1.isLt,
-    Keygen.omegaPowersArr_getElem! _
+    Halo2.Layout.omegaPowersArr_getElem! _
       (replayKeygenPermutation copies' (g, j)).2.isLt]
 
-/-- **The σ-row name fact (`hval`), generically.** Reading the derived σ table at a
-cell's global column and row gives the identity name of the cell's image under the
-chunk-shaped replay — the exact premise of the σ-column identification. The chunk
-layout enters through `flatten` (cells against `(row, global column)` pairs) and its
-compatibility facts: the flattening preserves rows, and a cell's chunk/column recompose
-to its global column. -/
-theorem permPolysOf_getD_eq_chunkRowName {k : ℕ}
-    (cs : ConstraintSystem Fp) (ops : Operations Fp)
-    {numCols n : ℕ} (hcount : numCols = (Halo2.Layout.permColsOf cs).length)
-    (hsize : n = 2 ^ k)
-    (copies' : List (FlatCell numCols n ×
-      FlatCell numCols n))
-    (hcopies : Halo2.Layout.V1.copyList (Halo2.Layout.permColsOf cs)
-        (Halo2.FloorPlanner.V1.starts ops) ops
-        (Halo2.Layout.constantCopyEntries cs ops) =
-      copies'.map fun p => (p.1.pair.1, p.1.pair.2, p.2.pair.1, p.2.pair.2))
-    {nc : ℕ} {width : ℕ → ℕ} (chunkLen : ℕ)
-    (flatten : ChunkCell nc n width ≃
-      Fin n × Fin numCols)
-    (hrow : ∀ rc : Fin n × Fin numCols,
-      ((flatten.symm rc).2.1 : ℕ) = (rc.1 : ℕ))
-    (hcol : ∀ rc : Fin n × Fin numCols,
-      ((flatten.symm rc).1 : ℕ) * chunkLen + ((flatten.symm rc).2.2 : ℕ) = (rc.2 : ℕ))
-    (chunk : Fin nc) (column : Fin (width chunk)) (i : Fin n) :
-    ((Keygen.permPolysOf k cs ops).getD
-        ((flatten ⟨chunk, i, column⟩).2 : ℕ) []).getD (i : ℕ) 0 =
-      chunkRowName (omegaOf k) deltaFp chunkLen
-        ((chunkPermutationOfFlat flatten
-            ((Equiv.prodComm _ _).permCongr (replayKeygenPermutation copies'))
-          ⟨chunk, i, column⟩).1 : ℕ)
-        ((chunkPermutationOfFlat flatten
-            ((Equiv.prodComm _ _).permCongr (replayKeygenPermutation copies'))
-          ⟨chunk, i, column⟩).2.1 : ℕ)
-        ((chunkPermutationOfFlat flatten
-            ((Equiv.prodComm _ _).permCongr (replayKeygenPermutation copies'))
-          ⟨chunk, i, column⟩).2.2 : ℕ) := by
-  subst numCols n
-  have hfst : (flatten ⟨chunk, i, column⟩).1 = i := by
-    have := hrow (flatten ⟨chunk, i, column⟩)
-    rw [Equiv.symm_apply_apply] at this
-    exact (Fin.ext this).symm
-  -- the image cell under the chunk-shaped replay
-  set fs := chunkPermutationOfFlat flatten
-    ((Equiv.prodComm _ _).permCongr (replayKeygenPermutation copies'))
-    ⟨chunk, i, column⟩ with hfs
-  -- its flat form: the replay image of `(global column, row)`, coordinates swapped
-  have hfsflat : fs = flatten.symm
-      (((replayKeygenPermutation copies'
-          ((flatten ⟨chunk, i, column⟩).2, (flatten ⟨chunk, i, column⟩).1)).2,
-        (replayKeygenPermutation copies'
-          ((flatten ⟨chunk, i, column⟩).2, (flatten ⟨chunk, i, column⟩).1)).1)) := by
-    rw [hfs, chunkPermutationOfFlat_apply]
-    rfl
-  have hentry := permPolysOf_getD_eq cs ops copies' hcopies
-    (flatten ⟨chunk, i, column⟩).2 i
-  rw [show ((flatten ⟨chunk, i, column⟩).2, i) =
-      ((flatten ⟨chunk, i, column⟩).2, (flatten ⟨chunk, i, column⟩).1) by
-    rw [hfst]] at hentry
-  rw [hentry, chunkRowName, rowName]
-  rw [hfsflat]
-  rw [hrow, hcol]
-  ring
-
-/-- Same-cycle facts transport from the full-domain keygen permutation to its
-active-row restriction: the restriction equation pushes powers through the widening,
-and widening is injective. -/
-theorem sameCycle_restrict_of_widen
-    {nc activeRows domainSize : ℕ} {width : ℕ → ℕ}
-    (hactive : activeRows ≤ domainSize)
-    (fullSigma : Perm (ChunkCell nc domainSize width))
-    (sigma : Perm (ChunkCell nc activeRows width))
-    (hrestrict : ∀ c : ChunkCell nc activeRows width,
-      widenPermutationChunkCell hactive (sigma c) =
-        fullSigma (widenPermutationChunkCell hactive c))
-    {c d : ChunkCell nc activeRows width}
-    (h : fullSigma.SameCycle (widenPermutationChunkCell hactive c)
-      (widenPermutationChunkCell hactive d)) :
-    sigma.SameCycle c d := by
-  classical
-  have hpow : ∀ (t : ℕ) (e : ChunkCell nc activeRows width),
-      (fullSigma ^ t) (widenPermutationChunkCell hactive e) =
-        widenPermutationChunkCell hactive ((sigma ^ t) e) := by
-    intro t
-    induction t with
-    | zero => intro e; rfl
-    | succ t ih =>
-        intro e
-        rw [pow_succ, pow_succ, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
-          ← hrestrict e, ih (sigma e)]
-  obtain ⟨i, _, hi⟩ := h.exists_pow_eq'
-  rw [hpow i c] at hi
-  have hcd : (sigma ^ i) c = d :=
-    widenPermutationChunkCell_injective hactive hi
-  exact ⟨(i : ℤ), by simpa using hcd⟩
-
-/-- Same-cycle facts transport through a conjugating equivalence: the conjugated
-permutation's powers are the conjugates of the powers. -/
-theorem sameCycle_permCongr_iff {α β : Type*} [DecidableEq α] [Fintype α]
-    [DecidableEq β] [Fintype β] (e : α ≃ β) (π : Perm α) (x y : β) :
-    (e.permCongr π).SameCycle x y ↔ π.SameCycle (e.symm x) (e.symm y) := by
-  have hpow : ∀ (t : ℕ) (z : β),
-      ((e.permCongr π) ^ t) z = e ((π ^ t) (e.symm z)) := by
-    intro t
-    induction t with
-    | zero => intro z; simp
-    | succ t ih =>
-        intro z
-        rw [pow_succ, pow_succ, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
-          Equiv.permCongr_apply, ih (e (π (e.symm z)))]
-        simp
-  constructor
-  · intro h
-    obtain ⟨i, _, hi⟩ := h.exists_pow_eq'
-    refine ⟨(i : ℤ), ?_⟩
-    rw [hpow i x] at hi
-    have := congrArg e.symm hi
-    simpa using this
-  · intro h
-    obtain ⟨i, _, hi⟩ := h.exists_pow_eq'
-    refine ⟨(i : ℤ), ?_⟩
-    have := congrArg e hi
-    rw [← hpow i x] at this
-    simpa using this
-
-/-- **Copy-pair value agreement from copy-list membership.** A copy pair of the keygen
-copy list links its endpoints through the abstract replay; conjugating through the
-chunk flattening, restricting to the active rows, and applying the resolver copy
-theorem yields equal committed values at the two cells. This is the per-pair fact the
-copy-replay witness consumes, with every coordinate translation explicit. -/
-theorem chunkRowValue_eq_of_mem_copies
-    {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
-    (vk : VerifyingKey shape Fp G) (ch : Challenges shape.k Fp)
-    (poly : CommitmentId → CPoly)
-    (l0 lLast lBlind : CPoly) (p : Fin numProofs) {n m : ℕ}
-    (h : ConstraintSatisfaction
-      (constraintModelOfResolver (numProofs := numProofs) vk ch poly
-        (permutationSetsOfResolver (numProofs := numProofs) vk poly)
-        (permutationChunksOfResolver (numProofs := numProofs) vk poly)
-        l0 lLast lBlind) n)
-    (hdom : ResolverPermutationDomain vk l0 lLast lBlind n m)
-    (hcycle : ResolverPermutationCycle vk poly p m)
-    (hgood : ResolverPermutationGoodChallenges vk ch poly p m)
-    {numCols domainSize : ℕ} (hactive : m ≤ domainSize)
-    (copies' : List (FlatCell numCols domainSize × FlatCell numCols domainSize))
-    (flatten : ResolverPermutationCell vk poly p domainSize ≃
-      Fin domainSize × Fin numCols)
-    (hrestrict : ∀ c : ResolverPermutationCell vk poly p m,
-      widenPermutationChunkCell hactive (hcycle.sigma c) =
-        chunkPermutationOfFlat flatten
-          ((Equiv.prodComm (Fin numCols) (Fin domainSize)).permCongr
-            (replayKeygenPermutation copies'))
-          (widenPermutationChunkCell hactive c))
-    (l r : FlatCell numCols domainSize) (hmem : (l, r) ∈ copies')
-    (cl cr : ResolverPermutationCell vk poly p m)
-    (hl : flatten (widenPermutationChunkCell hactive cl) = (l.2, l.1))
-    (hr : flatten (widenPermutationChunkCell hactive cr) = (r.2, r.1)) :
-    chunkRowValue vk.omega (ResolverPermutationPairs vk poly p)
-        cl.1 cl.2.1 cl.2.2 =
-      chunkRowValue vk.omega (ResolverPermutationPairs vk poly p)
-        cr.1 cr.2.1 cr.2.2 := by
-  classical
-  -- the replay links the endpoints
-  have hflat : (replayKeygenPermutation copies').SameCycle l r :=
-    replayKeygenPermutation_pair_linked copies' hmem
-  -- conjugate to the row-major orientation
-  have hswapped :
-      (((Equiv.prodComm (Fin numCols) (Fin domainSize)).permCongr
-        (replayKeygenPermutation copies'))).SameCycle (l.2, l.1) (r.2, r.1) := by
-    rw [sameCycle_permCongr_iff]
-    simpa using hflat
-  -- conjugate through the chunk flattening
-  have hchunk :
-      (chunkPermutationOfFlat flatten
-        ((Equiv.prodComm (Fin numCols) (Fin domainSize)).permCongr
-          (replayKeygenPermutation copies'))).SameCycle
-        (widenPermutationChunkCell hactive cl)
-        (widenPermutationChunkCell hactive cr) := by
-    have hcongr :
-        chunkPermutationOfFlat flatten
-            ((Equiv.prodComm (Fin numCols) (Fin domainSize)).permCongr
-              (replayKeygenPermutation copies')) =
-          flatten.symm.permCongr
-            ((Equiv.prodComm (Fin numCols) (Fin domainSize)).permCongr
-              (replayKeygenPermutation copies')) := by
-      refine Equiv.ext fun c => ?_
-      simp [chunkPermutationOfFlat, Equiv.permCongr_apply]
-    rw [hcongr, sameCycle_permCongr_iff]
-    simpa [hl, hr] using hswapped
-  -- restrict to the active rows and read the copy theorem
-  exact ConstraintSatisfaction.resolverPermutationCopyConstraints
-    vk ch poly l0 lLast lBlind p h hdom hcycle hgood
-    (sameCycle_restrict_of_widen hactive _ hcycle.sigma hrestrict hchunk)
-
-/-- Re-widening a row-bounded cell reproduces it. -/
-theorem widen_mk_of_lt
-    {nc activeRows domainSize : ℕ} {width : ℕ → ℕ}
-    (hactive : activeRows ≤ domainSize)
-    (x : ChunkCell nc domainSize width) (hx : (x.2.1 : ℕ) < activeRows) :
-    widenPermutationChunkCell hactive
-        (⟨x.1, ⟨(x.2.1 : ℕ), hx⟩, x.2.2⟩ : ChunkCell nc activeRows width) = x := by
-  rcases x with ⟨a, r, col⟩
-  rfl
-
-/-- Restrict a full-domain cell permutation to the active rows, given that it maps
-active cells to active cells: injectivity survives the restriction, and a finite
-injection is a permutation. -/
-def restrictActivePerm
-    {nc activeRows domainSize : ℕ} {width : ℕ → ℕ}
-    (hactive : activeRows ≤ domainSize)
-    (π : Perm (ChunkCell nc domainSize width))
-    (hpres : ∀ c : ChunkCell nc activeRows width,
-      ((π (widenPermutationChunkCell hactive c)).2.1 : ℕ) < activeRows) :
-    Perm (ChunkCell nc activeRows width) := by
-  let forward : ChunkCell nc activeRows width → ChunkCell nc activeRows width :=
-    fun c =>
-      ⟨(π (widenPermutationChunkCell hactive c)).1,
-        ⟨((π (widenPermutationChunkCell hactive c)).2.1 : ℕ), hpres c⟩,
-        (π (widenPermutationChunkCell hactive c)).2.2⟩
-  have hforwardWiden (c : ChunkCell nc activeRows width) :
-      widenPermutationChunkCell hactive (forward c) =
-        π (widenPermutationChunkCell hactive c) := by
-    exact widen_mk_of_lt hactive _ (hpres c)
-  have hforwardInjective : Function.Injective forward := by
-    intro c d h
-    apply widenPermutationChunkCell_injective hactive
-    apply π.injective
-    rw [← hforwardWiden c, ← hforwardWiden d, h]
-  have hforwardSurjective : Function.Surjective forward :=
-    (Finite.injective_iff_bijective.mp hforwardInjective).2
-  have hinversePres (c : ChunkCell nc activeRows width) :
-      (((π.symm (widenPermutationChunkCell hactive c)).2.1 : ℕ) < activeRows) := by
-    obtain ⟨d, rfl⟩ := hforwardSurjective c
-    rw [hforwardWiden d, π.symm_apply_apply]
-    exact d.2.1.isLt
-  let inverse : ChunkCell nc activeRows width → ChunkCell nc activeRows width :=
-    fun c =>
-      ⟨(π.symm (widenPermutationChunkCell hactive c)).1,
-        ⟨((π.symm (widenPermutationChunkCell hactive c)).2.1 : ℕ), hinversePres c⟩,
-        (π.symm (widenPermutationChunkCell hactive c)).2.2⟩
-  have hinverseWiden (c : ChunkCell nc activeRows width) :
-      widenPermutationChunkCell hactive (inverse c) =
-        π.symm (widenPermutationChunkCell hactive c) := by
-    exact widen_mk_of_lt hactive _ (hinversePres c)
-  exact
-    { toFun := forward
-      invFun := inverse
-      left_inv := fun c => widenPermutationChunkCell_injective hactive (by
-        rw [hinverseWiden, hforwardWiden, π.symm_apply_apply])
-      right_inv := fun c => widenPermutationChunkCell_injective hactive (by
-        rw [hforwardWiden, hinverseWiden, π.apply_symm_apply]) }
-
-/-- The restriction equation of `restrictActivePerm`, by construction. -/
-theorem restrictActivePerm_widen
-    {nc activeRows domainSize : ℕ} {width : ℕ → ℕ}
-    (hactive : activeRows ≤ domainSize)
-    (π : Perm (ChunkCell nc domainSize width))
-    (hpres : ∀ c : ChunkCell nc activeRows width,
-      ((π (widenPermutationChunkCell hactive c)).2.1 : ℕ) < activeRows)
-    (c : ChunkCell nc activeRows width) :
-    widenPermutationChunkCell hactive (restrictActivePerm hactive π hpres c) =
-      π (widenPermutationChunkCell hactive c) :=
-  widen_mk_of_lt hactive _ (hpres c)
-
-/-- Chunk cells are determined by their three numeric coordinates. -/
-theorem chunkCell_ext {nc m : ℕ} {width : ℕ → ℕ} {x y : ChunkCell nc m width}
-    (h1 : (x.1 : ℕ) = (y.1 : ℕ)) (h2 : (x.2.1 : ℕ) = (y.2.1 : ℕ))
-    (h3 : (x.2.2 : ℕ) = (y.2.2 : ℕ)) : x = y := by
-  rcases x with ⟨a, r, col⟩
-  rcases y with ⟨b, s, dol⟩
-  simp only at h1 h2 h3
-  obtain rfl : a = b := Fin.ext h1
-  obtain rfl : r = s := Fin.ext h2
-  obtain rfl : col = dol := Fin.ext h3
-  rfl
-
-/-- The chunk flattening: halo2 groups the permutation columns into `nc` chunks of
-`chunkLen` (the last possibly shorter), so a chunk cell is a `(row, global column)`
-pair with `global = chunk · chunkLen + column`. Generic over the chunking law. -/
-def chunkFlatten (nc numCols chunkLen m : ℕ) (width : ℕ → ℕ)
-    (hcl : 0 < chunkLen) (hcover : numCols ≤ nc * chunkLen)
-    (hw : ∀ c : Fin nc, width (c : ℕ) = min chunkLen (numCols - (c : ℕ) * chunkLen)) :
-    ChunkCell nc m width ≃ Fin m × Fin numCols where
-  toFun cell :=
-    (cell.2.1, ⟨(cell.1 : ℕ) * chunkLen + (cell.2.2 : ℕ), by
-      have hcol : (cell.2.2 : ℕ) < min chunkLen (numCols - (cell.1 : ℕ) * chunkLen) := by
-        rw [← hw cell.1]
-        exact cell.2.2.isLt
-      have := lt_min_iff.mp hcol
-      omega⟩)
-  invFun rg :=
-    ⟨⟨(rg.2 : ℕ) / chunkLen, by
-        have hlt := rg.2.isLt
-        by_contra hge
-        push Not at hge
-        have hmul : nc * chunkLen ≤ (rg.2 : ℕ) / chunkLen * chunkLen :=
-          Nat.mul_le_mul_right _ hge
-        have hdivle := Nat.div_mul_le_self (rg.2 : ℕ) chunkLen
-        omega⟩,
-      rg.1,
-      ⟨(rg.2 : ℕ) % chunkLen, by
-        rw [hw]
-        change (rg.2 : ℕ) % chunkLen <
-          min chunkLen (numCols - (rg.2 : ℕ) / chunkLen * chunkLen)
-        refine lt_min (Nat.mod_lt _ hcl) ?_
-        have hlt := rg.2.isLt
-        have hdm := Nat.div_add_mod (rg.2 : ℕ) chunkLen
-        have hcomm : (rg.2 : ℕ) / chunkLen * chunkLen =
-            chunkLen * ((rg.2 : ℕ) / chunkLen) := Nat.mul_comm _ _
-        omega⟩⟩
-  left_inv cell := by
-    rcases cell with ⟨c, i, col⟩
-    have hcol : (col : ℕ) < min chunkLen (numCols - (c : ℕ) * chunkLen) := by
-      rw [← hw c]
-      exact col.isLt
-    have hcolcl : (col : ℕ) < chunkLen := lt_of_lt_of_le hcol (min_le_left _ _)
-    refine chunkCell_ext ?_ rfl ?_
-    · show ((c : ℕ) * chunkLen + (col : ℕ)) / chunkLen = (c : ℕ)
-      rw [Nat.mul_comm (c : ℕ) chunkLen, Nat.mul_add_div hcl,
-        Nat.div_eq_of_lt hcolcl, Nat.add_zero]
-    · show ((c : ℕ) * chunkLen + (col : ℕ)) % chunkLen = (col : ℕ)
-      rw [Nat.mul_comm (c : ℕ) chunkLen, Nat.mul_add_mod,
-        Nat.mod_eq_of_lt hcolcl]
-  right_inv rg := by
-    rcases rg with ⟨i, g⟩
-    refine Prod.ext_iff.mpr ⟨rfl, Fin.ext ?_⟩
-    show (g : ℕ) / chunkLen * chunkLen + (g : ℕ) % chunkLen = (g : ℕ)
-    rw [Nat.mul_comm]
-    exact Nat.div_add_mod (g : ℕ) chunkLen
-
-@[simp]
-theorem chunkFlatten_apply_row
-    {nc numCols chunkLen m : ℕ} {width : ℕ → ℕ}
-    (hcl : 0 < chunkLen) (hcover : numCols ≤ nc * chunkLen)
-    (hw : ∀ c : Fin nc,
-      width (c : ℕ) = min chunkLen (numCols - (c : ℕ) * chunkLen))
-    (cell : ChunkCell nc m width) :
-    (chunkFlatten nc numCols chunkLen m width hcl hcover hw cell).1 =
-      cell.2.1 := rfl
-
-@[simp]
-theorem chunkFlatten_apply_column
-    {nc numCols chunkLen m : ℕ} {width : ℕ → ℕ}
-    (hcl : 0 < chunkLen) (hcover : numCols ≤ nc * chunkLen)
-    (hw : ∀ c : Fin nc,
-      width (c : ℕ) = min chunkLen (numCols - (c : ℕ) * chunkLen))
-    (cell : ChunkCell nc m width) :
-    ((chunkFlatten nc numCols chunkLen m width hcl hcover hw cell).2 : ℕ) =
-      (cell.1 : ℕ) * chunkLen + (cell.2.2 : ℕ) := rfl
-
-@[simp]
-theorem chunkFlatten_symm_apply_row
-    {nc numCols chunkLen m : ℕ} {width : ℕ → ℕ}
-    (hcl : 0 < chunkLen) (hcover : numCols ≤ nc * chunkLen)
-    (hw : ∀ c : Fin nc,
-      width (c : ℕ) = min chunkLen (numCols - (c : ℕ) * chunkLen))
-    (cell : Fin m × Fin numCols) :
-    ((chunkFlatten nc numCols chunkLen m width hcl hcover hw).symm cell).2.1 =
-      cell.1 := rfl
-
-@[simp]
-theorem chunkFlatten_symm_apply_column
-    {nc numCols chunkLen m : ℕ} {width : ℕ → ℕ}
-    (hcl : 0 < chunkLen) (hcover : numCols ≤ nc * chunkLen)
-    (hw : ∀ c : Fin nc,
-      width (c : ℕ) = min chunkLen (numCols - (c : ℕ) * chunkLen))
-    (cell : Fin m × Fin numCols) :
-    (((chunkFlatten nc numCols chunkLen m width hcl hcover hw).symm cell).1 :
-        ℕ) *
-        chunkLen +
-        (((chunkFlatten nc numCols chunkLen m width hcl hcover hw).symm cell).2.2 :
-          ℕ) =
-      (cell.2 : ℕ) := by
-  change (cell.2 : ℕ) / chunkLen * chunkLen +
-      (cell.2 : ℕ) % chunkLen = (cell.2 : ℕ)
-  rw [Nat.mul_comm]
-  exact Nat.div_add_mod (cell.2 : ℕ) chunkLen
-
-end Layout.Asm
-
-end Zcash.Snark
+end Halo2.Layout.Asm

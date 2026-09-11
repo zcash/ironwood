@@ -8,10 +8,8 @@ a closed `TopLevelCircuit` and its circuit-derived keygen data into ironwood-nat
 interfaces:
 
 * an ironwood `VerifyingKey` and pinned constraint view;
-* reconstruction of Clean operation satisfaction from ironwood polynomial
-  satisfaction;
-* semantic projection of configured lookup tuples into the verifier's
-  query-index expression language;
+* compiled row satisfaction from ironwood polynomial satisfaction;
+* interpretation of compiled expressions in the verifier's query-index language;
 * a final circuit statement expressed without exposing Clean implementation details
   to verifier or soundness callers.
 
@@ -41,9 +39,14 @@ The semantic bridge is split by responsibility:
   Finite-family tuple collision mathematics lives in `Snark/Soundness/Pricing/TupleCompression`.
 * `Halo2/CompiledCopies.lean` derives source copy constraints from equality on
   resolved copy pairs. The circuit-owned environment realizes allocated constants.
-* `CopyPermutation.lean` and `PermutationCycle.lean` identify compiler copy replay
+  `Halo2/CopyPermutation.lean` exports the compiled permutation, its usable-row
+  preservation, and recovery of copies from cycle equality. `Halo2/PermutationAssembly.lean`
+  proves that executable assembly implements that permutation;
+  `Halo2/PermutationRows.lean` computes the row vectors that Keygen commits.
+* `CopyPermutation.lean` and `PermutationCycle.lean` identify the compiled permutation
   with the verifier's sigma polynomials. `TopLevelCopyConstraints.lean` combines
   that identification with permutation challenge exclusions to prove compiled copy equality.
+  Verifier-generic coordinate changes live in `Snark/Soundness/Canonical/PermutationCoordinates`.
 * `TopLevelInterpretation.lean` assembles `ConstraintsCompiled` and applies
   `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
   `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.

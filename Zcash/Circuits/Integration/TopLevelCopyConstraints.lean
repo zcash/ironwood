@@ -65,34 +65,13 @@ def CanonicalMemberConstraintRelation.copiesCompiled_or_relation
     (hencoding : top.FixedColumnEncoding relation.polynomial) :
     top.CopiesCompiled (resolverAssignment top.omega relation.polynomial proofIndex) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hdomain : ResolverPermutationDomain
-      (top.toVerifierKey urs)
-      (top.constraintModel pp urs ch relation.polynomial).l0
-      (top.constraintModel pp urs ch relation.polynomial).lLast
-      (top.constraintModel pp urs ch relation.polynomial).lBlind
-      top.n (top.usableRowsAt top.domainExponent) := by
-    exact top.resolverPermutationDomain
+  rcases resolverPermutationCycle_or_relation top pp urs hk relation proofIndex with hcycle | hbad
+  · have hvalues := permutationValues_of_constraintSatisfaction top
         pp urs ch relation.polynomial
-  have hcycleResult :=
-    (resolverPermutationCycle_or_relation top)
-      pp urs hk relation proofIndex
-  rcases hcycleResult with hcycle | hbad
-  swap
-  · exact PSum.inr hbad
-  · let cycle := hcycle.cycle
-    have hcycleSigma := hcycle.sigma_eq
-    have hpairval :=
-      (copyPairValue_of_resolverPermutation top)
-        pp urs ch relation.polynomial
-        proofIndex satisfaction hdomain cycle hcycleSigma
+        proofIndex satisfaction hcycle.cycle hcycle.sigma_eq
         (exclusions.good proofIndex)
-    rw [top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hpairval
-    apply PSum.inl
-    intro tuple htuple
-    obtain ⟨pair, hpair, hleft, hright⟩ := (exists_pair_of_raw top) htuple
-    have heq := hpairval pair hpair
-    simp only [FlatCell.pair, Prod.mk.injEq] at hleft hright
-    simpa only [value, rawCopyValue, columns,
-      hleft.1, hleft.2, hright.1, hright.2] using heq
+    rw [top.resolverEnvironment_eq_environment urs relation.polynomial proofIndex hencoding] at hvalues
+    exact PSum.inl (top.copiesCompiled_of_permutation _ hvalues)
+  · exact PSum.inr hbad
 
 end Zcash.Snark

@@ -12,7 +12,6 @@ import Zcash.Circuits.Halo2.CopyOperations
 import Zcash.Circuits.Halo2.FixedOperations
 import Zcash.Circuits.Integration.PermutationColumns
 import Zcash.Circuits.Integration.PermutationCompiler
-import Zcash.Circuits.Integration.PermutationReplay
 import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Circuits.Integration.ResolverQueryEnvironment
 import Zcash.Circuits.Halo2.SelectorCompression

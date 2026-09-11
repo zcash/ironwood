@@ -32,27 +32,6 @@ variable {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
 variable {G : Type} [AddCommGroup G] [Module Fp G]
   [DecidableEq G] [Inhabited G]
 
-theorem copyList_decoded :
-    Halo2.Layout.V1.copyList
-        (Halo2.Layout.permColsOf top.constraintSystem)
-        (Halo2.FloorPlanner.V1.starts
-          (top.operations))
-        (top.operations)
-        (Halo2.Layout.constantCopyEntries top.constraintSystem
-          (top.operations)) =
-      (pairs top).map fun pair =>
-        (pair.1.pair.1, pair.1.pair.2,
-          pair.2.pair.1, pair.2.pair.2) := by
-  have hdecode :=
-    (Zcash.Snark.decodeCopies_map
-      top.permutationColumnCount
-      top.n
-      top.copyPairs
-      (copyBounds top)).symm
-  simpa only [TopLevelCircuit.copyPairs,
-    columns, constants,
-    TopLevelCircuit.regionStarts] using hdecode
-
 omit [Module Fp G] [DecidableEq G] in
 theorem permutationRows_eq_chunkRowName
     (pp : ProofParams) (urs : URS G)
@@ -63,8 +42,7 @@ theorem permutationRows_eq_chunkRowName
       (ResolverPermutationPairs
         (top.toVerifierKey urs) poly proofIndex chunk).length)
     (row : Fin top.n) :
-    (Zcash.Snark.topLevelPermutationRows
-      top
+    (top.permutationRows
       (((chunkFlatten top) pp urs poly proofIndex
         ⟨chunk, row, column⟩).2 : ℕ)).getD (row : ℕ) 0 =
       chunkRowName
@@ -77,23 +55,23 @@ theorem permutationRows_eq_chunkRowName
           ⟨chunk, row, column⟩).2.1 : ℕ)
         (((fullSigma top) pp urs poly proofIndex
           ⟨chunk, row, column⟩).2.2 : ℕ) := by
-  rw [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq]
-  apply Zcash.Snark.Layout.Asm.permPolysOf_getD_eq_chunkRowName
-    top.constraintSystem
-    (top.operations)
-    (columns_length top).symm
-    top.n_eq_two_pow_domainExponent
-    (pairs top)
-    (copyList_decoded top)
-    top.chunkLen
-    ((chunkFlatten top) pp urs poly proofIndex)
-  · intro rc
-    exact congrArg Fin.val
-      ((chunkFlatten_symm_apply_row top)
-        pp urs poly proofIndex rc)
-  · intro rc
-    exact (chunkFlatten_symm_apply_column top)
-      pp urs poly proofIndex rc
+  let flatten := chunkFlatten top pp urs poly proofIndex
+  let cell : FlatCell top.permutationColumnCount top.n :=
+    ((flatten ⟨chunk, row, column⟩).2, row)
+  have hrow : (flatten ⟨chunk, row, column⟩).1 = row :=
+    PermutationCoordinates.chunkFlatten_apply_row _ _ _ _
+  rw [top.permutationRows_getD cell, chunkRowName, rowName]
+  have himage :
+      fullSigma top pp urs poly proofIndex ⟨chunk, row, column⟩ =
+        flatten.symm ((top.copyPermutation cell).2, (top.copyPermutation cell).1) := by
+    simp only [fullSigma, chunkPermutationOfFlat_apply, Equiv.permCongr_apply,
+      Equiv.prodComm_symm, Equiv.prodComm_apply, Prod.swap, cell, flatten, hrow]
+  rw [himage]
+  rw [show ((flatten.symm ((top.copyPermutation cell).2,
+      (top.copyPermutation cell).1)).2.1 : ℕ) = (top.copyPermutation cell).2.val from
+        congrArg Fin.val (chunkFlatten_symm_apply_row top pp urs poly proofIndex _),
+    chunkFlatten_symm_apply_column top pp urs poly proofIndex]
+  ring
 
 theorem zipIdx_getD_snd
     {α : Type} (xs : List α) (fallback : α)
@@ -138,9 +116,7 @@ theorem chunkCommonIndex
     have h :=
       (((chunkFlatten top) pp urs poly proofIndex
         ⟨chunk, ⟨0, top.n_pos⟩, column⟩).2).isLt
-    simpa only [global,
-      chunkFlatten_apply_column,
-      columns_length] using h
+    simpa only [global, chunkFlatten_apply_column] using h
   have hglobalIndex :
       (vk.permutationChunks.take chunk).flatten.length +
           (column : ℕ) =
@@ -263,8 +239,7 @@ def resolverPermutationCycle_or_relation
         (((chunkFlatten top)
           pp urs relation.polynomial proofIndex
           ⟨chunk, ⟨0, top.n_pos⟩, column⟩).2).isLt
-      simpa only [chunkFlatten_apply_column,
-        columns_length] using hlt
+      simpa only [chunkFlatten_apply_column] using hlt
     let common : Fin top.permutationColumnCount :=
       ⟨(chunk : ℕ) * top.chunkLen + (column : ℕ), hcommon⟩
     let shapeCommon : Fin top.permutationColumnCount :=
@@ -287,15 +262,14 @@ def resolverPermutationCycle_or_relation
     have hcommit :
         vk.permutationCommonCommitment shapeCommon =
           key.commitInstance
-            (topLevelPermutationRows
-              top common) 1 := by
+            (top.permutationRows common) 1 := by
       simp only [vk]
       rw [top.toVerifierKey_permutationCommonCommitment]
       have source :=
-        PermutationCommitmentCoherence.commitment_ofKeygen
-          top urs hkDomain setup common
+        top.permutationCommitments_getD_eq_commitInstance
+          urs hkDomain setup.length_eq setup.generator_eq common
           common.isLt
-      simpa only [topLevelPermutationCommitment, key,
+      simpa only [key,
         LagrangeCommitmentKey.commitInstance,
         LagrangeCommitmentKey.commitRows] using source
     have hj :
@@ -306,8 +280,7 @@ def resolverPermutationCycle_or_relation
           column.isLt
     have hval :
         ∀ i : Fin top.n,
-          (topLevelPermutationRows
-            top common).getD (i : ℕ) 0 =
+          (top.permutationRows common).getD (i : ℕ) 0 =
             chunkRowName vk.omega vk.delta vk.chunkLen
               ((fullSigma top)
                 pp urs relation.polynomial proofIndex
@@ -353,8 +326,7 @@ def resolverPermutationCycle_or_relation
     have hidentified :=
       relation.resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation_of_size
         proofIndex chunk column hj shapeCommon hidx key
-        (topLevelPermutationRows
-          top common)
+        (top.permutationRows common)
         hcommit (by simpa only [top.toVerifierKey_omega] using top.domainRowsInjective_of_domainExponent_eq hk)
         (by
           simpa only [top.n_eq_two_pow_domainExponent] using
