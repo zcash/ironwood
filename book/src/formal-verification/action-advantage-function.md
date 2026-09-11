@@ -1,7 +1,7 @@
 # Reading the Security Bound
 
 > **Bottom line:** within the formal model, breaking the knowledge soundness of the
-> deployed Action verifier is —up to a small statistical error— at least as hard as
+> modeled Action verifier is —up to a small statistical error— at least as hard as
 > solving Vesta discrete log: the reduction turns every covered attack into a DLOG
 > solver with comparable resources. The benchmark therefore remains Vesta DLOG, whose
 > best known classical attacks have an expected-work scale of about $2^{126}$ group
@@ -9,6 +9,10 @@
 > for Vesta DLOG. At the certified profile, the constructed solver uses less than
 > twice the attacker's group-work budget, giving this claim a conservative 125-bit
 > computational-work headline; the advantage function below is the precise statement.
+
+The probability endpoint here measures the typed random-oracle observer, not production Rust
+acceptance. Captured Rust runs support the separately stated byte-to-typed boundary for one proof
+bundle; optional randomized batching of separate proof blobs is outside the model.
 
 Here “knowledge soundness” means that whoever produced an accepted proof must know a
 valid *witness*: the private data that justifies the proved statement. The extractor

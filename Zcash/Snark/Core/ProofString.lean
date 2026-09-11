@@ -7,9 +7,10 @@ After canonical decoding, the halo2 verifier consumes the proof purely as opaque
 (Vesta points, `E_q`) and field elements (`F_p`): it reads them, squeezes Fiat–Shamir challenges,
 assembles one MSM, and checks `MSM = identity`, never branching on a proof element's value
 (established by auditing the verify call graph). This module captures that post-decoding proof
-string as plain data, cross-referenced against the reads in `plonk/verifier.rs`. Byte-level
-decoding — including rejection of invalid encodings and points at infinity — is outside this
-typed layer.
+string as plain data, cross-referenced against the reads in `plonk/verifier.rs`. The
+byte-level decoding beneath — `read_point`/`read_scalar`, rejecting non-canonical encodings and the
+identity — is `readProof?` in `Verifier/ProofBytes.lean`, which is canonical: the typed proof is the
+unique preimage of the bytes read.
 
 A single Orchard proof covers a whole bundle: `Proof::verify`
 ([zcash/orchard#531](https://github.com/zcash/orchard/pull/531) `src/circuit.rs`) passes all `N` actions'

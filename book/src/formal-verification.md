@@ -102,14 +102,15 @@ research document linked above records the observed Lake behaviour behind this r
 **Concrete, closed facts with no free variables** may additionally use `native_decide`
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such facts in this repository are the
-four derived-form fingerprint boundary theorems `nonInteractiveFingerprint_matches_derived`
-(the generated per-capture `fingerprint_matches` are their raw forms): numeric checks that the
-Lean verifier's assembled multi-scalar multiplication equals the Rust verifier's on each
-captured proof — two honest, two at random inputs. The CompElliptic dependency applies the
-same discipline to its concrete curve-arithmetic facts (cardinalities, primality
+generated per-capture `fingerprint_matches` theorems: numeric checks that the Lean verifier's
+assembled multi-scalar multiplication equals the Rust verifier's on each captured proof — two
+honest, two at random inputs. Each family's strongest boundary theorem,
+`nonInteractiveFingerprint_matches_derived_keyDigest`, composes that captured anchor with the
+derived key, concrete transcript hash, and derived key digest. The CompElliptic dependency
+applies the same discipline to its concrete curve-arithmetic facts (cardinalities, primality
 certificates). Such facts are independently re-checkable (another implementation, or hand
-computation, would compute the same result), so a miscompiled or buggy oracle could in
-principle be caught by disagreement.
+computation, would compute the same result), so a miscompiled or buggy oracle could in principle
+be caught by disagreement.
 
 These boundaries are *checked at build time*, not merely documented. `Zcash.TrustBoundary` is the
 top-level census for reusable library claims — the key-binding, birthday, ledger, and
@@ -152,14 +153,31 @@ that every Lean module is reachable from it), and each `fingerprint_matches`'s
 `native_decide` compiles and runs the verifier, so anything `noncomputable` on the
 assembled-verifier path fails the build.
 
-What the fixture captures actually *check* is the statement of record in each family's
-`Boundary.lean` — `nonInteractiveFingerprint_matches_derived` — with the quantified match and its
-ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headliners in
+What the fixture captures actually *check* is the strongest statement of record in each family's
+`Boundary.lean` — `nonInteractiveFingerprint_matches_derived_keyDigest` — with the quantified
+match and its ε in `Snark/Fingerprint/Epsilon.lean` and the per-capture headliners in
 `Fixtures/*/Random/Epsilon.lean`. Capture lineage, seeds, and the reproducibility pipeline are in
-`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed,
-post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
-domain-prefix bytes, and BLAKE2b remain external; `Snark/Fingerprint/Match.lean` enumerates this
-boundary, tracked in [#66](https://github.com/zcash/ironwood/issues/66).
+`Zcash/Snark/Fixtures/PROVENANCE.md`. Together, the captures and ε theorems support the typed
+Rust↔Lean boundary. The byte layer beneath it is modeled and checked against the captures: every
+captured challenge is recomputed from halo2's transcript encoding through a Lean BLAKE2b
+(`Snark/Verifier/Transcript.lean`), and all four captures' generated proof bytes decode to their
+typed proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`).
+`DeployedAcceptsBytes` composes that exact parser, the key digest derived from the pinned
+description, and the BLAKE2b schedule into typed `DeployedAccepts`, requiring the description to
+describe the key (`Describes`) and excluding identity instance commitments as halo2 does; both
+honest captures witness the composition. BLAKE2b's idealization as a random oracle,
+`blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, universal
+refinement of Rust's reader to the Lean decoder, and identification of the pinned description as
+Rust's exact exporter output remain external. `Snark/Fingerprint/Match.lean` enumerates the
+boundary, while `Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement
+as the explicit `rustAcceptsRefinesLeanRaw` deployment assumption. The probability endpoint bounds
+the record's typed oracle observer rather than Rust acceptance; the Rust-containment theorem is
+separate and covers one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized
+aggregation of separate proof blobs is outside the formalization. The byte-layer implementation
+and landing history are recorded in
+[#215](https://github.com/zcash/ironwood/pull/215), which closes the scoped byte-encoding issue
+[#66](https://github.com/zcash/ironwood/issues/66). Neither claims to discharge the universal
+Rust-refinement assumption, which remains the explicit deployment boundary named above.
 
 **The circuit-side layout fixtures are pinned, not regenerated.** The CS and layout dumps behind
 `CircuitCheck`'s `TestVk*` comparisons (`Zcash/Circuits/Fixtures/*.json`) were emitted by one-off
@@ -168,7 +186,7 @@ captures they have no regenerate-and-diff pipeline: CI pins their bytes (`SHA256
 set-equality check so an unpinned dump cannot be added), and those pins live in the same
 repository they guard. Independent anchoring exists at verifying-key granularity —
 `Keygen/Certificate.lean` checks the key derived from the ported circuit against the
-release-regenerated capture — but the row-level layout content below the key, and the
+upstream-regenerated capture — but the row-level layout content below the key, and the
 base-circuit dump (`actionBaseLayout.json`), which has no capture-side anchor at all, rest on the
 pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
 are recorded in `Zcash/Circuits/Fixtures/PROVENANCE.md`.

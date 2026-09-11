@@ -5,6 +5,9 @@ import Zcash.Snark.Fixtures.SingleAction.Honest.VkMatch
 import Zcash.Snark.Fixtures.SingleAction.Honest.Negative
 import Zcash.Snark.Fixtures.SingleAction.Honest.Negative.Sweep
 import Zcash.Snark.Fixtures.SingleAction.Honest.Boundary
+import Zcash.Snark.Fixtures.SingleAction.Honest.Transcript
+import Zcash.Snark.Fixtures.SingleAction.Honest.ProofBytes
+import Zcash.Snark.Fixtures.PinnedKey
 import Zcash.Meta.AxiomCheck
 import Mathlib.Util.AssertNoSorry
 
@@ -384,3 +387,167 @@ CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
 CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived
+
+-- The byte layer beneath the schedule (`Transcript.lean`): every captured challenge recomputed
+-- from halo2's transcript encoding through BLAKE2b, and the fingerprint match restated on it.
+-- `deriveChallenges_matches_blake2b` is the only new compiler-trust element; the derived-key
+-- statement of record inherits it in place of the captured-table schedule check.
+assert_axioms Zcash.Snark.Fixture.markerSchedule_matches_blake2b +native(
+  Zcash.Snark.Fixture.markerSchedule_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture.deriveChallenges_matches_blake2b +native(
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture.deriveChallengesForStatement_matches_blake2b +native(
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_blake2b +native(
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
+  Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived)
+
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
+assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+
+-- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
+-- relation to the captured key (`Describes`, with the captured key as both its canonical and its
+-- used key) and the identity exclusion on the derived instance commitments, both evaluated here.
+assert_axioms Zcash.Snark.Fixture.capturedProofBytes_decodes +native(
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.serializeProof_eq_capturedProofBytes +native(
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes)
+assert_axioms Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero +native(
+  Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero)
+assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsBytes +native(
+  Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes,
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  CompElliptic.Fields.Pasta.vestaBase)
+-- The same capture through the raw entry point: public columns validated, commitments derived
+-- internally, then the exact parse — finite evidence for the deployment record's raw refinement,
+-- not a universal claim. The fixed-coverage mutation is rejected by a field read from the text.
+-- The remaining mutations are two-key coherence witnesses: the description still checks against
+-- canonical `vk`, while `VerifyingKeyAgrees` rejects a different verifier-used key. Three are
+-- kernel-checked; the fixed-coverage and chunk-partition witnesses each run a native comparison.
+assert_axioms Zcash.Snark.Fixture.capture_deployedAcceptsRawBytes +native(
+  CompElliptic.Fields.Pasta.vestaBase,
+  Zcash.Snark.Fixture.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_describes,
+  Zcash.Snark.Fixture.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.derivedInstanceCommitment_ne_zero,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_omitted_fixed_coverage +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_omitted_fixed_coverage)
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_blindingFactors
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_delta
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_chunkLen
+assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks +native(
+  Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
+  Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture.fingerprint_matches,
+  Zcash.Snark.Fixture.instance_commitments_derived,
+  Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
+
+-- The exporter-emitted pinned key description (`PinnedKey.lean`): parsed losslessly and read
+-- back field by field against the captured key (its digest check is the family's own
+-- `keyDigest_eq_capturedVkTranscriptRepr`, censused above). The parsed value and the readers the
+-- native claims range over are ordinary definitions (`Describes`' own, at the captured string),
+-- censused flagless so compiler trust cannot reach them; well-formedness of the parse is derived
+-- from the `base_modulus_eq` field check.
+assert_axioms Zcash.Snark.PinnedKey.pinned
+assert_axioms Zcash.Snark.PinnedKey.fuel
+assert_axioms Zcash.Snark.PinnedKey.cs
+assert_axioms Zcash.Snark.PinnedKey.domain
+assert_axioms Zcash.Snark.PinnedKey.capturedPinnedKeyDescription_parses +native(
+  Zcash.Snark.PinnedKey.base_modulus_eq)
+assert_axioms Zcash.Snark.PinnedKey.pinned_renderCompact +native(
+  Zcash.Snark.PinnedKey.pinned_renderCompact)
+assert_axioms Zcash.Snark.PinnedKey.base_modulus_eq +native(
+  Zcash.Snark.PinnedKey.base_modulus_eq)
+assert_axioms Zcash.Snark.PinnedKey.scalar_modulus_eq +native(
+  Zcash.Snark.PinnedKey.scalar_modulus_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_k_eq +native(
+  Zcash.Snark.PinnedKey.domain_k_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_extended_k_eq +native(
+  Zcash.Snark.PinnedKey.domain_extended_k_eq)
+assert_axioms Zcash.Snark.PinnedKey.domain_omega_eq +native(
+  Zcash.Snark.PinnedKey.domain_omega_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_fixed_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_fixed_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_advice_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_advice_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_instance_columns_eq +native(
+  Zcash.Snark.PinnedKey.num_instance_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.num_selectors_eq +native(
+  Zcash.Snark.PinnedKey.num_selectors_eq)
+assert_axioms Zcash.Snark.PinnedKey.gates_eq +native(
+  Zcash.Snark.PinnedKey.gates_eq)
+assert_axioms Zcash.Snark.PinnedKey.advice_queries_eq +native(
+  Zcash.Snark.PinnedKey.advice_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.instance_queries_eq +native(
+  Zcash.Snark.PinnedKey.instance_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.fixed_queries_eq +native(
+  Zcash.Snark.PinnedKey.fixed_queries_eq)
+assert_axioms Zcash.Snark.PinnedKey.permutation_columns_eq +native(
+  Zcash.Snark.PinnedKey.permutation_columns_eq)
+assert_axioms Zcash.Snark.PinnedKey.lookups_eq +native(
+  Zcash.Snark.PinnedKey.lookups_eq)
+assert_axioms Zcash.Snark.PinnedKey.constants_eq +native(
+  Zcash.Snark.PinnedKey.constants_eq)
+assert_axioms Zcash.Snark.PinnedKey.minimum_degree_eq +native(
+  Zcash.Snark.PinnedKey.minimum_degree_eq)
+assert_axioms Zcash.Snark.PinnedKey.fixed_commitments_eq +native(
+  Zcash.Snark.PinnedKey.fixed_commitments_eq)
+assert_axioms Zcash.Snark.PinnedKey.permutation_commitments_eq +native(
+  Zcash.Snark.PinnedKey.permutation_commitments_eq)

@@ -7,7 +7,11 @@
 --   one tier down, in `Zcash/Arithmetic/`; `Core.lean` is a one-name compatibility alias for
 --   the byte-locked fixture captures and nothing else.
 -- * `Verifier/` — the transcription layer: the deployed halo2 verifier's MSM assembly as a pure
---   Lean function (queries, expressions, multiopen, IPA fold, Fiat–Shamir schedule).
+--   Lean function (queries, expressions, multiopen, IPA fold, Fiat–Shamir schedule). `Transcript`
+--   and `ProofBytes` are the byte layer beneath it — halo2's transcript encoding under an
+--   executable BLAKE2b (`Common/Hash/Blake2b`), and the canonical proof-string codec. They are
+--   deliberately not re-exported here: the capture lanes reach them through their own
+--   `Transcript.lean`/`ProofBytes.lean`, and the census through `Zcash/TrustBoundary.lean`.
 -- * `Fingerprint/` — the faithfulness cross-check: the captured-fixture match (`native_decide`,
 --   loaded in the auto-generated `Fixture.lean`) plus the Schwartz–Zippel bound.
 -- * `Soundness/` — the soundness argument, in dependency layers. `Ipa/` (opening relation and the
@@ -27,16 +31,17 @@
 --   capture kind. The namespaces (`Fixture`, `Fixture2`, `FixtureRandom`, `FixtureRandom2`) are
 --   emitted by halo2's `dump_vesta_lean_fixture` and cannot be renamed here: the fixture CI
 --   regenerates each `Fixture.lean` and diffs it. `FixtureMax` is the shape at any action count.
--- * `Capstones/` — the deployed Action circuit's advertised statements, all in `Capstone`.
+-- * `Capstones/` — the modeled Action circuit's advertised statements, all in `Capstone`.
 --   `Action.lean` states them and is the only endpoint file; the `Action/` subdirectory holds
 --   what discharges them at the captured key, `Base` -> `Checks` -> `Budgets`. Those three are
 --   instance-level and cannot move under `Soundness/`, which is fixture-free by design: they are
 --   stated at the capture and reach it through their imports. The endpoints themselves are the
 --   knowledge-soundness bounds that nothing else depends on — the consensus-generic error
---   formula and its staged-certified counterpart, the deployed `2^123` work-factor instantiation,
---   and the conditionally staged-certified `2^125` adversary-work form. The verifier-level
---   endpoints are elsewhere, with the layer that proves them: the straight-line knowledge errors
---   beside their capture, the consensus work factors in `Soundness/AGM/`.
+--   formula and its staged-certified counterpart, the modeled `2^123` work-factor instantiation
+--   over the deployment record, and the conditionally staged-certified `2^125` adversary-work
+--   form. The verifier-level endpoints are elsewhere, with the layer that proves them: the
+--   straight-line knowledge errors beside their capture, the consensus work factors in
+--   `Soundness/AGM/`.
 --
 -- Import modules here that this umbrella should re-export. Build coverage does not depend on
 -- this list: every module under `Zcash/` must be reachable from some default target, which

@@ -10,16 +10,18 @@ import Zcash.Snark.Verifier.Assemble
 # Fiat–Shamir challenge schedule
 
 The deployed verifier derives each challenge by hashing the transcript absorbed so far. This module
-models halo2's BLAKE2b hash as the abstract `FiatShamir.squeeze`; it does not formalize BLAKE2b.
-The one-sided bias interfaces live in `Common.Oracle.Model`; the uniform-challenge idealization
-in `Soundness.Oracle.ChallengeUniform`.
+models the hash as the abstract `FiatShamir.squeeze` over typed transcript elements. Its deployed
+instance — halo2's tagged byte encoding under BLAKE2b, reduced modulo `p` — is `halo2Transcript` in
+`Verifier/Transcript.lean`, and every capture family runs this schedule through it. The one-sided
+bias interfaces live in `Common.Oracle.Model`; the uniform-challenge idealization in
+`Soundness.Oracle.ChallengeUniform`.
 
 `deriveChallenges` records the absorb/squeeze order from halo2's PLONK, multiopen, and commitment
 verifiers. `nonInteractiveFingerprint` runs `assemble` at those derived challenges.
 
 The security development idealizes `squeeze` as a random oracle; identifying deployed BLAKE2b
 with it is external, and the field conversion's exact reduction bias is priced in
-`Soundness/Oracle/Challenge255.lean`. Fixtures use trusted typed captures, not transcript bytes.
+`Soundness/Oracle/Challenge255.lean`.
 -/
 
 namespace Zcash.Snark
@@ -28,8 +30,9 @@ open Zcash.Arithmetic (Msm)
 
 /-- A point, scalar, or challenge-domain marker written to the Fiat–Shamir transcript.
 
-The constructors correspond to halo2's three BLAKE2b domain prefixes. A squeeze absorbs `challenge`;
-it does not feed the resulting field element back into the transcript. -/
+The constructors correspond to halo2's three BLAKE2b domain prefixes, spelled out as bytes by
+`encodeElt` (`Verifier/Transcript.lean`). A squeeze absorbs `challenge`; it does not feed the
+resulting field element back into the transcript. -/
 inductive TranscriptElt (F G : Type*) where
   | point : G → TranscriptElt F G
   | scalar : F → TranscriptElt F G
@@ -38,8 +41,9 @@ inductive TranscriptElt (F G : Type*) where
 
 /-- The abstract Fiat–Shamir hash: squeeze a field challenge from the absorbed transcript.
 
-The deployed hash is BLAKE2b. The model treats it as a random oracle; the querying adversary,
-query loss, and BLAKE2b justification remain outside this structure. -/
+The deployed instance is `halo2Transcript` (`Verifier/Transcript.lean`). The security model
+treats the squeeze as a random oracle; the querying adversary, query loss, and BLAKE2b
+justification remain outside this structure. -/
 structure FiatShamir (F G : Type*) where
   squeeze : List (TranscriptElt F G) → F
 
@@ -75,7 +79,9 @@ def absorbLookup {F G : Type*} (e : LookupEval F) : List (TranscriptElt F G) :=
   [.scalar e.productEval, .scalar e.productNextEval, .scalar e.permutedInputEval,
    .scalar e.permutedInputInvEval, .scalar e.permutedTableEval]
 
-/-- Public-instance commitments in Halo2's deployed proof-major, column-major absorb order. -/
+/-- Public-instance commitments in Halo2's deployed proof-major, column-major absorb order.
+Halo2's `common_point` errors on an identity commitment; this total encoding does not, so
+`DeployedAcceptsBytes` carries that exclusion as a conjunct. -/
 def absorbInstanceCommitments {shape : Shape} {F G : Type*}
     (instanceCommitment : Fin shape.numProofs → ℕ → G) : List (TranscriptElt F G) :=
   (List.ofFn fun p : Fin shape.numProofs =>

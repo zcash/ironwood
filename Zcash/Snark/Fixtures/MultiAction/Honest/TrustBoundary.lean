@@ -11,6 +11,8 @@ import Zcash.Snark.Capstones.Action
 import Zcash.Snark.Contract.Action
 import Zcash.Snark.Fixtures.MultiAction.Honest.Boundary
 import Zcash.Snark.Fixtures.PostNu63
+import Zcash.Snark.Fixtures.MultiAction.Honest.Transcript
+import Zcash.Snark.Fixtures.MultiAction.Honest.ProofBytes
 import Zcash.Meta.AxiomCheck
 
 /-!
@@ -504,9 +506,9 @@ assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_certified_kn
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- The same bound priced at the `2^123` work-factor target, with the extractor's random-oracle and
--- group-work envelopes and the finder's certified read set discharged alongside it.  A rung, not
--- an endpoint: the deployed endpoint transports it, and it is pinned directly so that transport
--- cannot silently widen its base.
+-- group-work envelopes and the finder's certified read set discharged alongside it. A rung, not
+-- an endpoint: the modeled observer endpoint transports it, and it is pinned directly so that
+-- transport cannot silently widen its base.
 assert_axioms Zcash.Snark.Capstone.adaptiveStatementKnowledgeFailure_le_at_2pow123 +native(
   CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
@@ -514,18 +516,20 @@ assert_axioms Zcash.Snark.Capstone.adaptiveStatementKnowledgeFailure_le_at_2pow1
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
--- The deployment-record consumers add the kernel-checked joint Challenge255 hybrid and its
+-- The deployment-record model consumers add the kernel-checked joint Challenge255 hybrid and its
 -- `2^-136` pricing, and no new trusted axiom owner beyond the ideal work-factor capstone they
 -- transport: the rung leaves the charge symbolic, the endpoint states the closed number.
-assert_axioms Zcash.Snark.Capstone.adaptiveStatementDeployedKnowledgeFailure_le_jointCharge +native(
+assert_axioms Zcash.Snark.Capstone.adaptiveStatementModeledKnowledgeFailure_le_jointCharge +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
   Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_security +native(
+assert_axioms Zcash.Snark.Capstone.orchard_action_adaptiveStatement_modeled_2pow123_knowledge_finite_security +native(
   CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
   Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
@@ -577,6 +581,8 @@ assert_axioms Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments +na
   Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments)
 assert_axioms Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments +native(
   Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments)
+-- The shared pinned key description, compared by the kernel: no native trust.
+assert_axioms Zcash.Snark.PostNu63Fixture.captures_use_same_pinnedKeyDescription
 assert_axioms Zcash.Snark.PostNu63Fixture.captures_use_same_urs +native(
   Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
   Zcash.Snark.PostNu63Fixture.captures_use_same_wu)
@@ -722,3 +728,91 @@ CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
 CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived
+
+-- The byte layer beneath the schedule (`Transcript.lean`): every captured challenge recomputed
+-- from halo2's transcript encoding through BLAKE2b, and the fingerprint match restated on it.
+-- `deriveChallenges_matches_blake2b` is the only new compiler-trust element; the derived-key
+-- statement of record inherits it in place of the captured-table schedule check.
+assert_axioms Zcash.Snark.Fixture2.markerSchedule_matches_blake2b +native(
+  Zcash.Snark.Fixture2.markerSchedule_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b +native(
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.deriveChallengesForStatement_matches_blake2b +native(
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b)
+assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_blake2b +native(
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.fingerprint_matches)
+assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_blake2b +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived)
+
+-- The key-digest scalar opening the transcript, recomputed from the exact exporter-emitted
+-- pinned-key string instead of taken from the capture.
+assert_axioms Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr +native(
+  Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr)
+
+-- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
+-- relation to the captured key (`Describes`, with the captured key as both its canonical and its
+-- used key) and the identity exclusion on the derived instance commitments, both evaluated here.
+assert_axioms Zcash.Snark.Fixture2.capturedProofBytes_decodes +native(
+  Zcash.Snark.Fixture2.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture2.serializeProof_eq_capturedProofBytes +native(
+  Zcash.Snark.Fixture2.capturedProofBytes_decodes,
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes +native(
+  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes)
+assert_axioms Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero +native(
+  Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero)
+assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsBytes +native(
+  Zcash.Snark.Fixture2.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes,
+  Zcash.Snark.Fixture2.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture2.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  CompElliptic.Fields.Pasta.vestaBase)
+-- The same capture through the raw entry point: public columns validated, commitments derived
+-- internally, then the exact parse — finite evidence for the deployment record's raw refinement,
+-- not a universal claim.
+assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsRawBytes +native(
+  CompElliptic.Fields.Pasta.vestaBase,
+  Zcash.Snark.Fixture2.capturedMsm_eval_eq_zero,
+  Zcash.Snark.Fixture2.capturedPinnedKeyDescription_describes,
+  Zcash.Snark.Fixture2.capturedProofBytes_decodes,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.derivedInstanceCommitment_ne_zero,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr,
+  Zcash.Snark.Fixture2.valid_capture_assembles,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_keyDigest +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Keygen.certificate,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_fixedCommitments,
+  Zcash.Snark.PostNu63Fixture.captures_use_same_permutationCommonCommitments,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
+  Zcash.Snark.Fixture2.fingerprint_matches,
+  Zcash.Snark.Fixture2.instance_commitments_derived,
+  Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr)
