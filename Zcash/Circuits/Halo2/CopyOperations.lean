@@ -53,22 +53,16 @@ def regionOperationDeclaredCopy? {F : Type} : RegionOperation F → Option (Decl
   | _ => none
 
 /-- Declared copies in one region, in operation order. -/
-def regionDeclaredCopies {F : Type} :
-    RegionOperations F → List (DeclaredCopy F)
-  | [] => []
-  | op :: rest =>
-      match regionOperationDeclaredCopy? op with
-      | some copy => copy :: regionDeclaredCopies rest
-      | none => regionDeclaredCopies rest
+def regionDeclaredCopies {F : Type} (ops : RegionOperations F) : List (DeclaredCopy F) :=
+  ops.filterMap regionOperationDeclaredCopy?
 
 /-- Declared copies in a complete layouter stream.  Region-local copies retain the `Cell` region
 indices they were synthesized with; layouter-level instance copies are inserted in stream order. -/
-def operationDeclaredCopies {F : Type} : Operations F → List (DeclaredCopy F)
-  | [] => []
-  | .region _ body :: rest => regionDeclaredCopies body ++ operationDeclaredCopies rest
-  | .constrainInstance cell col row :: rest =>
-      (.cell cell, .instance col row) :: operationDeclaredCopies rest
-  | .loadTable _ _ :: rest => operationDeclaredCopies rest
+def operationDeclaredCopies {F : Type} (ops : Operations F) : List (DeclaredCopy F) :=
+  ops.flatMap fun
+    | .region _ body => regionDeclaredCopies body
+    | .constrainInstance cell col row => [(.cell cell, .instance col row)]
+    | .loadTable _ _ => []
 
 namespace CircuitConstraintFamily
 

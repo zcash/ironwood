@@ -29,16 +29,6 @@ theorem permutationLayout_length : (top.permutationLayout).length = top.permutat
 def constantCopyEntries : List (ℕ × ℕ × ℕ) :=
   Halo2.Layout.constantCopyEntries top.constraintSystem top.operations
 
-omit [TopLevelShape top] in
-/-- V1 allocates at least one fixed cell for every circuit constant site. -/
-theorem constantSites_fit :
-    (operationConstSites
-        (top.operations)).length ≤
-      (top.constantCopyEntries).length := by
-  rw [constantCopyEntries, Halo2.Layout.constantCopyEntries, List.length_map,
-    operationConstSites_length]
-  exact top.constantValues_length_le_constantAssignments_length
-
 theorem usedRows_le_domainSize :
     Halo2.usedRows top.operations ≤ top.n :=
   top.operations_usedRows_le_usedRows.trans
@@ -63,7 +53,7 @@ theorem copyPairs_columns_lt : ∀ t ∈ top.copyPairs,
   rw [← top.permutationLayout_length]
   apply V1_copyList_columns_lt top.constraintSystem
     top.operations top.keygenCoherent
-    top.regionStarts (top.constantCopyEntries) (constantSites_fit top)
+    top.regionStarts (top.constantCopyEntries)
     (const_column_mem_permutationColumns top) tuple
   simpa only [TopLevelCircuit.copyPairs, permutationLayout] using htuple
 
@@ -88,7 +78,7 @@ theorem copyPairs_rows_lt_usedRows
     tuple.2.1 < Halo2.usedRows top.operations ∧
       tuple.2.2.2 < Halo2.usedRows top.operations := by
   apply V1_copyList_rows_lt_usedRows top.operations
-    (top.permutationLayout) (top.constantCopyEntries) (constantSites_fit top)
+    (top.permutationLayout) (top.constantCopyEntries)
     (const_row_lt_usedRows top) tuple
   simpa only [TopLevelCircuit.copyPairs, TopLevelCircuit.regionStarts,
     TopLevelCompilation.regionStarts] using htuple
