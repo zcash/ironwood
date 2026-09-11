@@ -30,8 +30,8 @@ The semantic bridge is split by responsibility:
 * `Halo2/CompiledGates.lean` and `Halo2/CompiledLookups.lean` recover source
   constraints from compiled row semantics. Query erasure, selector substitution,
   activation routing, and fixed-row realization belong to that compiler layer.
-* `TopLevelGates.lean` derives compiled gate vanishing from polynomial divisibility.
-  `TopLevelLookups.lean` derives compiled tuple membership from the scalar lookup
+* `PolynomialConstraints.lean` derives compiled gate vanishing from polynomial divisibility
+  and compiled tuple membership from the scalar lookup
   argument and the existing `β`/`γ`/`θ` exclusions. Tuple decompression is required
   only at compiler-derived activation rows, with every usable table row available.
   The `θ` event and its executable checks compare compiled tuples; their budget
@@ -43,16 +43,16 @@ The semantic bridge is split by responsibility:
   preservation, and recovery of copies from cycle equality. `Halo2/PermutationAssembly.lean`
   proves that executable assembly implements that permutation;
   `Halo2/PermutationRows.lean` computes the row vectors that Keygen commits.
-* `CopyPermutation.lean` and `PermutationCycle.lean` identify the compiled permutation
-  with the verifier's sigma polynomials. `TopLevelCopyConstraints.lean` combines
-  that identification with permutation challenge exclusions to prove compiled copy equality.
+* `PermutationCompiler.lean` proves query routing and chunk-layout facts.
+  `Permutation.lean` identifies the compiled permutation with the verifier's sigma
+  polynomials and combines that identification with permutation challenge exclusions
+  to prove compiled copy equality.
   Verifier-generic coordinate changes live in `Snark/Soundness/Canonical/PermutationCoordinates`.
 * `TopLevelInterpretation.lean` assembles `ConstraintsCompiled` and applies
   `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
   `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.
-  `TopLevelWitness.lean` provides the witness types;
-  `AssignmentEncoding.lean` identifies polynomial column reads with the circuit's
-  canonical proof assignment and public-input layout.
+  `Assignment.lean` provides the witness types and identifies polynomial column reads
+  with the circuit's canonical proof assignment and public-input layout.
   `CircuitFieldSupport top` supplies only numerical compatibility bounds;
   `Arithmetic.FieldDomainParams` derives roots and permutation-column separation
   from a certified field generator and its two-adic factorization. The field's
@@ -67,7 +67,7 @@ in `Snark/Soundness/Multiopen/RowBinding.lean`; `Multiopen/InstanceColumns.lean`
 the public-instance query routing. Integration supplies compiler provenance for fixed and
 permutation rows. Generic list chunking theory lives in `Common/ListChunks.lean`.
 `Multiopen/PermutationColumns.lean` provides the verifier-native σ-column commitment
-binding argument. `PolynomialQueries.lean` translates verifier query feeds to Clean
+binding argument. `PolynomialEnvironment.lean` translates verifier query feeds to Clean
 column reads in the polynomial environment.
 
 The circuit-generic terminal lives outside this boundary.

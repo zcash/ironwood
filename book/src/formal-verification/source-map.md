@@ -500,14 +500,15 @@ them as data (`SpecOrBreak`) rather than assuming them away.
 - **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
   mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
-  compiled gate and lookup evaluations (`TopLevelGates`, `TopLevelLookups`), using the tuple
+  compiled gate and lookup evaluations (`PolynomialConstraints`), using the tuple
   collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation interpretation
-  (`PermutationCompiler`, `CopyPermutation`, `PermutationCycle`),
+  (`PermutationCompiler`, `Permutation`),
   fixed-column provenance (`FixedColumns`), and public inputs (`TopLevelInstanceCommitment`).
   Shared opening comparison, σ-column commitment binding, and public-instance routing live in
   `Snark/Soundness/Multiopen/{RowBinding,PermutationColumns,InstanceColumns}`.
   Integration also provides the polynomial-backed environments
-  (`PolynomialQueries`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
+  (`PolynomialEnvironment`, `ExprRich`), the assignment/witness interface (`Assignment`),
+  and the reassembly of full
   compiled satisfaction (`TopLevelInterpretation`). These arguments
   apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
   `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and

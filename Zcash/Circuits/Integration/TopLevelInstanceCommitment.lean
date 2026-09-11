@@ -1,7 +1,7 @@
 import Zcash.Snark.Soundness.Multiopen.InstanceColumns
-import Zcash.Circuits.Integration.PolynomialQueries
+import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Common.RelationWitness
-import Zcash.Circuits.Integration.TopLevelWitness
+import Zcash.Circuits.Integration.Assignment
 import Mathlib.Util.AssertNoSorry
 
 set_option maxHeartbeats 20000
@@ -37,14 +37,8 @@ def instanceCommitmentKey
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
     (urs : URS G) :
-    LagrangeCommitmentKey urs (top.toVerifierKey urs).omega where
-  generators := fun i =>
-    commit urs
-      (polynomialCoefficients (2 ^ urs.k)
-        (rowPolynomial
-          (top.toVerifierKey urs).omega
-          (Pi.single i (1 : Fp))))
-  generator_eq := fun _ => rfl
+    LagrangeCommitmentKey urs (top.toVerifierKey urs).omega :=
+  LagrangeCommitmentKey.canonical urs (top.toVerifierKey urs).omega
 
 /--
 The verifier commitment family determined by a top-level circuit's public-input

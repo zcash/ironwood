@@ -1,5 +1,5 @@
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
-import Zcash.Circuits.Integration.TopLevelLookups
+import Zcash.Circuits.Integration.PolynomialConstraints
 
 /-!
 # What each challenge exclusion reads

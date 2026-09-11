@@ -1,4 +1,4 @@
-import Zcash.Circuits.Integration.PolynomialQueries
+import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Common.ListChunks
 import Zcash.Snark.Keygen.Pipeline
 
@@ -63,62 +63,29 @@ theorem permutationQueryReference_coherent
       (permutationQueryReference top.adviceQueryLayout
         top.fixedQueryLayout top.instanceQueryLayout column) := by
   have hquery := top.permutationColumn_mem_queryLayout hcolumn
+  have hIndex (layout : List (ℕ × ℤ)) (count index : ℕ)
+      (hCount : count = layout.length) (h : (index, 0) ∈ layout) :
+      layout.findIdx (· = (index, 0)) < count ∧
+        layout.findIdx (· = (index, 0)) < layout.length ∧
+        (layout.getD (layout.findIdx (· = (index, 0))) (0, 0)).2 = 0 := by
+    have hlt : layout.findIdx (· = (index, 0)) < layout.length :=
+      List.findIdx_lt_length_of_exists ⟨(index, 0), h, by simp⟩
+    exact ⟨hCount.symm ▸ hlt, hlt,
+      by rw [List.getD_findIdx_eq_target layout (index, 0) (0, 0) hlt]⟩
   rcases column with ⟨kind, index⟩
   cases kind with
   | advice =>
-      have hin :
-          top.adviceQueryLayout.findIdx (· = (index, 0)) <
-            top.adviceQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.adviceQueryLayout.findIdx (· = (index, 0)) <
-              top.adviceQueryCount := by
-          rw [top.adviceQueryCount_eq_adviceQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_adviceQueryLayout] using hin
-      · rw [top.toVerifierKey_adviceQueryLayout,
-          List.getD_findIdx_eq_target top.adviceQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_adviceQueryLayout] using
+        hIndex _ _ index top.adviceQueryCount_eq_adviceQueryLayout_length hquery
   | fixed =>
-      have hin :
-          top.fixedQueryLayout.findIdx (· = (index, 0)) <
-            top.fixedQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.fixedQueryLayout.findIdx (· = (index, 0)) <
-              top.fixedQueryCount := by
-          rw [top.fixedQueryCount_eq_fixedQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_fixedQueryLayout] using hin
-      · rw [top.toVerifierKey_fixedQueryLayout,
-          List.getD_findIdx_eq_target top.fixedQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_fixedQueryLayout] using
+        hIndex _ _ index top.fixedQueryCount_eq_fixedQueryLayout_length hquery
   | «instance» =>
-      have hin :
-          top.instanceQueryLayout.findIdx (· = (index, 0)) <
-            top.instanceQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.instanceQueryLayout.findIdx (· = (index, 0)) <
-              top.instanceQueryCount := by
-          rw [top.instanceQueryCount_eq_instanceQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_instanceQueryLayout] using hin
-      · rw [top.toVerifierKey_instanceQueryLayout,
-          List.getD_findIdx_eq_target top.instanceQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_instanceQueryLayout] using
+        hIndex _ _ index top.instanceQueryCount_eq_instanceQueryLayout_length hquery
 
 /-- Every permutation reference produced by a top-level circuit's compiler is
 well-routed. No concrete-circuit certificate is required. -/
@@ -256,6 +223,23 @@ theorem verifierCS_permutationChunks_take_flatten_length
       (constraintSystem_chunkLen_pos top.constraintSystem)
   · exact hi
 
+/-- A local chunk entry is the globally indexed compiler reference at its flat offset. -/
+theorem verifierCS_permutationChunks_getD
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (chunk column : ℕ)
+    (hChunk : chunk < top.verifierCS.permutationChunks.length)
+    (hColumn : column < (top.verifierCS.permutationChunks.getD chunk []).length) :
+    (top.verifierCS.permutationChunks.getD chunk []).getD column ((.advice 0), 0) =
+      (top.permutationColumns.map (permutationQueryReference top.adviceQueryLayout
+        top.fixedQueryLayout top.instanceQueryLayout)).zipIdx.getD
+          (chunk * top.chunkLen + column) ((.advice 0), 0) := by
+  have h := List.flatten_getD_at_chunk ((ColumnRef.advice 0), 0)
+    top.verifierCS.permutationChunks chunk column hChunk hColumn
+  rw [verifierCS_permutationChunks_take_flatten_length top chunk hChunk,
+    verifierCS_permutationChunks_flatten] at h
+  exact h.symm
+
 /-- Top-level keygen exposes the compiler prefix law without requiring downstream
 proofs to unfold a concrete circuit or verifying-key constructor. -/
 theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_take_flatten_length
@@ -370,57 +354,14 @@ theorem topLevelPermutationColumnAddresses_eq
   apply List.map_congr_left
   intro column hcolumn
   simp only [Function.comp_apply]
-  let referenceOf :=
-    permutationQueryReference top.adviceQueryLayout
-      top.fixedQueryLayout top.instanceQueryLayout
-  let reference :=
-    referenceOf column
-  have hreference :
-      reference ∈
-        top.permutationColumns.map
-          referenceOf :=
-    List.mem_map.mpr ⟨column, hcolumn, rfl⟩
-  have hindexed :
-      ∃ indexed ∈
-          (top.permutationColumns.map
-            referenceOf).zipIdx,
-        indexed.1 = reference := by
-    have hfst :
-        reference ∈
-          ((top.permutationColumns.map
-            referenceOf).zipIdx).map Prod.fst := by
-      rw [List.zipIdx_map_fst]
-      exact hreference
-    simpa only using List.mem_map.mp hfst
-  obtain ⟨indexed, hindexed, hindexedReference⟩ := hindexed
-  have hindexedFlat :
-      indexed ∈
-        top.verifierCS.permutationChunks.flatten := by
-    rw [verifierCS_permutationChunks_flatten]
-    simpa only [referenceOf] using hindexed
-  obtain ⟨chunk, hchunk, hindexedChunk⟩ :=
-    List.mem_flatten.mp hindexedFlat
-  have hrouted := top.permutationChunkRoutingCoherent urs chunk (by
-    simpa only [top.toVerifierKey_permutationChunks] using hchunk)
-    indexed hindexedChunk
-  have hreferenceCoherent :
-      PermutationColumnRef.Coherent
-        (top.toVerifierKey urs) reference := by
-    rw [← hindexedReference]
-    exact hrouted.1
-  have hdecoded :
-      permutationColumnAddress (top.toVerifierKey urs) reference =
-        column :=
-    permutationColumnAddress_queryReference
-      (top.toVerifierKey urs)
-      top.adviceQueryLayout top.fixedQueryLayout top.instanceQueryLayout
-      (top.toVerifierKey_adviceQueryLayout urs)
-      (top.toVerifierKey_fixedQueryLayout urs)
-      (top.toVerifierKey_instanceQueryLayout urs)
-      column hreferenceCoherent
+  have hdecoded := permutationColumnAddress_queryReference
+    (top.toVerifierKey urs)
+    top.adviceQueryLayout top.fixedQueryLayout top.instanceQueryLayout
+    (top.toVerifierKey_adviceQueryLayout urs)
+    (top.toVerifierKey_fixedQueryLayout urs)
+    (top.toVerifierKey_instanceQueryLayout urs)
+    column (permutationQueryReference_coherent top urs hcolumn)
   rcases column with ⟨kind, index⟩
-  cases kind <;>
-    simpa [reference, referenceOf, permutationQueryReference,
-      Halo2.Layout.ColRef.toAny] using hdecoded
+  cases kind <;> simpa [permutationQueryReference, Halo2.Layout.ColRef.toAny] using hdecoded
 
 end Zcash.Snark
