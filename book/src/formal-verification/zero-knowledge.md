@@ -31,7 +31,7 @@ Auxiliary retry and continuing-generator theorems concern additional external
 caller policies and are outside the release claim. Concrete BLAKE2b security,
 security of a particular PRNG, and whole-program Rust correspondence remain
 separate claims. The
-[Action witness theorem statements](https://github.com/zakura-core/ironwood-formal-verification/blob/establish-zk/Zcash/Snark/ZeroKnowledge/ActionWitnessSimulation.lean)
+[Action witness theorem statements](https://github.com/zcash/ironwood/blob/main/Zcash/Snark/ZeroKnowledge/ActionWitnessSimulation.lean)
 give the precise application contract.
 
 ## Computability boundary
@@ -42,7 +42,7 @@ The operational reduction programs are ordinary Lean definitions with
 produce a Boolean observation, and retain execution counters. Their erasure and
 cost theorems connect those computations to the security games; an abstract
 probability kernel alone does not supply an executable reduction. See the
-[program interfaces and resource model](https://github.com/zakura-core/ironwood-formal-verification/blob/859e54eac7c973238ec25c0b50b42264747aadce/Zcash/Snark/ZeroKnowledge/PROGRAMS.md).
+[program interfaces and resource model](https://github.com/zcash/ironwood/blob/main/Zcash/Snark/ZeroKnowledge/PROGRAMS.md).
 
 The following proof-side objects retain `noncomputable` declarations:
 

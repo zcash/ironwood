@@ -34,7 +34,7 @@ source and artifact checks alone do not validate the new proof terms.
 | **Fiat–Shamir ZK:** statistical comparison of the full oracle view, including adaptive queries before and after the attempt. | [ActionFiatShamir.lean](ActionFiatShamir.lean) |
 | **Released call observation:** one proof, returned error, or panic, with the oracle cache retained. | [Zakura/Action.lean](Zakura/Action.lean) |
 | **Action connection:** construct valid circuit rows from application witnesses satisfying the construction conditions below. | [ActionWitnessSimulation.lean](ActionWitnessSimulation.lean) |
-| **Prover completeness (awaiting final build):** bound abort or rejection from valid application witnesses, including an initialized call with a fresh random oracle. | [Interactive](ActionProverCompleteness.lean), [initialized call](Zakura/Completeness.lean) |
+| **Prover completeness:** bound abort or rejection from valid application witnesses, including an initialized call with a fresh random oracle. | [Interactive](ActionProverCompleteness.lean), [initialized call](Zakura/Completeness.lean) |
 | **Executable simulator:** a fixed-bit implementation with a proved distribution and structural resource bounds. | [ActionOracleBits.lean](ActionOracleBits.lean), [program model](PROGRAMS.md) |
 | **PRNG reduction:** a computational interactive simulation bound under an explicit generator-security assumption. | [CostedInteractivePrng.lean](CostedInteractivePrng.lean) |
 
@@ -76,9 +76,9 @@ rejected by the typed verifier:
 Pr[completed and accepted] ≥ 1 − η(m),    m ≥ 1
 ```
 
-This is high-probability completeness for one interactive attempt. The new
-[acceptance proof and binary bound](ActionProverCompleteness.lean) await the
-requested final Lean build. The [call bridge](Zakura/Completeness.lean) preserves
+This is high-probability completeness for one interactive attempt, established by the
+[acceptance proof and binary bound](ActionProverCompleteness.lean). The
+[call bridge](Zakura/Completeness.lean) preserves
 the same bound for the modeled Fiat–Shamir call with an empty initial oracle
 cache and successful public initialization.
 

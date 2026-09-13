@@ -104,7 +104,8 @@ theorem lookupRunPlan_reservations [DecidableEq A] (key : A → ℕ) (hkey : Fun
         · exact hlt
         · exact lt_trans hlt (hgreater a rfl x hx)
 
-/-- Equal-length valid lookup prefixes always produce permuted columns. -/
+/-- Equal-length valid lookup prefixes make the sorter succeed. That the columns it returns
+are permutations is `lookupSortColumns_correct`, not this statement. -/
 theorem lookupSortColumns_exists [DecidableEq A] (key : A → ℕ) (hkey : Function.Injective key)
     (input table : List A) (hlen : input.length = table.length) (hsubset : input ⊆ table) :
     ∃ output, lookupSortColumns key input table = some output := by

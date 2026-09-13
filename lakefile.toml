@@ -79,8 +79,9 @@ globs = ["Zcash.Meta.Tests.+"]
 # left to the census file's imports, so an endpoint stays built even if nothing pins it.
 #
 # `Keygen/Certificate` and `Keygen/InstanceCapture` (the ironwood#86 join of the captured
-# instance commitments to the circuit-derived family) are pinned explicitly: InstanceCapture has
-# no importer, and Certificate is otherwise reachable only through the capstone entries' imports.
+# instance commitments to the circuit-derived family) are pinned explicitly: Certificate is
+# otherwise reachable only through the capstone entries' imports, and InstanceCapture only
+# through one fixture boundary module. The pins keep both built whatever the importers do.
 [[lean_lib]]
 name = "FixtureCheck"
 globs = [

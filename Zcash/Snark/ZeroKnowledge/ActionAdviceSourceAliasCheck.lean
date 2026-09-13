@@ -8,7 +8,8 @@ set_option maxHeartbeats 0
 set_option stderrAsMessages false
 set_option trace.Zcash.adviceMapScan true
 
-/-- Every repeated advice write preserves the source-certified alias relation. -/
+/-- The advice-alias scan accepts the source-certified annotations, which is the check behind
+every repeated advice write preserving the alias relation, not that statement itself. -/
 theorem actionAdviceSource_aliasPlan :
     adviceAliasMapPlan ∅ (adviceAliasAddressData
       (actionAdviceSourceCertificate.annotations.map (fun entry => (entry.1.instruction, entry.2)))) = true := by

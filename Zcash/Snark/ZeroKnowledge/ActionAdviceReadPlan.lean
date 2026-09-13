@@ -8,7 +8,9 @@ set_option maxHeartbeats 0
 set_option stderrAsMessages false
 set_option trace.Zcash.adviceMapScan true
 
-/-- Every advice read is available when the original program executes. -/
+/-- The advice-read support scan accepts the certified annotations.
+`adviceSupportMapPlan_causal` carries that to the reading of record: every advice read is
+available when the original program executes. -/
 theorem actionAdviceSource_readPlan :
     adviceSupportMapPlan actionCircuit.placement ∅
       actionAdviceSourceCertificate.readCertificate.annotations = true := by
