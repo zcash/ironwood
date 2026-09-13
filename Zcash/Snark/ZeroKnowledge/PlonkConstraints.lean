@@ -107,7 +107,7 @@ theorem plonkConstraintNumerator_eq_fold {actions k : ℕ} {G : Type*} [Zero G]
 
 /-- Polynomial evaluation commutes with zero-default indexed access, connecting polynomial
 expressions to their row evaluations. -/
-private theorem eval_finFn {n : ℕ} (values : Fin n → CPoly) (x : Fp) (i : ℕ) :
+theorem eval_finFn {n : ℕ} (values : Fin n → CPoly) (x : Fp) (i : ℕ) :
     (finFn values i).eval x = finFn (fun j => (values j).eval x) i := by
   by_cases hi : i < n <;> simp [finFn, hi]
 

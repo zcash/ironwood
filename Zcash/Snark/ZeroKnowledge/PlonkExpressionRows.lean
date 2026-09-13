@@ -34,12 +34,6 @@ def plonkExpressionMaskCheck {actions : ℕ} (pub : PlonkPublicPolynomials actio
     (row : Fin 2048) (expr : Expr Fp) : Bool :=
   exprMaskInvariant (plonkFixedRowValues pub row) (plonkAdviceQueryRetained row) expr
 
-/-- Polynomial evaluation commutes with zero-default indexed access, connecting polynomial
-expressions to their row evaluations. -/
-private theorem eval_finFn {n : ℕ} (values : Fin n → CPoly) (x : Fp) (query : ℕ) :
-    (finFn values query).eval x = finFn (fun j => (values j).eval x) query := by
-  by_cases hq : query < n <;> simp [finFn, hq]
-
 /-- The fixed row feed agrees with the existing polynomial proof. -/
 theorem plonkPolynomialClaimProof_fixedRowValues {actions k : ℕ} {G : Type*} [Zero G]
     (pub : PlonkPublicPolynomials actions) (rows : ColumnHistory 2048) (row : Fin 2048) (query : ℕ) :

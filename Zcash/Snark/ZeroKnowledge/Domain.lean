@@ -37,13 +37,6 @@ def maskedRowPolynomial {n : ℕ} (firstMasked : ℕ) (omega : Fp)
     maskedRows firstMasked witness mask i = witness i := by
   simp [maskedRows, Nat.not_le_of_lt hi]
 
-/-- Rows at or beyond the boundary come from the mask, isolating the randomness used in the
-simulation argument. -/
-@[simp] theorem maskedRows_after {n firstMasked : ℕ} (witness : Fin n → Fp)
-    (mask : RowMask n firstMasked) (i : Fin n) (hi : firstMasked ≤ i.val) :
-    maskedRows firstMasked witness mask i = mask ⟨i, hi⟩ := by
-  simp [maskedRows, hi]
-
 /-- No distributional assumption about the masks can hide an unmasked domain row. -/
 theorem maskedRowPolynomial_eval_before {n firstMasked : ℕ} (omega : Fp)
     (hrows : Function.Injective fun i : Fin n => omega ^ i.val)

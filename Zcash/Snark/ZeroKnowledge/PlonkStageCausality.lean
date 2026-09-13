@@ -47,58 +47,11 @@ def plonkStageMessages {shape : Shape} {F G : Type*} (proof : ProofString shape 
   Fin.addCases (plonkPreIpaStages proof)
     (fun j => [.point (proof.ipaRounds j).1, .point (proof.ipaRounds j).2])
 
-/-- Absorbing a point vector introduces no verifier challenge, preserving challenge indices across
-this message block. -/
-private theorem count_absorbPoints {F G : Type*} {n : ℕ} (points : Fin n → G) :
-    protocolChallengeCount (absorbPoints (F := F) points) = 0 := by
-  rw [protocolChallengeCount_eq_zero_iff]
-  simp [absorbPoints]
-
-/-- Absorbing a scalar vector introduces no verifier challenge, preserving challenge indices across
-this message block. -/
-private theorem count_absorbScalars {F G : Type*} {n : ℕ} (scalars : Fin n → F) :
-    protocolChallengeCount (absorbScalars (G := G) scalars) = 0 := by
-  rw [protocolChallengeCount_eq_zero_iff]
-  simp [absorbScalars]
-
-/-- Absorbing a point matrix introduces no verifier challenge, preserving challenge indices across
-this message block. -/
-private theorem count_absorbPoints2 {F G : Type*} {a b : ℕ} (points : Fin a → Fin b → G) :
-    protocolChallengeCount (absorbPoints2 (F := F) points) = 0 := by
-  rw [protocolChallengeCount_eq_zero_iff]
-  simp [absorbPoints2, absorbPoints]
-
-/-- Absorbing a scalar matrix introduces no verifier challenge, preserving challenge indices across
-this message block. -/
-private theorem count_absorbScalars2 {F G : Type*} {a b : ℕ} (scalars : Fin a → Fin b → F) :
-    protocolChallengeCount (absorbScalars2 (G := G) scalars) = 0 := by
-  rw [protocolChallengeCount_eq_zero_iff]
-  simp [absorbScalars2, absorbScalars]
-
-/-- Absorbing the permuted lookup commitments introduces no verifier challenge, preserving challenge
-indices across this message block. -/
-private theorem count_absorbLookupPermuted {F G : Type*} {a b : ℕ}
-    (input table : Fin a → Fin b → G) :
-    protocolChallengeCount (absorbLookupPermuted (F := F) input table) = 0 := by
-  rw [protocolChallengeCount_eq_zero_iff]
-  simp [absorbLookupPermuted]
-
-/-- Absorbing permutation evaluations introduces no verifier challenge, preserving challenge indices
-across this message block. -/
-private theorem count_absorbPermSet {F G : Type*} (evals : PermSetEval F) :
-    protocolChallengeCount (absorbPermSet (G := G) evals) = 0 := by
-  cases h : evals.lastEval <;> simp [absorbPermSet, h, protocolChallengeCount]
-
-/-- Absorbing lookup evaluations introduces no verifier challenge, preserving challenge indices
-across this message block. -/
-private theorem count_absorbLookup {F G : Type*} (evals : LookupEval F) :
-    protocolChallengeCount (absorbLookup (G := G) evals) = 0 := rfl
-
 /-- The evaluation block contains no hidden challenge receive. -/
 theorem plonkEvaluationStage_challengeCount {shape : Shape} {F G : Type*}
     (proof : ProofString shape F G) : protocolChallengeCount (plonkEvaluationStage proof) = 0 := by
-  simp [plonkEvaluationStage, count_absorbScalars2, count_absorbScalars,
-    count_absorbPermSet, count_absorbLookup, protocolChallengeCount,
+  simp [plonkEvaluationStage, challenges_absorbScalars2, challenges_absorbScalars,
+    challenges_absorbPermSet, challenges_absorbLookup, protocolChallengeCount,
     List.map_ofFn, Function.comp_def]
 
 /-- All stage blocks contain only messages; their following receives are supplied by the scheduler. -/
@@ -109,8 +62,8 @@ theorem plonkStageMessages_challengeCount {shape : Shape} {F G : Type*}
   · intro i
     simp only [plonkStageMessages, Fin.addCases_left]
     fin_cases i <;>
-      simp [plonkPreIpaStages, count_absorbPoints2,
-        count_absorbLookupPermuted, count_absorbPoints, count_absorbScalars,
+      simp [plonkPreIpaStages, challenges_absorbPoints2,
+        challenges_absorbLookupPermuted, challenges_absorbPoints, challenges_absorbScalars,
         plonkEvaluationStage_challengeCount, protocolChallengeCount]
   · intro i
     simp only [plonkStageMessages, Fin.addCases_right, protocolChallengeCount]

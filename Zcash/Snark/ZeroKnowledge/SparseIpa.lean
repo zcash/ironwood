@@ -125,11 +125,6 @@ theorem sparseIpaContribution_eq_zero_of_evaluation (q xi : F) (rounds alphas : 
     sparseIpaContribution q xi rounds alphas = 0 := by
   simp [sparseIpaContribution, h]
 
-/-- Zero `xi` removes this mask; it is not covered by the nonzero-rank theorem. -/
-theorem sparseIpaContribution_zero_multiplier (q : F) (rounds alphas : Fin k → F) :
-    sparseIpaContribution q 0 rounds alphas = 0 := by
-  simp [sparseIpaContribution]
-
 /-- In the evaluation case the complete scalar is zero, not merely the mask contribution. -/
 theorem maskedIpaScalar_eq_zero_of_evaluation (q xi v : F) (rounds : Fin k → F)
     (coefficients : Fin (2 ^ k) → F) (alphas : Fin k → F)
