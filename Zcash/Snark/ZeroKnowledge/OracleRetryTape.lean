@@ -10,6 +10,8 @@ instantiate this runner with their existing one-attempt implementations.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- A deterministic finite retry runner around an existing cached-oracle attempt implementation. -/
 def runOracleRetries {Query Reply Tape : Type*}

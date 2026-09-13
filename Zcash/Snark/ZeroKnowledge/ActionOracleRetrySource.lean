@@ -12,6 +12,8 @@ shared-oracle retry law, including every failure prefix and exhaustion.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action

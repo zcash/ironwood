@@ -11,6 +11,8 @@ same retry decision as the finite runner, without a termination assumption.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Record the state returned by every attempt as part of that attempt's observation. -/
 def retainRetryState {A State Tape : Type*} (run : State → Tape → A × State)

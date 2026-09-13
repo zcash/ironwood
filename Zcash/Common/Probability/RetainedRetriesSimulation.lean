@@ -1,5 +1,5 @@
-import Zcash.Snark.ZeroKnowledge.RetryHistory
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.RetainedRetries
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # Simulation of retained retry histories
@@ -10,9 +10,8 @@ is retained. This gives a geometric error budget, uniformly bounded by
 `epsilon / (1 - failure)` when the retry probability is strictly below one.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Changing one attempt's law costs its bias under the same observable retry policy. -/
@@ -139,4 +138,4 @@ theorem retainedRetries_exhausted_tendsto {A : Type*} (law : PMF A) (retry : Set
   simpa only [retainedRetries_exhausted] using
     ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (hfailure.trans_lt hrate)
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

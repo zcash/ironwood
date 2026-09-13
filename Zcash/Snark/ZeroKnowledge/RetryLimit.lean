@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.RetryProjection
-import Zcash.Snark.ZeroKnowledge.DistributionAgreement
+import Zcash.Common.Probability.DistributionAgreement
 
 /-!
 # Statistical simulation of complete unlimited retry histories
@@ -13,6 +13,7 @@ the existing uniform simulation bound, for every event of the complete history.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Truncation changes the observed complete history with at most its geometric tail probability. -/

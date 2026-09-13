@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.TranscriptQuery
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # Probability of a prior query naming the first private commitment

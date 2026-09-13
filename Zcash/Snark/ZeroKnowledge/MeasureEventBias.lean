@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 import Mathlib.MeasureTheory.Measure.MeasuredSets
 import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
 

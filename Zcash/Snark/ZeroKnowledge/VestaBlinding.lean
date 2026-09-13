@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.BlindingGenerator
+import Zcash.Common.BlindingGenerator
 import Zcash.Snark.Core.Vesta
 
 /-!
@@ -12,6 +12,7 @@ certificate is introduced here.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
 
 open Zcash.Arithmetic (Fp card_Fp)
 open CompElliptic.Curves.Pasta

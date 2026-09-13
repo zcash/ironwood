@@ -14,6 +14,8 @@ The simulator is the existing witness-free fixed-bit shared-oracle stream.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action

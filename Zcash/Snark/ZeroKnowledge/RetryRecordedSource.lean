@@ -9,6 +9,8 @@ public states commutes exactly with replay from a continuing generator.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Retry on separated finite tapes, retaining each attempted result and public state. -/
 def recordedCoinRetries {A State Coins Tape : Type*}

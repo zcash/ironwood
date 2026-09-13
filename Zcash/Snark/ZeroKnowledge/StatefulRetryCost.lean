@@ -1,6 +1,8 @@
 import Zcash.Snark.ZeroKnowledge.StatefulRetry
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Execute retained retries, charging every attempt, decision, history node, and state handoff. -/
 def runStatefulRetriesCosted {A State Tape : Type*}

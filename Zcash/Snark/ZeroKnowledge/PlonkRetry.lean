@@ -1,6 +1,6 @@
 import Zcash.Snark.ZeroKnowledge.PlonkFiniteView
 import Zcash.Snark.ZeroKnowledge.PlonkSuccessBounds
-import Zcash.Snark.ZeroKnowledge.RetryHistorySimulation
+import Zcash.Common.Probability.RetainedRetriesSimulation
 import Zcash.Snark.ZeroKnowledge.CallerRetryPolicy
 
 /-!
@@ -19,6 +19,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The terminal failures that the auxiliary caller elects to repeat. -/

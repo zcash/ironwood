@@ -8,6 +8,8 @@ It reports exhaustion only when that prefix has not already stopped.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Replaying exactly the retained attempts reproduces the original policy result. -/
 theorem runRetryHistory_idempotent {A : Type*} (retry : Set A)

@@ -1,6 +1,6 @@
 import Zcash.Snark.ZeroKnowledge.IpaSampling
 import Zcash.Snark.ZeroKnowledge.IpaChallenges
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 
 /-!
 # Joint IPA simulation with fresh verifier challenges
@@ -15,6 +15,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp scalarFieldOrder)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G] [Fintype G]

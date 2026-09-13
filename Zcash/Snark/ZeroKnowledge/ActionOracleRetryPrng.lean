@@ -21,6 +21,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Adaptive postprocessing after retries driven by an arbitrary joint private source. -/

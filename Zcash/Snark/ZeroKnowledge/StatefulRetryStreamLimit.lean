@@ -11,6 +11,8 @@ The proof does not condition either execution on termination.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory Zcash.Common
 open scoped ENNReal

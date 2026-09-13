@@ -18,6 +18,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Real reference attempts with fresh private randomness and one evolving oracle cache. -/
 noncomputable def actionOracleRetries {actions : ℕ} (urs : URS VestaG) (hk : urs.k = 11)

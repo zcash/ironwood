@@ -19,6 +19,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp omegaOf URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The complete challenge tape is retained alongside the algebraic proof. -/

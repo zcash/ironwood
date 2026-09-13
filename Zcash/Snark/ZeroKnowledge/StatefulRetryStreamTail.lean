@@ -10,6 +10,8 @@ underlying probability law assumes almost-sure termination.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory
 open scoped ENNReal

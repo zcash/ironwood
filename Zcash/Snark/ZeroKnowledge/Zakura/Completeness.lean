@@ -29,6 +29,7 @@ namespace Zcash.Snark.ZeroKnowledge.Zakura
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Fresh-oracle execution returns the exact independently generated proof and its installed replies. -/

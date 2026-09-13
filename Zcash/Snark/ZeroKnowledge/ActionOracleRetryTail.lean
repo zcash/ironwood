@@ -18,6 +18,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The uniform retry budget of the fixed-bit simulator, including its private sampling bias. -/

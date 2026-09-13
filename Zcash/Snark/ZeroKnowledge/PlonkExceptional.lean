@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.PlonkSampling
-import Zcash.Snark.ZeroKnowledge.ExceptionalMixtures
+import Zcash.Common.Probability.ExceptionalMixtures
 
 /-!
 # Charging inconsistent private states in the joint simulation
@@ -14,6 +14,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp omegaOf URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open CompPoly
 open scoped ENNReal
 

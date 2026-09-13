@@ -18,6 +18,7 @@ running-time proof for arbitrary supplied continuations or tests.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Testing the source experiment is exactly the auxiliary-input PRNG game for the displayed reduction. -/

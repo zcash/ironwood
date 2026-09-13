@@ -14,6 +14,8 @@ programming failure returns the unchanged prior cache.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- The specified retry decision, with explicit simulator programming failure terminal. -/
 def oracleRetryRequested : Option ProverAttemptResult → Bool

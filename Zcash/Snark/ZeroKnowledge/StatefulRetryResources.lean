@@ -9,6 +9,8 @@ state growth is bounded by the number of attempts actually observed.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Any invariant preserved by one supported transition is preserved through the full retry history. -/
 theorem statefulRetries_invariant {A State : Type*} (attempt : State → PMF (A × State))

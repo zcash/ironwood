@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # Bias from disagreement on a common discrete probability space
@@ -7,9 +7,8 @@ The exceptional-event argument applies to arbitrary discrete source spaces,
 including the countable support of a law of finite stopped histories.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Two observations agreeing on the supported good event differ by at most its complement's mass. -/
@@ -25,4 +24,4 @@ theorem eventBias_map_of_agree {A B : Type*} (law : PMF A) (left right : A → B
     · exact Or.inl (by simpa only [Set.mem_preimage, ← hagree a hs hb] using ha)
   exact (law.toOuterMeasure_mono hsub).trans (MeasureTheory.measure_union_le _ _)
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

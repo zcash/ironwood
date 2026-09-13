@@ -16,6 +16,7 @@ set_option maxRecDepth 8192
 
 open Zcash.Arithmetic (Fp)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Recover each raw challenge digest independently, conditional on its field value. -/

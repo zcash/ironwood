@@ -10,6 +10,8 @@ allocates one whole private block, exactly as in `runGeneratedCoinRetries`.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Retain the attempt's public state without exposing the continuing generator. -/
 def generatedPublicRun {A State Coins Tape : Type*}

@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.OracleResources
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # Oracle preprocessing and continuation
@@ -12,6 +12,7 @@ bound, including when it queries the cache adaptively after receiving a proof.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- A common outer experiment preserves a uniform continuation bound on its supported outcomes. -/

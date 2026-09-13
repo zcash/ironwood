@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 
 /-!
 # Exceptional branches under an arbitrary private-state law
@@ -9,9 +9,8 @@ gives the same simulation bound by that set's probability, without conditioning 
 Approximate conditional agreement adds the average of its state-dependent error bounds.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Average conditional simulation errors and charge the probability of exceptional branches. -/
@@ -51,4 +50,4 @@ theorem variableMixedLaws_error_bound {C A : Type*}
   exact ⟨hdirection actual ideal (fun c hc => (hgood c hc).1),
     hdirection ideal actual (fun c hc => (hgood c hc).2)⟩
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

@@ -88,6 +88,18 @@ import Zcash.Snark.Soundness.Action.DeploymentRecord
 import Zcash.Security.GroupHash.Indiff
 import Zcash.Security.GroupHash.Pasta
 import Zcash.Security.GroupHash.TwoOracle
+import Zcash.Common.Probability.Conditioning
+import Zcash.Common.Probability.Distribution
+import Zcash.Common.Probability.DistributionAgreement
+import Zcash.Common.Probability.DistributionKernel
+import Zcash.Common.Probability.ExceptionalMixtures
+import Zcash.Common.Probability.LinearForm
+import Zcash.Common.Probability.LinearImage
+import Zcash.Common.Probability.RetainedRetries
+import Zcash.Common.Probability.RetainedRetriesSimulation
+import Zcash.Common.Probability.Retry
+import Zcash.Common.Probability.SimulationAgreement
+import Zcash.Common.BlindingGenerator
 
 /-!
 # Trust boundary, build-checked
@@ -187,6 +199,93 @@ assert_axioms Zcash.Common.OracleComp.runFreshPMF_eventBiasLE
 -- LabeledOracleComp.lean: labeled query trees and the first-label bad-set bounds
 assert_axioms Zcash.Common.LabeledOracleComp.finalBadWithoutRelation_measure_le
 assert_axioms Zcash.Common.LabeledOracleComp.firstLabelOrFallbackBad_measure_le
+
+/-! ## Common probability layer
+
+The one-sided bias calculus in `Zcash/Common/Probability/`, shared by the Fiat-Shamir
+reductions and the zero-knowledge simulation: transport of a bias through observations,
+kernels and mixtures, conditioning on success, the retry laws, and the uniformity of affine
+forms and surjective linear maps. `BlindingGenerator.lean` sits beside them with the
+group-module fact those uniformity arguments rest on. -/
+
+-- Distribution.lean: transport of one-sided bias through observations and exceptional events
+assert_axioms Zcash.Common.Probability.eventBias_map
+assert_axioms Zcash.Common.Probability.eventBias_le_one
+assert_axioms Zcash.Common.Probability.mixedLaws_error_bound
+
+-- DistributionKernel.lean: randomized observations on arbitrary probability mass functions
+assert_axioms Zcash.Common.Probability.eventBias_weighted_tsum
+assert_axioms Zcash.Common.Probability.eventBias_bind_kernel
+assert_axioms Zcash.Common.Probability.eventBias_bind_average_tsum
+
+-- DistributionAgreement.lean: bias from disagreement on a common discrete space
+assert_axioms Zcash.Common.Probability.eventBias_map_of_agree
+
+-- ExceptionalMixtures.lean: exceptional branches under an arbitrary private-state law
+assert_axioms Zcash.Common.Probability.variableMixedLaws_error_bound
+
+-- Conditioning.lean: simulation bounds after conditioning on successful attempts
+assert_axioms Zcash.Common.Probability.conditioning_mass_ne_zero
+assert_axioms Zcash.Common.Probability.conditioned_event_mass
+assert_axioms Zcash.Common.Probability.conditioned_event_mul_mass
+assert_axioms Zcash.Common.Probability.conditioned_eventBias
+assert_axioms Zcash.Common.Probability.conditioned_simulation_error_bound
+assert_axioms Zcash.Common.Probability.conditioned_common_error_bound
+
+-- SimulationAgreement.lean: simulation with an exceptional observation map
+assert_axioms Zcash.Common.Probability.simulation_map_of_agree
+
+-- Retry.lean: independent retries and the successful-attempt law
+assert_axioms Zcash.Common.Probability.event_mass_add_compl
+assert_axioms Zcash.Common.Probability.success_mass_lower_bound
+assert_axioms Zcash.Common.Probability.retryStep_event_mass
+assert_axioms Zcash.Common.Probability.conditioned_retry_fixedpoint
+assert_axioms Zcash.Common.Probability.retryStep_error_bound
+assert_axioms Zcash.Common.Probability.boundedRetries_error_bound
+assert_axioms Zcash.Common.Probability.boundedRetries_exhausted
+assert_axioms Zcash.Common.Probability.failure_mass_lt_one
+assert_axioms Zcash.Common.Probability.boundedRetries_tendsto
+assert_axioms Zcash.Common.Probability.exists_success_of_failure_lt_one
+
+-- RetainedRetries.lean: independent retries with every attempt retained
+assert_computable Zcash.Common.Probability.RetryHistory.prepend
+assert_computable Zcash.Common.Probability.RetryHistory.stopped
+assert_computable Zcash.Common.Probability.RetryHistory.map
+assert_computable Zcash.Common.Probability.runRetryHistory
+assert_axioms Zcash.Common.Probability.runRetryHistory_prefix
+assert_axioms Zcash.Common.Probability.runRetryHistory_exhausted_iff
+assert_axioms Zcash.Common.Probability.runRetryHistory_of_all_retry
+assert_axioms Zcash.Common.Probability.runRetryHistory_append_of_stopped
+assert_axioms Zcash.Common.Probability.runRetryHistory_map
+assert_axioms Zcash.Common.Probability.retainedRetryStep
+assert_axioms Zcash.Common.Probability.retainedRetries
+assert_axioms Zcash.Common.Probability.retryAttemptTape
+assert_axioms Zcash.Common.Probability.retainedRetries_fromTape
+assert_axioms Zcash.Common.Probability.retainedRetryStep_exhausted
+assert_axioms Zcash.Common.Probability.retainedRetries_exhausted
+
+-- RetainedRetriesSimulation.lean: simulation of retained retry histories
+assert_axioms Zcash.Common.Probability.retainedRetryStep_source_bias
+assert_axioms Zcash.Common.Probability.retainedRetryStep_continuation_error_bound
+assert_axioms Zcash.Common.Probability.retainedRetryError
+assert_axioms Zcash.Common.Probability.retainedRetryError_eq_sum
+assert_axioms Zcash.Common.Probability.retainedRetryError_le
+assert_axioms Zcash.Common.Probability.retainedRetries_simulation_error_bound
+assert_axioms Zcash.Common.Probability.retainedRetries_uniform_error_bound
+assert_axioms Zcash.Common.Probability.retainedRetries_exhausted_le
+assert_axioms Zcash.Common.Probability.retainedRetries_exhausted_tendsto
+
+-- LinearForm.lean: uniformity of an affine form of independent uniform masks
+assert_axioms Zcash.Common.Probability.affineLinearForm_uniform
+
+-- LinearImage.lean: uniformity of a surjective linear observation
+assert_axioms Zcash.Common.Probability.surjectiveAddMap_uniform
+assert_axioms Zcash.Common.Probability.surjectiveAffineMap_uniform
+
+-- BlindingGenerator.lean: scalar action by a nonzero point: injective, and bijective at equal cardinality
+assert_axioms Zcash.Common.scalarBlinding_injective
+assert_axioms Zcash.Common.scalarBlinding_bijective
+assert_axioms Zcash.Common.scalarBlinding_bijective_iff
 
 /-! ## Group-hash indifferentiability
 

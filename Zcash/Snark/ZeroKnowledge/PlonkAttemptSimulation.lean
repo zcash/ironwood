@@ -18,6 +18,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp deltaFp omegaOf scalarFieldOrder URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The compiler-derived joint bound also covers every encoded prefix and attempt outcome. -/

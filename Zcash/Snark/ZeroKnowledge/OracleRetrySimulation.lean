@@ -12,6 +12,7 @@ no fresh-oracle or independent-failure assumption is introduced.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- A cache-size-dependent attempt bound composes through finite retries retaining all observations and state. -/

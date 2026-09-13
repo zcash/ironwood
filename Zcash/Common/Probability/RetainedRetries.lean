@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Retry
+import Zcash.Common.Probability.Retry
 
 /-!
 # Independent retries with every attempt retained
@@ -9,9 +9,8 @@ outcome is terminal. An exhausted budget is represented explicitly. Each new
 attempt uses the same law independently of the complete preceding history.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- All attempts in order, and whether another requested attempt exceeded the budget. -/
@@ -155,4 +154,4 @@ theorem retainedRetries_exhausted {A : Type*} (law : PMF A) (retry : Set A)
   | zero => simp [retainedRetries, PMF.toOuterMeasure_pure_apply]
   | succ n ih => rw [retainedRetries, retainedRetryStep_exhausted, ih, pow_succ']
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

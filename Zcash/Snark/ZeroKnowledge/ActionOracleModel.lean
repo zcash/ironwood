@@ -1,6 +1,6 @@
 import Zcash.Snark.ZeroKnowledge.ActionDigest
 import Zcash.Snark.ZeroKnowledge.PlonkOracle
-import Zcash.Snark.ZeroKnowledge.SimulationAgreement
+import Zcash.Common.Probability.SimulationAgreement
 
 /-!
 # One Action-bundle attempt against a cached raw random oracle
@@ -22,6 +22,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The existing verifier's common-input prefix, with the actual Action instance commitments. -/

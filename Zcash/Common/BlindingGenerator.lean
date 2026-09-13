@@ -10,7 +10,7 @@ surjective. This supplies the bijection used by the statistical simulation from
 the concrete group order and a nonidentity check on the blinding generator.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common
 
 variable {F G : Type*} [Field F] [AddCommGroup G] [Module F G]
 
@@ -45,4 +45,4 @@ theorem scalarBlinding_bijective_iff [Fintype F] [Fintype G]
     exact zero_ne_one heq
   · exact scalarBlinding_bijective hcard point
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common

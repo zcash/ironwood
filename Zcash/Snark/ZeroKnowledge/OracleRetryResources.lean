@@ -9,6 +9,8 @@ execution when it survives each supported attempt.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Lift an attempt's cache-growth bound through its public observation adapter. -/
 theorem oracleRetryTransition_growth {Query Reply : Type*}

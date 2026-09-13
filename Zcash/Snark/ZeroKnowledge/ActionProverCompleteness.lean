@@ -1,7 +1,7 @@
 import Zcash.Snark.ZeroKnowledge.ActionTyped
 import Zcash.Snark.ZeroKnowledge.ActionWitnessSimulation
 import Zcash.Snark.ZeroKnowledge.PlonkCompleteness
-import Zcash.Snark.ZeroKnowledge.Retry
+import Zcash.Common.Probability.Retry
 
 /-!
 # High-probability completeness for application Action witnesses
@@ -26,6 +26,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Complete canonical emission and verifier acceptance for the same Action proof. -/

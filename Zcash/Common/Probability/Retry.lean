@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Conditioning
+import Zcash.Common.Probability.Conditioning
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -11,9 +11,8 @@ does not cover a caller that reuses coins, carries a transcript state across att
 or reveals failed attempts as part of its output.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Success and failure have total probability one. -/
@@ -152,4 +151,4 @@ theorem exists_success_of_failure_lt_one {A : Type*} (law : PMF A) (success : Se
   rw [hzero, zero_add] at hmass
   exact hfailure.ne hmass
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

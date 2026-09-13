@@ -9,7 +9,7 @@ The explicit fiber equivalence proves joint uniformity when a masking map is sur
 rather than inferring it from the uniformity of individual coordinates.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
 variable {A B : Type*} [AddCommGroup A] [AddCommGroup B]
 
@@ -49,4 +49,4 @@ theorem surjectiveAffineMap_uniform [Fintype A] [Fintype B]
   rw [← PMF.map_comp, surjectiveAddMap_uniform f hf]
   exact Zcash.map_uniformOfFintype_equiv (Equiv.addLeft offset)
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

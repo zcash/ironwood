@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.PlonkSuccessBounds
-import Zcash.Snark.ZeroKnowledge.Retry
+import Zcash.Common.Probability.Retry
 
 /-!
 # Successful full-prover observations
@@ -19,6 +19,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 instance plonkAttemptSuccessDecidable {actions k : ℕ} {G : Type*}

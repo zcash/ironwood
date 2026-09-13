@@ -11,6 +11,8 @@ do not infer independence of generated blocks from any marginal assumption.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Converting a finite vector of independent samples to a list gives the existing retry-tape law. -/
 theorem independentTapeLaw_toList {A : Type*} (law : PMF A) (budget : ℕ) :

@@ -25,6 +25,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS omegaOf)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Actual Action key generation supplies the reference's three public commitment families. -/
 theorem actionReferenceKey_publicCommitmentsMatch {G : Type}

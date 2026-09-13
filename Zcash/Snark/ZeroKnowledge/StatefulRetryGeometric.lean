@@ -12,6 +12,7 @@ potential pays the next comparison and the retry-weighted future comparisons.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Average bounds only on the support of the common outer experiment. -/

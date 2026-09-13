@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.RetryHistory
+import Zcash.Common.Probability.RetainedRetries
 
 /-!
 # Finite retained retries carrying state between attempts
@@ -10,6 +10,8 @@ state. This model does not replace a retained oracle cache by fresh verifier coi
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Prepend an observed attempt while preserving the continuation's final state. -/
 def prependStatefulRetry {A State : Type*} (attempt : A)

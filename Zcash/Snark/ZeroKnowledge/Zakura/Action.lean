@@ -21,6 +21,7 @@ namespace Zcash.Snark.ZeroKnowledge.Zakura
 open Zcash.Arithmetic (Fp URS scalarFieldOrder)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 -- Keep the concrete oracle implementation folded in proofs about its public wrapper.

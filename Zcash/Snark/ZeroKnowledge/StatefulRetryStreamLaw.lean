@@ -11,6 +11,8 @@ intermediate public state also retained. No run is conditioned on termination.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory Zcash.Common
 open scoped ENNReal

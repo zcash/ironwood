@@ -8,9 +8,8 @@ bound need not discard failed executions. Exact agreement off an exceptional eve
 a two-sided bound by that event's probability under the common outer sampling law.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Applying the same observation function cannot increase event bias. -/
@@ -61,4 +60,4 @@ theorem mixedLaws_error_bound {C A : Type*}
   exact ⟨hdirection actual ideal hgood,
     hdirection ideal actual (fun c hc => (hgood c hc).symm)⟩
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

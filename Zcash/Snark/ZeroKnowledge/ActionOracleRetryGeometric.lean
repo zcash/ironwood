@@ -17,6 +17,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The simulator retry budget is no larger than twice its zero-prior-query simulation budget. -/

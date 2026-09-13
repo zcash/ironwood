@@ -10,7 +10,7 @@ elements uniform. The proof replaces that coordinate by the affine output throug
 explicit bijection. This exposes the rank premise used by the sparse IPA mask.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
 variable {I F : Type*} [Fintype I] [DecidableEq I] [Field F]
 
@@ -72,4 +72,4 @@ theorem affineLinearForm_uniform [Fintype F] (weights : I → F) (j : I)
   rw [hmap, ← PMF.map_comp, Zcash.map_uniformOfFintype_equiv,
     Zcash.map_eval_uniformOfFintype]
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

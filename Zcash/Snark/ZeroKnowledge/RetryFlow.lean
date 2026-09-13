@@ -11,6 +11,7 @@ This connects the countable sum of stopped tapes to an executable retry step.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Prepend one additional retry observation to a stopped tape. -/

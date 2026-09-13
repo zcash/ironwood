@@ -12,6 +12,8 @@ from a preallocated private prefix covering the entire attempt budget.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 /-- Retained retries with one supplied coin tape per attempt and a continuing private generator. -/
 def runGeneratedCoinRetries {A State Coins Tape Generator : Type*}

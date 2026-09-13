@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.RandomTapeSource
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # A test-dependent reduction for a seeded private tape
@@ -17,6 +17,7 @@ PRNG security theorem also requires its seed, state, and resource conditions.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- A deterministic generator applied to an explicit seed distribution. -/

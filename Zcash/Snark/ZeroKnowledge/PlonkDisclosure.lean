@@ -19,6 +19,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp omegaOf URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G]

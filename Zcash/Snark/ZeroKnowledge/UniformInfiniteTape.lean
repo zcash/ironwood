@@ -10,6 +10,8 @@ existing independent uniform tape law.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory
 

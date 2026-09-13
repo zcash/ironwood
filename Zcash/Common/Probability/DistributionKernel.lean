@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 
 /-!
 # Randomized observations on arbitrary probability mass functions
@@ -8,9 +8,8 @@ space of byte strings or stopped retry histories. Thus randomized observations
 preserve the simulation error without requiring a finite output type.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- An event bound controls every `[0,1]`-valued test, without a finite-type premise. -/
@@ -71,4 +70,4 @@ theorem eventBias_bind_average_tsum {A B : Type*} (law : PMF A)
       ENNReal.tsum_le_tsum (fun a => mul_le_mul_right (h a event) _)
     _ = _ := by simp only [mul_add, ENNReal.tsum_add]
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

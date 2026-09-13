@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.IpaFailures
-import Zcash.Snark.ZeroKnowledge.Retry
+import Zcash.Common.Probability.Retry
 
 /-!
 # Simulating successful IPA attempts
@@ -17,6 +17,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp scalarFieldOrder)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The raw transcript is a finite tuple of its actual fields. -/

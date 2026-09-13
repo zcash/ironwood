@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.DigestFiber
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.DistributionKernel
 
 /-!
 # Recovering raw oracle digests without additional statistical loss

@@ -14,6 +14,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Snark Zcash.Circuits.Action
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 attribute [local irreducible] actionReferenceKey
 

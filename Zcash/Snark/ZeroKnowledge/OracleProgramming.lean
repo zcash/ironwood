@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.CachedOracle
-import Zcash.Snark.ZeroKnowledge.DistributionAgreement
+import Zcash.Common.Probability.DistributionAgreement
 
 /-!
 # Programming a finite oracle trace without changing cached answers

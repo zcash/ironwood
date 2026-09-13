@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 
 /-!
 # Simulation bounds after conditioning on successful attempts
@@ -8,9 +8,8 @@ of transferring an unconditioned simulation bound unchanged to the successful-pr
 The success event is the same observable predicate in the real and simulated experiments.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- A conditioning event with a supported outcome has positive mass. -/
@@ -98,4 +97,4 @@ theorem conditioned_common_error_bound {A : Type*} {actual ideal : PMF A} {ε lo
   exact ⟨fun event => (h.1 event).trans (add_le_add le_rfl (ENNReal.div_le_div_left haLower _)),
     fun event => (h.2 event).trans (add_le_add le_rfl (ENNReal.div_le_div_left hiLower _))⟩
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

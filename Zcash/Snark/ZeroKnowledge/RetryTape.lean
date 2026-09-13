@@ -1,5 +1,5 @@
-import Zcash.Snark.ZeroKnowledge.RetryHistorySimulation
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
+import Zcash.Common.Probability.RetainedRetriesSimulation
+import Zcash.Common.Probability.DistributionKernel
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -14,6 +14,7 @@ discarded, and a terminal observation may be an error rather than completion.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The complement of an event has the remaining probability mass. -/

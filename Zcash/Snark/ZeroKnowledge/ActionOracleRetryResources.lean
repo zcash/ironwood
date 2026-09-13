@@ -11,6 +11,8 @@ simulator tape allocation contains exactly the prescribed number of bit blocks.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open Zcash.Arithmetic (Fp URS)
 open Zcash.Circuits.Action

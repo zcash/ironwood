@@ -18,6 +18,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp scalarFieldOrder)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The IPA either completes, fails to encode a point, or panics on a zero round challenge. -/

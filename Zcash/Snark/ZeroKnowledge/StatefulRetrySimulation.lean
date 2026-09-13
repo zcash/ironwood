@@ -13,6 +13,7 @@ the simulator retains the same full history and final state.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Sum the successive comparison costs as the retained-state budget grows. -/

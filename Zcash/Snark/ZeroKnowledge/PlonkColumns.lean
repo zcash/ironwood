@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.ColumnSequence
-import Zcash.Snark.ZeroKnowledge.Distribution
+import Zcash.Common.Probability.Distribution
 
 /-!
 # The pinned private-column schedule
@@ -19,6 +19,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp omegaOf)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- The five kinds of newly committed private column. -/

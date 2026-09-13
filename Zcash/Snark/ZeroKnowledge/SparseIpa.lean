@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.LinearForm
+import Zcash.Common.Probability.LinearForm
 import Zcash.Snark.ZeroKnowledge.IpaFold
 import Zcash.Common.CPolynomial
 import Mathlib.Data.Fin.Rev
@@ -16,6 +16,8 @@ not establish the joint IPA view, which includes commitments and the final aggre
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open Zcash.Arithmetic (Fp)
 open CompPoly

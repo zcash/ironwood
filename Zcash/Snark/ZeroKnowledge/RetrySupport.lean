@@ -9,6 +9,8 @@ returns the same nonempty, nonexhausted history.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open scoped ENNReal
 

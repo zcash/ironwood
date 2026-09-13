@@ -10,6 +10,8 @@ neither independent generated blocks nor termination for every seed is assumed.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory Zcash.Common
 open scoped ENNReal

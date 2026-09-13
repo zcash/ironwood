@@ -15,6 +15,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp omegaOf URS)
 open Zcash.Common
+open Zcash.Common.Probability
 open CompPoly
 open scoped ENNReal
 

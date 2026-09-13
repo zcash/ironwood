@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.Domain
-import Zcash.Snark.ZeroKnowledge.LinearImage
+import Zcash.Common.Probability.LinearImage
 
 /-!
 # Joint evaluation rank of the replacement-row masks
@@ -11,6 +11,8 @@ degree is below `n`, so the existing row interpolation recovers it exactly.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open Zcash.Arithmetic (Fp)
 

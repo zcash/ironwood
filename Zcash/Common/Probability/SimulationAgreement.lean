@@ -1,4 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.DistributionAgreement
+import Zcash.Common.Probability.DistributionAgreement
 
 /-!
 # Simulation with an exceptional observation map
@@ -10,9 +10,8 @@ This avoids charging the same distribution replacement a second time merely
 to move an exceptional-event bound from the simulator to the prover.
 -/
 
-namespace Zcash.Snark.ZeroKnowledge
+namespace Zcash.Common.Probability
 
-open Zcash.Common
 open scoped ENNReal
 
 /-- Transfer a simulation through observations that agree away from an exceptional projected view. -/
@@ -62,4 +61,4 @@ theorem simulation_map_of_agree {Source View Output : Type*}
         exact add_le_add (add_le_add (source.toOuterMeasure_mono hsubset) le_rfl) le_rfl
       _ = _ := by ac_rfl
 
-end Zcash.Snark.ZeroKnowledge
+end Zcash.Common.Probability

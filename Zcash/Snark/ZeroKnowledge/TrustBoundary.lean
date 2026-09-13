@@ -387,7 +387,6 @@ import Zcash.Snark.ZeroKnowledge.PlonkCompilerRetry
 import Zcash.Snark.ZeroKnowledge.PlonkCausality
 import Zcash.Snark.ZeroKnowledge.IpaCausality
 import Zcash.Snark.ZeroKnowledge.PlonkSigmaCertificate
-import Zcash.Snark.ZeroKnowledge.BlindingGenerator
 import Zcash.Snark.ZeroKnowledge.PlonkEncoding
 import Zcash.Snark.ZeroKnowledge.PlonkBinaryBounds
 import Zcash.Snark.ZeroKnowledge.PlonkCompleteness
@@ -406,7 +405,6 @@ import Zcash.Snark.ZeroKnowledge.PlannerStarts
 import Zcash.Snark.ZeroKnowledge.SelectorCompressionCount
 import Zcash.Snark.ZeroKnowledge.SelectorBitPacking
 import Zcash.Snark.ZeroKnowledge.RandomTapeSource
-import Zcash.Snark.ZeroKnowledge.DistributionKernel
 import Zcash.Snark.ZeroKnowledge.PrngReduction
 import Zcash.Snark.ZeroKnowledge.RetryLimit
 import Zcash.Snark.ZeroKnowledge.RetryExpectation
@@ -420,7 +418,6 @@ import Zcash.Snark.ZeroKnowledge.PlonkQuerySchedule
 import Zcash.Snark.ZeroKnowledge.PlonkSimulatorTape
 import Zcash.Snark.ZeroKnowledge.OracleContinuationResources
 import Zcash.Snark.ZeroKnowledge.AnchorProbability
-import Zcash.Snark.ZeroKnowledge.SimulationAgreement
 import Zcash.Snark.ZeroKnowledge.RawBits
 import Zcash.Snark.ZeroKnowledge.OracleBitBounds
 import Zcash.Snark.ZeroKnowledge.OracleRetryBounds
@@ -711,17 +708,11 @@ assert_axioms Zcash.Snark.ZeroKnowledge.uniformRawPrivateTape_reduce
 assert_axioms Zcash.Snark.ZeroKnowledge.sourceTapeExperiment
 assert_axioms Zcash.Snark.ZeroKnowledge.sourceTapeExperiment_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.sourceTapeExperiment_simulation_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_weighted_tsum
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_bind_kernel
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_bind_average_tsum
 assert_axioms Zcash.Snark.ZeroKnowledge.seededTapeSource
 assert_axioms Zcash.Snark.ZeroKnowledge.tapeReduction
 assert_axioms Zcash.Snark.ZeroKnowledge.tapeReduction_law
 assert_axioms Zcash.Snark.ZeroKnowledge.seededTape_test_simulation_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.sampledAttempt_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_map
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_le_one
-assert_axioms Zcash.Snark.ZeroKnowledge.mixedLaws_error_bound
 
 -- Common #225: derive the sparse polynomial and the full scalar from the recursive fold.
 assert_computable Zcash.Snark.ZeroKnowledge.coefficientFold +choice
@@ -739,7 +730,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.coefficientEvaluation_sparseIpaCoefficie
 assert_axioms Zcash.Snark.ZeroKnowledge.coefficientFold_sparseIpaCoefficients
 assert_axioms Zcash.Snark.ZeroKnowledge.maskedIpaScalar_eq
 assert_axioms Zcash.Snark.ZeroKnowledge.maskedIpaScalar_eq_zero_of_evaluation
-assert_axioms Zcash.Snark.ZeroKnowledge.affineLinearForm_uniform
 assert_axioms Zcash.Snark.ZeroKnowledge.sparseIpaScalar_uniform
 assert_axioms Zcash.Snark.ZeroKnowledge.maskedIpaScalar_simulates
 assert_axioms Zcash.Snark.ZeroKnowledge.actualSparseIpaScalar_error_bound
@@ -834,22 +824,6 @@ assert_computable Zcash.Snark.ZeroKnowledge.IpaTranscript.pointFamily
 assert_computable Zcash.Snark.ZeroKnowledge.ipaPointBlindsIndex
 assert_computable Zcash.Snark.ZeroKnowledge.ipaSuccessSet +choice
 assert_computable Zcash.Snark.ZeroKnowledge.ipaTranscriptEquiv
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioning_mass_ne_zero
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_event_mass
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_event_mul_mass
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_eventBias
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_simulation_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_common_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.event_mass_add_compl
-assert_axioms Zcash.Snark.ZeroKnowledge.success_mass_lower_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.retryStep_event_mass
-assert_axioms Zcash.Snark.ZeroKnowledge.conditioned_retry_fixedpoint
-assert_axioms Zcash.Snark.ZeroKnowledge.retryStep_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.boundedRetries_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.boundedRetries_exhausted
-assert_axioms Zcash.Snark.ZeroKnowledge.failure_mass_lt_one
-assert_axioms Zcash.Snark.ZeroKnowledge.boundedRetries_tendsto
-assert_axioms Zcash.Snark.ZeroKnowledge.exists_success_of_failure_lt_one
 assert_axioms Zcash.Snark.ZeroKnowledge.honestIpaPoints_fixed_mask
 assert_axioms Zcash.Snark.ZeroKnowledge.idealIpaPoints_uniform
 assert_axioms Zcash.Snark.ZeroKnowledge.idealIpaPoint_identity_mass
@@ -898,8 +872,6 @@ assert_computable Zcash.Snark.ZeroKnowledge.rowEvaluationsFromTape +choice
 assert_computable Zcash.Snark.ZeroKnowledge.maskedColumnCommitmentCore +choice
 assert_computable Zcash.Snark.ZeroKnowledge.columnTapeEquiv +choice
 assert_computable Zcash.Snark.ZeroKnowledge.maskedColumnFromTape +choice
-assert_axioms Zcash.Snark.ZeroKnowledge.surjectiveAddMap_uniform
-assert_axioms Zcash.Snark.ZeroKnowledge.surjectiveAffineMap_uniform
 assert_axioms Zcash.Snark.ZeroKnowledge.rowMask_interpolationNodes_injective
 assert_axioms Zcash.Snark.ZeroKnowledge.rowMask_evaluations_surjective
 assert_axioms Zcash.Snark.ZeroKnowledge.rowEvaluationLinearMap_apply
@@ -1185,7 +1157,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.plonkInvalidRowMass_le_row_violation
 assert_axioms Zcash.Snark.ZeroKnowledge.sampledPlonkVerifier_consistency_error_bound
 
 -- The complete public tape is retained; exceptional challenges are charged, not excluded.
-assert_axioms Zcash.Snark.ZeroKnowledge.variableMixedLaws_error_bound
 assert_computable Zcash.Snark.ZeroKnowledge.plonkChallengesFromTape
 assert_axioms Zcash.Snark.ZeroKnowledge.widePlonkChallenges_sampling_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.freshPlonkVerifier_simulation_error_bound
@@ -1718,30 +1689,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.successfulPlonk_selection_tendsto
 assert_axioms Zcash.Snark.ZeroKnowledge.wideSuccessfulCompilerKeygenPlonk_simulation_capstone
 
 -- Auxiliary caller composition retains every prefix and selects which terminal failures to repeat.
-assert_computable Zcash.Snark.ZeroKnowledge.RetryHistory.prepend
-assert_computable Zcash.Snark.ZeroKnowledge.RetryHistory.stopped
-assert_computable Zcash.Snark.ZeroKnowledge.RetryHistory.map
-assert_computable Zcash.Snark.ZeroKnowledge.runRetryHistory
-assert_axioms Zcash.Snark.ZeroKnowledge.runRetryHistory_prefix
-assert_axioms Zcash.Snark.ZeroKnowledge.runRetryHistory_exhausted_iff
-assert_axioms Zcash.Snark.ZeroKnowledge.runRetryHistory_of_all_retry
-assert_axioms Zcash.Snark.ZeroKnowledge.runRetryHistory_append_of_stopped
-assert_axioms Zcash.Snark.ZeroKnowledge.runRetryHistory_map
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries
-assert_axioms Zcash.Snark.ZeroKnowledge.retryAttemptTape
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_fromTape
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_exhausted
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_exhausted
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_source_bias
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_continuation_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryError
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryError_eq_sum
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryError_le
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_simulation_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_uniform_error_bound
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_exhausted_le
-assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_exhausted_tendsto
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkFinitePermSetEval
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkFiniteLookupEval
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkFiniteProofString
@@ -1794,7 +1741,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_supported
 assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_truncate
 assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_truncate_exhausted_iff
 assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_length_tail
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_map_of_agree
 assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_truncation_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.unlimitedRetainedRetries_simulation_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.natExpectation_eq_tsum_tail
@@ -1926,9 +1872,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.plonkReferenceAttemptFromTape_proof_leng
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkReferenceAttemptFromTape_prefix_causal
 
 -- The group argument is abstract here; the concrete Vesta cardinality has its own census.
-assert_axioms Zcash.Snark.ZeroKnowledge.scalarBlinding_injective
-assert_axioms Zcash.Snark.ZeroKnowledge.scalarBlinding_bijective
-assert_axioms Zcash.Snark.ZeroKnowledge.scalarBlinding_bijective_iff
 
 -- The readable bound in the PR follows from the checked numerical budget.
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkSimulationErrorBound_le_actions_mul_one
@@ -2355,7 +2298,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.plonkChallengesFromDigests_extend
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkChallengesFromDigests_extend_read
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkAfterDigests_causal
 -- SimulationAgreement
-assert_axioms Zcash.Snark.ZeroKnowledge.simulation_map_of_agree
 -- StageQuery
 assert_axioms Zcash.Snark.ZeroKnowledge.protocolStagesTrace_queryPrefix
 assert_axioms Zcash.Snark.ZeroKnowledge.protocolQueryPrefix_stages
@@ -3456,7 +3398,6 @@ assert_computable Zcash.Snark.ZeroKnowledge.plonkQuotientPrimeEntryCosted
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkQuotientPrimeEntryCosted_result
 assert_axioms Zcash.Snark.ZeroKnowledge.plonkQuotientPrimeEntryCosted_cost_le
 
-
 -- RowCoefficientCost
 assert_computable Zcash.Snark.ZeroKnowledge.rowCoefficientSummandCosted +choice
 assert_axioms Zcash.Snark.ZeroKnowledge.rowCoefficientSummandCosted_result
@@ -3477,7 +3418,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.rowPolynomialEvalCosted_cost_le
 assert_computable Zcash.Snark.ZeroKnowledge.rowPolynomialCommitmentCosted +choice
 assert_axioms Zcash.Snark.ZeroKnowledge.rowPolynomialCommitmentCosted_result
 assert_axioms Zcash.Snark.ZeroKnowledge.rowPolynomialCommitmentCosted_cost_le
-
 
 -- OpeningGroupLayoutCost
 assert_computable Zcash.Snark.ZeroKnowledge.firstOpeningGroupCosted

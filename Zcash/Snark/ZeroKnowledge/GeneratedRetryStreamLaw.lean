@@ -10,6 +10,8 @@ finite truncations are exactly the finite continuing-generator observations.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open MeasureTheory Zcash.Common
 open scoped ENNReal

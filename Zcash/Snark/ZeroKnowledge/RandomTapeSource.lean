@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.Sampling
-import Zcash.Snark.ZeroKnowledge.RetryHistorySimulation
+import Zcash.Common.Probability.RetainedRetriesSimulation
 
 /-!
 # Independent raw tapes and replacement of the complete private source
@@ -18,6 +18,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (Fp)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- A vector of independent samples from one arbitrary probability mass function. -/

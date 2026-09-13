@@ -12,6 +12,7 @@ The averaged theorem also covers a privately randomized oracle computation.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Run on independent replies, then install the recorded trace without overwriting cached answers. -/

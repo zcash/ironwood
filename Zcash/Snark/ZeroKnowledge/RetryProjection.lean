@@ -9,6 +9,8 @@ exactly the existing finite-budget policy on independent attempt tapes.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
+open Zcash.Common
+open Zcash.Common.Probability
 
 open scoped ENNReal
 

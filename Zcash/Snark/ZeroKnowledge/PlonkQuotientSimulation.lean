@@ -23,6 +23,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Arithmetic (Fp omegaOf URS)
 open CompPoly
 open Zcash.Common
+open Zcash.Common.Probability
 
 section Quotient
 

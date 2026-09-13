@@ -20,6 +20,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Zcash.Arithmetic (URS scalarFieldOrder)
 open Zcash.Common
+open Zcash.Common.Probability
 open scoped ENNReal
 
 /-- Adaptive oracle phases surrounding one internal retained-history retry run. -/
