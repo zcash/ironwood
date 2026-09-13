@@ -2,8 +2,8 @@ import Zcash.Snark.Fixtures.Prover.Division
 import Zcash.Snark.Fixtures.Prover.Replay
 import Zcash.Snark.Fixtures.Prover.SingleAction
 import Zcash.Snark.Fixtures.Prover.MultiAction
-import Zcash.Snark.Fixtures.SingleAction.Honest.Fixture
-import Zcash.Snark.Fixtures.MultiAction.Honest.Fixture
+import Zcash.Snark.Fixtures.ReducedMask.SingleAction.Honest.Fixture
+import Zcash.Snark.Fixtures.ReducedMask.MultiAction.Honest.Fixture
 import Zcash.Snark.ZeroKnowledge.Zakura.Attempt
 
 /-!
@@ -153,14 +153,14 @@ def checkSingleCapture : IO Unit := do
   checkWideCoefficientBlocks
   checkWideQuotientCollapse
   checkCase "single-honest" SingleAction.captured
-    Fixture.vk Fixture.capturedURS.g Fixture.capturedURS.w Fixture.capturedURS.u
-    Fixture.capturedPublicInstances Fixture.capturedInit Fixture.ch Fixture.ps true
+    FixtureReduced.vk FixtureReduced.capturedURS.g FixtureReduced.capturedURS.w FixtureReduced.capturedURS.u
+    FixtureReduced.capturedPublicInstances FixtureReduced.capturedInit FixtureReduced.ch FixtureReduced.ps true
 
 /-- Check the complete two-Action execution. -/
 def checkMultiCapture : IO Unit :=
   checkCase "multi-honest" MultiAction.captured
-    Fixture2.vk Fixture2.capturedURS.g Fixture2.capturedURS.w Fixture2.capturedURS.u
-    Fixture2.capturedPublicInstances Fixture2.capturedInit Fixture2.ch Fixture2.ps false
+    FixtureReduced2.vk FixtureReduced2.capturedURS.g FixtureReduced2.capturedURS.w FixtureReduced2.capturedURS.u
+    FixtureReduced2.capturedPublicInstances FixtureReduced2.capturedInit FixtureReduced2.ch FixtureReduced2.ps false
 
 /-- Check the complete one- and two-Action executions imported from Rust-generated Lean modules. -/
 def checkCaptures : IO Unit := do
