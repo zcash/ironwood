@@ -84,7 +84,7 @@ theorem idealPlonkJoint_exceptional_error_bound {actions : ℕ}
       (idealColumnRows (plonkColumnSteps construct) history).toOuterMeasure {rows | ¬ good rows} := by
     change (idealPlonkMaterial construct history).toOuterMeasure (Prod.fst ⁻¹' {rows | ¬ good rows}) = _
     rw [← PMF.toOuterMeasure_map_apply, idealPlonkMaterial_rows]
-  have h := arbitraryMixedLaws_error_bound (idealPlonkMaterial construct history)
+  have h := mixedLaws_error_bound (idealPlonkMaterial construct history)
     actual (simulate ∘ observe) (fun material => good material.1) hfixed
   rw [hsim, hbad] at h
   exact h

@@ -658,9 +658,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.actionFiatShamir_prover_queryBound +nati
 assert_axioms Zcash.Snark.ZeroKnowledge.actionFiatShamir_program_simulation_error_bound +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionFiatShamir_simulation_error_bound +native(
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- ActionOracleAdversary
 assert_axioms Zcash.Snark.ZeroKnowledge.ActionOracleRequest
 assert_axioms Zcash.Snark.ZeroKnowledge.ActionOracleSelection +native(

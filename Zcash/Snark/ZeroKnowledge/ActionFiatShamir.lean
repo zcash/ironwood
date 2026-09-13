@@ -62,14 +62,4 @@ theorem actionFiatShamir_program_simulation_error_bound [Fintype VestaG] {action
   rw [actionOracleSimulatorProgram_law urs hk inputs hW vkTranscriptRepr cache]
   exact actionOracle_cached_simulation_error_bound urs hk inputs witness hvalid hpositive hW vkTranscriptRepr cache
 
-/-- Statistical one-attempt Fiat–Shamir simulation, retaining the adversary's final oracle view. -/
-theorem actionFiatShamir_simulation_error_bound [Fintype VestaG] {actions : ℕ}
-    {urs : URS VestaG} {hk : urs.k = 11} {Coins State Output : Type*}
-    (adversary : ActionOracleAdversary (actions := actions) urs hk Coins State Output)
-    (hpositive : 0 < actions) (hW : urs.w ≠ 0) :
-    let error := plonkSimulationErrorBound actions + (adversary.beforeBudget : ℝ≥0∞) / scalarFieldOrder
-    PMFEventBiasLE (actionOracleRealExperiment adversary) (actionOracleSimulatedExperiment adversary) error ∧
-      PMFEventBiasLE (actionOracleSimulatedExperiment adversary) (actionOracleRealExperiment adversary) error :=
-  actionOracleAdversary_simulation_error_bound adversary hpositive hW
-
 end Zcash.Snark.ZeroKnowledge

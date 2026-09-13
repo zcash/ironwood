@@ -1177,7 +1177,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.plonkConstraintNumerator_dvd_of_rows
 assert_axioms Zcash.Snark.ZeroKnowledge.sampledPlonkVerifier_rows_simulation_error_bound
 
 -- Private exceptional states contribute their probability to the joint comparison.
-assert_axioms Zcash.Snark.ZeroKnowledge.arbitraryMixedLaws_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.idealPlonkMaterial_rows
 assert_axioms Zcash.Snark.ZeroKnowledge.idealPlonkJoint_exceptional_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.sampledPlonkJoint_sampling_error_bound
@@ -1734,7 +1733,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.retryAttemptTape
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_fromTape
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_exhausted
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetries_exhausted
-assert_axioms Zcash.Snark.ZeroKnowledge.eventBias_bind_source
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_source_bias
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryStep_continuation_error_bound
 assert_axioms Zcash.Snark.ZeroKnowledge.retainedRetryError

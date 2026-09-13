@@ -30,36 +30,35 @@ theorem eventBias_le_one {A : Type*} (actual ideal : PMF A) :
 
 The outer draw is the same on both sides. The bad branches may be arbitrary; neither law
 is conditioned on success or on the complement of the bad event. -/
-theorem mixedLaws_error_bound {C A : Type*} [Fintype C]
+theorem mixedLaws_error_bound {C A : Type*}
     (coins : PMF C) (actual ideal : C → PMF A) (good : C → Prop) [DecidablePred good]
     (hgood : ∀ c, good c → actual c = ideal c) :
     PMFEventBiasLE (coins.bind actual) (coins.bind ideal)
         (coins.toOuterMeasure {c | ¬ good c}) ∧
       PMFEventBiasLE (coins.bind ideal) (coins.bind actual)
         (coins.toOuterMeasure {c | ¬ good c}) := by
-  have hmass : (∑ c, coins c * (if good c then 0 else 1)) =
-      coins.toOuterMeasure {c | ¬ good c} := by
-    rw [PMF.toOuterMeasure_apply_fintype]
-    apply Finset.sum_congr rfl
-    intro c _
-    by_cases hc : good c <;> simp [hc]
-  have hforward (c : C) :
-      PMFEventBiasLE (actual c) (ideal c) (if good c then 0 else 1) := by
-    by_cases hc : good c
-    · rw [if_pos hc, hgood c hc]
-      intro event
-      simp
-    · rw [if_neg hc]
-      exact eventBias_le_one _ _
-  have hreverse (c : C) :
-      PMFEventBiasLE (ideal c) (actual c) (if good c then 0 else 1) := by
-    by_cases hc : good c
-    · rw [if_pos hc, hgood c hc]
-      intro event
-      simp
-    · rw [if_neg hc]
-      exact eventBias_le_one _ _
-  exact ⟨hmass ▸ PMFEventBiasLE.bind_average hforward,
-    hmass ▸ PMFEventBiasLE.bind_average hreverse⟩
+  have hdirection (f g : C → PMF A) (hfg : ∀ c, good c → f c = g c) :
+      PMFEventBiasLE (coins.bind f) (coins.bind g) (coins.toOuterMeasure {c | ¬ good c}) := by
+    intro event
+    have hpoint (c : C) : (f c).toOuterMeasure event ≤
+        (g c).toOuterMeasure event + (if good c then 0 else 1) := by
+      by_cases hc : good c
+      · rw [if_pos hc, hfg c hc, add_zero]
+      · rw [if_neg hc]
+        exact eventBias_le_one (f c) (g c) event
+    rw [PMF.toOuterMeasure_bind_apply, PMF.toOuterMeasure_bind_apply]
+    calc
+      _ ≤ ∑' c, coins c * ((g c).toOuterMeasure event + (if good c then 0 else 1)) :=
+        ENNReal.tsum_le_tsum fun c => mul_le_mul_right (hpoint c) (coins c)
+      _ = _ := by
+        simp_rw [mul_add]
+        rw [ENNReal.tsum_add]
+        congr 1
+        rw [PMF.toOuterMeasure_apply]
+        apply tsum_congr
+        intro c
+        by_cases hc : good c <;> simp [hc]
+  exact ⟨hdirection actual ideal hgood,
+    hdirection ideal actual (fun c hc => (hgood c hc).symm)⟩
 
 end Zcash.Snark.ZeroKnowledge

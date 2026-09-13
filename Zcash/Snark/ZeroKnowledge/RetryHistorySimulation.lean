@@ -15,18 +15,12 @@ namespace Zcash.Snark.ZeroKnowledge
 open Zcash.Common
 open scoped ENNReal
 
-/-- A common probabilistic continuation cannot increase bias in its discrete input law. -/
-theorem eventBias_bind_source {A B : Type*}
-    {actual ideal : PMF A} {ε : ℝ≥0∞} (h : PMFEventBiasLE actual ideal ε)
-    (nextFor : A → PMF B) : PMFEventBiasLE (actual.bind nextFor) (ideal.bind nextFor) ε :=
-  eventBias_bind_kernel h nextFor
-
 /-- Changing one attempt's law costs its bias under the same observable retry policy. -/
 theorem retainedRetryStep_source_bias {A : Type*}
     {actual ideal : PMF A} {ε : ℝ≥0∞} (h : PMFEventBiasLE actual ideal ε)
     (retry : Set A) [DecidablePred (fun a => a ∈ retry)] (next : PMF (RetryHistory A)) :
     PMFEventBiasLE (retainedRetryStep actual retry next) (retainedRetryStep ideal retry next) ε :=
-  eventBias_bind_source h _
+  eventBias_bind_kernel h _
 
 /-- Retaining the first attempt does not remove the retry-probability factor on continuation error. -/
 theorem retainedRetryStep_continuation_error_bound {A : Type*}
