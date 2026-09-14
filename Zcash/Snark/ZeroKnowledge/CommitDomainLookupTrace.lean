@@ -1,5 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.SinsemillaLookupTrace
-import Zcash.Circuits.Ecc.MulFixed.FullWidth
+import Zcash.Snark.ZeroKnowledge.FixedBaseLookupTrace
 import Zcash.Circuits.Sinsemilla.CommitDomain
 
 /-!
@@ -13,22 +13,6 @@ contribute empty entries and the trace keeps one entry per region.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Zcash.Circuits
-
-/-- Both regions of full-width blinding multiplication are lookup-free. The region-level
-`regionLookupTrace_eq_nil` does not reach this: a circuit's trace has one entry per region, so
-crossing a multi-region call boundary needs the region count as well as the activation count.
-Stated here, beside its only consumer. -/
-@[lookup_trace_norm]
-theorem fullWidth_lookupTrace (base : Ecc.MulFixed.FixedBase)
-    (config : Ecc.MulFixed.FullWidth.Config) (input : Var UnconstrainedNat Fp)
-    (region : RegionIndex) :
-    lookupTrace (((Ecc.MulFixed.FullWidth.circuit base).call config input).operations region)
-      = [[], []] := by
-  rw [FormalCircuit.call_operations]
-  change lookupTrace ((Ecc.MulFixed.FullWidth.synthesize base.toData config
-    (Ecc.MulFixed.FullWidth.scalarWindows input)).operations region) = _
-  simp only [Ecc.MulFixed.FullWidth.synthesize, lookup_trace_norm, synthesis_summary_norm,
-    List.cons_append]
 
 /-- The exact commitment lookup trace, parameterized by the message's piece widths. Only the
 hash configuration appears: it is the sole source of lookups. -/
