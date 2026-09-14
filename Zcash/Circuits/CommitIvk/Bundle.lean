@@ -319,4 +319,12 @@ def bundle (wb1 wd1 : WitgenIR Fp 1) :
     · push_cast at he13 ⊢; linear_combination he13
     · push_cast at he14 ⊢; linear_combination he14
 
+/-- The incoming-viewing-key gate's elaborated footprint is its named summary, so
+`synthesis_summary_norm` can cross a call to it. -/
+@[synthesis_summary_norm]
+theorem bundle_synthesisSummary_eq (wb1 wd1 : WitgenIR Fp 1) (cfg : Config) (offset : ℕ)
+    (input : Var Inputs Fp) (region : RegionIndex) :
+    (bundle wb1 wd1).elaborated.synthesisSummary cfg offset input region =
+      synthesisSummary cfg offset := rfl
+
 end Zcash.Circuits.CommitIvk

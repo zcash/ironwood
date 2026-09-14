@@ -372,6 +372,11 @@ def innerRegionSynthesisSummary (cfg : Config) (offset : ℕ) :
       (windowChainSynthesisSummary cfg.superConfig offset 85))
 
 @[synthesis_summary_norm]
+theorem innerRegionSynthesisSummary_lookupActivationCount (cfg : Config) (offset : ℕ) :
+    (innerRegionSynthesisSummary cfg offset).lookupActivationCount = 0 := by
+  simp only [innerRegionSynthesisSummary, synthesis_summary_norm]
+
+@[synthesis_summary_norm]
 theorem innerRegion_synthesisSummary_eq
     (B : FixedBaseData) (cfg : Config) (offset : ℕ)
     (windows : Vector (Witgen.MOver Fp (AssignedCell Fp) (FExpr Fp)) 85)
