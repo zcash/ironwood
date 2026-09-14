@@ -68,8 +68,9 @@ theorem regionLookupTrace_nil :
 theorem regionLookupTrace_cons (operation : RegionOperation F)
     (rest : RegionOperations F) :
     regionLookupTrace (operation :: rest) =
-      regionLookupTrace [operation] ++ regionLookupTrace rest := by
-  simp only [regionLookupTrace, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      (match operation with
+        | .enableLookup argument _ row => [(argument.masterSelector.index, row)]
+        | _ => []) ++ regionLookupTrace rest := rfl
 
 /-- Region traces concatenate. -/
 theorem regionLookupTrace_append (first second : RegionOperations F) :
