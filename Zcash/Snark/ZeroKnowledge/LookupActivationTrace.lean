@@ -110,4 +110,35 @@ theorem lookupTrace_flatMap {α : Type} (items : List α)
 theorem lookupTrace_region (name : String) (body : RegionOperations F) :
     lookupTrace [.region name body] = [regionLookupTrace body] := rfl
 
+/-- An advice assignment contributes no lookup. -/
+theorem regionLookupTrace_assignAdvice (column : Column .advice) (witness : WitgenIR F 1) (row : ℕ) :
+    regionLookupTrace [.assignAdvice column row witness] = [] := rfl
+
+/-- A fixed assignment contributes no lookup. -/
+theorem regionLookupTrace_assignFixed (column : Column .fixed) (row : ℕ) (value : F) :
+    regionLookupTrace [.assignFixed column row value] = [] := rfl
+
+/-- An equality constraint contributes no lookup. -/
+theorem regionLookupTrace_constrainEqual (left right : Cell) :
+    regionLookupTrace [.constrainEqual left right] (F := F) = [] := rfl
+
+/-- A constant constraint contributes no lookup. -/
+theorem regionLookupTrace_constrainConstant (cell : Cell) (value : F) :
+    regionLookupTrace [.constrainConstant cell value] = [] := rfl
+
+/-- An instance constraint inside a region contributes no lookup. -/
+theorem regionLookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
+    regionLookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl
+
+/-- An empty synthesis stream has no regions. -/
+theorem lookupTrace_nil : lookupTrace ([] : Operations F) = [] := rfl
+
+/-- An instance constraint outside a region contributes no region trace. -/
+theorem lookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
+    lookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl
+
+/-- A table load contributes no region trace. -/
+theorem lookupTrace_loadTable (table : TableColumn) (values : List F) :
+    lookupTrace [.loadTable table values] = [] := rfl
+
 end Zcash.Snark.ZeroKnowledge
