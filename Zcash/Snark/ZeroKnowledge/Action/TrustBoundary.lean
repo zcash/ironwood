@@ -1370,7 +1370,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBit_simulation_error_b
 -- Complete original Action gate and lookup activation coverage.
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateActivationCoverage_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateActivationCoverage +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_lookupActivationCoverage_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_lookupActivationCoverage +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete source execution and application witness simulation.

@@ -1,4 +1,6 @@
-import Zcash.Snark.ZeroKnowledge.ActionLookupSourceCertificate
+import Zcash.Snark.ZeroKnowledge.ActionOrderedStarts
+import Zcash.Snark.ZeroKnowledge.ActionSourceSelectorTrace
+import Zcash.Snark.ZeroKnowledge.ActionSourceLookupTrace
 import Zcash.Snark.ZeroKnowledge.ActivationCoverageScan
 import Zcash.Meta.ActivationCoverage
 
@@ -9,35 +11,21 @@ set_option maxHeartbeats 0
 set_option stderrAsMessages false
 set_option trace.Zcash.activationCoverage true
 
-/-- Every configured lookup has its original source entry at every active master row. -/
-theorem actionCircuit_lookupActivationCoverage_certificate :
-    lookupActivationCoverageCheck
-      (actionCircuit.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index))
-      actionCircuit.selectorActivations actionLookupActivationSourceCertificate.entries = true := by
-  have normalizeCheck (labels : List (ℕ × ℕ)) :
-      lookupActivationCoverageCheck
-        (actionCircuit.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index))
-        actionCircuit.selectorActivations labels =
-      lookupActivationCoverageCheck
-        (Internal.actionCircuitImpl.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index))
-        (placeSelectorTrace actionRegionStartsCertificate (actionSourceSelectorTrace actionConfig)) labels := by
-    rw [actionCircuit_selectorActivations_eq_sourceTrace, actionCircuit_regionStarts_eq_certificate,
-      Internal.actionCircuit_eq_impl]
-  rw [normalizeCheck]
-  change lookupActivationCoverageCheck
-    (Internal.actionCircuitImpl.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index))
-    (placeSelectorTrace actionRegionStartsCertificate (actionSourceSelectorTrace actionConfig))
-    actionLookupActivationSourceCertificate.entries = true
-  rw [← lookupActivationCoverageScan_eq]
-  check_activation_coverage
+/-- The lookup coverage result is indexed by the original complete Action operations: every
+configured lookup has its original source entry at every active master row.
 
-/-- The lookup coverage result is indexed by the original complete Action operations. -/
+Both of the check's list arguments are read from compact source traces, placed. The labels
+come from `actionCircuit_lookupLabels_eq_sourceTrace` and the activations from
+`actionCircuit_selectorActivations_eq_sourceTrace`, so the opaque circuit is opened only
+through its recorded implementation equation, never reduced through. -/
 theorem actionCircuit_lookupActivationCoverage :
     lookupActivationCoverageCheck
       (actionCircuit.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index))
       actionCircuit.selectorActivations
       (sourceLookupActivationLabels actionCircuit.placement actionCircuit.operations 0) = true := by
-  rw [← actionLookupActivationSourceCertificate.source_eq]
-  exact actionCircuit_lookupActivationCoverage_certificate
+  rw [actionCircuit_lookupLabels_eq_sourceTrace, actionCircuit_selectorActivations_eq_sourceTrace,
+    actionCircuit_regionStarts_eq_certificate, Internal.actionCircuit_eq_impl]
+  rw [← lookupActivationCoverageScan_eq]
+  check_activation_coverage
 
 end Zcash.Snark.ZeroKnowledge
