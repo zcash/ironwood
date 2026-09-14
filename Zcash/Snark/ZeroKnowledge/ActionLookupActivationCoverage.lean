@@ -28,4 +28,10 @@ theorem actionCircuit_lookupActivationCoverage :
   rw [← lookupActivationCoverageScan_eq]
   check_activation_coverage
 
+/-- The configured Action lookup arguments have distinct master selectors. -/
+theorem actionCircuit_lookupMasters_nodup :
+    (actionCircuit.constraintSystem.lookups.map (fun lookup => lookup.masterSelector.index)).Nodup := by
+  rw [Internal.actionCircuit_eq_impl]
+  decide +kernel
+
 end Zcash.Snark.ZeroKnowledge

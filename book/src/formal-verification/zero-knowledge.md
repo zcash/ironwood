@@ -54,18 +54,19 @@ The following proof-side objects retain `noncomputable` declarations:
 
 The static Action values are `actionAdviceSourceCertificateRaw`,
 `actionAdviceSourceCertificate`, `actionGateSourceCertificateRaw`,
-`actionGateActivationSourceCertificate`, `actionLookupSourceCertificateRaw`,
-`actionLookupActivationSourceCertificate`, `actionWitnessLoadSourceCertificate`,
+`actionGateActivationSourceCertificate`, `actionWitnessLoadSourceCertificate`,
 and `actionValueSourceCertificate`. Their retained data are checked against the
 original programs. The noncomputable source-certificate values in
 `Zcash.Meta.Tests` serve the same purpose in positive and negative regression cases.
 
-`ActionAdviceSourceData`, `ActionGateSourceCertificate`, and
-`ActionLookupSourceCertificate` each certify their complete original source.
-`ActionAdviceSourceAliasCheck` and `ActionAdviceReadPlan` check the full alias
-and read scans. `ActionGateActivationCoverage` and
-`ActionLookupActivationCoverage` establish coverage of the original Action
-circuit metadata.
+`ActionAdviceSourceData` and `ActionGateSourceCertificate` each certify their
+complete original source. `ActionAdviceSourceAliasCheck` and
+`ActionAdviceReadPlan` check the full alias and read scans.
+`ActionGateActivationCoverage` establishes coverage of the original Action
+circuit's gate activations from the gate certificate.
+`ActionLookupActivationCoverage` establishes coverage of its lookup activations
+from the compositional source trace, which is assembled from the gadgets' traces
+and opens the opaque circuit only through its recorded implementation equation.
 
 These large static checks raise the recursion limit and use larger or unlimited
 heartbeat budgets during elaboration. The tactics construct intermediate
