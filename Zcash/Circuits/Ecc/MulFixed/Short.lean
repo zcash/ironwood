@@ -126,6 +126,11 @@ def innerRegionSynthesisSummary (cfg : Config) (offset : ℕ) :
       (windowChainSynthesisSummary cfg.superConfig offset 22))
 
 @[synthesis_summary_norm]
+theorem innerRegionSynthesisSummary_lookupActivationCount (cfg : Config) (offset : ℕ) :
+    (innerRegionSynthesisSummary cfg offset).lookupActivationCount = 0 := by
+  simp only [innerRegionSynthesisSummary, synthesis_summary_norm]
+
+@[synthesis_summary_norm]
 theorem innerRegion_synthesisSummary_eq
     (B : FixedBaseData) (cfg : Config) (offset : ℕ)
     (magnitude : AssignedCell Fp) (self : RegionIndex) :
@@ -168,6 +173,11 @@ def mswRegionSynthesisSummary (cfg : Config) :
         .selector cfg.qMulFixedShort.index,
         .column .advice cfg.superConfig.addConfig.yP.index]
       2 0)
+
+@[synthesis_summary_norm]
+theorem mswRegionSynthesisSummary_lookupActivationCount (cfg : Config) :
+    (mswRegionSynthesisSummary cfg).lookupActivationCount = 0 := by
+  simp only [mswRegionSynthesisSummary, synthesis_summary_norm]
 
 @[synthesis_summary_norm]
 theorem mswRegion_synthesisSummary_eq
