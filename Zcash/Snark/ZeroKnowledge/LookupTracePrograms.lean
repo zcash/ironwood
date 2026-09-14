@@ -18,7 +18,7 @@ attribute [lookup_trace_norm]
   regionLookupTrace_enableGate regionLookupTrace_enableLookup
   regionLookupTrace_assignAdvice regionLookupTrace_assignFixed
   regionLookupTrace_constrainEqual regionLookupTrace_constrainConstant
-  regionLookupTrace_constrainInstance
+  regionLookupTrace_constrainInstance regionLookupTrace_eq_nil
   lookupTrace_nil lookupTrace_cons lookupTrace_append lookupTrace_flatMap
   lookupTrace_region lookupTrace_constrainInstance lookupTrace_loadTable
   RegionCircuit.operations_bind RegionCircuit.operations_pure

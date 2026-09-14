@@ -131,6 +131,29 @@ theorem regionLookupTrace_constrainConstant (cell : Cell) (value : F) :
 theorem regionLookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
     regionLookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl
 
+/-- The trace records one entry per lookup activation, which is what the floor planner's
+region summary counts. -/
+theorem regionLookupTrace_length (body : RegionOperations F) :
+    (regionLookupTrace body).length =
+      (FloorPlanner.regionSynthesisSummary body).lookupActivationCount := by
+  induction body with
+  | nil => rfl
+  | cons operation rest ih =>
+      cases operation <;>
+        simp only [regionLookupTrace_cons, FloorPlanner.regionSynthesisSummary,
+          FloorPlanner.RegionSynthesisSummary.combine_lookupActivationCount,
+          FloorPlanner.RegionSynthesisSummary.ofOperation_lookupActivationCount,
+          FloorPlanner.regionOperationLookupActivationCount,
+          List.length_append, List.length_cons, List.length_nil, ih]
+
+/-- A region whose summary counts no lookup activation has an empty trace. A gadget that
+enables no lookup therefore needs no trace lemma of its own: this discharges from the
+`lookupActivationCount` the gadget's own circuit file already establishes. -/
+theorem regionLookupTrace_eq_nil {body : RegionOperations F}
+    (h : (FloorPlanner.regionSynthesisSummary body).lookupActivationCount = 0) :
+    regionLookupTrace body = [] :=
+  List.eq_nil_of_length_eq_zero (by rw [regionLookupTrace_length, h])
+
 /-- An empty synthesis stream has no regions. -/
 theorem lookupTrace_nil : lookupTrace ([] : Operations F) = [] := rfl
 

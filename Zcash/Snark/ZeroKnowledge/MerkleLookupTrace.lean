@@ -6,32 +6,15 @@ import Zcash.Circuits.Sinsemilla.Merkle
 /-!
 # Exact lookup traces of the Merkle-path circuit
 
-A hash layer's only lookups are the two short range checks on its decomposed
-input. The conditional swap, the decomposition gate, and the Sinsemilla hash
-enable no lookup, so their regions contribute empty entries and the trace keeps
-one entry per region.
+A hash layer's lookups come from two sources: the two short range checks on its
+decomposed input, and the Sinsemilla chain that hashes it. The conditional swap
+and the decomposition gate enable no lookup, so their regions contribute empty
+entries and the trace keeps one entry per region.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Zcash.Circuits
-
-/-- Conditional swap enables no lookup. -/
-@[lookup_trace_norm]
-theorem condSwap_regionLookupTrace (sibling : WitgenIR Fp 1)
-    (swap : Placed ProverEnvironment Fp → Bool) (config : CondSwap.Config)
-    (offset : ℕ) (input : Var CondSwap.Input Fp) (region : RegionIndex) :
-    regionLookupTrace (((CondSwap.swap sibling swap).call config offset input).operations region) = [] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
-
-/-- Merkle input decomposition enables no lookup. -/
-@[lookup_trace_norm]
-theorem merkleDecomposition_regionLookupTrace (level : Fp) (config : Sinsemilla.Merkle.Gate.Config)
-    (offset : ℕ) (input : Var Sinsemilla.Merkle.Gate.Inputs Fp) (region : RegionIndex) :
-    regionLookupTrace (((Sinsemilla.Merkle.Gate.circuit level).call config offset input).operations region) = [] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
 
 /-- The seven source regions of a Merkle hash layer: the two short range checks and
 the Sinsemilla hash each contribute their own lookups. -/
@@ -52,7 +35,8 @@ theorem merkleHash_lookupTrace (generators : Specs.Sinsemilla.Generators)
   change lookupTrace ((Sinsemilla.Merkle.HashLayer.synthesize generators config.1 config.2
     point honCurve level input).operations region) = _
   simp only [Sinsemilla.Merkle.HashLayer.synthesize, Sinsemilla.HashToPoint.hashMessage,
-    lookup_trace_norm, merkleHashLookupTrace, shortLookupTrace, List.cons_append]
+    lookup_trace_norm, synthesis_summary_norm, merkleHashLookupTrace, shortLookupTrace,
+    List.cons_append]
 
 /-- A layer's conditional-swap region precedes its hash-layer regions. -/
 def merkleLayerLookupTrace (config : Sinsemilla.Merkle.Config) (lookup : LookupRangeCheck.Config 10) :
@@ -69,7 +53,7 @@ theorem merkleLayer_lookupTrace (generators : Specs.Sinsemilla.Generators)
     lookupTrace (((Sinsemilla.Merkle.Layer.circuit generators point honCurve level hlevel sibling swap).call
       config input).operations region) = merkleLayerLookupTrace config.2.1 config.2.2 := by
   rw [FormalCircuit.call_operations]
-  simp only [Sinsemilla.Merkle.Layer.circuit, lookup_trace_norm,
+  simp only [Sinsemilla.Merkle.Layer.circuit, lookup_trace_norm, synthesis_summary_norm,
     merkleLayerLookupTrace, List.cons_append]
 
 /-- Every lookup in a serial Merkle path, with no witness-dependent trace data. -/
