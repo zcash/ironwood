@@ -71,6 +71,7 @@ import Zcash.Snark.ZeroKnowledge.StoredActionTapeTraceBound
 import Zcash.Snark.ZeroKnowledge.ActionAdviceSourceData
 import Zcash.Snark.ZeroKnowledge.ActionGateSourceCertificate
 import Zcash.Snark.ZeroKnowledge.ActionLookupSourceCertificate
+import Zcash.Snark.ZeroKnowledge.ActionLookupTraceAgreement
 import Zcash.Snark.ZeroKnowledge.StoredActionTapeJointCost
 import Zcash.Snark.ZeroKnowledge.StoredActionTapeJointBound
 import Zcash.Snark.ZeroKnowledge.StoredActionJointCostBound
@@ -1334,6 +1335,7 @@ assert_axioms Zcash.Snark.ZeroKnowledge.actionLookupSourceLabels_eq +native(Comp
 assert_axioms Zcash.Snark.ZeroKnowledge.actionLookupSourceCertificateRaw +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionLookupActivationSourceCertificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_lookupMasters_nodup +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.actionSourceLookupTrace_placed_eq_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete stored-bit transcript, canonical observation, and raw reply prefixes.
 assert_axioms Zcash.Snark.ZeroKnowledge.StoredPlonkTraceOutput
