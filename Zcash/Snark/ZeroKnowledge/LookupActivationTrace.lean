@@ -134,6 +134,13 @@ theorem regionLookupTrace_constrainInstance (cell : Cell) (column : Column .inst
 /-- An empty synthesis stream has no regions. -/
 theorem lookupTrace_nil : lookupTrace ([] : Operations F) = [] := rfl
 
+/-- Only region operations add a trace slot, preserving the compiler region index. -/
+theorem lookupTrace_cons (operation : Operation F) (rest : Operations F) :
+    lookupTrace (operation :: rest) = match operation with
+      | .region _ body => regionLookupTrace body :: lookupTrace rest
+      | _ => lookupTrace rest := by
+  cases operation <;> rfl
+
 /-- An instance constraint outside a region contributes no region trace. -/
 theorem lookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
     lookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl

@@ -19,7 +19,7 @@ attribute [lookup_trace_norm]
   regionLookupTrace_assignAdvice regionLookupTrace_assignFixed
   regionLookupTrace_constrainEqual regionLookupTrace_constrainConstant
   regionLookupTrace_constrainInstance
-  lookupTrace_nil lookupTrace_append lookupTrace_flatMap
+  lookupTrace_nil lookupTrace_cons lookupTrace_append lookupTrace_flatMap
   lookupTrace_region lookupTrace_constrainInstance lookupTrace_loadTable
   RegionCircuit.operations_bind RegionCircuit.operations_pure
   Circuit.operations_bind Circuit.operations_pure
