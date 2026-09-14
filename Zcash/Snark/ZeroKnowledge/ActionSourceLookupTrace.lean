@@ -193,4 +193,16 @@ theorem actionCircuit_lookupTrace_eq :
     actionConfig ()).operations 0) = _
   exact actionMainPost_lookupTrace _ _ _ _ _
 
+/-- The source labels the coverage check is stated over are exactly the placed compositional
+trace. This is the substitution that lets the coverage proof drop the certified walk: the
+statement it proves is unchanged, only its derivation is. Placement enters definitionally,
+since a circuit's `placement` is `regionStarts.getD · 0`. -/
+theorem actionCircuit_lookupLabels_eq_sourceTrace :
+    sourceLookupActivationLabels actionCircuit.placement actionCircuit.operations 0 =
+      placeSelectorTrace actionCircuit.regionStarts (actionSourceLookupTrace actionConfig) 0 := by
+  rw [← operationSourceLookupLabels_eq]
+  rw [show actionCircuit.placement = fun region => actionCircuit.regionStarts.getD region 0
+    from rfl]
+  rw [operationSourceLookupLabels_eq_placeTrace, actionCircuit_lookupTrace_eq]
+
 end Zcash.Snark.ZeroKnowledge
