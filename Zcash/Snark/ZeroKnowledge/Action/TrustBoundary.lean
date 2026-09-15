@@ -351,6 +351,33 @@ assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_packedSelectorBounds +nati
 -- Exact source activation traces, the label projections derived from them, and their connection
 -- to compiler placement.
 assert_axioms Zcash.Snark.ZeroKnowledge.copyCheck_activationTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.completeRound_regionActivations
+assert_computable Zcash.Snark.ZeroKnowledge.completeRoundsActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.completeRoundsActivations_selectorOf
+assert_axioms Zcash.Snark.ZeroKnowledge.completeStartCopy_regionActivations
+assert_axioms Zcash.Snark.ZeroKnowledge.complete_regionActivations
+assert_axioms Zcash.Snark.ZeroKnowledge.condSwap_regionActivations
+assert_computable Zcash.Snark.ZeroKnowledge.incompleteActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.incompleteActivations_selectorOf
+assert_axioms Zcash.Snark.ZeroKnowledge.incompleteLoop_regionActivations +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.incompleteRound_regionActivations +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.incompleteRoundsActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.incompleteRoundsActivations_selectorOf
+assert_axioms Zcash.Snark.ZeroKnowledge.incomplete_regionActivations +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.merkleDecomposition_regionActivations
+assert_computable Zcash.Snark.ZeroKnowledge.merkleHashActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.merkleHash_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.merkleLayerActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.merkleLayer_activationTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.merkleRoot_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.shortCheckActivations +choice
+assert_computable Zcash.Snark.ZeroKnowledge.sinsemillaCommitActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.sinsemillaCommit_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.copyCheck_activationTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.gateRowRun_selectorOf
 assert_axioms Zcash.Snark.ZeroKnowledge.noteDecomposeB_regionActivations
 assert_axioms Zcash.Snark.ZeroKnowledge.noteDecomposeD_regionActivations

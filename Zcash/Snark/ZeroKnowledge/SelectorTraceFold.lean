@@ -1,4 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.SelectorTracePrograms
+import Zcash.Circuits.Trace.Activations
 import Clean.Halo2.Subcircuit
 
 /-!
@@ -6,11 +7,14 @@ import Clean.Halo2.Subcircuit
 
 An input-independent trace for each child suffices to reduce the whole fold,
 without evaluating its intermediate witnesses or region-index expressions.
+
+The fold rule does not depend on what is being extracted, so this is
+`Zcash/Circuits/Trace/Activations.lean`'s rule at `selectorOf`.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
 
-open Halo2
+open Halo2 Zcash.Circuits.Trace
 
 /-- Serial calls preserve the exact concatenation of their per-iteration traces. -/
 theorem selectorTrace_foldCall {F ConfigInput Config : Type} [FiniteField F]
@@ -21,14 +25,7 @@ theorem selectorTrace_foldCall {F ConfigInput Config : Type} [FiniteField F]
     (htrace : ∀ index input current,
       selectorTrace (((children index).call config input).operations current) = traces index) :
     selectorTrace ((FormalCircuit.foldCall children toInput config initial count).operations region) =
-      (List.ofFn fun i : Fin count => traces i.val).flatten := by
-  rw [FormalCircuit.foldCall_operations]
-  induction count with
-  | zero => rfl
-  | succ count ih =>
-      rw [FormalCircuit.foldOps, selectorTrace_append, ih, htrace,
-        List.ofFn_succ', List.concat_eq_append, List.flatten_append]
-      simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
-      rfl
+      (List.ofFn fun i : Fin count => traces i.val).flatten :=
+  trace_foldCall selectorOf children toInput config initial count region traces htrace
 
 end Zcash.Snark.ZeroKnowledge

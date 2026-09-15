@@ -1,6 +1,7 @@
 import Clean.Halo2.FormalRegion.Call
 import Clean.Halo2.FormalRegion.ToFormal
 import Clean.Halo2.Keygen.FloorPlanner.RegionShape
+import Clean.Halo2.Subcircuit
 
 /-!
 # Compact activation traces
@@ -275,6 +276,40 @@ theorem flatMap_foldRange (f : RegionOperation F → List β) (offset stride cou
   unfold RegionCircuit.foldRange RegionCircuit.foldRangeVar
   rw [RegionCircuit.foldRangeVarAux_operations, flatten_flatMap, List.map_ofFn]
   rfl
+
+/-- Serial calls preserve the exact concatenation of their per-iteration traces. An
+input-independent trace for each child suffices to reduce the whole fold, without evaluating its
+intermediate witnesses or region-index expressions. -/
+theorem trace_foldCall {ConfigInput Config : Type}
+    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
+    (f : RegionOperation F → List β)
+    (children : ℕ → FormalCircuit F ConfigInput Config Input Output)
+    (toInput : Var Output F → Var Input F) (config : Config) (initial : Var Input F)
+    (count : ℕ) (region : RegionIndex) (traces : ℕ → List (List β))
+    (htrace : ∀ index input current,
+      trace f (((children index).call config input).operations current) = traces index) :
+    trace f ((FormalCircuit.foldCall children toInput config initial count).operations region) =
+      (List.ofFn fun i : Fin count => traces i.val).flatten := by
+  rw [FormalCircuit.foldCall_operations]
+  induction count with
+  | zero => rfl
+  | succ count ih =>
+      rw [FormalCircuit.foldOps, trace_append, ih, htrace,
+        List.ofFn_succ', List.concat_eq_append, List.flatten_append]
+      simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
+      rfl
+
+/-- A serial fold's activations are the concatenation of its per-iteration activations. -/
+theorem activationTrace_foldCall {ConfigInput Config : Type}
+    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
+    (children : ℕ → FormalCircuit F ConfigInput Config Input Output)
+    (toInput : Var Output F → Var Input F) (config : Config) (initial : Var Input F)
+    (count : ℕ) (region : RegionIndex) (traces : ℕ → List (List (RegionOperation F)))
+    (htrace : ∀ index input current,
+      activationTrace (((children index).call config input).operations current) = traces index) :
+    activationTrace ((FormalCircuit.foldCall children toInput config initial count).operations region) =
+      (List.ofFn fun i : Fin count => traces i.val).flatten :=
+  trace_foldCall activationOf children toInput config initial count region traces htrace
 
 /-- Promoting a region gadget to a layouter gadget contributes exactly one region, including
 where that region's trace is empty. -/

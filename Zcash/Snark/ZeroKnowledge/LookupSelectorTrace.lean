@@ -40,6 +40,14 @@ theorem runningActivations_selectorOf {K : ℕ} (config : LookupRangeCheck.Confi
     Function.comp_def, selectorOf, List.flatMap_cons, List.flatMap_nil, List.append_nil,
     List.map_cons, List.map_nil, ComplexSelector.toSelector_index]
 
+/-- The common local trace of a witnessed short check, regardless of bit width: the lookup at
+both rows, then the bitshift gate at the second. -/
+def shortCheckActivations {K : ℕ} (config : LookupRangeCheck.Config K) :
+    List (RegionOperation Fp) :=
+  [.enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] 0,
+    .enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] 1,
+    .enableGate (LookupRangeCheck.bitshiftGate K config) 1]
+
 /-- The common local trace of a witnessed short check, regardless of bit width. -/
 def shortSelectorTrace {K : ℕ} (config : LookupRangeCheck.Config K) : List (ℕ × ℕ) :=
   [(config.qLookup.index, 0), (config.qLookup.index, 1), (config.qBitshift.index, 1)]
