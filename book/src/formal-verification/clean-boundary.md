@@ -54,7 +54,11 @@ On `TopLevelCircuit`, defined ironwood-side in the designated boundary modules:
 
 > Clean identifiers may appear only under `Zcash/Circuits/` and inside the designated
 > boundary modules. Every other `Zcash/Snark/` (and `Common/`, `Security/`) signature
-> mentions only `TopLevelCircuit` and ironwood types.
+> mentions only ironwood types and definitions the boundary modules export.
+
+`TopLevelCircuit` is the largest of those exports but it is not the only one: a consumer may
+name anything the boundary presents in ironwood terms. What it may not do is reach past the
+boundary to Clean's own vocabulary.
 
 Review test: *would a reader of this file need to know Clean exists to understand it?
 If yes and it is not a boundary module, it is misplaced.*
@@ -73,7 +77,7 @@ boundary mentions `RichExpression` at all.
 
 ## Current state of the boundary
 
-Checked against the tree as of [`dc421aa0`](https://github.com/zcash/ironwood/commit/dc421aa04592bf37ebb404e3e562793d029581a5) (2026-08-21):
+Checked against the tree as of [`dc421aa0`](https://github.com/zcash/ironwood/commit/dc421aa04592bf37ebb404e3e562793d029581a5) (2026-08-21), except where a later date is given:
 
 * `Zcash/Bridge/` is dissolved; `Snark/VkCommit/` became the designated boundary
   family `Snark/Keygen/`; and the `RichExpression` conversion lives inside the
@@ -88,6 +92,30 @@ Checked against the tree as of [`dc421aa0`](https://github.com/zcash/ironwood/co
 * The cross-repo migrations — `Circuits/Fixtures/Layout.lean`'s keygen semantics
   into Clean's `Halo2/Keygen`, and eventually `Circuits/TopLevel{,Keygen}.lean`
   themselves into Clean core — ride Clean pin cycles and have not happened.
+* **2026-09-15.** The zero-knowledge development is now the concentration of rule
+  violations: 22 modules under `Zcash/Snark/ZeroKnowledge/` import Clean directly and 29
+  name `RegionOperation`, `Operations`, `LookupArgument` or `ComplexSelector` in their
+  signatures. `Zcash/Snark/Soundness/` does not name any of them, so the rule holds
+  everywhere else.
+
+  This is not drift in one corner. Reading the 22 module docs, every one of them describes
+  pure Halo2 compiler semantics — planner start rows, copy-stream footprints, fixed and
+  packed-selector column support outside the usable rows, expression degree bounds through
+  the compiler, selector compression counts and roots, advice witness execution, native
+  witness read support, and the compact activation traces. Only two of the 22 mention a
+  zero-knowledge concept at all, and one of those states that it uses only expression
+  structure and query classifications. The rule was not applied to this tree.
+
+  About a third of them are the activation-trace family, whose shared layer now lives at
+  `Circuits/Trace/Activations.lean`, written against Clean and Mathlib alone so that it can
+  be lifted into Clean. The rest — keygen, copy, advice-witness and selector-compression
+  semantics — are a separate migration of the same kind.
+
+  For the trace family the consuming side is easy: what the zero-knowledge argument takes
+  from it is label lists — `List (ℕ × ℕ)` and `List ((ℕ × String) × ℕ)` — which need no Clean
+  vocabulary at all, so per-circuit label accessors and their coverage facts exported from a
+  boundary module retire that third. The other two thirds each need the same treatment
+  before the rule can be enforced mechanically.
 
 ## Drawing the boundary precisely
 
