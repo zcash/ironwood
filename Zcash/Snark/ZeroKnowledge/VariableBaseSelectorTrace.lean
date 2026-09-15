@@ -192,6 +192,15 @@ theorem complete_regionSelectorTrace (count bit : ℕ) (config : Ecc.MulComplete
   rw [regionSelectorTrace_eq_project, complete_regionActivations,
     completeRoundsActivations_selectorOf]
 
+/-- Every activation in the actual variable-base multiplication main region. -/
+def variableBaseMainActivations (config : Ecc.Mul.Config) : List (RegionOperation Fp) :=
+  [.enableGate (completeAddGate config.addConfig) 0] ++
+    incompleteActivations config.hiConfig 1 124 ++
+    incompleteActivations config.loConfig 1 125 ++
+    completeRoundsActivations config.completeConfig 129 3 ++
+    [.enableGate (Ecc.Mul.lsbGate config) 135,
+      .enableGate (completeAddGate config.addConfig) 135]
+
 /-- Every selector activation in the actual variable-base multiplication main region. -/
 def variableBaseMainSelectorTrace (config : Ecc.Mul.Config) : List (ℕ × ℕ) :=
   [(config.addConfig.qAdd.index, 0)] ++
@@ -200,18 +209,34 @@ def variableBaseMainSelectorTrace (config : Ecc.Mul.Config) : List (ℕ × ℕ) 
     completeRoundsSelectorTrace config.completeConfig 129 3 ++
     [(config.qMulLsb.index, 135), (config.addConfig.qAdd.index, 135)]
 
-/-- The main variable-base multiplication region retains both round schedules, supplying the source
-metadata for Action selector coverage. -/
+/-- The main region's activations project to its selector labels. -/
+theorem variableBaseMainActivations_selectorOf (config : Ecc.Mul.Config) :
+    (variableBaseMainActivations config).flatMap selectorOf =
+      variableBaseMainSelectorTrace config := by
+  simp [variableBaseMainActivations, variableBaseMainSelectorTrace, selectorOf,
+    incompleteActivations_selectorOf, completeRoundsActivations_selectorOf, completeAddGate,
+    Ecc.Mul.lsbGate_selector]
+
+/-- The main variable-base multiplication region retains both round schedules, supplying the
+source metadata for Action activation coverage. -/
+@[activation_trace_norm]
+theorem variableBaseMain_regionActivations (config : Ecc.Mul.Config)
+    (offset : ℕ) (input : Var Ecc.Mul.Inputs Fp) (region : RegionIndex) :
+    regionActivations ((Ecc.Mul.mainCircuit.call config offset input).operations region) =
+      variableBaseMainActivations config := by
+  rw [FormalRegionCircuit.call_operations]
+  change regionActivations ((Ecc.Mul.mainSynthesize config input).operations region) = _
+  simp only [Ecc.Mul.mainSynthesize, activation_trace_norm,
+    Ecc.Mul.offInit, Ecc.Mul.offHi, Ecc.Mul.offLo, Ecc.Mul.offComp, Ecc.Mul.offLsb,
+    Ecc.Mul.loSpan, Ecc.Mul.compSpan, variableBaseMainActivations,
+    List.cons_append, List.append_assoc]
+
 @[selector_trace_norm]
 theorem variableBaseMain_regionSelectorTrace (config : Ecc.Mul.Config)
     (offset : ℕ) (input : Var Ecc.Mul.Inputs Fp) (region : RegionIndex) :
     regionSelectorTrace ((Ecc.Mul.mainCircuit.call config offset input).operations region) =
       variableBaseMainSelectorTrace config := by
-  rw [FormalRegionCircuit.call_operations]
-  change regionSelectorTrace ((Ecc.Mul.mainSynthesize config input).operations region) = _
-  simp only [Ecc.Mul.mainSynthesize, selector_trace_norm, Ecc.Mul.lsbGate_selector,
-    Ecc.Mul.offInit, Ecc.Mul.offHi, Ecc.Mul.offLo, Ecc.Mul.offComp, Ecc.Mul.offLsb,
-    Ecc.Mul.loSpan, Ecc.Mul.compSpan, variableBaseMainSelectorTrace,
-    List.cons_append, List.append_assoc]
+  rw [regionSelectorTrace_eq_project, variableBaseMain_regionActivations,
+    variableBaseMainActivations_selectorOf]
 
 end Zcash.Snark.ZeroKnowledge

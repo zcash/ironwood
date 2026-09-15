@@ -152,6 +152,13 @@ def fixedWindowChainSelectorTrace (config : Ecc.MulFixed.Config) (offset count :
   [(config.addIncompleteConfig.qAddIncomplete.index, offset + 1)] ++
     selectorRowRun config.addIncompleteConfig.qAddIncomplete.index (offset + 2) (count - 3)
 
+/-- The chain's activations project to its selector labels. -/
+theorem fixedWindowChainActivations_selectorOf (config : Ecc.MulFixed.Config) (offset count : ℕ) :
+    (fixedWindowChainActivations config offset count).flatMap selectorOf =
+      fixedWindowChainSelectorTrace config offset count := by
+  simp [fixedWindowChainActivations, fixedWindowChainSelectorTrace, gateRowRun_selectorOf,
+    fixedChainGate, Ecc.AddIncomplete.gate_selector, selectorOf]
+
 /-- Any activation-free window witness routine gives the same shared addition trace. -/
 theorem fixedWindowChain_regionActivations (config : Ecc.MulFixed.Config)
     (process : ℕ → ℕ → RegionCircuit Fp (Point (AssignedCell Fp))) (offset count : ℕ)
