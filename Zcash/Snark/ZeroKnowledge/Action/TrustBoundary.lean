@@ -354,6 +354,34 @@ assert_axioms Zcash.Snark.ZeroKnowledge.copyCheck_activationTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.completeRound_regionActivations
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCanonicity_regionActivations
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCheck13_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.actionBaseActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.actionBaseCall_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.actionChecksActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.actionCrossAddressRow_regionActivations
+assert_axioms Zcash.Snark.ZeroKnowledge.actionCrossAddress_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.actionNotesActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.actionOrchardChecks_regionActivations
+assert_axioms Zcash.Snark.ZeroKnowledge.actionSynthChecks_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.actionSynthNotes_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.actionSynthesizeBase_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.actionWitnessActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.addChip_regionActivations
+assert_computable Zcash.Snark.ZeroKnowledge.addressIntegrityActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.addressIntegrity_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.nullifierActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.nullifier_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.spendAuthorityActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.spendAuthority_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.valueCommitActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.valueCommit_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Snark.ZeroKnowledge.commitIvkActivations +choice
 assert_axioms Zcash.Snark.ZeroKnowledge.commitIvkCanonicity_activationTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.commitIvkGate_regionActivations
