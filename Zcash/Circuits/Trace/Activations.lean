@@ -39,6 +39,11 @@ summary's fields are. `project_of_vanishing` and the placement commutation are i
 paper's naturality and fusion laws rather than facts peculiar to circuits.
 -/
 
+-- `register_simp_attr` expands to a `meta initialize` block, and initializers run when a module
+-- is loaded by an importer rather than while that module is itself being elaborated. So the
+-- rules below cannot carry this attribute here; `Trace/Programs.lean` applies it to them.
+register_simp_attr activation_trace_norm
+
 namespace Zcash.Circuits.Trace
 
 open Halo2
@@ -233,6 +238,7 @@ theorem trace_flatten (f : RegionOperation F → List β) (bodies : List (Operat
   simp only [List.flatten_eq_flatMap, trace_flatMap, List.flatMap_map]
   rfl
 
+section Loops
 variable [FiniteField F]
 
 /-- A fixed-stride loop exposes only its per-iteration traces. -/
@@ -277,11 +283,112 @@ theorem trace_toFormal_call {ConfigInput Config : Type}
   rw [FormalCircuit.call_operations, FormalRegionCircuit.call_operations]
   rfl
 
+end Loops
+
 /-! ## The activation instances
 
-Each is the corresponding generic rule at `activationOf`, and is stated separately only because
-the gadget lemmas are written on `regionActivations` rather than on a bare `flatMap`.
+Each is the corresponding generic rule at `activationOf`. They are stated separately because a
+gadget proof reduces a `do` block with its hypotheses phrased on `regionActivations`. Unfolding
+that to a bare `flatMap` would leave those hypotheses unable to match, and simp cannot fold a
+definition back up by name.
 -/
+
+/-- An empty region has no activations. -/
+theorem regionActivations_nil : regionActivations ([] : RegionOperations F) = [] := rfl
+
+/-- One operation contributes its own activation, if it is one, before the remaining trace. -/
+theorem regionActivations_cons (operation : RegionOperation F) (rest : RegionOperations F) :
+    regionActivations (operation :: rest) =
+      (match operation with
+        | operation@(.enableGate _ _) => [operation]
+        | operation@(.enableLookup _ _ _) => [operation]
+        | _ => []) ++ regionActivations rest := rfl
+
+/-- Region programs concatenate. -/
+theorem regionActivations_append (left right : RegionOperations F) :
+    regionActivations (left ++ right) = regionActivations left ++ regionActivations right :=
+  List.flatMap_append ..
+
+/-- Region programs commute with `flatMap`. -/
+theorem regionActivations_flatMap (items : List α) (body : α → RegionOperations F) :
+    regionActivations (items.flatMap body) =
+      items.flatMap fun item => regionActivations (body item) :=
+  List.flatMap_assoc ..
+
+/-- Flattening region-program lists preserves their concatenated activations. -/
+theorem regionActivations_flatten (bodies : List (RegionOperations F)) :
+    regionActivations bodies.flatten = (bodies.map regionActivations).flatten :=
+  flatten_flatMap bodies activationOf
+
+/-- A gate activation is itself an activation. -/
+theorem regionActivations_enableGate (gate : Gate F) (row : ℕ) :
+    regionActivations [.enableGate gate row] = [.enableGate gate row] := rfl
+
+/-- A lookup activation is kept whole, rather than projected to the selectors it enables. -/
+theorem regionActivations_enableLookup (argument : LookupArgument F)
+    (enabled : List ComplexSelector) (row : ℕ) :
+    regionActivations [.enableLookup argument enabled row] =
+      [.enableLookup argument enabled row] := rfl
+
+/-- An advice assignment does not contribute any activation. -/
+theorem regionActivations_assignAdvice (column : Column .advice) (witness : WitgenIR F 1)
+    (row : ℕ) : regionActivations [.assignAdvice column row witness] = [] := rfl
+
+/-- A fixed assignment does not contribute any activation. -/
+theorem regionActivations_assignFixed (column : Column .fixed) (row : ℕ) (value : F) :
+    regionActivations [.assignFixed column row value] = [] := rfl
+
+/-- A copy constraint does not contribute any activation. -/
+theorem regionActivations_constrainEqual (left right : Cell) :
+    regionActivations [.constrainEqual left right] (F := F) = [] := rfl
+
+/-- A constant constraint does not contribute any activation. -/
+theorem regionActivations_constrainConstant (cell : Cell) (value : F) :
+    regionActivations [.constrainConstant cell value] = [] := rfl
+
+/-- An instance constraint inside a region does not contribute any activation. -/
+theorem regionActivations_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
+    regionActivations [.constrainInstance cell column row] (F := F) = [] := rfl
+
+/-- An empty synthesis stream has no regions. -/
+theorem activationTrace_nil : activationTrace ([] : Operations F) = [] := rfl
+
+/-- Only a region operation adds a trace slot. -/
+theorem activationTrace_cons (operation : Operation F) (rest : Operations F) :
+    activationTrace (operation :: rest) = match operation with
+      | .region _ body => regionActivations body :: activationTrace rest
+      | _ => activationTrace rest :=
+  trace_cons activationOf operation rest
+
+/-- Synthesis stages concatenate their region traces. -/
+theorem activationTrace_append (left right : Operations F) :
+    activationTrace (left ++ right) = activationTrace left ++ activationTrace right :=
+  trace_append activationOf left right
+
+/-- A synthesis loop keeps each iteration's region traces in order. -/
+theorem activationTrace_flatMap (items : List α) (body : α → Operations F) :
+    activationTrace (items.flatMap body) =
+      items.flatMap fun item => activationTrace (body item) :=
+  trace_flatMap activationOf items body
+
+/-- A region occupies one trace slot even where it has no activations. -/
+theorem activationTrace_region (name : String) (body : RegionOperations F) :
+    activationTrace [.region name body] = [regionActivations body] := rfl
+
+/-- An instance constraint outside a region does not contribute any trace slot. -/
+theorem activationTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
+    activationTrace [.constrainInstance cell column row] (F := F) = [] := rfl
+
+/-- A table load does not contribute any trace slot. -/
+theorem activationTrace_loadTable (table : TableColumn) (values : List F) :
+    activationTrace [.loadTable table values] = [] := rfl
+
+/-- Flattening synthesis-program lists preserves region order. -/
+theorem activationTrace_flatten (bodies : List (Operations F)) :
+    activationTrace bodies.flatten = (bodies.map activationTrace).flatten :=
+  trace_flatten activationOf bodies
+
+variable [FiniteField F]
 
 /-- A fixed-stride loop exposes only its per-iteration activations. -/
 theorem regionActivations_forRange' (offset stride count : ℕ)
