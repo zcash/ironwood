@@ -354,6 +354,27 @@ assert_axioms Zcash.Snark.ZeroKnowledge.copyCheck_activationTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.completeRound_regionActivations
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCanonicity_regionActivations
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCheck13_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.commitIvkActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.commitIvkCanonicity_activationTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.commitIvkGate_regionActivations
+assert_computable Zcash.Snark.ZeroKnowledge.commitIvkPiecesActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.commitIvkPieces_activationTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.commitIvk_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.noteChecksActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.noteChecks_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.noteCommitActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.noteCommit_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_computable Zcash.Snark.ZeroKnowledge.noteGatesActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.noteGates_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.notePiecesActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.notePieces_activationTrace
+assert_computable Zcash.Snark.ZeroKnowledge.noteYActivations +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.noteY_activationTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCanonicity_regionActivations
+assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldCheck13_activationTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldFixed_activationTrace +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.baseFieldInner_regionActivations +native(
