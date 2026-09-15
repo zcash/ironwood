@@ -7,11 +7,15 @@ import Clean.Halo2.FormalRegion.ToFormal
 The normalization rules project operation streams before reducing field values or
 witness programs. Child calls remain available as separate proof boundaries, and
 loop rules retain their finite iteration structure.
+
+None of these rules depends on what is being extracted, so each one is the corresponding
+extractor-generic rule of `Zcash/Circuits/Trace/Activations.lean` at `selectorOf`. This module
+supplies the selector names and the `selector_trace_norm` tagging.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
 
-open Halo2
+open Halo2 Zcash.Circuits.Trace
 
 attribute [selector_trace_norm]
   regionSelectorTrace_nil regionSelectorTrace_cons regionSelectorTrace_append regionSelectorTrace_flatMap
@@ -36,17 +40,15 @@ variable {F α β : Type}
 generated loop normal forms. -/
 @[selector_trace_norm]
 theorem regionSelectorTrace_flatten (bodies : List (RegionOperations F)) :
-    regionSelectorTrace bodies.flatten = (bodies.map regionSelectorTrace).flatten := by
-  simp only [List.flatten_eq_flatMap, regionSelectorTrace_flatMap, List.flatMap_map]
-  rfl
+    regionSelectorTrace bodies.flatten = (bodies.map regionSelectorTrace).flatten :=
+  flatten_flatMap bodies selectorOf
 
 /-- Flattening synthesis-program lists preserves region order, supporting generated loop normal
 forms. -/
 @[selector_trace_norm]
 theorem selectorTrace_flatten (bodies : List (Operations F)) :
-    selectorTrace bodies.flatten = (bodies.map selectorTrace).flatten := by
-  simp only [List.flatten_eq_flatMap, selectorTrace_flatMap, List.flatMap_map]
-  rfl
+    selectorTrace bodies.flatten = (bodies.map selectorTrace).flatten :=
+  trace_flatten selectorOf bodies
 
 variable [FiniteField F]
 
@@ -56,9 +58,8 @@ theorem regionSelectorTrace_forRange' (offset stride count : ℕ)
     (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
     regionSelectorTrace ((RegionCircuit.forRange' offset stride count body).operations region) =
       (List.ofFn fun i : Fin count =>
-        regionSelectorTrace ((body i.val (offset + i.val * stride)).operations region)).flatten := by
-  rw [RegionCircuit.forRange'_operations, regionSelectorTrace_flatten, List.map_ofFn]
-  rfl
+        regionSelectorTrace ((body i.val (offset + i.val * stride)).operations region)).flatten :=
+  flatMap_forRange' selectorOf offset stride count body region
 
 /-- Variable row schedules keep the same trace projection. -/
 @[selector_trace_norm]
@@ -66,9 +67,8 @@ theorem regionSelectorTrace_forRangeVar' (rows : ℕ → ℕ) (count : ℕ)
     (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
     regionSelectorTrace ((RegionCircuit.forRangeVar' rows count body).operations region) =
       (List.ofFn fun i : Fin count =>
-        regionSelectorTrace ((body i.val (rows i.val)).operations region)).flatten := by
-  rw [RegionCircuit.forRangeVar'_operations, regionSelectorTrace_flatten, List.map_ofFn]
-  rfl
+        regionSelectorTrace ((body i.val (rows i.val)).operations region)).flatten :=
+  flatMap_forRangeVar' selectorOf rows count body region
 
 /-- Accumulator-dependent folds preserve every activation of each actual iteration. -/
 @[selector_trace_norm]
@@ -77,10 +77,8 @@ theorem regionSelectorTrace_foldRange (offset stride count : ℕ) (initial : β)
     regionSelectorTrace ((RegionCircuit.foldRange offset stride count initial body).operations region) =
       (List.ofFn fun i : Fin count =>
         regionSelectorTrace ((body i.val (offset + i.val * stride)
-          (RegionCircuit.foldAcc (fun j => offset + j * stride) initial body i.val region)).operations region)).flatten := by
-  unfold RegionCircuit.foldRange RegionCircuit.foldRangeVar
-  rw [RegionCircuit.foldRangeVarAux_operations, regionSelectorTrace_flatten, List.map_ofFn]
-  rfl
+          (RegionCircuit.foldAcc (fun j => offset + j * stride) initial body i.val region)).operations region)).flatten :=
+  flatMap_foldRange selectorOf offset stride count initial body region
 
 /-- Promoting a region gadget to a layouter gadget contributes exactly one region,
 including when that region's selector trace is empty. -/
@@ -90,8 +88,7 @@ theorem selectorTrace_toFormal_call {ConfigInput Config : Type}
     (child : FormalRegionCircuit F ConfigInput Config Input Output)
     (name : String) (config : Config) (input : Var Input F) (region : RegionIndex) :
     selectorTrace (((child.toFormal name).call config input).operations region) =
-      [regionSelectorTrace ((child.call config 0 input).operations region)] := by
-  rw [FormalCircuit.call_operations, FormalRegionCircuit.call_operations]
-  rfl
+      [regionSelectorTrace ((child.call config 0 input).operations region)] :=
+  trace_toFormal_call selectorOf child name config input region
 
 end Zcash.Snark.ZeroKnowledge

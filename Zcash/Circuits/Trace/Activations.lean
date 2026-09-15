@@ -1,4 +1,5 @@
 import Clean.Halo2.FormalRegion.Call
+import Clean.Halo2.FormalRegion.ToFormal
 import Clean.Halo2.Keygen.FloorPlanner.RegionShape
 
 /-!
@@ -12,8 +13,8 @@ This is pure Halo2 compiler semantics: it does not mention any ironwood vocabula
 to be lifted into Clean, where the surrounding machinery already lives. Clean already provides the
 placed selector form (`FloorPlanner.activations`), the region indexing (`indexedRegions`), and the
 synthesis summaries with `combine`/`empty` and their associativity and unit laws. What is added
-here is the pre-placement compact form, the label shapes as projections of it, and placement
-generic in the label payload.
+here is the pre-placement compact form, the label shapes as projections of it, the composition
+rules stated generically in the extractor, and placement generic in the label payload.
 
 ## The structure this rests on
 
@@ -42,7 +43,7 @@ namespace Zcash.Circuits.Trace
 
 open Halo2
 
-variable {F α β : Type}
+variable {F α β γ : Type}
 
 /-! ## Activations -/
 
@@ -56,11 +57,16 @@ def activationOf : RegionOperation F → List (RegionOperation F)
 def regionActivations (body : RegionOperations F) : List (RegionOperation F) :=
   body.flatMap activationOf
 
+/-- The ordered region traces of an extractor; a region contributes a slot even where it
+extracts nothing. -/
+def trace (f : RegionOperation F → List β) (operations : Operations F) : List (List β) :=
+  operations.filterMap fun operation => match operation with
+    | .region _ body => some (body.flatMap f)
+    | _ => none
+
 /-- The ordered region activation lists; a region without activations still occupies a slot. -/
 def activationTrace (operations : Operations F) : List (List (RegionOperation F)) :=
-  operations.filterMap fun operation => match operation with
-    | .region _ body => some (regionActivations body)
-    | _ => none
+  trace activationOf operations
 
 /-! ## Projections
 
@@ -168,10 +174,12 @@ theorem placeLabels_eq_project (starts : List ℕ) (trace : List (List (RegionOp
       congr 1
       simp only [hshift]
 
-/-! ## Loops
+/-! ## Composition
 
-A loop's activations arrive as a flattened list of per-iteration lists, so every loop gadget's
-derivation needs the fact that projection commutes with flattening.
+Every trace here is `List.flatMap` of an extractor, so the rules for composing traces — through
+concatenation, flattening, the loop combinators, and a child call — do not depend on which
+extractor is in play. Stating them once, generically, is what lets one set of rules serve the
+activations, all three label shapes, and any shape added later.
 -/
 
 /-- Projecting a flattened list is projecting each piece and then flattening. -/
@@ -181,15 +189,135 @@ theorem flatten_flatMap (bodies : List (List α)) (f : α → List β) :
   | nil => rfl
   | cons body rest ih => simp only [List.flatten_cons, List.flatMap_append, ih, List.map_cons]
 
+/-- An empty synthesis stream has no regions. -/
+theorem trace_nil (f : RegionOperation F → List β) : trace f ([] : Operations F) = [] := rfl
+
+/-- Only a region operation adds a trace slot, which preserves the compiler's region index. -/
+theorem trace_cons (f : RegionOperation F → List β) (operation : Operation F)
+    (rest : Operations F) :
+    trace f (operation :: rest) = match operation with
+      | .region _ body => body.flatMap f :: trace f rest
+      | _ => trace f rest := by
+  cases operation <;> rfl
+
+/-- Synthesis traces concatenate. -/
+theorem trace_append (f : RegionOperation F → List β) (first second : Operations F) :
+    trace f (first ++ second) = trace f first ++ trace f second := by
+  simp only [trace, List.filterMap_append]
+
+/-- Synthesis traces commute with `flatMap`. -/
+theorem trace_flatMap (f : RegionOperation F → List β) (items : List α)
+    (body : α → Operations F) :
+    trace f (items.flatMap body) = items.flatMap fun item => trace f (body item) := by
+  induction items with
+  | nil => rfl
+  | cons item rest ih => simp only [List.flatMap_cons, trace_append, ih]
+
+/-- A region contributes exactly its own trace, even where that trace is empty. -/
+theorem trace_region (f : RegionOperation F → List β) (name : String)
+    (body : RegionOperations F) : trace f [.region name body] = [body.flatMap f] := rfl
+
+/-- An instance constraint outside a region does not contribute any trace slot. -/
+theorem trace_constrainInstance (f : RegionOperation F → List β) (cell : Cell)
+    (column : Column .instance) (row : ℕ) :
+    trace f [.constrainInstance cell column row] = [] := rfl
+
+/-- A table load does not contribute any trace slot. -/
+theorem trace_loadTable (f : RegionOperation F → List β) (table : TableColumn)
+    (values : List F) : trace f [.loadTable table values] = [] := rfl
+
+/-- Flattening synthesis-program lists preserves region order, which the generated loop normal
+forms rely on. -/
+theorem trace_flatten (f : RegionOperation F → List β) (bodies : List (Operations F)) :
+    trace f bodies.flatten = (bodies.map (trace f)).flatten := by
+  simp only [List.flatten_eq_flatMap, trace_flatMap, List.flatMap_map]
+  rfl
+
 variable [FiniteField F]
+
+/-- A fixed-stride loop exposes only its per-iteration traces. -/
+theorem flatMap_forRange' (f : RegionOperation F → List β) (offset stride count : ℕ)
+    (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
+    ((RegionCircuit.forRange' offset stride count body).operations region).flatMap f =
+      (List.ofFn fun i : Fin count =>
+        ((body i.val (offset + i.val * stride)).operations region).flatMap f).flatten := by
+  rw [RegionCircuit.forRange'_operations, flatten_flatMap, List.map_ofFn]
+  rfl
+
+/-- A variable row schedule keeps the same projection. -/
+theorem flatMap_forRangeVar' (f : RegionOperation F → List β) (rows : ℕ → ℕ) (count : ℕ)
+    (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
+    ((RegionCircuit.forRangeVar' rows count body).operations region).flatMap f =
+      (List.ofFn fun i : Fin count =>
+        ((body i.val (rows i.val)).operations region).flatMap f).flatten := by
+  rw [RegionCircuit.forRangeVar'_operations, flatten_flatMap, List.map_ofFn]
+  rfl
+
+/-- An accumulator-dependent fold preserves every operation of each actual iteration. -/
+theorem flatMap_foldRange (f : RegionOperation F → List β) (offset stride count : ℕ)
+    (initial : γ) (body : ℕ → ℕ → γ → RegionCircuit F γ) (region : RegionIndex) :
+    ((RegionCircuit.foldRange offset stride count initial body).operations region).flatMap f =
+      (List.ofFn fun i : Fin count =>
+        ((body i.val (offset + i.val * stride)
+          (RegionCircuit.foldAcc (fun j => offset + j * stride) initial body i.val
+            region)).operations region).flatMap f).flatten := by
+  unfold RegionCircuit.foldRange RegionCircuit.foldRangeVar
+  rw [RegionCircuit.foldRangeVarAux_operations, flatten_flatMap, List.map_ofFn]
+  rfl
+
+/-- Promoting a region gadget to a layouter gadget contributes exactly one region, including
+where that region's trace is empty. -/
+theorem trace_toFormal_call {ConfigInput Config : Type}
+    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
+    (f : RegionOperation F → List β)
+    (child : FormalRegionCircuit F ConfigInput Config Input Output)
+    (name : String) (config : Config) (input : Var Input F) (region : RegionIndex) :
+    trace f (((child.toFormal name).call config input).operations region) =
+      [((child.call config 0 input).operations region).flatMap f] := by
+  rw [FormalCircuit.call_operations, FormalRegionCircuit.call_operations]
+  rfl
+
+/-! ## The activation instances
+
+Each is the corresponding generic rule at `activationOf`, and is stated separately only because
+the gadget lemmas are written on `regionActivations` rather than on a bare `flatMap`.
+-/
 
 /-- A fixed-stride loop exposes only its per-iteration activations. -/
 theorem regionActivations_forRange' (offset stride count : ℕ)
     (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
     regionActivations ((RegionCircuit.forRange' offset stride count body).operations region) =
       (List.ofFn fun i : Fin count =>
-        regionActivations ((body i.val (offset + i.val * stride)).operations region)).flatten := by
-  rw [RegionCircuit.forRange'_operations, regionActivations, flatten_flatMap, List.map_ofFn]
-  rfl
+        regionActivations ((body i.val (offset + i.val * stride)).operations region)).flatten :=
+  flatMap_forRange' activationOf offset stride count body region
+
+/-- A variable row schedule keeps the same activations. -/
+theorem regionActivations_forRangeVar' (rows : ℕ → ℕ) (count : ℕ)
+    (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
+    regionActivations ((RegionCircuit.forRangeVar' rows count body).operations region) =
+      (List.ofFn fun i : Fin count =>
+        regionActivations ((body i.val (rows i.val)).operations region)).flatten :=
+  flatMap_forRangeVar' activationOf rows count body region
+
+/-- An accumulator-dependent fold preserves every activation of each actual iteration. -/
+theorem regionActivations_foldRange (offset stride count : ℕ)
+    (initial : γ) (body : ℕ → ℕ → γ → RegionCircuit F γ) (region : RegionIndex) :
+    regionActivations
+        ((RegionCircuit.foldRange offset stride count initial body).operations region) =
+      (List.ofFn fun i : Fin count =>
+        regionActivations ((body i.val (offset + i.val * stride)
+          (RegionCircuit.foldAcc (fun j => offset + j * stride) initial body i.val
+            region)).operations region)).flatten :=
+  flatMap_foldRange activationOf offset stride count initial body region
+
+/-- Promoting a region gadget to a layouter gadget contributes exactly one region of
+activations. -/
+theorem activationTrace_toFormal_call {ConfigInput Config : Type}
+    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
+    (child : FormalRegionCircuit F ConfigInput Config Input Output)
+    (name : String) (config : Config) (input : Var Input F) (region : RegionIndex) :
+    activationTrace (((child.toFormal name).call config input).operations region) =
+      [regionActivations ((child.call config 0 input).operations region)] :=
+  trace_toFormal_call activationOf child name config input region
 
 end Zcash.Circuits.Trace

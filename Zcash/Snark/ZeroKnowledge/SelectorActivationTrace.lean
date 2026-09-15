@@ -1,6 +1,7 @@
 import Clean.Halo2.Formal.Call
 import Clean.Halo2.FormalRegion.Call
 import Clean.Halo2.Keygen.FloorPlanner.RegionShape
+import Zcash.Circuits.Trace.Activations
 
 /-!
 # Compositional selector-activation traces
@@ -10,28 +11,27 @@ its local row, and its region's position in the synthesis stream. Empty regions
 remain in the trace because they still advance the floor planner's region index.
 `activations_eq_placeSelectorTrace` connects this smaller representation to the
 compiler's actual activation walk, for any supplied placement.
+
+The trace is the shared extractor form of `Zcash/Circuits/Trace/Activations.lean` at
+`selectorOf`, so the rules below that hold for any extractor are that module's rules applied
+here. What this module adds is the selector vocabulary, the placement, and the walk.
 -/
 
 register_simp_attr selector_trace_norm
 
 namespace Zcash.Snark.ZeroKnowledge
 
-open Halo2
+open Halo2 Zcash.Circuits.Trace
 
 variable {F : Type}
 
 /-- A region's ordered selector activations, before floor-planner placement. -/
 def regionSelectorTrace (body : RegionOperations F) : List (ℕ × ℕ) :=
-  body.flatMap fun operation => match operation with
-    | .enableGate gate row => [(gate.selector.index, row)]
-    | .enableLookup _ enabled row => enabled.map fun selector => (selector.index, row)
-    | _ => []
+  body.flatMap selectorOf
 
 /-- The ordered region traces; even a region with no selectors occupies one slot. -/
 def selectorTrace (operations : Operations F) : List (List (ℕ × ℕ)) :=
-  operations.filterMap fun operation => match operation with
-    | .region _ body => some (regionSelectorTrace body)
-    | _ => none
+  trace selectorOf operations
 
 /-- Apply the compiler's region starts to a compact selector trace. -/
 def placeSelectorTrace (starts : List ℕ) (trace : List (List (ℕ × ℕ)))
@@ -78,7 +78,8 @@ theorem regionSelectorTrace_enableLookup (argument : LookupArgument F)
     (enabled : List Selector) (row : ℕ) :
     regionSelectorTrace [.enableLookup argument enabled row] =
       enabled.map (fun selector => (selector.index, row)) := by
-  simp only [regionSelectorTrace, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  simp only [regionSelectorTrace, selectorOf, List.flatMap_cons, List.flatMap_nil,
+    List.append_nil]
 
 /-- Advice assignment contributes no selector activation, allowing witness computations to be
 removed from the trace. -/
@@ -112,22 +113,20 @@ instruction-wise reduction. -/
 theorem selectorTrace_cons (operation : Operation F) (rest : Operations F) :
     selectorTrace (operation :: rest) = match operation with
       | .region _ body => regionSelectorTrace body :: selectorTrace rest
-      | _ => selectorTrace rest := by
-  cases operation <;> rfl
+      | _ => selectorTrace rest :=
+  trace_cons selectorOf operation rest
 
 /-- Sequential synthesis stages concatenate their region traces, allowing stage certificates to
 compose. -/
 theorem selectorTrace_append (left right : Operations F) :
-    selectorTrace (left ++ right) = selectorTrace left ++ selectorTrace right := by
-  simp only [selectorTrace, List.filterMap_append]
+    selectorTrace (left ++ right) = selectorTrace left ++ selectorTrace right :=
+  trace_append selectorOf left right
 
 /-- A synthesis loop retains each iteration's region traces in order, enabling compositional loop
 certificates. -/
 theorem selectorTrace_flatMap {α : Type} (items : List α) (body : α → Operations F) :
-    selectorTrace (items.flatMap body) = items.flatMap (fun item => selectorTrace (body item)) := by
-  induction items with
-  | nil => rfl
-  | cons item rest ih => simp only [List.flatMap_cons, selectorTrace_append, ih]
+    selectorTrace (items.flatMap body) = items.flatMap (fun item => selectorTrace (body item)) :=
+  trace_flatMap selectorOf items body
 
 /-- A region occupies one trace slot even when it has no activations, preserving floor-planner
 indices. -/
@@ -155,13 +154,13 @@ theorem activations_eq_placeSelectorTrace (starts : List ℕ) (operations : Oper
       cases operation with
       | region name body =>
           simp only [indexedRegions, activations, List.flatMap_cons,
-            selectorTrace, List.filterMap_cons, placeSelectorTrace, List.zipIdx_cons,
-            List.map_flatMap, regionSelectorTrace] at ih ⊢
+            selectorTrace, trace, List.filterMap_cons, placeSelectorTrace, List.zipIdx_cons,
+            List.map_flatMap] at ih ⊢
           rw [ih]
           congr 1
           apply List.flatMap_congr
           intro operation hoperation
-          cases operation <;> simp
+          cases operation <;> simp [selectorOf]
       | constrainInstance cell column row => exact ih initial
       | loadTable table values => exact ih initial
 
