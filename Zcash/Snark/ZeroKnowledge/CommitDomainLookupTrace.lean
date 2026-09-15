@@ -6,7 +6,7 @@ import Zcash.Circuits.Sinsemilla.CommitDomain
 # Lookup trace of a Sinsemilla commitment
 
 Every lookup in a commitment comes from the Sinsemilla hash. Full-width blinding
-multiplication and the two complete additions enable none, so their regions
+multiplication and the two complete additions do not enable any, so their regions
 contribute empty entries and the trace keeps one entry per region.
 -/
 

@@ -18,16 +18,17 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Zcash.Circuits Zcash.Circuits.Action
 
-/-- Witness loading enables no lookup in any of its eight regions. -/
+/-- Witness loading does not enable any lookup, in any of its eight regions. -/
 def actionWitnessLookupTrace : List (List (ℕ × ℕ)) := List.replicate 8 []
 
-/-- Loading the Sinsemilla generator table opens no region, so it contributes no entry. -/
+/-- Loading the Sinsemilla generator table does not open a region, so it does not contribute an
+entry. -/
 @[lookup_trace_norm]
 theorem sinsemillaLoad_lookupTrace (generators : Specs.Sinsemilla.Generators)
     (table : Sinsemilla.GeneratorTableConfig) (region : RegionIndex) :
     lookupTrace ((Sinsemilla.load generators table).operations region) = [] := rfl
 
-/-- Witnessing a point enables no lookup. -/
+/-- Witnessing a point does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem witnessPoint_regionLookupTrace (config : Ecc.WitnessPoint.Config) (offset : ℕ)
     (input : Var (Unconstrained Zcash.Circuits.Point) Fp) (region : RegionIndex) :
@@ -72,7 +73,7 @@ theorem actionSynthChecks_lookupTrace (generators : Specs.Sinsemilla.Generators)
   simp only [Circuit.synthChecksProgram, Circuit.loadPrivate, lookup_trace_norm,
     synthesis_summary_norm, actionChecksLookupTrace, List.cons_append, List.append_assoc]
 
-/-- The Orchard checks region enables no lookup. -/
+/-- The Orchard checks region does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem actionOrchardChecks_regionLookupTrace (config : Circuit.Config)
     (cells : Circuit.WitnessCells) (checks : Circuit.CheckCells) (region : RegionIndex) :
@@ -131,7 +132,7 @@ theorem actionBaseCall_lookupTrace (generators : Specs.Sinsemilla.Generators)
     config).operations region) = _
   exact actionSynthesizeBase_lookupTrace _ _ _ _ _
 
-/-- A cross-address check region enables no lookup. -/
+/-- A cross-address check region does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem actionCrossAddressRow_regionLookupTrace (config : Circuit.Config)
     (oldCell newCell : AssignedCell Fp) (row : ℕ) (region : RegionIndex) :

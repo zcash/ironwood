@@ -6,10 +6,10 @@ import Zcash.Circuits.Sinsemilla.Merkle
 /-!
 # Exact lookup traces of the Merkle-path circuit
 
-A hash layer's lookups come from two sources: the two short range checks on its
-decomposed input, and the Sinsemilla chain that hashes it. The conditional swap
-and the decomposition gate enable no lookup, so their regions contribute empty
-entries and the trace keeps one entry per region.
+A hash layer's lookups come from two sources: the two short range checks on its decomposed input,
+and the Sinsemilla chain that hashes it. The conditional swap and the decomposition gate do not
+enable any lookup, so their regions contribute empty entries and the trace keeps one entry per
+region.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge

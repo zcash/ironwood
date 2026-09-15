@@ -8,14 +8,14 @@ import Zcash.Circuits.NoteCommit.MainBundle
 All forty-three regions are retained in source order. The lookups come from the
 range checks — seven short checks interleaved with the message pieces, and the
 running checks in the canonicity stages — together with the Sinsemilla chain of
-the commitment itself. The ten closing gate regions enable none.
+the commitment itself. The ten closing gate regions do not enable any.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Zcash.Circuits
 
-/-- The five-region y-coordinate canonicity flow; its closing gate enables no lookup. -/
+/-- The five-region y-coordinate canonicity flow; its closing gate does not enable any lookup. -/
 def noteYLookupTrace (config : LookupRangeCheck.Config 10) : List (List (ℕ × ℕ)) :=
   [shortLookupTrace config, shortLookupTrace config,
     runningLookupTrace config 0 25, runningLookupTrace config 0 13, []]
@@ -67,10 +67,10 @@ theorem noteChecks_lookupTrace (generators : Specs.Sinsemilla.Generators)
   simp only [NoteCommit.Main.synthChecks, lookup_trace_norm, synthesis_summary_norm,
     noteChecksLookupTrace, List.cons_append, List.append_assoc]
 
-/-- Five decomposition gates followed by five canonicity gates, none enabling a lookup. -/
+/-- Five decomposition gates followed by five canonicity gates, of which none enables a lookup. -/
 def noteGatesLookupTrace : List (List (ℕ × ℕ)) := List.replicate 10 []
 
-/-- The note gate stage enables no lookup, in any of its ten regions. -/
+/-- The note gate stage does not enable any lookup, in any of its ten regions. -/
 @[lookup_trace_norm]
 theorem noteGates_lookupTrace (config : NoteCommit.Main.Config)
     (input : Var NoteCommit.Main.Inputs Fp) (pieces : NoteCommit.Main.PieceCells)

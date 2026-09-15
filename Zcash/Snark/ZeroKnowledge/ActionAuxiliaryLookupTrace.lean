@@ -20,7 +20,7 @@ namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Zcash.Circuits
 
-/-- A full Poseidon round enables no lookup. -/
+/-- A full Poseidon round does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem poseidonFullRound_regionLookupTrace (round : ℕ) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
@@ -29,7 +29,7 @@ theorem poseidonFullRound_regionLookupTrace (round : ℕ) (config : Poseidon.Con
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- A partial Poseidon round enables no lookup. -/
+/-- A partial Poseidon round does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem poseidonPartialRound_regionLookupTrace (round : ℕ) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
@@ -38,7 +38,7 @@ theorem poseidonPartialRound_regionLookupTrace (round : ℕ) (config : Poseidon.
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- The addition chip enables no lookup. -/
+/-- The addition chip does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem addChip_regionLookupTrace (config : AddChip.Config) (offset : ℕ)
     (input : Var AddChip.Inputs Fp) (region : RegionIndex) :
@@ -46,7 +46,7 @@ theorem addChip_regionLookupTrace (config : AddChip.Config) (offset : ℕ)
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- Witnessing a non-identity point enables no lookup. -/
+/-- Witnessing a non-identity point does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem witnessPointNonId_regionLookupTrace (config : Ecc.WitnessPoint.Config) (offset : ℕ)
     (input : Var (Unconstrained Point) Fp) (region : RegionIndex) :
@@ -55,7 +55,7 @@ theorem witnessPointNonId_regionLookupTrace (config : Ecc.WitnessPoint.Config) (
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- Poseidon initialization enables no lookup. -/
+/-- Poseidon initialization does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem poseidonInit_regionLookupTrace (capacity : Fp) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
@@ -64,7 +64,7 @@ theorem poseidonInit_regionLookupTrace (capacity : Fp) (config : Poseidon.Config
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- Poseidon input absorption enables no lookup. -/
+/-- Poseidon input absorption does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem poseidonInput_regionLookupTrace (config : Poseidon.Config) (offset : ℕ)
     (input : Var Poseidon.Sponge.AddInputInput Fp) (region : RegionIndex) :
@@ -73,7 +73,7 @@ theorem poseidonInput_regionLookupTrace (config : Poseidon.Config) (offset : ℕ
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-/-- The Poseidon permutation enables no lookup: its rounds are pure gate activations. -/
+/-- The Poseidon permutation does not enable any lookup: its rounds are pure gate activations. -/
 @[lookup_trace_norm]
 theorem poseidonPermutation_regionLookupTrace (config : Poseidon.Config) (offset : ℕ)
     (input : Var Poseidon.Permute.State Fp) (region : RegionIndex) :
@@ -98,10 +98,10 @@ theorem poseidonHash_lookupTrace (capacity : Fp) (config : Poseidon.Config)
   change lookupTrace ((Poseidon.synthesize capacity config input).operations region) = _
   simp only [Poseidon.synthesize, lookup_trace_norm, synthesis_summary_norm, List.cons_append]
 
-/-- The five value-commitment regions, none enabling a lookup. -/
+/-- The five value-commitment regions, of which none enables a lookup. -/
 def valueCommitLookupTrace : List (List (ℕ × ℕ)) := List.replicate 5 []
 
-/-- Value commitment enables no lookup. -/
+/-- Value commitment does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem valueCommit_lookupTrace (valueBase : Ecc.MulFixed.Short.FixedBase)
     (blindBase : Ecc.MulFixed.FixedBase)
@@ -114,10 +114,10 @@ theorem valueCommit_lookupTrace (valueBase : Ecc.MulFixed.Short.FixedBase)
     synthesis_summary_norm, valueCommitLookupTrace, List.cons_append]
   rfl
 
-/-- The three spend-authority regions, none enabling a lookup. -/
+/-- The three spend-authority regions, of which none enables a lookup. -/
 def spendAuthorityLookupTrace : List (List (ℕ × ℕ)) := List.replicate 3 []
 
-/-- Spend authority enables no lookup. -/
+/-- Spend authority does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem spendAuthority_lookupTrace (base : Ecc.MulFixed.FixedBase)
     (config : Ecc.MulFixed.FullWidth.Config × Ecc.Add.Config)

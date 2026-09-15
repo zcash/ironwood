@@ -90,7 +90,7 @@ theorem regionLookupTrace_enableLookup (argument : LookupArgument F)
     regionLookupTrace [.enableLookup argument enabled row] =
       [(argument.masterSelector.index, row)] := rfl
 
-/-- A gate activation contributes no lookup. -/
+/-- A gate activation does not contribute any lookup. -/
 theorem regionLookupTrace_enableGate (gate : Gate F) (row : ℕ) :
     regionLookupTrace [.enableGate gate row] = [] := rfl
 
@@ -111,23 +111,23 @@ theorem lookupTrace_flatMap {α : Type} (items : List α)
 theorem lookupTrace_region (name : String) (body : RegionOperations F) :
     lookupTrace [.region name body] = [regionLookupTrace body] := rfl
 
-/-- An advice assignment contributes no lookup. -/
+/-- An advice assignment does not contribute any lookup. -/
 theorem regionLookupTrace_assignAdvice (column : Column .advice) (witness : WitgenIR F 1) (row : ℕ) :
     regionLookupTrace [.assignAdvice column row witness] = [] := rfl
 
-/-- A fixed assignment contributes no lookup. -/
+/-- A fixed assignment does not contribute any lookup. -/
 theorem regionLookupTrace_assignFixed (column : Column .fixed) (row : ℕ) (value : F) :
     regionLookupTrace [.assignFixed column row value] = [] := rfl
 
-/-- An equality constraint contributes no lookup. -/
+/-- An equality constraint does not contribute any lookup. -/
 theorem regionLookupTrace_constrainEqual (left right : Cell) :
     regionLookupTrace [.constrainEqual left right] (F := F) = [] := rfl
 
-/-- A constant constraint contributes no lookup. -/
+/-- A constant constraint does not contribute any lookup. -/
 theorem regionLookupTrace_constrainConstant (cell : Cell) (value : F) :
     regionLookupTrace [.constrainConstant cell value] = [] := rfl
 
-/-- An instance constraint inside a region contributes no lookup. -/
+/-- An instance constraint inside a region does not contribute any lookup. -/
 theorem regionLookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
     regionLookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl
 
@@ -146,9 +146,9 @@ theorem regionLookupTrace_length (body : RegionOperations F) :
           FloorPlanner.regionOperationLookupActivationCount,
           List.length_append, List.length_cons, List.length_nil, ih]
 
-/-- A region whose summary counts no lookup activation has an empty trace. A gadget that
-enables no lookup therefore needs no trace lemma of its own: this discharges from the
-`lookupActivationCount` the gadget's own circuit file already establishes. -/
+/-- A region whose summary counts no lookup activation has an empty trace. A gadget that does not
+enable any lookup therefore does not need a trace lemma of its own: this discharges from the
+`lookupActivationCount` that the gadget's own circuit file already establishes. -/
 theorem regionLookupTrace_eq_nil {body : RegionOperations F}
     (h : (FloorPlanner.regionSynthesisSummary body).lookupActivationCount = 0) :
     regionLookupTrace body = [] :=
@@ -164,11 +164,11 @@ theorem lookupTrace_cons (operation : Operation F) (rest : Operations F) :
       | _ => lookupTrace rest := by
   cases operation <;> rfl
 
-/-- An instance constraint outside a region contributes no region trace. -/
+/-- An instance constraint outside a region does not contribute any region trace. -/
 theorem lookupTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
     lookupTrace [.constrainInstance cell column row] (F := F) = [] := rfl
 
-/-- A table load contributes no region trace. -/
+/-- A table load does not contribute any region trace. -/
 theorem lookupTrace_loadTable (table : TableColumn) (values : List F) :
     lookupTrace [.loadTable table values] = [] := rfl
 

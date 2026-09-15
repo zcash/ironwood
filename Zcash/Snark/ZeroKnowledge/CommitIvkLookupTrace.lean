@@ -8,7 +8,7 @@ import Zcash.Circuits.CommitIvk.MainBundle
 
 The lookups come from two places: the three short range checks interleaved with the
 message pieces, and the two running checks in the canonicity stage. The commitment's
-own Sinsemilla hash contributes its chain; the final gate region enables none.
+own Sinsemilla hash contributes its chain, and the final gate region does not enable any.
 -/
 
 namespace Zcash.Snark.ZeroKnowledge
@@ -16,7 +16,7 @@ namespace Zcash.Snark.ZeroKnowledge
 open Halo2 Zcash.Circuits
 
 /-- Incoming-viewing-key canonicity contributes both running range-check traces; its
-closing gate region enables no lookup. -/
+closing gate region does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem commitIvkCanonicity_lookupTrace (first second : WitgenIR Fp 1)
     (config : CommitIvk.Config × LookupRangeCheck.Config 10)

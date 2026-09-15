@@ -4,7 +4,7 @@ import Zcash.Circuits.Ecc.Mul
 /-!
 # Lookup traces of variable-base scalar multiplication
 
-The whole double-and-add convergence runs in one region and enables no lookup.
+The whole double-and-add convergence runs in one region and does not enable any lookup.
 Every lookup comes from the overflow check that follows it, whose middle region
 is a copied running range check over the scalar's low 130 bits.
 -/

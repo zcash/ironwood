@@ -7,7 +7,7 @@ import Zcash.Circuits.Ecc.MulFixed.Short
 # Lookup traces of fixed-base multiplication
 
 No variant's window passes enable a lookup. Full-width and short multiplication
-therefore contribute none at all; the base-field variant's only lookups come from
+therefore do not contribute any at all; the base-field variant's only lookups come from
 the auxiliary thirteen-window range check on its scalar.
 -/
 
@@ -31,7 +31,7 @@ theorem fullWidth_lookupTrace (base : Ecc.MulFixed.FixedBase)
   simp only [Ecc.MulFixed.FullWidth.synthesize, lookup_trace_norm, synthesis_summary_norm,
     List.cons_append]
 
-/-- The short-scalar sign region enables no lookup. -/
+/-- The short-scalar sign region does not enable any lookup. -/
 @[lookup_trace_norm]
 theorem shortSign_regionLookupTrace (config : Ecc.MulFixed.Short.Config)
     (accumulator window : Point (AssignedCell Fp)) (sign high : AssignedCell Fp)
@@ -40,7 +40,7 @@ theorem shortSign_regionLookupTrace (config : Ecc.MulFixed.Short.Config)
       high).operations region) = [] := by
   simp only [lookup_trace_norm, synthesis_summary_norm]
 
-/-- Short fixed-base multiplication enables no lookup, in either of its two regions. -/
+/-- Short fixed-base multiplication does not enable any lookup, in either of its two regions. -/
 @[lookup_trace_norm]
 theorem shortFixed_lookupTrace (base : Ecc.MulFixed.Short.FixedBase)
     (config : Ecc.MulFixed.Short.Config)
