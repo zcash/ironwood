@@ -122,6 +122,11 @@ theorem lookupOf_vanishes (operation : RegionOperation F) :
     (activationOf operation).flatMap lookupOf = lookupOf operation := by
   cases operation <;> simp [activationOf, lookupOf]
 
+/-- One activation of the same gate at each of `count` successive rows from `offset`. Enabling a
+gate across a row range is what most loop gadgets do, so their traces are stated with this. -/
+def gateRowRun (gate : Gate F) (offset count : ℕ) : List (RegionOperation F) :=
+  (List.ofFn fun i : Fin count => [RegionOperation.enableGate gate (offset + i.val)]).flatten
+
 /-! ## Placement
 
 A label is a payload paired with a row, and placement adds a region's start to the row. So

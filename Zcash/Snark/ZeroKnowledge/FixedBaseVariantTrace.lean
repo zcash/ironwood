@@ -27,7 +27,7 @@ theorem shortInner_regionSelectorTrace (base : Ecc.MulFixed.FixedBaseData)
       runningFixedInnerSelectorTrace config.superConfig offset 22 := by
   simp only [Ecc.MulFixed.Short.innerRegion, selector_trace_norm, Ecc.MulFixed.coordsGate_selector]
   rw [fixedWindowChain_regionSelectorTrace _ _ _ _ _ (fun index row =>
-    fixedWindow_regionSelectorTrace base _ config.superConfig magnitude index row region)]
+    fixedWindow_regionActivations base _ config.superConfig magnitude index row region)]
   simp only [runningFixedInnerSelectorTrace, List.append_assoc]
 
 /-- The short-scalar sign stage retains the addition and signed-magnitude selectors, supplying the
@@ -66,7 +66,7 @@ theorem baseFieldInner_regionSelectorTrace (base : Ecc.MulFixed.FixedBase)
   rw [Ecc.MulFixed.BaseFieldElem.innerRegion_operations_eq]
   simp only [selector_trace_norm, Ecc.MulFixed.coordsGate_selector]
   rw [fixedWindowChain_regionSelectorTrace _ _ _ _ _ (fun index row =>
-    fixedWindow_regionSelectorTrace base.toData _ config.superConfig input.alpha index row region)]
+    fixedWindow_regionActivations base.toData _ config.superConfig input.alpha index row region)]
   rfl
 
 /-- The auxiliary thirteen-window range check retains its configured region trace, supplying the
