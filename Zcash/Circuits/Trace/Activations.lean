@@ -31,13 +31,13 @@ Two consequences do the work below:
   time. Its side condition is the honest content — a projection must vanish off activations to
   factor through them.
 * A label is a payload paired with a row, and placement moves only the row. So one placement
-  function and one commutation theorem serve every label shape, instead of one per shape.
+  function serves every label shape, instead of one per shape.
 
 In the vocabulary of Gibbons and Oliveira's *The Essence of the Iterator Pattern*, each
 projection is a traversal in a monoidal applicative: at the free monoid it collects labels, at
 the additive naturals it counts, at `max` it measures extents — which is what the synthesis
-summary's fields are. `project_of_vanishing` and the placement commutation are instances of that
-paper's naturality and fusion laws rather than facts peculiar to circuits.
+summary's fields are. `project_of_vanishing` is an instance of that paper's naturality law
+rather than a fact peculiar to circuits.
 -/
 
 -- `register_simp_attr` expands to a `meta initialize` block, and initializers run when a module
@@ -135,60 +135,15 @@ def gateRowRun (gate : Gate F) (offset count : ℕ) : List (RegionOperation F) :
 
 /-! ## Placement
 
-A label is a payload paired with a row, and placement adds a region's start to the row. So
-placing the activations determines the placement of every label shape at once.
+A label is a payload paired with a row, and placement adds a region's start to the row, whatever
+the payload. So one placement function serves every label shape.
 -/
-
-/-- Shift one activation's local row by a region start. -/
-def shiftActivation (offset : ℕ) : RegionOperation F → RegionOperation F
-  | .enableGate gate row => .enableGate gate (offset + row)
-  | .enableLookup argument enabled row => .enableLookup argument enabled (offset + row)
-  | operation => operation
-
-/-- Apply the compiler's region starts to a compact activation trace. -/
-def placeActivationTrace (starts : List ℕ) (trace : List (List (RegionOperation F)))
-    (initial : ℕ := 0) : List (RegionOperation F) :=
-  (trace.zipIdx initial).flatMap fun (body, index) =>
-    body.map (shiftActivation (starts.getD index 0))
 
 /-- Apply the compiler's region starts to a compact trace of labels of any payload. -/
 def placeLabels (starts : List ℕ) (trace : List (List (α × ℕ))) (initial : ℕ := 0) :
     List (α × ℕ) :=
   (trace.zipIdx initial).flatMap fun (body, index) =>
     body.map fun label => (label.1, starts.getD index 0 + label.2)
-
-/-- An extractor whose labels move with the row it reads. Every projection here satisfies it,
-which is why one placement theorem serves them all. -/
-abbrev ShiftsWithRow (f : RegionOperation F → List (α × ℕ)) : Prop :=
-  ∀ offset operation, f (shiftActivation offset operation) =
-    (f operation).map fun label => (label.1, offset + label.2)
-
-theorem selectorOf_shiftsWithRow : ShiftsWithRow (F := F) selectorOf := by
-  intro offset operation
-  cases operation <;> simp [selectorOf, shiftActivation]
-
-theorem gateOf_shiftsWithRow : ShiftsWithRow (F := F) gateOf := by
-  intro offset operation
-  cases operation <;> simp [gateOf, shiftActivation]
-
-theorem lookupOf_shiftsWithRow : ShiftsWithRow (F := F) lookupOf := by
-  intro offset operation
-  cases operation <;> simp [lookupOf, shiftActivation]
-
-/-- Placement commutes with any row-shifting projection, so placed labels of any shape may be
-read off the one placed activation trace. -/
-theorem placeLabels_eq_project (starts : List ℕ) (trace : List (List (RegionOperation F)))
-    (initial : ℕ) (f : RegionOperation F → List (α × ℕ)) (hshift : ShiftsWithRow f) :
-    placeLabels starts (trace.map fun body => body.flatMap f) initial =
-      (placeActivationTrace starts trace initial).flatMap f := by
-  induction trace generalizing initial with
-  | nil => rfl
-  | cons body rest ih =>
-      simp only [List.map_cons, placeLabels, placeActivationTrace, List.zipIdx_cons,
-        List.flatMap_cons, List.flatMap_append, List.map_flatMap, List.flatMap_map] at *
-      rw [ih]
-      congr 1
-      simp only [hshift]
 
 /-! ## Composition
 
