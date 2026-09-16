@@ -14,44 +14,6 @@ def sourceLookupActivationLabels {F : Type} (place : RegionIndex → ℕ)
   (operationEnabledLookups operations initial).map fun lookup =>
     (lookup.argument.masterSelector.index, place lookup.region + lookup.row)
 
-/-- Direct source projection without constructing intermediate enabled-lookup records. -/
-def regionSourceLookupLabels {F : Type} (place : RegionIndex → ℕ) (region : RegionIndex) :
-    RegionOperations F → List (ℕ × ℕ)
-  | [] => []
-  | .enableLookup argument _ row :: rest =>
-    (argument.masterSelector.index, place region + row) :: regionSourceLookupLabels place region rest
-  | _ :: rest => regionSourceLookupLabels place region rest
-
-/-- The original operation walk, retaining region-counter threading. -/
-def operationSourceLookupLabels {F : Type} (place : RegionIndex → ℕ) :
-    Operations F → RegionIndex → List (ℕ × ℕ)
-  | [], _ => []
-  | .region _ body :: rest, region =>
-    regionSourceLookupLabels place region body ++ operationSourceLookupLabels place rest (region + 1)
-  | _ :: rest, region => operationSourceLookupLabels place rest region
-
-/-- Direct metadata preserve each original lookup activation in a region. -/
-theorem regionSourceLookupLabels_eq {F : Type} (place : RegionIndex → ℕ)
-    (region : RegionIndex) (body : RegionOperations F) :
-    regionSourceLookupLabels place region body =
-      (regionEnabledLookups region body).map (fun lookup =>
-        (lookup.argument.masterSelector.index, place lookup.region + lookup.row)) := by
-  induction body with
-  | nil => rfl
-  | cons operation rest ih =>
-    cases operation <;> simp only [regionSourceLookupLabels, regionEnabledLookups, List.map_cons, ih]
-
-/-- Direct reflection retains the exact complete original lookup schedule. -/
-theorem operationSourceLookupLabels_eq {F : Type} (place : RegionIndex → ℕ)
-    (operations : Operations F) (initial : RegionIndex) :
-    operationSourceLookupLabels place operations initial = sourceLookupActivationLabels place operations initial := by
-  unfold sourceLookupActivationLabels
-  induction operations generalizing initial with
-  | nil => rfl
-  | cons operation rest ih =>
-    cases operation <;> simp only [operationSourceLookupLabels, operationEnabledLookups,
-      List.map_append, regionSourceLookupLabels_eq, ih]
-
 /-- Every active configured lookup master must name an original lookup activation. -/
 def lookupActivationCoverageCheck (masters : List ℕ)
     (activations labels : List (ℕ × ℕ)) : Bool :=
