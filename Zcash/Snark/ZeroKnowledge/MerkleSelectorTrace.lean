@@ -99,7 +99,7 @@ theorem merkleRoot_activationTrace (generators : Specs.Sinsemilla.Generators)
     pure output.node : Circuit Fp (AssignedCell Fp)).operations region) = _
   simp only [activation_trace_norm]
   trans (List.ofFn fun _ : Fin depth => merkleLayerActivations generators config).flatten
-  · apply activationTrace_foldCall (traces := fun _ => merkleLayerActivations generators config)
+  · apply trace_foldCall activationOf (traces := fun _ => merkleLayerActivations generators config)
     intro index input current
     simp only [Sinsemilla.Merkle.CalculateRoot.layerAt, activation_trace_norm]
   · simp

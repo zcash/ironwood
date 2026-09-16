@@ -55,7 +55,7 @@ theorem poseidonPermutation_regionActivations (config : Poseidon.Config) (offset
   simp only [Poseidon.permuteSynthesize, activation_trace_norm,
     gateRowRun, poseidonPermutationActivations, Nat.mul_one, List.append_assoc]
   rw [Poseidon.operations_readStateRow]
-  simp only [regionActivations_nil, List.append_nil]
+  simp only [List.flatMap_nil, List.append_nil]
 
 /-- Poseidon initialization adds no activation, so trace extraction can omit its field
 assignments. -/

@@ -26,9 +26,9 @@ theorem shortInner_regionActivations (base : Ecc.MulFixed.FixedBaseData)
     (config : Ecc.MulFixed.Short.Config) (offset : ℕ) (magnitude : AssignedCell Fp) (region : RegionIndex) :
     regionActivations ((Ecc.MulFixed.Short.innerRegion base config offset magnitude).operations region) =
       runningFixedInnerActivations config.superConfig offset 22 := by
-  simp only [Ecc.MulFixed.Short.innerRegion, activation_trace_norm]
-  rw [fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
-    fixedWindow_regionActivations base _ config.superConfig magnitude index row region)]
+  simp only [Ecc.MulFixed.Short.innerRegion, activation_trace_norm,
+    fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
+      fixedWindow_regionActivations base _ config.superConfig magnitude index row region)]
   simp only [runningFixedInnerActivations, List.append_assoc]
 
 /-- The short-scalar sign stage retains the addition and signed-magnitude gates, supplying the
@@ -53,7 +53,11 @@ theorem shortFixed_activationTrace (base : Ecc.MulFixed.Short.FixedBase) (config
   rw [FormalCircuit.call_operations]
   change activationTrace ((Ecc.MulFixed.Short.synthesize base.toData config input).operations region) = _
   simp only [Ecc.MulFixed.Short.synthesize, activation_trace_norm, List.cons_append]
-  rw [shortSign_regionActivations]
+  -- `synthesize` passes `mswRegion` where a `Var Point Fp` result is expected, so the goal
+  -- carries that spelling in an implicit argument where the lemma has `Point (AssignedCell Fp)`.
+  -- The two are definitionally but not reducibly equal, which keeps the simp set from matching.
+  congr 2
+  exact shortSign_regionActivations ..
 
 /-- Base-field fixed multiplication retains its 85-window inner trace, supplying the source
 metadata for Action activation coverage. -/
@@ -66,8 +70,7 @@ theorem baseFieldInner_regionActivations (base : Ecc.MulFixed.FixedBase)
   rw [FormalRegionCircuit.call_operations]
   change regionActivations ((Ecc.MulFixed.BaseFieldElem.innerRegion base.toData config offset input.alpha).operations region) = _
   rw [Ecc.MulFixed.BaseFieldElem.innerRegion_operations_eq]
-  simp only [activation_trace_norm]
-  rw [fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
+  simp only [activation_trace_norm, fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
     fixedWindow_regionActivations base.toData _ config.superConfig input.alpha index row region)]
   rfl
 

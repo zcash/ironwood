@@ -59,8 +59,10 @@ def activationOf : RegionOperation F → List (RegionOperation F)
   | operation@(.enableLookup _ _ _) => [operation]
   | _ => []
 
-/-- A region's activation operations, in source order, before floor-planner placement. -/
-def regionActivations (body : RegionOperations F) : List (RegionOperation F) :=
+/-- A region's activation operations, in source order, before floor-planner placement. Reducible,
+so the composition rules stated for any extractor apply at this name directly, and a gadget lemma
+stated at this name still matches a goal spelled as the underlying `flatMap`. -/
+abbrev regionActivations (body : RegionOperations F) : List (RegionOperation F) :=
   body.flatMap activationOf
 
 /-- The ordered region traces of an extractor; a region contributes a slot even where it
@@ -70,8 +72,9 @@ def trace (f : RegionOperation F → List β) (operations : Operations F) : List
     | .region _ body => some (body.flatMap f)
     | _ => none
 
-/-- The ordered region activation lists; a region without activations still occupies a slot. -/
-def activationTrace (operations : Operations F) : List (List (RegionOperation F)) :=
+/-- The ordered region activation lists; a region without activations still occupies a slot.
+Reducible for the same reason as `regionActivations`. -/
+abbrev activationTrace (operations : Operations F) : List (List (RegionOperation F)) :=
   trace activationOf operations
 
 /-! ## Projections
@@ -312,18 +315,6 @@ theorem trace_foldCall {ConfigInput Config : Type}
       simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
       rfl
 
-/-- A serial fold's activations are the concatenation of its per-iteration activations. -/
-theorem activationTrace_foldCall {ConfigInput Config : Type}
-    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
-    (children : ℕ → FormalCircuit F ConfigInput Config Input Output)
-    (toInput : Var Output F → Var Input F) (config : Config) (initial : Var Input F)
-    (count : ℕ) (region : RegionIndex) (traces : ℕ → List (List (RegionOperation F)))
-    (htrace : ∀ index input current,
-      activationTrace (((children index).call config input).operations current) = traces index) :
-    activationTrace ((FormalCircuit.foldCall children toInput config initial count).operations region) =
-      (List.ofFn fun i : Fin count => traces i.val).flatten :=
-  trace_foldCall activationOf children toInput config initial count region traces htrace
-
 /-- Promoting a region gadget to a layouter gadget contributes exactly one region, including
 where that region's trace is empty. -/
 theorem trace_toFormal_call {ConfigInput Config : Type}
@@ -337,147 +328,5 @@ theorem trace_toFormal_call {ConfigInput Config : Type}
   rfl
 
 end Loops
-
-/-! ## The activation instances
-
-Each is the corresponding generic rule at `activationOf`. They are stated separately because a
-gadget proof reduces a `do` block with its hypotheses phrased on `regionActivations`. Unfolding
-that to a bare `flatMap` would leave those hypotheses unable to match, and simp cannot fold a
-definition back up by name.
--/
-
-/-- An empty region has no activations. -/
-theorem regionActivations_nil : regionActivations ([] : RegionOperations F) = [] := rfl
-
-/-- One operation contributes its own activation, if it is one, before the remaining trace. -/
-theorem regionActivations_cons (operation : RegionOperation F) (rest : RegionOperations F) :
-    regionActivations (operation :: rest) =
-      (match operation with
-        | operation@(.enableGate _ _) => [operation]
-        | operation@(.enableLookup _ _ _) => [operation]
-        | _ => []) ++ regionActivations rest := rfl
-
-/-- Region programs concatenate. -/
-theorem regionActivations_append (left right : RegionOperations F) :
-    regionActivations (left ++ right) = regionActivations left ++ regionActivations right :=
-  List.flatMap_append ..
-
-/-- Region programs commute with `flatMap`. -/
-theorem regionActivations_flatMap (items : List α) (body : α → RegionOperations F) :
-    regionActivations (items.flatMap body) =
-      items.flatMap fun item => regionActivations (body item) :=
-  List.flatMap_assoc ..
-
-/-- Flattening region-program lists preserves their concatenated activations. -/
-theorem regionActivations_flatten (bodies : List (RegionOperations F)) :
-    regionActivations bodies.flatten = (bodies.map regionActivations).flatten :=
-  flatten_flatMap bodies activationOf
-
-/-- A gate activation is itself an activation. -/
-theorem regionActivations_enableGate (gate : Gate F) (row : ℕ) :
-    regionActivations [.enableGate gate row] = [.enableGate gate row] := rfl
-
-/-- A lookup activation is kept whole, rather than projected to the selectors it enables. -/
-theorem regionActivations_enableLookup (argument : LookupArgument F)
-    (enabled : List ComplexSelector) (row : ℕ) :
-    regionActivations [.enableLookup argument enabled row] =
-      [.enableLookup argument enabled row] := rfl
-
-/-- An advice assignment does not contribute any activation. -/
-theorem regionActivations_assignAdvice (column : Column .advice) (witness : WitgenIR F 1)
-    (row : ℕ) : regionActivations [.assignAdvice column row witness] = [] := rfl
-
-/-- A fixed assignment does not contribute any activation. -/
-theorem regionActivations_assignFixed (column : Column .fixed) (row : ℕ) (value : F) :
-    regionActivations [.assignFixed column row value] = [] := rfl
-
-/-- A copy constraint does not contribute any activation. -/
-theorem regionActivations_constrainEqual (left right : Cell) :
-    regionActivations [.constrainEqual left right] (F := F) = [] := rfl
-
-/-- A constant constraint does not contribute any activation. -/
-theorem regionActivations_constrainConstant (cell : Cell) (value : F) :
-    regionActivations [.constrainConstant cell value] = [] := rfl
-
-/-- An instance constraint inside a region does not contribute any activation. -/
-theorem regionActivations_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
-    regionActivations [.constrainInstance cell column row] (F := F) = [] := rfl
-
-/-- An empty synthesis stream has no regions. -/
-theorem activationTrace_nil : activationTrace ([] : Operations F) = [] := rfl
-
-/-- Only a region operation adds a trace slot. -/
-theorem activationTrace_cons (operation : Operation F) (rest : Operations F) :
-    activationTrace (operation :: rest) = match operation with
-      | .region _ body => regionActivations body :: activationTrace rest
-      | _ => activationTrace rest :=
-  trace_cons activationOf operation rest
-
-/-- Synthesis stages concatenate their region traces. -/
-theorem activationTrace_append (left right : Operations F) :
-    activationTrace (left ++ right) = activationTrace left ++ activationTrace right :=
-  trace_append activationOf left right
-
-/-- A synthesis loop keeps each iteration's region traces in order. -/
-theorem activationTrace_flatMap (items : List α) (body : α → Operations F) :
-    activationTrace (items.flatMap body) =
-      items.flatMap fun item => activationTrace (body item) :=
-  trace_flatMap activationOf items body
-
-/-- A region occupies one trace slot even where it has no activations. -/
-theorem activationTrace_region (name : String) (body : RegionOperations F) :
-    activationTrace [.region name body] = [regionActivations body] := rfl
-
-/-- An instance constraint outside a region does not contribute any trace slot. -/
-theorem activationTrace_constrainInstance (cell : Cell) (column : Column .instance) (row : ℕ) :
-    activationTrace [.constrainInstance cell column row] (F := F) = [] := rfl
-
-/-- A table load does not contribute any trace slot. -/
-theorem activationTrace_loadTable (table : TableColumn) (values : List F) :
-    activationTrace [.loadTable table values] = [] := rfl
-
-/-- Flattening synthesis-program lists preserves region order. -/
-theorem activationTrace_flatten (bodies : List (Operations F)) :
-    activationTrace bodies.flatten = (bodies.map activationTrace).flatten :=
-  trace_flatten activationOf bodies
-
-variable [FiniteField F]
-
-/-- A fixed-stride loop exposes only its per-iteration activations. -/
-theorem regionActivations_forRange' (offset stride count : ℕ)
-    (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
-    regionActivations ((RegionCircuit.forRange' offset stride count body).operations region) =
-      (List.ofFn fun i : Fin count =>
-        regionActivations ((body i.val (offset + i.val * stride)).operations region)).flatten :=
-  flatMap_forRange' activationOf offset stride count body region
-
-/-- A variable row schedule keeps the same activations. -/
-theorem regionActivations_forRangeVar' (rows : ℕ → ℕ) (count : ℕ)
-    (body : ℕ → ℕ → RegionCircuit F Unit) (region : RegionIndex) :
-    regionActivations ((RegionCircuit.forRangeVar' rows count body).operations region) =
-      (List.ofFn fun i : Fin count =>
-        regionActivations ((body i.val (rows i.val)).operations region)).flatten :=
-  flatMap_forRangeVar' activationOf rows count body region
-
-/-- An accumulator-dependent fold preserves every activation of each actual iteration. -/
-theorem regionActivations_foldRange (offset stride count : ℕ)
-    (initial : γ) (body : ℕ → ℕ → γ → RegionCircuit F γ) (region : RegionIndex) :
-    regionActivations
-        ((RegionCircuit.foldRange offset stride count initial body).operations region) =
-      (List.ofFn fun i : Fin count =>
-        regionActivations ((body i.val (offset + i.val * stride)
-          (RegionCircuit.foldAcc (fun j => offset + j * stride) initial body i.val
-            region)).operations region)).flatten :=
-  flatMap_foldRange activationOf offset stride count initial body region
-
-/-- Promoting a region gadget to a layouter gadget contributes exactly one region of
-activations. -/
-theorem activationTrace_toFormal_call {ConfigInput Config : Type}
-    {Input Output : TypeMap} [CircuitType Input] [CircuitType Output]
-    (child : FormalRegionCircuit F ConfigInput Config Input Output)
-    (name : String) (config : Config) (input : Var Input F) (region : RegionIndex) :
-    activationTrace (((child.toFormal name).call config input).operations region) =
-      [regionActivations ((child.call config 0 input).operations region)] :=
-  trace_toFormal_call activationOf child name config input region
 
 end Zcash.Circuits.Trace

@@ -141,8 +141,7 @@ theorem fullWidthInner_regionActivations (base : Ecc.MulFixed.FixedBaseData)
     regionActivations ((Ecc.MulFixed.FullWidth.innerRegion base config offset windows).operations region) =
       fullWidthInnerActivations config offset := by
   rw [Ecc.MulFixed.FullWidth.innerRegion_operations_eq]
-  simp only [activation_trace_norm]
-  rw [fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
+  simp only [activation_trace_norm, fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
     fullWidthWindow_regionActivations base config windows index row region)]
   rfl
 
