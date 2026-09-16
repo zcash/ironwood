@@ -1,5 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.SelectorTracePrograms
-import Zcash.Snark.ZeroKnowledge.ActivationTrace
+import Zcash.Circuits.Trace.Programs
 import Zcash.Circuits.Sinsemilla.HashToPoint
 
 /-!
@@ -27,33 +26,12 @@ def sinsemillaRoundsActivations (generators : Specs.Sinsemilla.Generators)
       RegionOperation.enableGate (Sinsemilla.HashPiece.sinsemillaGate config)
         (offset + i.val)]).flatten
 
-/-- Each interior Sinsemilla row enables the lookup and then the gate. -/
-def sinsemillaRoundsSelectorTrace (config : Sinsemilla.HashPiece.Config) (offset count : ℕ) :
-    List (ℕ × ℕ) :=
-  (List.ofFn fun i : Fin count =>
-    [(config.qS1.index, offset + i.val), (config.qS1.index, offset + i.val)]).flatten
-
-/-- A run of Sinsemilla round activations projects to its selector labels. -/
-theorem sinsemillaRoundsActivations_selectorOf (generators : Specs.Sinsemilla.Generators)
-    (config : Sinsemilla.HashPiece.Config) (offset count : ℕ) :
-    (sinsemillaRoundsActivations generators config offset count).flatMap selectorOf =
-      sinsemillaRoundsSelectorTrace config offset count := by
-  simp only [sinsemillaRoundsActivations, sinsemillaRoundsSelectorTrace, flatten_flatMap,
-    List.map_ofFn, Function.comp_def, selectorOf, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, List.map_cons, List.map_nil, Sinsemilla.HashPiece.sinsemillaGate_selector,
-    ComplexSelector.toSelector_index, List.singleton_append]
-
 /-- A piece ends with the boundary lookup; its linking gate belongs to the chain. -/
 def sinsemillaPieceActivations (generators : Specs.Sinsemilla.Generators)
     (config : Sinsemilla.HashPiece.Config) (offset count : ℕ) : List (RegionOperation Fp) :=
   sinsemillaRoundsActivations generators config offset count ++
     [.enableLookup (Sinsemilla.HashPiece.generatorLookup generators config) [config.qS1]
       (offset + count)]
-
-/-- A piece ends with the boundary lookup; its linking gate belongs to the chain. -/
-def sinsemillaPieceSelectorTrace (config : Sinsemilla.HashPiece.Config) (offset count : ℕ) :
-    List (ℕ × ℕ) :=
-  sinsemillaRoundsSelectorTrace config offset count ++ [(config.qS1.index, offset + count)]
 
 /-- One Sinsemilla round records its lookup and its gate, supplying the source metadata for Action
 activation coverage. -/
@@ -94,16 +72,6 @@ theorem sinsemillaPiece_regionActivations (generators : Specs.Sinsemilla.Generat
     Sinsemilla.HashPiece.operations_readState, Sinsemilla.HashPiece.operations_cellAt,
     Sinsemilla.HashPiece.operations_cellVec, sinsemillaPieceActivations]
   rfl
-
-/-- A piece's activations project to its selector labels. -/
-theorem sinsemillaPieceActivations_selectorOf (generators : Specs.Sinsemilla.Generators)
-    (config : Sinsemilla.HashPiece.Config) (offset count : ℕ) :
-    (sinsemillaPieceActivations generators config offset count).flatMap selectorOf =
-      sinsemillaPieceSelectorTrace config offset count := by
-  simp only [sinsemillaPieceActivations, sinsemillaPieceSelectorTrace, List.flatMap_append,
-    sinsemillaRoundsActivations_selectorOf, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, selectorOf, List.map_cons, List.map_nil,
-    ComplexSelector.toSelector_index]
 
 /-- A Sinsemilla slot retains the trace of its message piece, supplying the source metadata for
 Action activation coverage. -/

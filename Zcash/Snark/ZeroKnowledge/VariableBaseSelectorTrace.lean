@@ -19,41 +19,12 @@ def incompleteRoundsActivations (config : Ecc.MulIncomplete.Config) (offset coun
   (List.ofFn fun i : Fin count =>
     [RegionOperation.enableGate (Ecc.MulIncomplete.qMul2Gate config) (offset + i.val + 1)]).flatten
 
-/-- Interior incomplete-addition gates occur one row after their round starts. -/
-def incompleteRoundsSelectorTrace (config : Ecc.MulIncomplete.Config) (offset count : ℕ) :
-    List (ℕ × ℕ) :=
-  (List.ofFn fun i : Fin count => [(config.qMul2.index, offset + i.val + 1)]).flatten
-
-/-- The interior rounds' activations project to their selector labels. -/
-theorem incompleteRoundsActivations_selectorOf (config : Ecc.MulIncomplete.Config)
-    (offset count : ℕ) :
-    (incompleteRoundsActivations config offset count).flatMap selectorOf =
-      incompleteRoundsSelectorTrace config offset count := by
-  simp only [incompleteRoundsActivations, incompleteRoundsSelectorTrace, flatten_flatMap,
-    List.map_ofFn, Function.comp_def, selectorOf, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, Ecc.MulIncomplete.qMul2Gate_selector]
-
 /-- Initial, interior, and final incomplete-addition gates in source order. -/
 def incompleteActivations (config : Ecc.MulIncomplete.Config) (offset count : ℕ) :
     List (RegionOperation Fp) :=
   [.enableGate (Ecc.MulIncomplete.qMul1Gate config) offset] ++
     incompleteRoundsActivations config offset count ++
     [.enableGate (Ecc.MulIncomplete.qMul3Gate config) (offset + count + 1)]
-
-/-- Initial, interior, and final incomplete-addition selectors in source order. -/
-def incompleteSelectorTrace (config : Ecc.MulIncomplete.Config) (offset count : ℕ) :
-    List (ℕ × ℕ) :=
-  [(config.qMul1.index, offset)] ++ incompleteRoundsSelectorTrace config offset count ++
-    [(config.qMul3.index, offset + count + 1)]
-
-/-- The incomplete stage's activations project to its selector labels. -/
-theorem incompleteActivations_selectorOf (config : Ecc.MulIncomplete.Config) (offset count : ℕ) :
-    (incompleteActivations config offset count).flatMap selectorOf =
-      incompleteSelectorTrace config offset count := by
-  simp only [incompleteActivations, incompleteSelectorTrace, List.flatMap_append,
-    incompleteRoundsActivations_selectorOf, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, selectorOf, Ecc.MulIncomplete.qMul1Gate_selector,
-    Ecc.MulIncomplete.qMul3Gate_selector]
 
 /-- One incomplete multiplication round records its configured gate, supplying the source
 metadata for Action activation coverage. -/
@@ -97,22 +68,6 @@ def completeRoundsActivations (config : Ecc.MulComplete.Config) (offset count : 
       RegionOperation.enableGate (completeAddGate config.addConfig)
         (offset + i.val * 2 + 1)]).flatten
 
-/-- The decomposition selector and the two complete-addition selectors in each bit round. -/
-def completeRoundsSelectorTrace (config : Ecc.MulComplete.Config) (offset count : ℕ) :
-    List (ℕ × ℕ) :=
-  (List.ofFn fun i : Fin count =>
-    [(config.qDecompose.index, offset + i.val * 2 + 1),
-      (config.addConfig.qAdd.index, offset + i.val * 2),
-      (config.addConfig.qAdd.index, offset + i.val * 2 + 1)]).flatten
-
-/-- The complete rounds' activations project to their selector labels. -/
-theorem completeRoundsActivations_selectorOf (config : Ecc.MulComplete.Config)
-    (offset count : ℕ) :
-    (completeRoundsActivations config offset count).flatMap selectorOf =
-      completeRoundsSelectorTrace config offset count := by
-  simp [completeRoundsActivations, completeRoundsSelectorTrace, flatten_flatMap,
-    Function.comp_def, selectorOf, Ecc.MulComplete.decomposeGate_selector, completeAddGate]
-
 /-- One complete multiplication round records its configured gates, supplying the source
 metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -155,22 +110,6 @@ def variableBaseMainActivations (config : Ecc.Mul.Config) : List (RegionOperatio
     completeRoundsActivations config.completeConfig 129 3 ++
     [.enableGate (Ecc.Mul.lsbGate config) 135,
       .enableGate (completeAddGate config.addConfig) 135]
-
-/-- Every selector activation in the actual variable-base multiplication main region. -/
-def variableBaseMainSelectorTrace (config : Ecc.Mul.Config) : List (ℕ × ℕ) :=
-  [(config.addConfig.qAdd.index, 0)] ++
-    incompleteSelectorTrace config.hiConfig 1 124 ++
-    incompleteSelectorTrace config.loConfig 1 125 ++
-    completeRoundsSelectorTrace config.completeConfig 129 3 ++
-    [(config.qMulLsb.index, 135), (config.addConfig.qAdd.index, 135)]
-
-/-- The main region's activations project to its selector labels. -/
-theorem variableBaseMainActivations_selectorOf (config : Ecc.Mul.Config) :
-    (variableBaseMainActivations config).flatMap selectorOf =
-      variableBaseMainSelectorTrace config := by
-  simp [variableBaseMainActivations, variableBaseMainSelectorTrace, selectorOf,
-    incompleteActivations_selectorOf, completeRoundsActivations_selectorOf, completeAddGate,
-    Ecc.Mul.lsbGate_selector]
 
 /-- The main variable-base multiplication region retains both round schedules, supplying the
 source metadata for Action activation coverage. -/

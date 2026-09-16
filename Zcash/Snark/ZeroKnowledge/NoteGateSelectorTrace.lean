@@ -1,5 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.SelectorTracePrograms
-import Zcash.Snark.ZeroKnowledge.ActivationTrace
+import Zcash.Circuits.Trace.Programs
 import Zcash.Circuits.NoteCommit.Decompose
 import Zcash.Circuits.NoteCommit.Canonicity
 

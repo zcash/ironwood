@@ -1,5 +1,4 @@
 import Zcash.Snark.ZeroKnowledge.ActionWitnessSelectorTrace
-import Zcash.Snark.ZeroKnowledge.ActivationTrace
 
 /-!
 # Activation traces shared by fixed-base multiplication

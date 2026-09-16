@@ -1,6 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.SinsemillaSelectorTrace
 import Zcash.Snark.ZeroKnowledge.LookupSelectorTrace
-import Zcash.Snark.ZeroKnowledge.SelectorTraceFold
 import Zcash.Circuits.Sinsemilla.Merkle
 
 /-!

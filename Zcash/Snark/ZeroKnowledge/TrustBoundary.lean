@@ -333,7 +333,6 @@ import Zcash.Snark.ZeroKnowledge.NativeScalarWitnessSupport
 import Zcash.Snark.ZeroKnowledge.AdviceSupportPlan
 import Zcash.Snark.ZeroKnowledge.ActionHintReadSupport
 import Zcash.Snark.ZeroKnowledge.ProtocolCacheCost
-import Zcash.Snark.ZeroKnowledge.SelectorTraceFold
 import Zcash.Snark.ZeroKnowledge.SelectorInitialTrace
 import Zcash.Snark.ZeroKnowledge.SelectorTracePlacement
 import Zcash.Snark.ZeroKnowledge.SelectorReplacementSupport
@@ -2045,37 +2044,8 @@ assert_axioms Zcash.Snark.ZeroKnowledge.derivePinnedCS_decidableEq_irrel
 assert_axioms Zcash.Snark.ZeroKnowledge.eraseExpr_sourceMaskCertificates
 
 -- Exact source selector traces and their connection to compiler placement.
-assert_computable Zcash.Snark.ZeroKnowledge.regionSelectorTrace
-assert_computable Zcash.Snark.ZeroKnowledge.selectorTrace
 assert_computable Zcash.Snark.ZeroKnowledge.placeSelectorTrace
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_nil
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_cons
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_append
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_flatMap
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_enableGate
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_enableLookup
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_assignAdvice
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_assignFixed
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_constrainEqual
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_constrainConstant
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_constrainInstance
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_nil
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_cons
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_append
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_flatMap
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_region
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_constrainInstance
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_loadTable
 assert_axioms Zcash.Snark.ZeroKnowledge.activations_eq_placeSelectorTrace
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_flatten
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_flatten
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_forRange'
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_forRangeVar'
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSelectorTrace_foldRange
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_toFormal_call
-
-assert_computable Zcash.Snark.ZeroKnowledge.selectorRowRun
-assert_axioms Zcash.Snark.ZeroKnowledge.selectorTrace_foldCall
 
 assert_computable Zcash.Snark.ZeroKnowledge.initialSelectorCheck
 assert_axioms Zcash.Snark.ZeroKnowledge.initialSelectorCheck_not_mem_local

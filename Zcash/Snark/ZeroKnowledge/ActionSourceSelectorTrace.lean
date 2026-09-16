@@ -170,8 +170,8 @@ theorem actionCircuit_activationTrace_eq :
 labels are the activation trace projected, so this follows from the activation equation and the
 generic projection rather than from a selector tower of its own. -/
 theorem actionCircuit_selectorTrace_eq :
-    selectorTrace actionCircuit.operations = actionSourceSelectorTrace actionConfig := by
-  rw [selectorTrace, trace_eq_project _ selectorOf_vanishes, actionCircuit_activationTrace_eq]
+    trace selectorOf actionCircuit.operations = actionSourceSelectorTrace actionConfig := by
+  rw [trace_eq_project _ selectorOf_vanishes, actionCircuit_activationTrace_eq]
   rfl
 
 /-- The compiler's complete activation list follows by placing the source-derived trace. -/

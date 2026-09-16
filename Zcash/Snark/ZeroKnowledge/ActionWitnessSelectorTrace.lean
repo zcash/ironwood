@@ -1,5 +1,4 @@
-import Zcash.Snark.ZeroKnowledge.SelectorTracePrograms
-import Zcash.Snark.ZeroKnowledge.ActivationTrace
+import Zcash.Circuits.Trace.Programs
 import Zcash.Circuits.Action.Circuit
 
 /-!
