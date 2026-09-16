@@ -7,6 +7,7 @@ import Zcash.Snark.Fixtures.Prover.TrustBoundary
 import Zcash.Snark.ZeroKnowledge.TrustBoundary
 import Zcash.Snark.ZeroKnowledge.Vesta.TrustBoundary
 import Zcash.Snark.ZeroKnowledge.Action.TrustBoundary
+import Zcash.Snark.ZeroKnowledge.Action.Certificates.TrustBoundary
 import Zcash.Snark.ZeroKnowledge.Zakura.TrustBoundary
 
 /-!
