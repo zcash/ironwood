@@ -250,10 +250,17 @@ For every touched docstring, module doc, book sentence, and the PR body:
 
 ## Final sweep
 
-Before handing over: `scripts/check_endpoint_census.sh`, `scripts/check_csimp_census.sh`,
-`scripts/check_no_umbrella_imports.sh`, `scripts/check_build_coverage.sh`, `typos`, and
-`lake build --wfail` — the default-target build, not `lake build Zcash`, which touches none of
-the `FixtureCheck`, `CircuitCheck`, `MetaCheck`, or `SecurityCheck` cones and so elaborates less
-than the coverage property in §1 item 2 demands. Then one pass over the full diff with the
-census, trust-surface, noncomputable, and claims questions above, reporting per file what was
-fixed, what is compliant, and what needs author judgment.
+Before handing over, run each of these:
+
+- `scripts/check_endpoint_census.sh`;
+- `scripts/check_csimp_census.sh`;
+- `scripts/check_census_pins.sh`;
+- `scripts/check_no_umbrella_imports.sh`;
+- `scripts/check_build_coverage.sh`; and
+- `lake build --wfail` on the default target (not `lake build Zcash`, which touches none of the
+  `FixtureCheck`, `CircuitCheck`, `MetaCheck`, or `SecurityCheck` cones and so elaborates less
+  than the coverage property in §1 item 2 demands).
+
+Then one pass over the full diff with the census, trust-surface, noncomputable, and claims
+questions above, reporting per file what was fixed, what is compliant, and what needs author
+judgment.

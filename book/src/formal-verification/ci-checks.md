@@ -55,6 +55,10 @@ Lean-relevant change. All of them can be run locally from the repository root.
   census pin. The census commands traverse a declaration's *dependencies*, so an
   endpoint that nothing pinned depends on would otherwise be invisible to every census
   entry.
+* **`check_census_pins.sh`** — every census file pins a declaration once. A second entry
+  checks nothing new, and a duplicated block is what a careless copy or a census split
+  leaves behind, hiding a stale or missing entry behind a passing build.
+  `assert_computable` already implies `assert_axioms` on the same definition.
 * **`check_csimp_census.sh`** — every `@[csimp]` replacement lemma has its own
   `assert_axioms` entry. The compiler applies a csimp substitution in all downstream
   compiled code, but the lemma's own axioms are not propagated into downstream

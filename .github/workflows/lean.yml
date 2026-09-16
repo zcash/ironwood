@@ -106,6 +106,12 @@ jobs:
       # such a leaf, but not a stray native_decide or other unexpected axiom; the pin does.
       - name: Verify soundness endpoints are axiom-censused
         run: scripts/check_endpoint_census.sh
+      # A census pins each declaration once. A second entry checks nothing new, and a
+      # duplicated block is what a careless copy or a census split leaves behind, hiding a
+      # stale or missing entry behind a passing build. `assert_computable` already implies
+      # `assert_axioms` on the same definition.
+      - name: Verify census pins are unique
+        run: scripts/check_census_pins.sh
       # Every module file must be reachable from the lakefile's defaultTargets — a module
       # outside that set is not elaborated at all, and nothing else fails when one falls out.
       # Coverage stopped being a pure import-reachability property when `Zcash/Snark.lean`
