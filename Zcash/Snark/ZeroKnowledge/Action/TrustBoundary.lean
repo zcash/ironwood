@@ -356,10 +356,6 @@ assert_computable Zcash.Snark.ZeroKnowledge.actionSourceRegionStarts +choice
 assert_axioms Zcash.Snark.ZeroKnowledge.actionSourceRegionStarts_def
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_regionStarts_eq_source +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_computable Zcash.Snark.ZeroKnowledge.actionSourceSelectorActivations +choice
-assert_axioms Zcash.Snark.ZeroKnowledge.actionSourceSelectorActivations_def
-assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_selectorActivations_eq_source +native(
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_previousSelector_replacement_zero +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)

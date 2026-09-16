@@ -1,4 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.ActionOrderedShapes
+import Zcash.Snark.ZeroKnowledge.ActionSourceSelectorTrace
 import Zcash.Snark.ZeroKnowledge.ActionTracePlacement
 import Zcash.Snark.ZeroKnowledge.ActionExpressionDegree
 import Zcash.Snark.ZeroKnowledge.SelectorCompressionCount
