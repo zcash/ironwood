@@ -17,7 +17,7 @@ open Halo2 Zcash.Circuits Zcash.Circuits.Action Zcash.Circuits.Trace
 /-- The actual Action compiler consumes exactly the placed source selector trace. -/
 theorem actionCircuit_selectorActivations_eq_trace :
     actionCircuit.selectorActivations =
-      placeSelectorTrace actionCircuit.regionStarts (trace selectorOf actionCircuit.operations) :=
-  activations_eq_placeSelectorTrace actionCircuit.regionStarts actionCircuit.operations 0
+      placeLabels actionCircuit.regionStarts (trace selectorOf actionCircuit.operations) :=
+  activations_eq_placeLabels actionCircuit.regionStarts actionCircuit.operations 0
 
 end Zcash.Snark.ZeroKnowledge

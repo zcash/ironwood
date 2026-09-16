@@ -177,7 +177,7 @@ theorem actionCircuit_selectorTrace_eq :
 /-- The compiler's complete activation list follows by placing the source-derived trace. -/
 theorem actionCircuit_selectorActivations_eq_sourceTrace :
     actionCircuit.selectorActivations =
-      placeSelectorTrace actionCircuit.regionStarts (actionSourceSelectorTrace actionConfig) := by
+      placeLabels actionCircuit.regionStarts (actionSourceSelectorTrace actionConfig) := by
   rw [actionCircuit_selectorActivations_eq_trace, actionCircuit_selectorTrace_eq]
 
 end Zcash.Snark.ZeroKnowledge

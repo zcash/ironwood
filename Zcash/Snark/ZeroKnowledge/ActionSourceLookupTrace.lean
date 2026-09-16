@@ -34,7 +34,7 @@ compiler's own labels, and only its derivation goes through the trace. Placement
 definitionally, since a circuit's `placement` is `regionStarts.getD · 0`. -/
 theorem actionCircuit_lookupLabels_eq_sourceTrace :
     sourceLookupActivationLabels actionCircuit.placement actionCircuit.operations 0 =
-      placeSelectorTrace actionCircuit.regionStarts (actionSourceLookupTrace actionConfig) 0 := by
+      placeLabels actionCircuit.regionStarts (actionSourceLookupTrace actionConfig) 0 := by
   rw [show actionCircuit.placement = fun region => actionCircuit.regionStarts.getD region 0
     from rfl]
   rw [sourceLookupActivationLabels_eq_placeTrace, actionCircuit_lookupTrace_eq]

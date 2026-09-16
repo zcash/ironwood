@@ -15,7 +15,7 @@ point-order dependency.
 
 namespace Zcash.Snark.ZeroKnowledge
 
-open Halo2 Zcash.Circuits.Action
+open Halo2 Zcash.Circuits.Action Zcash.Circuits.Trace
 
 /-- One bit for every active row of each of the 56 source selectors. -/
 def actionSelectorBitsCertificate : Array (BitVec 2048) :=
@@ -77,12 +77,12 @@ def actionSelectorBitsCertificate : Array (BitVec 2048) :=
     0x8000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]
 
 private def certifiedActivations : List (ℕ × ℕ) :=
-  placeSelectorTrace actionRegionStartsCertificate (actionSourceSelectorTrace actionConfig)
+  placeLabels actionRegionStartsCertificate (actionSourceSelectorTrace actionConfig)
 
 /-- The ordered source trace equals the retained activation list, connecting the compact certificate
 to synthesis. -/
 private theorem orderedActivations_eq : actionOrderedSelectorActivations = certifiedActivations :=
-  congrArg (fun starts => placeSelectorTrace starts (actionSourceSelectorTrace actionConfig))
+  congrArg (fun starts => placeLabels starts (actionSourceSelectorTrace actionConfig))
     actionOrderedRegionStarts_eq_certificate
 
 set_option maxRecDepth 16384 in

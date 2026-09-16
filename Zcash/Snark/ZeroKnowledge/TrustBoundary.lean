@@ -2043,12 +2043,11 @@ assert_axioms Zcash.Snark.ZeroKnowledge.derivePinnedCS_decidableEq_irrel
 assert_axioms Zcash.Snark.ZeroKnowledge.eraseExpr_sourceMaskCertificates
 
 -- Exact source selector traces and their connection to compiler placement.
-assert_computable Zcash.Snark.ZeroKnowledge.placeSelectorTrace
-assert_axioms Zcash.Snark.ZeroKnowledge.activations_eq_placeSelectorTrace
+assert_axioms Zcash.Snark.ZeroKnowledge.activations_eq_placeLabels
 
 assert_computable Zcash.Snark.ZeroKnowledge.initialSelectorCheck
 assert_axioms Zcash.Snark.ZeroKnowledge.initialSelectorCheck_not_mem_local
-assert_axioms Zcash.Snark.ZeroKnowledge.mem_placeSelectorTrace_initial
+assert_axioms Zcash.Snark.ZeroKnowledge.mem_placeLabels_initial
 assert_axioms Zcash.Snark.ZeroKnowledge.initialSelectorCheck_not_mem_placed
 assert_computable Zcash.Snark.ZeroKnowledge.regionStartsFromSummary
 assert_axioms Zcash.Snark.ZeroKnowledge.regionStartsFromSummary_def

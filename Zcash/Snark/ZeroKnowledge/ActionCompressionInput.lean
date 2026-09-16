@@ -14,17 +14,17 @@ correspondence used by the closed count in `ActionCompressionCertificate`.
 
 namespace Zcash.Snark.ZeroKnowledge
 
-open Halo2 Halo2.FloorPlanner Zcash.Circuits.Action
+open Halo2 Halo2.FloorPlanner Zcash.Circuits.Action Zcash.Circuits.Trace
 
 /-- Place the complete source selector trace at those certified source-shape starts. -/
 def actionOrderedSelectorActivations : List (ℕ × ℕ) :=
-  placeSelectorTrace actionOrderedRegionStarts (actionSourceSelectorTrace actionConfig)
+  placeLabels actionOrderedRegionStarts (actionSourceSelectorTrace actionConfig)
 
 /-- Every actual activation is reproduced by the reduced ordered source calculation. -/
 theorem actionCircuit_selectorActivations_eq_ordered :
     actionCircuit.selectorActivations = actionOrderedSelectorActivations :=
   actionCircuit_selectorActivations_eq_sourceTrace.trans
-    (congrArg (fun starts => placeSelectorTrace starts (actionSourceSelectorTrace actionConfig))
+    (congrArg (fun starts => placeLabels starts (actionSourceSelectorTrace actionConfig))
       actionCircuit_regionStarts_eq_ordered)
 
 /-- The remaining compression calculation on the certified Action inputs. -/

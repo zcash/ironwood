@@ -6,8 +6,8 @@ import Zcash.Snark.ZeroKnowledge.SelectorActivationTrace
 
 A compact lookup trace, `trace lookupOf` of `Zcash/Circuits/Trace/Activations.lean`, keeps each
 lookup argument's own master selector at its local row, so lookup membership is never inferred
-from a selector index alone. A region with no lookups still occupies one slot. Placement reuses
-`placeSelectorTrace`, since a compact lookup trace has the shape of a compact selector trace.
+from a selector index alone. A region with no lookups still occupies one slot. Placement is
+`placeLabels`, which is generic in the label payload.
 `sourceLookupActivationLabels_eq_placeTrace` connects the placed trace to the coverage check's
 own label list over the operation stream, for any supplied placement.
 -/
@@ -23,7 +23,7 @@ stream, so either may be used to state a circuit's lookup labels. -/
 theorem sourceLookupActivationLabels_eq_placeTrace (starts : List ℕ)
     (operations : Operations F) (initial : ℕ) :
     sourceLookupActivationLabels (fun region => starts.getD region 0) operations initial =
-      placeSelectorTrace starts (trace lookupOf operations) initial := by
+      placeLabels starts (trace lookupOf operations) initial := by
   unfold sourceLookupActivationLabels
   induction operations generalizing initial with
   | nil => rfl
@@ -31,7 +31,7 @@ theorem sourceLookupActivationLabels_eq_placeTrace (starts : List ℕ)
       cases operation with
       | region name body =>
           simp only [operationEnabledLookups, List.map_append, trace, List.filterMap_cons,
-            placeSelectorTrace, List.zipIdx_cons, List.flatMap_cons]
+            placeLabels, List.zipIdx_cons, List.flatMap_cons]
           rw [ih]
           congr 1
           induction body with
