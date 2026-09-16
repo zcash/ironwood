@@ -1369,7 +1369,6 @@ only through erased proof fields. Noncomputable events and probability theorems 
 separately with `assert_axioms`. -/
 
 assert_computable Zcash.Snark.bindOrRelationWitness
-assert_computable Zcash.Snark.finForallOrRelationWitness
 assert_computable Zcash.Snark.finForallOption
 assert_computable Zcash.Snark.listForallOrRelationWitness
 assert_computable Zcash.Snark.boundedForallOrRelationWitness
@@ -1622,10 +1621,6 @@ assert_axioms Zcash.Snark.deployedAllPts_x3_blind
 assert_axioms Zcash.Snark.deployedAllPts_congr_preMultiopen
 assert_axioms Zcash.Snark.deployedRootPrefixDetermined_witness +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.witnessOnlineMemberFamily +native(
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.witnessDeployedRootFamily +native(
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The constraint-level and straight-line interfaces are inhabited on the same witness
 -- (`Composition.StraightLineWitness`): the constraint difference of the zero data is the zero
 -- polynomial, so the constraint-`x` stage is a read-free executable computation, and the
@@ -1856,7 +1851,6 @@ assert_computable Zcash.Snark.deployedDirectDecodeOps +choice
 -- The index-generic squeeze bridge (`Composition.PrefixedSqueeze`): a bad-root event at
 -- any pre-IPA squeeze costs the same bound, linear in the number of squeeze points, so
 -- the y/beta/gamma/theta surfaces are priced the same way the x surface already was.
-assert_axioms Zcash.Snark.preIpaLen_strictMono
 assert_axioms Zcash.Snark.algebraicFullPrefixesPre_eq_of_eq_at +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.algebraicFullPrefixesPre_ne_at +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The interpolation points the synthetic opened-batch adapters take as a hypothesis

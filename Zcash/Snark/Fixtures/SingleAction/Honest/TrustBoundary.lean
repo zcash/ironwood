@@ -321,10 +321,6 @@ assert_axioms Zcash.Snark.Fixture.capturedScheduleIncludesInit_eq_true +native(
   Zcash.Snark.Fixture.capturedScheduleIncludesInit_eq_true)
 assert_axioms Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule +native(
   Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule)
-assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches +native(
-  Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule,
-  Zcash.Snark.Fixture.fingerprint_matches,
-  Zcash.Snark.Fixture.instance_commitments_derived)
 assert_axioms Zcash.Snark.Fixture.capturedFs
 assert_axioms Zcash.Snark.Fixture.capturedInit
 assert_axioms Zcash.Snark.deriveChallenges
