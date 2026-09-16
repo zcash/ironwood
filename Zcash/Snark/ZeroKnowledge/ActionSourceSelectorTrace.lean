@@ -238,9 +238,13 @@ def actionSourceActivations (generators : Specs.Sinsemilla.Generators) (config :
     List (List (RegionOperation Fp)) :=
   actionBaseActivations generators config ++ [gateRowRun (Circuit.orchardGate config.qOrchard config.advices) 0 4]
 
-/-- All source regions of the specified post-NU6.3 Action circuit. -/
+/-- All source selector labels of the specified post-NU6.3 Action circuit: the selectors read off
+each region of the source activation trace. Defining it this way rather than assembling it from
+per-gadget selector traces is what removes the parallel selector tower — the equation relating
+the two forms is true by definition, so nothing has to prove it. -/
 def actionSourceSelectorTrace (config : Circuit.Config) : List (List (ℕ × ℕ)) :=
-  actionBaseSelectorTrace config ++ [selectorRowRun config.qOrchard.index 0 4]
+  (actionSourceActivations Specs.Sinsemilla.orchardGenerators config).map
+    fun body => body.flatMap selectorOf
 
 /-- The complete Action source produces the composed base and cross-address traces, supplying the
 source metadata for Action activation coverage. -/
@@ -251,15 +255,6 @@ theorem actionMainPost_activationTrace (generators : Specs.Sinsemilla.Generators
       actionSourceActivations generators config := by
   simp only [Circuit.mainPost, activation_trace_norm, actionSourceActivations]
 
-/-- The complete Action source produces the composed base and cross-address traces, supplying the
-source metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionMainPost_selectorTrace (generators : Specs.Sinsemilla.Generators) (bases : Circuit.Bases)
-    (config : Circuit.Config) (input : Var unit Fp) (region : RegionIndex) :
-    selectorTrace ((Circuit.mainPost generators bases config input).operations region) =
-      actionSourceSelectorTrace config := by
-  simp only [Circuit.mainPost, selector_trace_norm, actionSourceSelectorTrace]
-
 /-- The actual opaque Action circuit has precisely the source-derived compact activation trace. -/
 theorem actionCircuit_activationTrace_eq :
     activationTrace actionCircuit.operations =
@@ -268,12 +263,13 @@ theorem actionCircuit_activationTrace_eq :
   change activationTrace ((Circuit.mainPost Specs.Sinsemilla.orchardGenerators orchardBases actionConfig ()).operations 0) = _
   exact actionMainPost_activationTrace _ _ _ _ _
 
-/-- The actual opaque Action circuit has precisely the source-derived compact trace. -/
+/-- The actual opaque Action circuit has precisely the source-derived compact trace. Its selector
+labels are the activation trace projected, so this follows from the activation equation and the
+generic projection rather than from a selector tower of its own. -/
 theorem actionCircuit_selectorTrace_eq :
     selectorTrace actionCircuit.operations = actionSourceSelectorTrace actionConfig := by
-  rw [Internal.actionCircuit_eq_impl]
-  change selectorTrace ((Circuit.mainPost Specs.Sinsemilla.orchardGenerators orchardBases actionConfig ()).operations 0) = _
-  exact actionMainPost_selectorTrace _ _ _ _ _
+  rw [selectorTrace, trace_eq_project _ selectorOf_vanishes, actionCircuit_activationTrace_eq]
+  rfl
 
 /-- The compiler's complete activation list follows by placing the source-derived trace. -/
 theorem actionCircuit_selectorActivations_eq_sourceTrace :

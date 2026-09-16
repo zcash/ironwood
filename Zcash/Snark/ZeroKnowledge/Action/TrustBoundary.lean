@@ -700,8 +700,11 @@ assert_axioms Zcash.Snark.ZeroKnowledge.actionBaseCall_selectorTrace +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCrossAddressRow_regionSelectorTrace
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCrossAddress_selectorTrace
-assert_computable Zcash.Snark.ZeroKnowledge.actionSourceSelectorTrace
-assert_axioms Zcash.Snark.ZeroKnowledge.actionMainPost_selectorTrace +native(
+assert_computable Zcash.Snark.ZeroKnowledge.actionSourceActivations +choice
+assert_computable Zcash.Snark.ZeroKnowledge.actionSourceSelectorTrace +choice
+assert_axioms Zcash.Snark.ZeroKnowledge.actionMainPost_activationTrace +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_activationTrace_eq +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_selectorTrace_eq +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)

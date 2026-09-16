@@ -48,7 +48,8 @@ theorem actionVariableBaseMain_initial_selector (offset : ℕ)
     (regionSelectorTrace
       ((Ecc.Mul.mainCircuit.call actionConfig.eccConfig.mul offset input).operations region)).filter
         (fun activation => activation.2 = 0) = [(8, 0)] := by
-  rw [variableBaseMain_regionSelectorTrace, variableBaseMainSelectorTrace_initial]
+  rw [regionSelectorTrace_eq_project, variableBaseMain_regionActivations,
+    variableBaseMainActivations_selectorOf, variableBaseMainSelectorTrace_initial]
   rfl
 
 end Zcash.Snark.ZeroKnowledge

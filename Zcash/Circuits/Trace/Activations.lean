@@ -108,6 +108,19 @@ theorem project_of_vanishing (keep : α → List α) (f : α → List β)
   rw [List.flatMap_assoc]
   exact List.flatMap_congr fun item _ => vanishes item
 
+/-- A whole synthesis trace of labels is the activation trace with the labels read off each
+region. This is what lets a circuit's label trace be *defined* as a projection, so the equation
+relating the two needs no proof of its own. -/
+theorem trace_eq_project (f : RegionOperation F → List β)
+    (vanishes : ∀ operation, (activationOf operation).flatMap f = f operation)
+    (operations : Operations F) :
+    trace f operations = (activationTrace operations).map fun body => body.flatMap f := by
+  simp only [activationTrace, trace, List.map_filterMap]
+  congr 1
+  funext operation
+  cases operation <;>
+    simp only [Option.map_some, Option.map_none, project_of_vanishing _ _ vanishes]
+
 /-- Selector labels read the activations and nothing else. -/
 theorem selectorOf_vanishes (operation : RegionOperation F) :
     (activationOf operation).flatMap selectorOf = selectorOf operation := by
