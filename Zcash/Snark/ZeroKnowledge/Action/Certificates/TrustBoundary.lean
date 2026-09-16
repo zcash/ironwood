@@ -1,4 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.ActionGateSourceCertificate
+import Zcash.Snark.ZeroKnowledge.ActionGateTraceAgreement
 import Zcash.Snark.ZeroKnowledge.ActionAdviceSourceData
 import Zcash.Snark.ZeroKnowledge.ActionGateActivationCoverage
 import Zcash.Snark.ZeroKnowledge.ActionWitnessSimulation
@@ -25,6 +26,7 @@ assert_axioms Zcash.Snark.ZeroKnowledge.actionGateSourceLabels_eq +native(CompEl
 assert_axioms Zcash.Snark.ZeroKnowledge.actionGateSourceCertificateRaw +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionGateActivationSourceCertificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateLabels_nodup +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms Zcash.Snark.ZeroKnowledge.actionSourceGateTrace_placed_eq_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete original Action gate activation coverage.
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateActivationCoverage_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
