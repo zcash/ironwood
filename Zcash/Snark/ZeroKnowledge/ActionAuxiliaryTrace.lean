@@ -19,7 +19,7 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem addChip_regionActivations (config : AddChip.Config) (offset : ℕ)
     (input : Var AddChip.Inputs Fp) (region : RegionIndex) :
-    regionActivations ((AddChip.add.call config offset input).operations region) =
+    ((AddChip.add.call config offset input).operations region).flatMap activationOf =
       [.enableGate (AddChip.addGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -41,7 +41,7 @@ traces, supplying the source metadata for Action activation coverage. -/
 theorem valueCommit_activationTrace (valueBase : Ecc.MulFixed.Short.FixedBase) (blindBase : Ecc.MulFixed.FixedBase)
     (config : Ecc.MulFixed.Short.Config × Ecc.MulFixed.FullWidth.Config × Ecc.Add.Config)
     (input : Var Action.ValueCommit.Inputs Fp) (region : RegionIndex) :
-    activationTrace (((Action.ValueCommit.circuit valueBase blindBase).call config input).operations region) =
+    trace activationOf (((Action.ValueCommit.circuit valueBase blindBase).call config input).operations region) =
       valueCommitActivations config := by
   rw [FormalCircuit.call_operations]
   simp only [Action.ValueCommit.circuit, Ecc.Add.addFormal, activation_trace_norm,
@@ -60,7 +60,7 @@ the source metadata for Action activation coverage. -/
 theorem spendAuthority_activationTrace (base : Ecc.MulFixed.FixedBase)
     (config : Ecc.MulFixed.FullWidth.Config × Ecc.Add.Config)
     (input : Var Action.SpendAuthority.Input Fp) (region : RegionIndex) :
-    activationTrace (((Action.SpendAuthority.circuit base).call config input).operations region) =
+    trace activationOf (((Action.SpendAuthority.circuit base).call config input).operations region) =
       spendAuthorityActivations config := by
   rw [FormalCircuit.call_operations]
   simp only [Action.SpendAuthority.circuit, Ecc.Add.addFormal, activation_trace_norm,
@@ -79,7 +79,7 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem addressIntegrity_activationTrace (config : Ecc.Mul.Config × Ecc.WitnessPoint.Config)
     (input : Var Action.AddressIntegrity.Input Fp) (region : RegionIndex) :
-    activationTrace ((Action.AddressIntegrity.circuit.call config input).operations region) =
+    trace activationOf ((Action.AddressIntegrity.circuit.call config input).operations region) =
       addressIntegrityActivations config := by
   rw [FormalCircuit.call_operations]
   simp only [Action.AddressIntegrity.circuit, Ecc.WitnessPoint.pointNonIdFormal,
@@ -104,10 +104,10 @@ source metadata for Action activation coverage. -/
 theorem nullifier_activationTrace (base : Ecc.MulFixed.FixedBase)
     (config : Poseidon.Config × AddChip.Config × Ecc.MulFixed.BaseFieldElem.Config × Ecc.Add.Config)
     (input : Var Action.DeriveNullifier.Input Fp) (region : RegionIndex) :
-    activationTrace (((Action.DeriveNullifier.circuit base).call config input).operations region) =
+    trace activationOf (((Action.DeriveNullifier.circuit base).call config input).operations region) =
       nullifierActivations config := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((Action.DeriveNullifier.synthesize base config input).operations region) = _
+  change trace activationOf ((Action.DeriveNullifier.synthesize base config input).operations region) = _
   simp only [Action.DeriveNullifier.synthesize, AddChip.addFormal, Ecc.Add.addFormal,
     activation_trace_norm, nullifierActivations, List.cons_append]
 

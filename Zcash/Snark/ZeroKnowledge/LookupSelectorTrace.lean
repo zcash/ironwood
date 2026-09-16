@@ -38,7 +38,7 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem rangeCheckRound_regionActivations (K : ℕ) (config : LookupRangeCheck.Config K)
     (element : AssignedCell Fp) (index row : ℕ) (region : RegionIndex) :
-    regionActivations ((LookupRangeCheck.rangeCheckRound K config element index row).operations region) =
+    ((LookupRangeCheck.rangeCheckRound K config element index row).operations region).flatMap activationOf =
       [.enableLookup (LookupRangeCheck.rangeCheckLookup K config)
         [config.qLookup, config.qRunning] row] := rfl
 
@@ -47,7 +47,7 @@ for Action activation coverage. -/
 @[activation_trace_norm]
 theorem rangeCheckLoop_regionActivations (K : ℕ) (config : LookupRangeCheck.Config K)
     (element : AssignedCell Fp) (offset count : ℕ) (region : RegionIndex) :
-    regionActivations ((LookupRangeCheck.rangeCheckLoop K config element offset count).operations region) =
+    ((LookupRangeCheck.rangeCheckLoop K config element offset count).operations region).flatMap activationOf =
       runningActivations config offset count := by
   simp only [LookupRangeCheck.rangeCheckLoop, activation_trace_norm, Nat.mul_one,
     runningActivations]
@@ -57,7 +57,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem shortRangeCheck_regionActivations (K bits : ℕ) (config : LookupRangeCheck.Config K)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((LookupRangeCheck.shortRangeCheck K bits).call config offset input).operations region) =
+    (((LookupRangeCheck.shortRangeCheck K bits).call config offset input).operations region).flatMap activationOf =
       [.enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] offset,
         .enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] (offset + 1),
         .enableGate (LookupRangeCheck.bitshiftGate K config) (offset + 1)] := by
@@ -70,10 +70,11 @@ metadata for Action activation coverage. -/
 theorem rangeCheck_regionActivations (K count : ℕ) (strict : Bool)
     (config : LookupRangeCheck.Config K) (offset : ℕ)
     (input : Var LookupRangeCheck.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((LookupRangeCheck.rangeCheck K count strict).call config offset input).operations region) =
+    (((LookupRangeCheck.rangeCheck K count strict).call config offset input).operations region).flatMap activationOf =
       runningActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((LookupRangeCheck.rangeCheckBody K count strict config offset input).operations region) = _
+  change ((LookupRangeCheck.rangeCheckBody K count strict config offset input).operations
+    region).flatMap activationOf = _
   cases strict <;>
     simp only [LookupRangeCheck.rangeCheckBody, activation_trace_norm, Bool.false_eq_true,
       if_false, if_true]
@@ -84,10 +85,12 @@ metadata for Action activation coverage. -/
 theorem rangeCheckAt_regionActivations (K count : ℕ) (strict : Bool)
     (hstrict : strict = true → 0 < count) (config : LookupRangeCheck.Config K) (offset : ℕ)
     (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((LookupRangeCheck.rangeCheckAt K count strict hstrict).call config offset input).operations region) =
+    (((LookupRangeCheck.rangeCheckAt K count strict hstrict).call
+      config offset input).operations region).flatMap activationOf =
       runningActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((LookupRangeCheck.rangeCheckAtBody K count strict config offset input).operations region) = _
+  change ((LookupRangeCheck.rangeCheckAtBody K count strict config offset input).operations
+    region).flatMap activationOf = _
   cases strict <;>
     simp only [LookupRangeCheck.rangeCheckAtBody, activation_trace_norm, Bool.false_eq_true,
       if_false, if_true]
@@ -98,10 +101,12 @@ metadata for Action activation coverage. -/
 theorem rangeCheckAtDecomposed_regionActivations (count : ℕ) (hcount : 13 ≤ count)
     (hpow : 10 * count ≤ 254) (config : LookupRangeCheck.Config 10) (offset : ℕ)
     (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((LookupRangeCheck.rangeCheckAtDecomposed count hcount hpow).call config offset input).operations region) =
+    (((LookupRangeCheck.rangeCheckAtDecomposed count hcount hpow).call
+      config offset input).operations region).flatMap activationOf =
       runningActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((LookupRangeCheck.rangeCheckAtDecomposedBody count config offset input).operations region) = _
+  change ((LookupRangeCheck.rangeCheckAtDecomposedBody count config offset input).operations
+    region).flatMap activationOf = _
   simp only [LookupRangeCheck.rangeCheckAtDecomposedBody, activation_trace_norm]
 
 /-- Copying into a range check retains its region trace, supplying the source metadata for Action
@@ -109,7 +114,7 @@ activation coverage. -/
 @[activation_trace_norm]
 theorem copyCheck_activationTrace (K count : ℕ) (strict : Bool)
     (config : LookupRangeCheck.Config K) (input : Var LookupRangeCheck.Inputs Fp) (region : RegionIndex) :
-    activationTrace (((LookupRangeCheck.copyCheck K count strict).call config input).operations region) =
+    trace activationOf (((LookupRangeCheck.copyCheck K count strict).call config input).operations region) =
       [runningActivations config 0 count] := by
   simp only [LookupRangeCheck.copyCheck, activation_trace_norm]
 
@@ -117,7 +122,7 @@ theorem copyCheck_activationTrace (K count : ℕ) (strict : Bool)
 @[activation_trace_norm]
 theorem witnessShortCheck_activationTrace (K bits : ℕ) (config : LookupRangeCheck.Config K)
     (witness : WitgenIR Fp 1) (region : RegionIndex) :
-    activationTrace ((LookupRangeCheck.witnessShortCheck K bits config witness).operations region) =
+    trace activationOf ((LookupRangeCheck.witnessShortCheck K bits config witness).operations region) =
       [[.enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] 0,
         .enableLookup (LookupRangeCheck.rangeCheckLookup K config) [config.qLookup] 1,
         .enableGate (LookupRangeCheck.bitshiftGate K config) 1]] := by
@@ -128,7 +133,7 @@ Action activation coverage. -/
 @[activation_trace_norm]
 theorem witnessCheck_activationTrace (K count : ℕ) (strict : Bool) (config : LookupRangeCheck.Config K)
     (witness : WitgenIR Fp 1) (hstrict : strict = true → 0 < count) (region : RegionIndex) :
-    activationTrace ((LookupRangeCheck.witnessCheck K count strict config witness hstrict).operations region) =
+    trace activationOf ((LookupRangeCheck.witnessCheck K count strict config witness hstrict).operations region) =
       [runningActivations config 0 count] := by
   simp only [LookupRangeCheck.witnessCheck, activation_trace_norm]
 
@@ -137,7 +142,7 @@ Action activation coverage. -/
 @[activation_trace_norm]
 theorem witnessCheckDecomposed_activationTrace (config : LookupRangeCheck.Config 10)
     (witness : WitgenIR Fp 1) (region : RegionIndex) :
-    activationTrace ((LookupRangeCheck.witnessCheckDecomposed config witness).operations region) =
+    trace activationOf ((LookupRangeCheck.witnessCheckDecomposed config witness).operations region) =
       [runningActivations config 0 25] := by
   simp only [LookupRangeCheck.witnessCheckDecomposed, activation_trace_norm]
 

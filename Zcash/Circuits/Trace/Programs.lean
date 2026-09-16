@@ -11,10 +11,8 @@ iteration structure.
 `Activations.lean` registers the attribute and this module applies it, because an attribute
 cannot be applied in the module that registers it.
 
-`regionActivations` and `activationTrace` are reducible, so the rules stated for any extractor
-serve here directly, and a gadget lemma stated at either name still matches a goal that those
-rules have spelled as the underlying `flatMap`. The base cases are `List.flatMap`'s own and the
-equations of `activationOf`.
+The rules are the ones stated for any extractor, applied at `activationOf`; the base cases are
+`List.flatMap`'s own and the equations of `activationOf`.
 -/
 
 namespace Zcash.Circuits.Trace

@@ -21,7 +21,7 @@ activation coverage. -/
 @[activation_trace_norm]
 theorem poseidonFullRound_regionActivations (round : ℕ) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((Poseidon.fullRound round).call config offset input).operations region) =
+    (((Poseidon.fullRound round).call config offset input).operations region).flatMap activationOf =
       [.enableGate (Poseidon.fullRoundGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -31,7 +31,7 @@ Action activation coverage. -/
 @[activation_trace_norm]
 theorem poseidonPartialRound_regionActivations (round : ℕ) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((Poseidon.partialRound round).call config offset input).operations region) =
+    (((Poseidon.partialRound round).call config offset input).operations region).flatMap activationOf =
       [.enableGate (Poseidon.partialRoundsGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -48,10 +48,10 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem poseidonPermutation_regionActivations (config : Poseidon.Config) (offset : ℕ)
     (input : Var Poseidon.Permute.State Fp) (region : RegionIndex) :
-    regionActivations ((Poseidon.permuteRegion.call config offset input).operations region) =
+    ((Poseidon.permuteRegion.call config offset input).operations region).flatMap activationOf =
       poseidonPermutationActivations config offset := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Poseidon.permuteSynthesize config offset input).operations region) = _
+  change ((Poseidon.permuteSynthesize config offset input).operations region).flatMap activationOf = _
   simp only [Poseidon.permuteSynthesize, activation_trace_norm,
     gateRowRun, poseidonPermutationActivations, Nat.mul_one, List.append_assoc]
   rw [Poseidon.operations_readStateRow]
@@ -62,7 +62,7 @@ assignments. -/
 @[activation_trace_norm]
 theorem poseidonInit_regionActivations (capacity : Fp) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionActivations (((Poseidon.initRegion capacity).call config offset input).operations region) = [] := by
+    (((Poseidon.initRegion capacity).call config offset input).operations region).flatMap activationOf = [] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
 
@@ -71,7 +71,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem poseidonInput_regionActivations (config : Poseidon.Config) (offset : ℕ)
     (input : Var Poseidon.Sponge.AddInputInput Fp) (region : RegionIndex) :
-    regionActivations ((Poseidon.addInputRegion.call config offset input).operations region) =
+    ((Poseidon.addInputRegion.call config offset input).operations region).flatMap activationOf =
       [.enableGate (Poseidon.padAndAddGate config) (offset + 1)] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -80,11 +80,11 @@ theorem poseidonInput_regionActivations (config : Poseidon.Config) (offset : ℕ
 @[activation_trace_norm]
 theorem poseidonHash_activationTrace (capacity : Fp) (config : Poseidon.Config)
     (input : Var Poseidon.Sponge.Rate2 Fp) (region : RegionIndex) :
-    activationTrace (((Poseidon.hash capacity).call config input).operations region) =
+    trace activationOf (((Poseidon.hash capacity).call config input).operations region) =
       [[], [.enableGate (Poseidon.padAndAddGate config) 1],
         poseidonPermutationActivations config 0] := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((Poseidon.synthesize capacity config input).operations region) = _
+  change trace activationOf ((Poseidon.synthesize capacity config input).operations region) = _
   simp only [Poseidon.synthesize, activation_trace_norm, List.cons_append]
 
 end Zcash.Snark.ZeroKnowledge

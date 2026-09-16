@@ -28,10 +28,10 @@ for Action activation coverage. -/
 theorem noteY_activationTrace (witness : WitgenIR Fp 1)
     (config : NoteCommit.YCanonicity.Config × LookupRangeCheck.Config 10)
     (input : Var NoteCommit.YCanonicityCheck.Inputs Fp) (region : RegionIndex) :
-    activationTrace (((NoteCommit.YCanonicityCheck.circuit witness).call config input).operations region) =
+    trace activationOf (((NoteCommit.YCanonicityCheck.circuit witness).call config input).operations region) =
       noteYActivations config := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((NoteCommit.YCanonicityCheck.synth witness config.1 config.2 input).operations region) = _
+  change trace activationOf ((NoteCommit.YCanonicityCheck.synth witness config.1 config.2 input).operations region) = _
   simp only [NoteCommit.YCanonicityCheck.synth, NoteCommit.YCanonicityCheck.gateChild,
     activation_trace_norm, noteYActivations, shortCheckActivations, List.cons_append]
 
@@ -45,7 +45,7 @@ for Action activation coverage. -/
 @[activation_trace_norm]
 theorem notePieces_activationTrace (config : NoteCommit.Main.Config)
     (input : Var NoteCommit.Main.Inputs Fp) (region : RegionIndex) :
-    activationTrace ((NoteCommit.Main.synthPieces config input).operations region) =
+    trace activationOf ((NoteCommit.Main.synthPieces config input).operations region) =
       notePiecesActivations config := by
   simp only [NoteCommit.Main.synthPieces, activation_trace_norm,
     notePiecesActivations, shortCheckActivations, List.cons_append]
@@ -67,7 +67,8 @@ theorem noteChecks_activationTrace (generators : Specs.Sinsemilla.Generators) (b
     (point : Point Fp) (honCurve : point.OnCurve) (config : NoteCommit.Main.Config)
     (input : Var NoteCommit.Main.Inputs Fp) (pieces : NoteCommit.Main.PieceCells)
     (hashRegion region : RegionIndex) :
-    activationTrace ((NoteCommit.Main.synthChecks generators base point honCurve config input pieces hashRegion).operations region) =
+    trace activationOf ((NoteCommit.Main.synthChecks generators base point honCurve config input pieces
+      hashRegion).operations region) =
       noteChecksActivations generators config := by
   simp only [NoteCommit.Main.synthChecks, activation_trace_norm,
     noteChecksActivations, List.cons_append, List.append_assoc]
@@ -91,7 +92,7 @@ Action activation coverage. -/
 theorem noteGates_activationTrace (config : NoteCommit.Main.Config)
     (input : Var NoteCommit.Main.Inputs Fp) (pieces : NoteCommit.Main.PieceCells)
     (checks : NoteCommit.Main.CheckCells) (hashRegion region : RegionIndex) :
-    activationTrace ((NoteCommit.Main.synthGates config input pieces checks hashRegion).operations region) =
+    trace activationOf ((NoteCommit.Main.synthGates config input pieces checks hashRegion).operations region) =
       noteGatesActivations config := by
   simp only [NoteCommit.Main.synthGates, NoteCommit.Main.synthDecompositions,
     NoteCommit.Main.synthCanonicity, NoteCommit.Main.synthGdPkdValueCanonicity,
@@ -110,10 +111,11 @@ for Action activation coverage. -/
 theorem noteCommit_activationTrace (generators : Specs.Sinsemilla.Generators) (base : Ecc.MulFixed.FixedBase)
     (point : Point Fp) (honCurve : point.OnCurve) (config : NoteCommit.Main.Config)
     (input : Var NoteCommit.Main.Inputs Fp) (region : RegionIndex) :
-    activationTrace (((NoteCommit.Main.circuit generators base point honCurve).call config input).operations region) =
+    trace activationOf
+        (((NoteCommit.Main.circuit generators base point honCurve).call config input).operations region) =
       noteCommitActivations generators config := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((NoteCommit.Main.synth generators base point honCurve config input).operations region) = _
+  change trace activationOf ((NoteCommit.Main.synth generators base point honCurve config input).operations region) = _
   simp only [NoteCommit.Main.synth, activation_trace_norm, NoteCommit.Main.currentRegion_operations,
     noteCommitActivations, List.append_assoc]
 

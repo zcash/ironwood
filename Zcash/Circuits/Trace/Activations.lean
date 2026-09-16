@@ -59,23 +59,12 @@ def activationOf : RegionOperation F → List (RegionOperation F)
   | operation@(.enableLookup _ _ _) => [operation]
   | _ => []
 
-/-- A region's activation operations, in source order, before floor-planner placement. Reducible,
-so the composition rules stated for any extractor apply at this name directly, and a gadget lemma
-stated at this name still matches a goal spelled as the underlying `flatMap`. -/
-abbrev regionActivations (body : RegionOperations F) : List (RegionOperation F) :=
-  body.flatMap activationOf
-
 /-- The ordered region traces of an extractor; a region contributes a slot even where it
 extracts nothing. -/
 def trace (f : RegionOperation F → List β) (operations : Operations F) : List (List β) :=
   operations.filterMap fun operation => match operation with
     | .region _ body => some (body.flatMap f)
     | _ => none
-
-/-- The ordered region activation lists; a region without activations still occupies a slot.
-Reducible for the same reason as `regionActivations`. -/
-abbrev activationTrace (operations : Operations F) : List (List (RegionOperation F)) :=
-  trace activationOf operations
 
 /-! ## Projections
 
@@ -117,8 +106,8 @@ relating the two needs no proof of its own. -/
 theorem trace_eq_project (f : RegionOperation F → List β)
     (vanishes : ∀ operation, (activationOf operation).flatMap f = f operation)
     (operations : Operations F) :
-    trace f operations = (activationTrace operations).map fun body => body.flatMap f := by
-  simp only [activationTrace, trace, List.map_filterMap]
+    trace f operations = (trace activationOf operations).map fun body => body.flatMap f := by
+  simp only [trace, List.map_filterMap]
   congr 1
   funext operation
   cases operation <;>

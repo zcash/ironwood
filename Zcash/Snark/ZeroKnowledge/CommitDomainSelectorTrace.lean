@@ -28,10 +28,10 @@ theorem sinsemillaCommit_activationTrace (generators : Specs.Sinsemilla.Generato
     (base : Ecc.MulFixed.FixedBase) (point : Point Fp) (honCurve : point.OnCurve) (hwidths : widths ≠ [])
     (config : Ecc.MulFixed.FullWidth.Config × Sinsemilla.HashPiece.Config × Ecc.Add.Config)
     (input : Var (Sinsemilla.CommitDomain.Input widths.length) Fp) (region : RegionIndex) :
-    activationTrace (((Sinsemilla.CommitDomain.commit generators widths base point honCurve hwidths).call
+    trace activationOf (((Sinsemilla.CommitDomain.commit generators widths base point honCurve hwidths).call
       config input).operations region) = sinsemillaCommitActivations generators widths config := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((Sinsemilla.CommitDomain.synthesize generators widths base point honCurve hwidths
+  change trace activationOf ((Sinsemilla.CommitDomain.synthesize generators widths base point honCurve hwidths
     config input).operations region) = _
   simp only [Sinsemilla.CommitDomain.synthesize, Ecc.Add.addFormal, activation_trace_norm,
     sinsemillaCommitActivations, List.cons_append]

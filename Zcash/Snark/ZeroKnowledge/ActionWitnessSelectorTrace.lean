@@ -26,7 +26,7 @@ for Action activation coverage. -/
 @[activation_trace_norm]
 theorem witnessPoint_regionActivations (config : Ecc.WitnessPoint.Config) (offset : ℕ)
     (input : Var (Unconstrained Point) Fp) (region : RegionIndex) :
-    regionActivations ((Ecc.WitnessPoint.point.call config offset input).operations region) =
+    ((Ecc.WitnessPoint.point.call config offset input).operations region).flatMap activationOf =
       [.enableGate (Ecc.WitnessPoint.pointGate config.qPoint config.x config.y) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -36,7 +36,7 @@ for Action activation coverage. -/
 @[activation_trace_norm]
 theorem witnessNonIdPoint_regionActivations (config : Ecc.WitnessPoint.Config) (offset : ℕ)
     (input : Var (Unconstrained Point) Fp) (region : RegionIndex) :
-    regionActivations ((Ecc.WitnessPoint.pointNonId.call config offset input).operations region) =
+    ((Ecc.WitnessPoint.pointNonId.call config offset input).operations region).flatMap activationOf =
       [.enableGate (Ecc.WitnessPoint.pointNonIdGate config.qPointNonId config.x config.y)
         offset] := by
   rw [FormalRegionCircuit.call_operations]
@@ -47,7 +47,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem completeAdd_regionActivations (config : Ecc.Add.Config) (offset : ℕ)
     (input : Var Ecc.Add.Inputs Fp) (region : RegionIndex) :
-    regionActivations ((Ecc.Add.add.call config offset input).operations region) =
+    ((Ecc.Add.add.call config offset input).operations region).flatMap activationOf =
       [.enableGate (completeAddGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -57,20 +57,20 @@ activation coverage. -/
 @[activation_trace_norm]
 theorem sinsemillaLoad_activationTrace (generators : Specs.Sinsemilla.Generators)
     (table : Sinsemilla.GeneratorTableConfig) (region : RegionIndex) :
-    activationTrace ((Sinsemilla.load generators table).operations region) = [] := rfl
+    trace activationOf ((Sinsemilla.load generators table).operations region) = [] := rfl
 
 /-- Loading private data retains one empty region trace, supplying the source metadata for Action
 activation coverage. -/
 @[activation_trace_norm]
 theorem loadPrivate_activationTrace (column : Column .advice) (witness : WitgenIR Fp 1)
     (region : RegionIndex) :
-    activationTrace ((Action.Circuit.loadPrivate column witness).operations region) = [[]] := rfl
+    trace activationOf ((Action.Circuit.loadPrivate column witness).operations region) = [[]] := rfl
 
 /-- All eight witness-loading regions, including the five regions with no activations. -/
 @[activation_trace_norm]
 theorem actionSynthWitness_activationTrace (generators : Specs.Sinsemilla.Generators)
     (witness : Action.Circuit.Witnesses Fp) (config : Action.Circuit.Config) (region : RegionIndex) :
-    activationTrace ((Action.Circuit.synthWitness generators witness config).operations region) =
+    trace activationOf ((Action.Circuit.synthWitness generators witness config).operations region) =
       [[], [],
         [.enableGate (Ecc.WitnessPoint.pointGate config.eccConfig.witnessPoint.qPoint
           config.eccConfig.witnessPoint.x config.eccConfig.witnessPoint.y) 0],

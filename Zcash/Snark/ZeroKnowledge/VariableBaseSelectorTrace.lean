@@ -60,7 +60,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem incompleteRound_regionActivations (bit : ℕ) (config : Ecc.MulIncomplete.Config)
     (offset : ℕ) (input : Var (Unconstrained field) Fp) (region : RegionIndex) :
-    regionActivations (((Ecc.MulIncomplete.round bit).call config offset input).operations region) =
+    (((Ecc.MulIncomplete.round bit).call config offset input).operations region).flatMap activationOf =
       [.enableGate (Ecc.MulIncomplete.qMul2Gate config) (offset + 1)] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -70,10 +70,10 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem incompleteLoop_regionActivations (count bit : ℕ) (config : Ecc.MulIncomplete.Config)
     (offset : ℕ) (input : Var (Unconstrained field) Fp) (region : RegionIndex) :
-    regionActivations (((Ecc.MulIncomplete.loop count bit).call config offset input).operations region) =
+    (((Ecc.MulIncomplete.loop count bit).call config offset input).operations region).flatMap activationOf =
       incompleteRoundsActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Ecc.MulIncomplete.loopProgram count bit config offset input).operations region) = _
+  change ((Ecc.MulIncomplete.loopProgram count bit config offset input).operations region).flatMap activationOf = _
   rw [Ecc.MulIncomplete.loopProgram_operations]
   simp only [activation_trace_norm, Nat.mul_one, incompleteRoundsActivations]
 
@@ -82,7 +82,7 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem incomplete_regionActivations (count bit : ℕ) (config : Ecc.MulIncomplete.Config)
     (offset : ℕ) (input : Var Ecc.MulIncomplete.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((Ecc.MulIncomplete.double_and_add count bit).call config offset input).operations region) =
+    (((Ecc.MulIncomplete.double_and_add count bit).call config offset input).operations region).flatMap activationOf =
       incompleteActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
   simp only [Ecc.MulIncomplete.double_and_add, activation_trace_norm,
@@ -118,12 +118,13 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem completeRound_regionActivations (bit iteration : ℕ) (config : Ecc.MulComplete.Config)
     (offset : ℕ) (input : Var Ecc.MulComplete.RoundInputs Fp) (region : RegionIndex) :
-    regionActivations (((Ecc.MulComplete.round bit iteration).call config offset input).operations region) =
+    (((Ecc.MulComplete.round bit iteration).call config offset input).operations region).flatMap activationOf =
       [.enableGate (Ecc.MulComplete.decomposeGate config) (offset + 1),
         .enableGate (completeAddGate config.addConfig) offset,
         .enableGate (completeAddGate config.addConfig) (offset + 1)] := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Ecc.MulComplete.roundSynthesize bit iteration config offset input).operations region) = _
+  change ((Ecc.MulComplete.roundSynthesize bit iteration config offset input).operations
+    region).flatMap activationOf = _
   simp only [Ecc.MulComplete.roundSynthesize, activation_trace_norm, List.cons_append]
 
 /-- Copying the complete-round initial state adds no activation, supplying the source
@@ -131,17 +132,18 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem completeStartCopy_regionActivations (config : Ecc.MulComplete.Config)
     (input : Var Ecc.MulComplete.Inputs Fp) (offset : ℕ) (region : RegionIndex) :
-    regionActivations ((Ecc.MulComplete.startCopy config input offset).operations region) = [] := rfl
+    ((Ecc.MulComplete.startCopy config input offset).operations region).flatMap activationOf = [] := rfl
 
 /-- The complete multiplication stage retains its complete activation trace, supplying the
 source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem complete_regionActivations (count bit : ℕ) (config : Ecc.MulComplete.Config)
     (offset : ℕ) (input : Var Ecc.MulComplete.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((Ecc.MulComplete.assign_region count bit).call config offset input).operations region) =
+    (((Ecc.MulComplete.assign_region count bit).call config offset input).operations region).flatMap activationOf =
       completeRoundsActivations config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Ecc.MulComplete.assignRegionSynthesize count bit config offset input).operations region) = _
+  change ((Ecc.MulComplete.assignRegionSynthesize count bit config offset input).operations
+    region).flatMap activationOf = _
   simp only [Ecc.MulComplete.assignRegionSynthesize, activation_trace_norm,
     Ecc.MulComplete.operations_zsCells, completeRoundsActivations]
 
@@ -175,10 +177,10 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem variableBaseMain_regionActivations (config : Ecc.Mul.Config)
     (offset : ℕ) (input : Var Ecc.Mul.Inputs Fp) (region : RegionIndex) :
-    regionActivations ((Ecc.Mul.mainCircuit.call config offset input).operations region) =
+    ((Ecc.Mul.mainCircuit.call config offset input).operations region).flatMap activationOf =
       variableBaseMainActivations config := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Ecc.Mul.mainSynthesize config input).operations region) = _
+  change ((Ecc.Mul.mainSynthesize config input).operations region).flatMap activationOf = _
   simp only [Ecc.Mul.mainSynthesize, activation_trace_norm,
     Ecc.Mul.offInit, Ecc.Mul.offHi, Ecc.Mul.offLo, Ecc.Mul.offComp, Ecc.Mul.offLsb,
     Ecc.Mul.loSpan, Ecc.Mul.compSpan, variableBaseMainActivations,

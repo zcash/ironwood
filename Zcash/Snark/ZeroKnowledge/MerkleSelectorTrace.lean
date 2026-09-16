@@ -21,7 +21,7 @@ metadata for Action activation coverage. -/
 theorem condSwap_regionActivations (sibling : WitgenIR Fp 1)
     (swap : Placed ProverEnvironment Fp → Bool) (config : CondSwap.Config)
     (offset : ℕ) (input : Var CondSwap.Input Fp) (region : RegionIndex) :
-    regionActivations (((CondSwap.swap sibling swap).call config offset input).operations region) =
+    (((CondSwap.swap sibling swap).call config offset input).operations region).flatMap activationOf =
       [.enableGate (CondSwap.swapGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -31,7 +31,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem merkleDecomposition_regionActivations (level : Fp) (config : Sinsemilla.Merkle.Gate.Config)
     (offset : ℕ) (input : Var Sinsemilla.Merkle.Gate.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.Merkle.Gate.circuit level).call config offset input).operations region) =
+    (((Sinsemilla.Merkle.Gate.circuit level).call config offset input).operations region).flatMap activationOf =
       [.enableGate (Sinsemilla.Merkle.Gate.decomposeGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -52,10 +52,10 @@ theorem merkleHash_activationTrace (generators : Specs.Sinsemilla.Generators)
     (point : Point Fp) (honCurve : point.OnCurve) (level : ℕ) (hlevel : level < 2 ^ 10)
     (config : Sinsemilla.Merkle.Config × LookupRangeCheck.Config 10)
     (input : Var Sinsemilla.Merkle.HashLayer.Input Fp) (region : RegionIndex) :
-    activationTrace (((Sinsemilla.Merkle.HashLayer.circuit generators point honCurve level hlevel).call
+    trace activationOf (((Sinsemilla.Merkle.HashLayer.circuit generators point honCurve level hlevel).call
       config input).operations region) = merkleHashActivations generators config.1 config.2 := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((Sinsemilla.Merkle.HashLayer.synthesize generators config.1 config.2
+  change trace activationOf ((Sinsemilla.Merkle.HashLayer.synthesize generators config.1 config.2
     point honCurve level input).operations region) = _
   simp only [Sinsemilla.Merkle.HashLayer.synthesize, Sinsemilla.HashToPoint.hashMessage,
     activation_trace_norm, merkleHashActivations, shortCheckActivations, List.cons_append]
@@ -75,7 +75,7 @@ theorem merkleLayer_activationTrace (generators : Specs.Sinsemilla.Generators)
     (sibling : WitgenIR Fp 1) (swap : Placed ProverEnvironment Fp → Bool)
     (config : CondSwap.Config × Sinsemilla.Merkle.Config × LookupRangeCheck.Config 10)
     (input : Var Sinsemilla.Merkle.Layer.Input Fp) (region : RegionIndex) :
-    activationTrace (((Sinsemilla.Merkle.Layer.circuit generators point honCurve level hlevel sibling swap).call
+    trace activationOf (((Sinsemilla.Merkle.Layer.circuit generators point honCurve level hlevel sibling swap).call
       config input).operations region) = merkleLayerActivations generators config := by
   rw [FormalCircuit.call_operations]
   simp only [Sinsemilla.Merkle.Layer.circuit, activation_trace_norm,
@@ -88,11 +88,11 @@ theorem merkleRoot_activationTrace (generators : Specs.Sinsemilla.Generators)
     (siblings : ℕ → WitgenIR Fp 1) (swaps : ℕ → Placed ProverEnvironment Fp → Bool)
     (config : CondSwap.Config × Sinsemilla.Merkle.Config × LookupRangeCheck.Config 10)
     (input : Var Sinsemilla.Merkle.Layer.Input Fp) (region : RegionIndex) :
-    activationTrace (((Sinsemilla.Merkle.CalculateRoot.circuit generators point honCurve level depth hdepth
+    trace activationOf (((Sinsemilla.Merkle.CalculateRoot.circuit generators point honCurve level depth hdepth
       siblings swaps).call config input).operations region) =
       (List.replicate depth (merkleLayerActivations generators config)).flatten := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((do
+  change trace activationOf ((do
     let output ← FormalCircuit.foldCall
       (Sinsemilla.Merkle.CalculateRoot.layerAt generators point honCurve level siblings swaps)
       Sinsemilla.Merkle.CalculateRoot.toInput config input depth

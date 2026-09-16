@@ -21,7 +21,7 @@ Action activation coverage. -/
 @[activation_trace_norm]
 theorem incompleteAdd_regionActivations (config : Ecc.AddIncomplete.Config) (offset : ℕ)
     (input : Var Ecc.AddIncomplete.Inputs Fp) (region : RegionIndex) :
-    regionActivations ((Ecc.AddIncomplete.add.call config offset input).operations region) =
+    ((Ecc.AddIncomplete.add.call config offset input).operations region).flatMap activationOf =
       [.enableGate (Ecc.AddIncomplete.gate config.qAddIncomplete config.xP config.yP
         config.xQR config.yQR) offset] := by
   rw [FormalRegionCircuit.call_operations]
@@ -32,7 +32,7 @@ source metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem decomposeEnable_regionActivations (width : ℕ) (config : DecomposeRunningSum.Config)
     (offset count : ℕ) (region : RegionIndex) :
-    regionActivations ((DecomposeRunningSum.enableLoop width config offset count).operations region) =
+    ((DecomposeRunningSum.enableLoop width config offset count).operations region).flatMap activationOf =
       gateRowRun (DecomposeRunningSum.rangeCheckGate width config) offset count := by
   simp only [DecomposeRunningSum.enableLoop, activation_trace_norm, gateRowRun, Nat.mul_one]
 
@@ -41,7 +41,7 @@ Action activation coverage. -/
 @[activation_trace_norm]
 theorem decomposeAssign_regionActivations (width : ℕ) (config : DecomposeRunningSum.Config)
     (input : AssignedCell Fp) (offset count : ℕ) (region : RegionIndex) :
-    regionActivations ((DecomposeRunningSum.assignLoop width config input offset count).operations region) = [] := by
+    ((DecomposeRunningSum.assignLoop width config input offset count).operations region).flatMap activationOf = [] := by
   simp only [DecomposeRunningSum.assignLoop, activation_trace_norm, List.ofFn_const,
     List.flatten_replicate_nil]
 
@@ -50,10 +50,11 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem copyDecompose_regionActivations (width count : ℕ) (config : DecomposeRunningSum.Config)
     (offset : ℕ) (input : Var DecomposeRunningSum.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((DecomposeRunningSum.copyDecompose width count).call config offset input).operations region) =
+    (((DecomposeRunningSum.copyDecompose width count).call
+      config offset input).operations region).flatMap activationOf =
       gateRowRun (DecomposeRunningSum.rangeCheckGate width config) offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((DecomposeRunningSum.body width count config offset input).operations region) = _
+  change ((DecomposeRunningSum.body width count config offset input).operations region).flatMap activationOf = _
   simp only [DecomposeRunningSum.body, activation_trace_norm]
 
 /-- One fixed-base constant window enables the supplied gate at its row, supplying the source
@@ -62,7 +63,7 @@ metadata for Action activation coverage. -/
 theorem fixedConstantsWindow_regionActivations (toggle : Gate Fp)
     (base : Ecc.MulFixed.FixedBaseData) (config : Ecc.MulFixed.Config) (index row : ℕ)
     (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.fixedConstantsWindow toggle base config index row).operations region) =
+    ((Ecc.MulFixed.fixedConstantsWindow toggle base config index row).operations region).flatMap activationOf =
       [.enableGate toggle row] := rfl
 
 /-- The fixed-base constant loop enables the supplied gate on successive rows, supplying the
@@ -71,7 +72,7 @@ source metadata for Action activation coverage. -/
 theorem fixedConstantsLoop_regionActivations (toggle : Gate Fp)
     (base : Ecc.MulFixed.FixedBaseData) (config : Ecc.MulFixed.Config) (offset count : ℕ)
     (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.fixedConstantsLoop toggle base config offset count).operations region) =
+    ((Ecc.MulFixed.fixedConstantsLoop toggle base config offset count).operations region).flatMap activationOf =
       gateRowRun toggle offset count := by
   simp only [Ecc.MulFixed.fixedConstantsLoop, activation_trace_norm,
     fixedConstantsWindow_regionActivations, gateRowRun, Nat.mul_one]
@@ -82,7 +83,7 @@ metadata for Action activation coverage. -/
 theorem fixedWindow_regionActivations (base : Ecc.MulFixed.FixedBaseData)
     (table : ℕ → ℕ → Point Fp) (config : Ecc.MulFixed.Config) (input : AssignedCell Fp)
     (index row : ℕ) (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.processWindow base table config input index row).operations region) = [] := rfl
+    ((Ecc.MulFixed.processWindow base table config input index row).operations region).flatMap activationOf = [] := rfl
 
 /-- The gate of the incomplete addition that the chain repeats. -/
 def fixedChainGate (config : Ecc.MulFixed.Config) : Gate Fp :=
@@ -99,8 +100,8 @@ def fixedWindowChainActivations (config : Ecc.MulFixed.Config) (offset count : �
 theorem fixedWindowChain_regionActivations (config : Ecc.MulFixed.Config)
     (process : ℕ → ℕ → RegionCircuit Fp (Point (AssignedCell Fp))) (offset count : ℕ)
     (region : RegionIndex)
-    (hprocess : ∀ index row, regionActivations ((process index row).operations region) = []) :
-    regionActivations ((Ecc.MulFixed.windowChain config process offset count).operations region) =
+    (hprocess : ∀ index row, ((process index row).operations region).flatMap activationOf = []) :
+    ((Ecc.MulFixed.windowChain config process offset count).operations region).flatMap activationOf =
       fixedWindowChainActivations config offset count := by
   simp only [Ecc.MulFixed.windowChain, Ecc.MulFixed.windowChainStep, activation_trace_norm,
     hprocess, fixedWindowChainActivations, fixedChainGate, gateRowRun, Nat.mul_one]
@@ -112,7 +113,8 @@ theorem fullWidthWindow_regionActivations (base : Ecc.MulFixed.FixedBaseData)
     (config : Ecc.MulFixed.FullWidth.Config)
     (windows : Vector (Witgen.MOver Fp (AssignedCell Fp) (FExpr Fp)) 85)
     (index row : ℕ) (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.FullWidth.processWindowH base config windows index row).operations region) = [] := rfl
+    ((Ecc.MulFixed.FullWidth.processWindowH base config windows index row).operations
+      region).flatMap activationOf = [] := rfl
 
 /-- Full-width scalar witnessing enables its gate across all 85 windows, supplying the source
 metadata for Action activation coverage. -/
@@ -120,7 +122,7 @@ metadata for Action activation coverage. -/
 theorem fullWidthScalar_regionActivations (config : Ecc.MulFixed.FullWidth.Config)
     (windows : Vector (Witgen.MOver Fp (AssignedCell Fp) (FExpr Fp)) 85)
     (offset : ℕ) (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.FullWidth.witnessScalarLoop config windows offset).operations region) =
+    ((Ecc.MulFixed.FullWidth.witnessScalarLoop config windows offset).operations region).flatMap activationOf =
       gateRowRun (Ecc.MulFixed.FullWidth.fullWidthGate config) offset 85 := by
   simp only [Ecc.MulFixed.FullWidth.witnessScalarLoop, activation_trace_norm, gateRowRun,
     Nat.mul_one, List.ofFn_const, List.flatten_replicate_nil, List.append_nil]
@@ -138,7 +140,7 @@ metadata for Action activation coverage. -/
 theorem fullWidthInner_regionActivations (base : Ecc.MulFixed.FixedBaseData)
     (config : Ecc.MulFixed.FullWidth.Config) (offset : ℕ)
     (windows : Vector (Witgen.MOver Fp (AssignedCell Fp) (FExpr Fp)) 85) (region : RegionIndex) :
-    regionActivations ((Ecc.MulFixed.FullWidth.innerRegion base config offset windows).operations region) =
+    ((Ecc.MulFixed.FullWidth.innerRegion base config offset windows).operations region).flatMap activationOf =
       fullWidthInnerActivations config offset := by
   rw [Ecc.MulFixed.FullWidth.innerRegion_operations_eq]
   simp only [activation_trace_norm, fixedWindowChain_regionActivations _ _ _ _ _ (fun index row =>
@@ -150,11 +152,11 @@ theorem fullWidthInner_regionActivations (base : Ecc.MulFixed.FixedBaseData)
 theorem fullWidth_activationTrace (base : Ecc.MulFixed.FixedBase)
     (config : Ecc.MulFixed.FullWidth.Config) (input : Var UnconstrainedNat Fp)
     (region : RegionIndex) :
-    activationTrace (((Ecc.MulFixed.FullWidth.circuit base).call config input).operations region) =
+    trace activationOf (((Ecc.MulFixed.FullWidth.circuit base).call config input).operations region) =
       [fullWidthInnerActivations config 0,
         [.enableGate (completeAddGate config.superConfig.addConfig) 0]] := by
   rw [FormalCircuit.call_operations]
-  change activationTrace ((Ecc.MulFixed.FullWidth.synthesize base.toData config
+  change trace activationOf ((Ecc.MulFixed.FullWidth.synthesize base.toData config
     (Ecc.MulFixed.FullWidth.scalarWindows input)).operations region) = _
   simp only [Ecc.MulFixed.FullWidth.synthesize, activation_trace_norm, List.cons_append]
 

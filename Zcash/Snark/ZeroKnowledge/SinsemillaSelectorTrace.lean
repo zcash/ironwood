@@ -60,7 +60,7 @@ activation coverage. -/
 @[activation_trace_norm]
 theorem sinsemillaRound_regionActivations (generators : Specs.Sinsemilla.Generators) (index : ℕ)
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ) (input : AssignedCell Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.HashPiece.round generators index).call config offset input).operations region) =
+    (((Sinsemilla.HashPiece.round generators index).call config offset input).operations region).flatMap activationOf =
       [.enableLookup (Sinsemilla.HashPiece.generatorLookup generators config) [config.qS1] offset,
         .enableGate (Sinsemilla.HashPiece.sinsemillaGate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
@@ -71,7 +71,7 @@ metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem sinsemillaLoop_regionActivations (generators : Specs.Sinsemilla.Generators) (count : ℕ)
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ) (input : AssignedCell Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.HashPiece.loop generators count).call config offset input).operations region) =
+    (((Sinsemilla.HashPiece.loop generators count).call config offset input).operations region).flatMap activationOf =
       sinsemillaRoundsActivations generators config offset count := by
   rw [FormalRegionCircuit.call_operations]
   simp only [Sinsemilla.HashPiece.loop, activation_trace_norm,
@@ -84,12 +84,12 @@ metadata for Action activation coverage. -/
 theorem sinsemillaPiece_regionActivations (generators : Specs.Sinsemilla.Generators) (count : ℕ)
     (final : Bool) (initialY : Placed Environment Fp → Fp)
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ) (input : AssignedCell Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.HashPiece.circuit generators count final initialY).call
-      config offset input).operations region) =
+    (((Sinsemilla.HashPiece.circuit generators count final initialY).call
+      config offset input).operations region).flatMap activationOf =
       sinsemillaPieceActivations generators config offset count := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Sinsemilla.HashPiece.circuitBody generators count final initialY
-    config offset input).operations region) = _
+  change ((Sinsemilla.HashPiece.circuitBody generators count final initialY
+    config offset input).operations region).flatMap activationOf = _
   simp only [Sinsemilla.HashPiece.circuitBody, activation_trace_norm,
     Sinsemilla.HashPiece.operations_readState, Sinsemilla.HashPiece.operations_cellAt,
     Sinsemilla.HashPiece.operations_cellVec, sinsemillaPieceActivations]
@@ -111,8 +111,8 @@ Action activation coverage. -/
 theorem sinsemillaSlot_regionActivations (generators : Specs.Sinsemilla.Generators)
     (widths : List ℕ) (initialY : Placed Environment Fp → Fp) (index : ℕ)
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ) (input : AssignedCell Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.Chain.slot generators widths initialY index).call
-      config offset input).operations region) =
+    (((Sinsemilla.Chain.slot generators widths initialY index).call
+      config offset input).operations region).flatMap activationOf =
       sinsemillaPieceActivations generators config offset (widths.getD index 0) := by
   rw [FormalRegionCircuit.call_operations]
   simp only [Sinsemilla.Chain.slot, activation_trace_norm,
@@ -135,8 +135,8 @@ theorem sinsemillaChain_regionActivations (generators : Specs.Sinsemilla.Generat
     (widths : List ℕ) (initialY : Placed Environment Fp → Fp)
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ)
     (input : Var (Sinsemilla.Chain.Inputs widths.length) Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.Chain.circuit generators widths initialY).call
-      config offset input).operations region) =
+    (((Sinsemilla.Chain.circuit generators widths initialY).call
+      config offset input).operations region).flatMap activationOf =
       sinsemillaChainActivations generators config offset widths := by
   rw [FormalRegionCircuit.call_operations]
   simp only [Sinsemilla.Chain.circuit, activation_trace_norm,
@@ -157,12 +157,12 @@ theorem sinsemillaHash_regionActivations (generators : Specs.Sinsemilla.Generato
     (widths : List ℕ) (point : Point Fp) (honCurve : point.OnCurve) (hwidths : widths ≠ [])
     (config : Sinsemilla.HashPiece.Config) (offset : ℕ)
     (input : Var (Sinsemilla.Chain.Inputs widths.length) Fp) (region : RegionIndex) :
-    regionActivations (((Sinsemilla.HashToPoint.hashRegion generators widths point honCurve hwidths).call
-      config offset input).operations region) =
+    (((Sinsemilla.HashToPoint.hashRegion generators widths point honCurve hwidths).call
+      config offset input).operations region).flatMap activationOf =
       sinsemillaHashActivations generators config offset widths := by
   rw [FormalRegionCircuit.call_operations]
-  change regionActivations ((Sinsemilla.HashToPoint.hashRegionSynthesize generators widths point
-    config offset input).operations region) = _
+  change ((Sinsemilla.HashToPoint.hashRegionSynthesize generators widths point
+    config offset input).operations region).flatMap activationOf = _
   simp only [Sinsemilla.HashToPoint.hashRegionSynthesize, activation_trace_norm,
     Sinsemilla.HashToPoint.z1Cells_operations, sinsemillaHashActivations]
 
@@ -173,7 +173,7 @@ theorem sinsemillaHash_activationTrace (generators : Specs.Sinsemilla.Generators
     (widths : List ℕ) (point : Point Fp) (honCurve : point.OnCurve) (hwidths : widths ≠ [])
     (config : Sinsemilla.HashPiece.Config)
     (input : Var (Sinsemilla.Chain.Inputs widths.length) Fp) (region : RegionIndex) :
-    activationTrace (((Sinsemilla.HashToPoint.hashCircuit generators widths point honCurve hwidths).call
+    trace activationOf (((Sinsemilla.HashToPoint.hashCircuit generators widths point honCurve hwidths).call
       config input).operations region) = [sinsemillaHashActivations generators config 0 widths] := by
   simp only [Sinsemilla.HashToPoint.hashCircuit, activation_trace_norm]
 
@@ -182,6 +182,6 @@ for Action activation coverage. -/
 @[activation_trace_norm]
 theorem witnessMessagePiece_activationTrace (config : Sinsemilla.HashPiece.Config)
     (witness : WitgenIR Fp 1) (region : RegionIndex) :
-    activationTrace ((Sinsemilla.HashToPoint.witnessMessagePiece config witness).operations region) = [[]] := rfl
+    trace activationOf ((Sinsemilla.HashToPoint.witnessMessagePiece config witness).operations region) = [[]] := rfl
 
 end Zcash.Snark.ZeroKnowledge

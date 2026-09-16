@@ -17,8 +17,8 @@ variable {F : Type}
 
 /-- The selector trace already in use is the selector projection of the activations. -/
 theorem regionSelectorTrace_eq_project (body : RegionOperations F) :
-    regionSelectorTrace body = (regionActivations body).flatMap selectorOf := by
-  rw [regionActivations, project_of_vanishing _ _ selectorOf_vanishes]
+    regionSelectorTrace body = (body.flatMap activationOf).flatMap selectorOf := by
+  rw [project_of_vanishing _ _ selectorOf_vanishes]
   rfl
 
 /-- The selector placement already in use is the generic one at a numeric payload. -/

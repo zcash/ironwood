@@ -19,7 +19,7 @@ open Halo2 Zcash.Circuits Zcash.Circuits.Trace
 @[activation_trace_norm]
 theorem noteDecomposeB_regionActivations (first : WitgenIR Fp 1) (config : NoteCommit.DecomposeB.Config)
     (offset : ℕ) (input : Var NoteCommit.DecomposeB.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.DecomposeB.bundle first).call config offset input).operations region) =
+    (((NoteCommit.DecomposeB.bundle first).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.DecomposeB.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -28,7 +28,7 @@ theorem noteDecomposeB_regionActivations (first : WitgenIR Fp 1) (config : NoteC
 @[activation_trace_norm]
 theorem noteDecomposeD_regionActivations (first : WitgenIR Fp 1) (config : NoteCommit.DecomposeD.Config)
     (offset : ℕ) (input : Var NoteCommit.DecomposeD.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.DecomposeD.bundle first).call config offset input).operations region) =
+    (((NoteCommit.DecomposeD.bundle first).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.DecomposeD.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -37,7 +37,7 @@ theorem noteDecomposeD_regionActivations (first : WitgenIR Fp 1) (config : NoteC
 @[activation_trace_norm]
 theorem noteDecomposeE_regionActivations (config : NoteCommit.DecomposeE.Config)
     (offset : ℕ) (input : Var NoteCommit.DecomposeE.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.DecomposeE.bundle).call config offset input).operations region) =
+    (((NoteCommit.DecomposeE.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.DecomposeE.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -46,7 +46,7 @@ theorem noteDecomposeE_regionActivations (config : NoteCommit.DecomposeE.Config)
 @[activation_trace_norm]
 theorem noteDecomposeG_regionActivations (first : WitgenIR Fp 1) (config : NoteCommit.DecomposeG.Config)
     (offset : ℕ) (input : Var NoteCommit.DecomposeG.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.DecomposeG.bundle first).call config offset input).operations region) =
+    (((NoteCommit.DecomposeG.bundle first).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.DecomposeG.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -55,7 +55,7 @@ theorem noteDecomposeG_regionActivations (first : WitgenIR Fp 1) (config : NoteC
 @[activation_trace_norm]
 theorem noteDecomposeH_regionActivations (first : WitgenIR Fp 1) (config : NoteCommit.DecomposeH.Config)
     (offset : ℕ) (input : Var NoteCommit.DecomposeH.Inputs Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.DecomposeH.bundle first).call config offset input).operations region) =
+    (((NoteCommit.DecomposeH.bundle first).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.DecomposeH.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -64,7 +64,7 @@ theorem noteDecomposeH_regionActivations (first : WitgenIR Fp 1) (config : NoteC
 @[activation_trace_norm]
 theorem noteGdCanonicity_regionActivations (config : NoteCommit.GdCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.GdCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.GdCanonicity.bundle).call config offset input).operations region) =
+    (((NoteCommit.GdCanonicity.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.GdCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -73,7 +73,7 @@ theorem noteGdCanonicity_regionActivations (config : NoteCommit.GdCanonicity.Con
 @[activation_trace_norm]
 theorem notePkdCanonicity_regionActivations (config : NoteCommit.PkdCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.PkdCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.PkdCanonicity.bundle).call config offset input).operations region) =
+    (((NoteCommit.PkdCanonicity.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.PkdCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -82,7 +82,7 @@ theorem notePkdCanonicity_regionActivations (config : NoteCommit.PkdCanonicity.C
 @[activation_trace_norm]
 theorem noteValueCanonicity_regionActivations (config : NoteCommit.ValueCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.ValueCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.ValueCanonicity.bundle).call config offset input).operations region) =
+    (((NoteCommit.ValueCanonicity.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.ValueCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -91,7 +91,7 @@ theorem noteValueCanonicity_regionActivations (config : NoteCommit.ValueCanonici
 @[activation_trace_norm]
 theorem noteRhoCanonicity_regionActivations (config : NoteCommit.RhoCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.RhoCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.RhoCanonicity.bundle).call config offset input).operations region) =
+    (((NoteCommit.RhoCanonicity.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.RhoCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -100,7 +100,7 @@ theorem noteRhoCanonicity_regionActivations (config : NoteCommit.RhoCanonicity.C
 @[activation_trace_norm]
 theorem notePsiCanonicity_regionActivations (config : NoteCommit.PsiCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.PsiCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.PsiCanonicity.bundle).call config offset input).operations region) =
+    (((NoteCommit.PsiCanonicity.bundle).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.PsiCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
@@ -109,7 +109,7 @@ theorem notePsiCanonicity_regionActivations (config : NoteCommit.PsiCanonicity.C
 @[activation_trace_norm]
 theorem noteYCanonicity_regionActivations (first second : WitgenIR Fp 1) (config : NoteCommit.YCanonicity.Config)
     (offset : ℕ) (input : Var NoteCommit.YCanonicity.Row Fp) (region : RegionIndex) :
-    regionActivations (((NoteCommit.YCanonicity.bundle first second).call config offset input).operations region) =
+    (((NoteCommit.YCanonicity.bundle first second).call config offset input).operations region).flatMap activationOf =
       [.enableGate (NoteCommit.YCanonicity.gate config) offset] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
