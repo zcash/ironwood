@@ -50,23 +50,21 @@ The following proof-side objects retain `noncomputable` declarations:
 | --- | --- | --- |
 | Sampling laws, event masses, error bounds, retry measures, and PRNG kernels | `PMF`, measure, and extended-real operations describe mathematical probabilities. In particular, `ActionReductionProgram.kernel`, `InteractiveReductionProgram.kernel`, and `tapeReduction` are laws of computations, not implementations of a random-bit source. | Distribution equalities, probability bounds, and admissibility predicates. |
 | Masking equivalences, linear maps, and finite enumerations | The algebraic proofs use inverse maps and finite-type constructions supplied through choice. The `CommitmentMask`, `IpaSimulation`, `RowMaskRank`, and `PlonkFiniteView` modules own these objects. | Coupling, rank, and finite-distribution proofs; the operational programs do not execute these choice-based constructions. |
-| Action source certificates | Normalized source programs can contain auxiliary definitions intended only for kernel reduction. Code generation is disabled for these static certificate values. | Proofs of source erasure, read availability, alias validity, and activation coverage. |
+| Action source certificates | Normalized source programs can contain auxiliary definitions intended only for kernel reduction. Code generation is disabled for these static certificate values. | Proofs of source erasure, read availability, and alias validity. |
 
 The static Action values are `actionAdviceSourceCertificateRaw`,
-`actionAdviceSourceCertificate`, `actionGateSourceCertificateRaw`,
-`actionGateActivationSourceCertificate`, `actionWitnessLoadSourceCertificate`,
-and `actionValueSourceCertificate`. Their retained data are checked against the
+`actionAdviceSourceCertificate`, `actionWitnessLoadSourceCertificate`, and
+`actionValueSourceCertificate`. Their retained data are checked against the
 original programs. The noncomputable source-certificate values in
 `Zcash.Meta.Tests` serve the same purpose in positive and negative regression cases.
 
-`ActionAdviceSourceData` and `ActionGateSourceCertificate` each certify their
-complete original source. `ActionAdviceSourceAliasCheck` and
-`ActionAdviceReadPlan` check the full alias and read scans.
-`ActionGateActivationCoverage` establishes coverage of the original Action
-circuit's gate activations from the gate certificate.
-`ActionLookupActivationCoverage` establishes coverage of its lookup activations
-from the compositional source trace, which is assembled from the gadgets' traces
-and opens the opaque circuit only through its recorded implementation equation.
+`ActionAdviceSourceData` certifies its complete original source.
+`ActionAdviceSourceAliasCheck` and `ActionAdviceReadPlan` check the full alias
+and read scans. `ActionGateActivationCoverage` and
+`ActionLookupActivationCoverage` establish coverage of the original Action
+circuit's gate and lookup activations from the compositional source traces,
+which are assembled from the gadgets' traces and open the opaque circuit only
+through its recorded implementation equation.
 
 These large static checks raise the recursion limit and use larger or unlimited
 heartbeat budgets during elaboration. The tactics construct intermediate

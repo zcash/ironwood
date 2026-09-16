@@ -301,7 +301,6 @@ import Zcash.Snark.ZeroKnowledge.PlonkCopyValues
 import Zcash.Snark.ZeroKnowledge.CompiledLookupCompleteness
 import Zcash.Snark.ZeroKnowledge.LookupActivationCoverage
 import Zcash.Snark.ZeroKnowledge.SourcePartialValue
-import Zcash.Snark.ZeroKnowledge.DirectGateLabels
 import Zcash.Snark.ZeroKnowledge.CopySourceCompleteness
 import Zcash.Snark.ZeroKnowledge.ActionWitnessLoadCertificate
 import Zcash.Snark.ZeroKnowledge.MerkleHintExtraction
@@ -3002,14 +3001,6 @@ assert_axioms Zcash.Snark.ZeroKnowledge.topLevel_verifierGates_zero_of_constrain
 -- Inactive compiler rows do not constrain private query values.
 assert_axioms Zcash.Snark.ZeroKnowledge.topLevel_substitutedGate_zero_of_inactive
 assert_axioms Zcash.Snark.ZeroKnowledge.topLevel_verifierGates_zero_of_inactive
-
--- Arbitrary Action feeds and inactive suffix rows.
-
--- Direct reflection preserves every original gate label.
-assert_computable Zcash.Snark.ZeroKnowledge.regionSourceGateLabels
-assert_computable Zcash.Snark.ZeroKnowledge.operationSourceGateLabels
-assert_axioms Zcash.Snark.ZeroKnowledge.regionSourceGateLabels_eq
-assert_axioms Zcash.Snark.ZeroKnowledge.operationSourceGateLabels_eq
 
 -- The original equations imply the compiler's full ordered copy stream.
 assert_axioms Zcash.Snark.ZeroKnowledge.regionCopiesSplit_fst_eq_declared

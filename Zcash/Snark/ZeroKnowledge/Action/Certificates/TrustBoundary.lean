@@ -1,5 +1,3 @@
-import Zcash.Snark.ZeroKnowledge.ActionGateSourceCertificate
-import Zcash.Snark.ZeroKnowledge.ActionGateTraceAgreement
 import Zcash.Snark.ZeroKnowledge.ActionAdviceSourceData
 import Zcash.Snark.ZeroKnowledge.ActionWitnessSimulation
 import Zcash.Snark.ZeroKnowledge.ActionProverCompleteness
@@ -8,24 +6,17 @@ import Zcash.Meta.AxiomCheck
 /-!
 # The certificate-dependent boundary of the Action development
 
-These entries pin the declarations that depend on the evaluated source certificates: the gate
-source certificate and the three modules of the advice source certificate. Those four modules
-take between forty minutes and an hour each to elaborate, so their consumers are censused here
-rather than in `Action/TrustBoundary.lean`, which reaches none of them and checks in seconds.
-Everything an entry here depends on is otherwise pinned there.
+These entries pin the declarations that depend on the evaluated advice source certificate,
+whose three modules take between forty minutes and an hour each to elaborate. Their consumers
+are censused here rather than in `Action/TrustBoundary.lean`, which reaches none of them and
+checks in seconds. Everything an entry here depends on is otherwise pinned there.
 -/
 
--- The evaluated source certificates: the advice source programs and the gate source labels.
+-- The evaluated source certificate: the advice source programs.
 assert_computable Zcash.Snark.ZeroKnowledge.actionAdviceSourcePrograms +choice +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionAdviceSourcePrograms_eq +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionAdviceSourceCertificateRaw +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionAdviceSourceCertificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_computable Zcash.Snark.ZeroKnowledge.actionGateSourceLabels +choice +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionGateSourceLabels_eq +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionGateSourceCertificateRaw +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionGateActivationSourceCertificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateLabels_nodup +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_axioms Zcash.Snark.ZeroKnowledge.actionSourceGateTrace_placed_eq_certificate +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete source execution and application witness simulation.
 assert_axioms Zcash.Snark.ZeroKnowledge.actionAdviceSource_readPlan +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)

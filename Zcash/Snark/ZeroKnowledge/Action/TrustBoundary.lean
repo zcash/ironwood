@@ -1360,6 +1360,7 @@ assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBitSimulator_law +nati
 assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBit_simulation_error_bound +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 -- Complete original Action gate activation coverage.
+assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateLabels_nodup +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateActivationCoverage +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete original Action lookup activation coverage.

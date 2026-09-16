@@ -11,6 +11,12 @@ set_option maxHeartbeats 0
 set_option stderrAsMessages false
 set_option trace.Zcash.activationCoverage true
 
+/-- Gate names disambiguate the configured gates sharing selector 18. -/
+theorem actionCircuit_gateLabels_nodup :
+    (actionCircuit.constraintSystem.gates.map sourceGateLabel).Nodup := by
+  rw [Internal.actionCircuit_eq_impl]
+  decide +kernel
+
 /-- The gate coverage result is indexed by the original complete Action operations: every
 configured gate has its original source entry at every active row.
 
