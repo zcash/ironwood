@@ -65,15 +65,6 @@ theorem incompleteRound_regionActivations (bit : ℕ) (config : Ecc.MulIncomplet
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-@[selector_trace_norm]
-theorem incompleteRound_regionSelectorTrace (bit : ℕ) (config : Ecc.MulIncomplete.Config)
-    (offset : ℕ) (input : Var (Unconstrained field) Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Ecc.MulIncomplete.round bit).call config offset input).operations region) =
-      [(config.qMul2.index, offset + 1)] := by
-  rw [regionSelectorTrace_eq_project, incompleteRound_regionActivations]
-  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, selectorOf,
-    Ecc.MulIncomplete.qMul2Gate_selector]
-
 /-- Incomplete multiplication rounds retain their successive activation rows, supplying the
 source metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -86,14 +77,6 @@ theorem incompleteLoop_regionActivations (count bit : ℕ) (config : Ecc.MulInco
   rw [Ecc.MulIncomplete.loopProgram_operations]
   simp only [activation_trace_norm, Nat.mul_one, incompleteRoundsActivations]
 
-@[selector_trace_norm]
-theorem incompleteLoop_regionSelectorTrace (count bit : ℕ) (config : Ecc.MulIncomplete.Config)
-    (offset : ℕ) (input : Var (Unconstrained field) Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Ecc.MulIncomplete.loop count bit).call config offset input).operations region) =
-      incompleteRoundsSelectorTrace config offset count := by
-  rw [regionSelectorTrace_eq_project, incompleteLoop_regionActivations,
-    incompleteRoundsActivations_selectorOf]
-
 /-- The incomplete multiplication stage retains its complete activation trace, supplying the
 source metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -104,14 +87,6 @@ theorem incomplete_regionActivations (count bit : ℕ) (config : Ecc.MulIncomple
   rw [FormalRegionCircuit.call_operations]
   simp only [Ecc.MulIncomplete.double_and_add, activation_trace_norm,
     Ecc.MulIncomplete.operations_readState, incompleteActivations, List.append_assoc]
-
-@[selector_trace_norm]
-theorem incomplete_regionSelectorTrace (count bit : ℕ) (config : Ecc.MulIncomplete.Config)
-    (offset : ℕ) (input : Var Ecc.MulIncomplete.Inputs Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Ecc.MulIncomplete.double_and_add count bit).call config offset input).operations region) =
-      incompleteSelectorTrace config offset count := by
-  rw [regionSelectorTrace_eq_project, incomplete_regionActivations,
-    incompleteActivations_selectorOf]
 
 /-- The decomposition gate and the two complete additions in each bit round. -/
 def completeRoundsActivations (config : Ecc.MulComplete.Config) (offset count : ℕ) :
@@ -151,26 +126,12 @@ theorem completeRound_regionActivations (bit iteration : ℕ) (config : Ecc.MulC
   change regionActivations ((Ecc.MulComplete.roundSynthesize bit iteration config offset input).operations region) = _
   simp only [Ecc.MulComplete.roundSynthesize, activation_trace_norm, List.cons_append]
 
-@[selector_trace_norm]
-theorem completeRound_regionSelectorTrace (bit iteration : ℕ) (config : Ecc.MulComplete.Config)
-    (offset : ℕ) (input : Var Ecc.MulComplete.RoundInputs Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Ecc.MulComplete.round bit iteration).call config offset input).operations region) =
-      [(config.qDecompose.index, offset + 1), (config.addConfig.qAdd.index, offset),
-        (config.addConfig.qAdd.index, offset + 1)] := by
-  rw [regionSelectorTrace_eq_project, completeRound_regionActivations]
-  simp [selectorOf, Ecc.MulComplete.decomposeGate_selector, completeAddGate]
-
 /-- Copying the complete-round initial state adds no activation, supplying the source
 metadata for Action activation coverage. -/
 @[activation_trace_norm]
 theorem completeStartCopy_regionActivations (config : Ecc.MulComplete.Config)
     (input : Var Ecc.MulComplete.Inputs Fp) (offset : ℕ) (region : RegionIndex) :
     regionActivations ((Ecc.MulComplete.startCopy config input offset).operations region) = [] := rfl
-
-@[selector_trace_norm]
-theorem completeStartCopy_regionSelectorTrace (config : Ecc.MulComplete.Config)
-    (input : Var Ecc.MulComplete.Inputs Fp) (offset : ℕ) (region : RegionIndex) :
-    regionSelectorTrace ((Ecc.MulComplete.startCopy config input offset).operations region) = [] := rfl
 
 /-- The complete multiplication stage retains its complete activation trace, supplying the
 source metadata for Action activation coverage. -/
@@ -183,14 +144,6 @@ theorem complete_regionActivations (count bit : ℕ) (config : Ecc.MulComplete.C
   change regionActivations ((Ecc.MulComplete.assignRegionSynthesize count bit config offset input).operations region) = _
   simp only [Ecc.MulComplete.assignRegionSynthesize, activation_trace_norm,
     Ecc.MulComplete.operations_zsCells, completeRoundsActivations]
-
-@[selector_trace_norm]
-theorem complete_regionSelectorTrace (count bit : ℕ) (config : Ecc.MulComplete.Config)
-    (offset : ℕ) (input : Var Ecc.MulComplete.Inputs Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Ecc.MulComplete.assign_region count bit).call config offset input).operations region) =
-      completeRoundsSelectorTrace config offset count := by
-  rw [regionSelectorTrace_eq_project, complete_regionActivations,
-    completeRoundsActivations_selectorOf]
 
 /-- Every activation in the actual variable-base multiplication main region. -/
 def variableBaseMainActivations (config : Ecc.Mul.Config) : List (RegionOperation Fp) :=
@@ -230,13 +183,5 @@ theorem variableBaseMain_regionActivations (config : Ecc.Mul.Config)
     Ecc.Mul.offInit, Ecc.Mul.offHi, Ecc.Mul.offLo, Ecc.Mul.offComp, Ecc.Mul.offLsb,
     Ecc.Mul.loSpan, Ecc.Mul.compSpan, variableBaseMainActivations,
     List.cons_append, List.append_assoc]
-
-@[selector_trace_norm]
-theorem variableBaseMain_regionSelectorTrace (config : Ecc.Mul.Config)
-    (offset : ℕ) (input : Var Ecc.Mul.Inputs Fp) (region : RegionIndex) :
-    regionSelectorTrace ((Ecc.Mul.mainCircuit.call config offset input).operations region) =
-      variableBaseMainSelectorTrace config := by
-  rw [regionSelectorTrace_eq_project, variableBaseMain_regionActivations,
-    variableBaseMainActivations_selectorOf]
 
 end Zcash.Snark.ZeroKnowledge

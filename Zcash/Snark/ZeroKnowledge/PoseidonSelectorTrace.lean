@@ -26,14 +26,6 @@ theorem poseidonFullRound_regionActivations (round : ℕ) (config : Poseidon.Con
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-@[selector_trace_norm]
-theorem poseidonFullRound_regionSelectorTrace (round : ℕ) (config : Poseidon.Config)
-    (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Poseidon.fullRound round).call config offset input).operations region) =
-      [(config.sFull.index, offset)] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
-
 /-- A partial Poseidon round records its partial-round gate, supplying the source metadata for
 Action activation coverage. -/
 @[activation_trace_norm]
@@ -44,26 +36,12 @@ theorem poseidonPartialRound_regionActivations (round : ℕ) (config : Poseidon.
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-@[selector_trace_norm]
-theorem poseidonPartialRound_regionSelectorTrace (round : ℕ) (config : Poseidon.Config)
-    (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Poseidon.partialRound round).call config offset input).operations region) =
-      [(config.sPartial.index, offset)] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
-
 /-- The exact gate-row schedule of the width-three permutation. -/
 def poseidonPermutationActivations (config : Poseidon.Config) (offset : ℕ) :
     List (RegionOperation Fp) :=
   gateRowRun (Poseidon.fullRoundGate config) offset 4 ++
     gateRowRun (Poseidon.partialRoundsGate config) (offset + 4) 28 ++
     gateRowRun (Poseidon.fullRoundGate config) (offset + 32) 4
-
-/-- The exact gate-row schedule of the width-three permutation. -/
-def poseidonPermutationSelectorTrace (config : Poseidon.Config) (offset : ℕ) : List (ℕ × ℕ) :=
-  selectorRowRun config.sFull.index offset 4 ++
-    selectorRowRun config.sPartial.index (offset + 4) 28 ++
-    selectorRowRun config.sFull.index (offset + 32) 4
 
 /-- The Poseidon permutation retains the full and partial round schedule, supplying the source
 metadata for Action activation coverage. -/
@@ -79,29 +57,12 @@ theorem poseidonPermutation_regionActivations (config : Poseidon.Config) (offset
   rw [Poseidon.operations_readStateRow]
   simp only [regionActivations_nil, List.append_nil]
 
-@[selector_trace_norm]
-theorem poseidonPermutation_regionSelectorTrace (config : Poseidon.Config) (offset : ℕ)
-    (input : Var Poseidon.Permute.State Fp) (region : RegionIndex) :
-    regionSelectorTrace ((Poseidon.permuteRegion.call config offset input).operations region) =
-      poseidonPermutationSelectorTrace config offset := by
-  rw [regionSelectorTrace_eq_project, poseidonPermutation_regionActivations]
-  simp only [poseidonPermutationActivations, List.flatMap_append, gateRowRun_selectorOf,
-    Poseidon.fullRoundGate_selector, Poseidon.partialRoundsGate_selector,
-    poseidonPermutationSelectorTrace]
-
 /-- Poseidon initialization adds no activation, so trace extraction can omit its field
 assignments. -/
 @[activation_trace_norm]
 theorem poseidonInit_regionActivations (capacity : Fp) (config : Poseidon.Config)
     (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
     regionActivations (((Poseidon.initRegion capacity).call config offset input).operations region) = [] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
-
-@[selector_trace_norm]
-theorem poseidonInit_regionSelectorTrace (capacity : Fp) (config : Poseidon.Config)
-    (offset : ℕ) (input : Var unit Fp) (region : RegionIndex) :
-    regionSelectorTrace (((Poseidon.initRegion capacity).call config offset input).operations region) = [] := by
   rw [FormalRegionCircuit.call_operations]
   rfl
 
@@ -115,14 +76,6 @@ theorem poseidonInput_regionActivations (config : Poseidon.Config) (offset : ℕ
   rw [FormalRegionCircuit.call_operations]
   rfl
 
-@[selector_trace_norm]
-theorem poseidonInput_regionSelectorTrace (config : Poseidon.Config) (offset : ℕ)
-    (input : Var Poseidon.Sponge.AddInputInput Fp) (region : RegionIndex) :
-    regionSelectorTrace ((Poseidon.addInputRegion.call config offset input).operations region) =
-      [(config.sPadAndAdd.index, offset + 1)] := by
-  rw [FormalRegionCircuit.call_operations]
-  rfl
-
 /-- All three regions of the actual constant-length hash circuit. -/
 @[activation_trace_norm]
 theorem poseidonHash_activationTrace (capacity : Fp) (config : Poseidon.Config)
@@ -133,14 +86,5 @@ theorem poseidonHash_activationTrace (capacity : Fp) (config : Poseidon.Config)
   rw [FormalCircuit.call_operations]
   change activationTrace ((Poseidon.synthesize capacity config input).operations region) = _
   simp only [Poseidon.synthesize, activation_trace_norm, List.cons_append]
-
-@[selector_trace_norm]
-theorem poseidonHash_selectorTrace (capacity : Fp) (config : Poseidon.Config)
-    (input : Var Poseidon.Sponge.Rate2 Fp) (region : RegionIndex) :
-    selectorTrace (((Poseidon.hash capacity).call config input).operations region) =
-      [[], [(config.sPadAndAdd.index, 1)], poseidonPermutationSelectorTrace config 0] := by
-  rw [FormalCircuit.call_operations]
-  change selectorTrace ((Poseidon.synthesize capacity config input).operations region) = _
-  simp only [Poseidon.synthesize, selector_trace_norm, List.cons_append]
 
 end Zcash.Snark.ZeroKnowledge

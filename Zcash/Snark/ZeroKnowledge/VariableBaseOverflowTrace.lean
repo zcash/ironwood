@@ -20,12 +20,6 @@ theorem overflowGate_regionActivations (K : ℕ) (config : Ecc.MulOverflow.Confi
     regionActivations ((Ecc.MulOverflow.gateRegion K config input scalar low).operations region) =
       [.enableGate (Ecc.MulOverflow.overflowGate K config) 1] := rfl
 
-@[selector_trace_norm]
-theorem overflowGate_regionSelectorTrace (K : ℕ) (config : Ecc.MulOverflow.Config K)
-    (input : Var Ecc.MulOverflow.Inputs Fp) (scalar low : AssignedCell Fp) (region : RegionIndex) :
-    regionSelectorTrace ((Ecc.MulOverflow.gateRegion K config input scalar low).operations region) =
-      [(config.qOverflow.index, 1)] := rfl
-
 /-- Scalar-overflow checks retain their complete region trace, supplying the source metadata for
 Action activation coverage. -/
 @[activation_trace_norm]
@@ -38,27 +32,11 @@ theorem overflow_activationTrace (K : ℕ) (hKW : K * Ecc.MulOverflow.numWords K
   change activationTrace ((Ecc.MulOverflow.synthesize K config input).operations region) = _
   simp only [Ecc.MulOverflow.synthesize, activation_trace_norm, List.cons_append]
 
-@[selector_trace_norm]
-theorem overflow_selectorTrace (K : ℕ) (hKW : K * Ecc.MulOverflow.numWords K = 130)
-    (config : Ecc.MulOverflow.Config K) (input : Var Ecc.MulOverflow.Inputs Fp) (region : RegionIndex) :
-    selectorTrace (((Ecc.MulOverflow.circuit K hKW).call config input).operations region) =
-      [[], runningSelectorTrace config.lookupConfig 0 (Ecc.MulOverflow.numWords K),
-        [(config.qOverflow.index, 1)]] := by
-  rw [FormalCircuit.call_operations]
-  change selectorTrace ((Ecc.MulOverflow.synthesize K config input).operations region) = _
-  simp only [Ecc.MulOverflow.synthesize, selector_trace_norm, List.cons_append]
-
 /-- All four regions of the actual variable-base multiplication gadget. -/
 def variableBaseActivations (config : Ecc.Mul.Config) : List (List (RegionOperation Fp)) :=
   [variableBaseMainActivations config, [],
     runningActivations config.overflowConfig.lookupConfig 0 13,
     [.enableGate (Ecc.MulOverflow.overflowGate 10 config.overflowConfig) 1]]
-
-/-- All four regions of the actual variable-base multiplication gadget. -/
-def variableBaseSelectorTrace (config : Ecc.Mul.Config) : List (List (ℕ × ℕ)) :=
-  [variableBaseMainSelectorTrace config, [],
-    runningSelectorTrace config.overflowConfig.lookupConfig 0 13,
-    [(config.overflowConfig.qOverflow.index, 1)]]
 
 /-- Variable-base multiplication retains its main and overflow region traces, supplying the
 source metadata for Action activation coverage. -/
@@ -70,16 +48,6 @@ theorem variableBase_activationTrace (config : Ecc.Mul.Config)
   rw [FormalCircuit.call_operations]
   change activationTrace ((Ecc.Mul.synthesize config input).operations region) = _
   simp only [Ecc.Mul.synthesize, activation_trace_norm, variableBaseActivations,
-    Ecc.MulOverflow.numWords, List.cons_append]
-
-@[selector_trace_norm]
-theorem variableBase_selectorTrace (config : Ecc.Mul.Config)
-    (input : Var Ecc.Mul.Inputs Fp) (region : RegionIndex) :
-    selectorTrace ((Ecc.Mul.mul.call config input).operations region) =
-      variableBaseSelectorTrace config := by
-  rw [FormalCircuit.call_operations]
-  change selectorTrace ((Ecc.Mul.synthesize config input).operations region) = _
-  simp only [Ecc.Mul.synthesize, selector_trace_norm, variableBaseSelectorTrace,
     Ecc.MulOverflow.numWords, List.cons_append]
 
 end Zcash.Snark.ZeroKnowledge

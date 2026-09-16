@@ -25,12 +25,6 @@ def actionWitnessActivations (config : Circuit.Config) : List (List (RegionOpera
     [.enableGate (Ecc.WitnessPoint.pointNonIdGate config.eccConfig.witnessPoint.qPointNonId config.eccConfig.witnessPoint.x config.eccConfig.witnessPoint.y) 0],
     [.enableGate (Ecc.WitnessPoint.pointNonIdGate config.eccConfig.witnessPoint.qPointNonId config.eccConfig.witnessPoint.x config.eccConfig.witnessPoint.y) 0], [], [], []]
 
-/-- Witness loading keeps all eight regions, including the five selector-free loads. -/
-def actionWitnessSelectorTrace (config : Circuit.Config) : List (List (ℕ × ℕ)) :=
-  [[], [], [(config.eccConfig.witnessPoint.qPoint.index, 0)],
-    [(config.eccConfig.witnessPoint.qPointNonId.index, 0)],
-    [(config.eccConfig.witnessPoint.qPointNonId.index, 0)], [], [], []]
-
 /-- The exact sequence of all 295 integrity-check regions. -/
 def actionChecksActivations (generators : Specs.Sinsemilla.Generators) (config : Circuit.Config) :
     List (List (RegionOperation Fp)) :=
@@ -47,19 +41,6 @@ def actionChecksActivations (generators : Specs.Sinsemilla.Generators) (config :
         mulConfig := config.eccConfig.mulFixedFull, addConfig := config.eccConfig.add } ++
     addressIntegrityActivations (config.eccConfig.mul, config.eccConfig.witnessPoint)
 
-/-- The exact sequence of all 295 integrity-check regions. -/
-def actionChecksSelectorTrace (config : Circuit.Config) : List (List (ℕ × ℕ)) :=
-  (List.replicate 16 (merkleLayerSelectorTrace (config.merkle1.condSwap, config.merkle1, config.lookupConfig))).flatten ++
-    (List.replicate 16 (merkleLayerSelectorTrace (config.merkle2.condSwap, config.merkle2, config.lookupConfig))).flatten ++
-    [[], []] ++
-    valueCommitSelectorTrace (config.eccConfig.mulFixedShort, config.eccConfig.mulFixedFull, config.eccConfig.add) ++
-    nullifierSelectorTrace (config.poseidonConfig, config.addChipConfig, config.eccConfig.mulFixedBaseField, config.eccConfig.add) ++
-    spendAuthoritySelectorTrace (config.eccConfig.mulFixedFull, config.eccConfig.add) ++
-    commitIvkSelectorTrace
-      { gate := config.commitIvkConfig, hashConfig := config.sinsemilla1, lookupConfig := config.lookupConfig,
-        mulConfig := config.eccConfig.mulFixedFull, addConfig := config.eccConfig.add } ++
-    addressIntegritySelectorTrace (config.eccConfig.mul, config.eccConfig.witnessPoint)
-
 /-- Action checks produce their configured trace independently of witness values, supplying the
 source metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -71,17 +52,6 @@ theorem actionSynthChecks_activationTrace (generators : Specs.Sinsemilla.Generat
   simp only [Circuit.synthChecksProgram, activation_trace_norm,
     actionChecksActivations, List.cons_append, List.append_assoc]
 
-/-- Action checks produce their configured trace independently of witness values, supplying the
-source metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionSynthChecks_selectorTrace (generators : Specs.Sinsemilla.Generators) (bases : Circuit.Bases)
-    (witness : Circuit.Witnesses Fp) (config : Circuit.Config) (cells : Circuit.WitnessCells) (region : RegionIndex) :
-    selectorTrace ((Circuit.synthChecks generators bases witness config cells).operations region) =
-      actionChecksSelectorTrace config := by
-  rw [Circuit.synthChecks_eq]
-  simp only [Circuit.synthChecksProgram, selector_trace_norm,
-    actionChecksSelectorTrace, List.cons_append, List.append_assoc]
-
 /-- The Orchard checks enable the Orchard gate at row zero, supplying the source metadata for
 Action activation coverage. -/
 @[activation_trace_norm]
@@ -89,14 +59,6 @@ theorem actionOrchardChecks_regionActivations (config : Circuit.Config)
     (cells : Circuit.WitnessCells) (checks : Circuit.CheckCells) (region : RegionIndex) :
     regionActivations ((Circuit.synthOrchardChecks config cells checks).operations region) =
       [.enableGate (Circuit.orchardGate config.qOrchard config.advices) 0] := rfl
-
-/-- The Orchard checks enable the Orchard selector at row zero, supplying the source metadata for
-Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionOrchardChecks_regionSelectorTrace (config : Circuit.Config)
-    (cells : Circuit.WitnessCells) (checks : Circuit.CheckCells) (region : RegionIndex) :
-    regionSelectorTrace ((Circuit.synthOrchardChecks config cells checks).operations region) =
-      [(config.qOrchard.index, 0)] := rfl
 
 /-- Old and new note commitments with their intervening witness and copy regions. -/
 def actionNotesActivations (generators : Specs.Sinsemilla.Generators) (config : Circuit.Config) :
@@ -111,18 +73,6 @@ def actionNotesActivations (generators : Specs.Sinsemilla.Generators) (config : 
         mulConfig := config.eccConfig.mulFixedFull, addConfig := config.eccConfig.add } ++
     [[.enableGate (Circuit.orchardGate config.qOrchard config.advices) 0]]
 
-/-- Old and new note commitments with their intervening witness and copy regions. -/
-def actionNotesSelectorTrace (config : Circuit.Config) : List (List (ℕ × ℕ)) :=
-  noteCommitSelectorTrace
-      { gates := config.noteCommitOld, hashConfig := config.sinsemilla1, lookupConfig := config.lookupConfig,
-        mulConfig := config.eccConfig.mulFixedFull, addConfig := config.eccConfig.add } ++
-    [[], [(config.eccConfig.witnessPoint.qPointNonId.index, 0)],
-      [(config.eccConfig.witnessPoint.qPointNonId.index, 0)], []] ++
-    noteCommitSelectorTrace
-      { gates := config.noteCommitNew, hashConfig := config.sinsemilla2, lookupConfig := config.lookupConfig,
-        mulConfig := config.eccConfig.mulFixedFull, addConfig := config.eccConfig.add } ++
-    [[(config.qOrchard.index, 0)]]
-
 /-- The note stages produce their configured traces independently of witness values, supplying
 the source metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -135,27 +85,11 @@ theorem actionSynthNotes_activationTrace (generators : Specs.Sinsemilla.Generato
   simp only [Circuit.synthNotesProgram, Ecc.WitnessPoint.pointNonIdFormal, activation_trace_norm,
     actionNotesActivations, List.cons_append, List.append_assoc]
 
-/-- The note stages produce their configured traces independently of witness values, supplying the
-source metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionSynthNotes_selectorTrace (generators : Specs.Sinsemilla.Generators) (bases : Circuit.Bases)
-    (witness : Circuit.Witnesses Fp) (config : Circuit.Config) (cells : Circuit.WitnessCells)
-    (checks : Circuit.CheckCells) (region : RegionIndex) :
-    selectorTrace ((Circuit.synthNotes generators bases witness config cells checks).operations region) =
-      actionNotesSelectorTrace config := by
-  rw [Circuit.synthNotes_eq]
-  simp only [Circuit.synthNotesProgram, Ecc.WitnessPoint.pointNonIdFormal, selector_trace_norm,
-    actionNotesSelectorTrace, List.cons_append, List.append_assoc]
-
 /-- The base Action's complete source trace, independent of witness programs. -/
 def actionBaseActivations (generators : Specs.Sinsemilla.Generators) (config : Circuit.Config) :
     List (List (RegionOperation Fp)) :=
   actionWitnessActivations config ++ actionChecksActivations generators config ++
     actionNotesActivations generators config
-
-/-- The base Action's complete source trace, independent of witness programs. -/
-def actionBaseSelectorTrace (config : Circuit.Config) : List (List (ℕ × ℕ)) :=
-  actionWitnessSelectorTrace config ++ actionChecksSelectorTrace config ++ actionNotesSelectorTrace config
 
 /-- Base Action synthesis produces the composed checks-and-notes trace, supplying the source
 metadata for Action activation coverage. -/
@@ -166,16 +100,6 @@ theorem actionSynthesizeBase_activationTrace (generators : Specs.Sinsemilla.Gene
       actionBaseActivations generators config := by
   simp only [Circuit.synthesizeBase, activation_trace_norm, actionBaseActivations,
     actionWitnessActivations, List.append_assoc]
-
-/-- Base Action synthesis produces the composed checks-and-notes trace, supplying the source
-metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionSynthesizeBase_selectorTrace (generators : Specs.Sinsemilla.Generators) (bases : Circuit.Bases)
-    (witness : Circuit.Witnesses Fp) (config : Circuit.Config) (region : RegionIndex) :
-    selectorTrace ((Circuit.synthesizeBase generators bases witness config).operations region) =
-      actionBaseSelectorTrace config := by
-  simp only [Circuit.synthesizeBase, selector_trace_norm, actionBaseSelectorTrace,
-    actionWitnessSelectorTrace, List.append_assoc]
 
 /-- Calling the base Action circuit preserves its complete source trace, supplying the source
 metadata for Action activation coverage. -/
@@ -188,17 +112,6 @@ theorem actionBaseCall_activationTrace (generators : Specs.Sinsemilla.Generators
   change activationTrace ((Circuit.synthesizeBase generators bases Circuit.hintWitnesses config).operations region) = _
   exact actionSynthesizeBase_activationTrace _ _ _ _ _
 
-/-- Calling the base Action circuit preserves its complete source trace, supplying the source
-metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionBaseCall_selectorTrace (generators : Specs.Sinsemilla.Generators) (bases : Circuit.Bases)
-    (config : Circuit.Config) (input : Var unit Fp) (region : RegionIndex) :
-    selectorTrace (((Circuit.baseCircuit generators bases).call config input).operations region) =
-      actionBaseSelectorTrace config := by
-  rw [FormalCircuit.call_operations]
-  change selectorTrace ((Circuit.synthesizeBase generators bases Circuit.hintWitnesses config).operations region) = _
-  exact actionSynthesizeBase_selectorTrace _ _ _ _ _
-
 /-- A cross-address check enables the Orchard gate at its requested row, supplying the source
 metadata for Action activation coverage. -/
 @[activation_trace_norm]
@@ -206,14 +119,6 @@ theorem actionCrossAddressRow_regionActivations (config : Circuit.Config)
     (oldCell newCell : AssignedCell Fp) (row : ℕ) (region : RegionIndex) :
     regionActivations ((Circuit.synthCrossAddressRow config oldCell newCell row).operations region) =
       [.enableGate (Circuit.orchardGate config.qOrchard config.advices) row] := rfl
-
-/-- A cross-address check enables the Orchard selector at its requested row, supplying the source
-metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionCrossAddressRow_regionSelectorTrace (config : Circuit.Config)
-    (oldCell newCell : AssignedCell Fp) (row : ℕ) (region : RegionIndex) :
-    regionSelectorTrace ((Circuit.synthCrossAddressRow config oldCell newCell row).operations region) =
-      [(config.qOrchard.index, row)] := rfl
 
 /-- Cross-address checks retain the four successive Orchard activations, supplying the source
 metadata for Action activation coverage. -/
@@ -223,15 +128,6 @@ theorem actionCrossAddress_activationTrace (config : Circuit.Config)
     activationTrace ((Circuit.synthCrossAddressChecks config points).operations region) =
       [gateRowRun (Circuit.orchardGate config.qOrchard config.advices) 0 4] := by
   simp only [Circuit.synthCrossAddressChecks, activation_trace_norm, gateRowRun, Nat.mul_one]
-
-/-- Cross-address checks retain the four successive Orchard activations, supplying the source
-metadata for Action selector coverage. -/
-@[selector_trace_norm]
-theorem actionCrossAddress_selectorTrace (config : Circuit.Config)
-    (points : Var Circuit.AddressPoints Fp) (region : RegionIndex) :
-    selectorTrace ((Circuit.synthCrossAddressChecks config points).operations region) =
-      [selectorRowRun config.qOrchard.index 0 4] := by
-  simp only [Circuit.synthCrossAddressChecks, selector_trace_norm, selectorRowRun, Nat.mul_one]
 
 /-- All source regions of the specified post-NU6.3 Action circuit. -/
 def actionSourceActivations (generators : Specs.Sinsemilla.Generators) (config : Circuit.Config) :
