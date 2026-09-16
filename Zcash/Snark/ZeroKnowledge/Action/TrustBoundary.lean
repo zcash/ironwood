@@ -54,6 +54,7 @@ import Zcash.Snark.ZeroKnowledge.StoredActionHonestOracleViewCost
 import Zcash.Snark.ZeroKnowledge.StoredActionHonestOracleViewBound
 import Zcash.Snark.ZeroKnowledge.ActionNumeratorCoefficientsCost
 import Zcash.Snark.ZeroKnowledge.ActionQuotientRowsCost
+import Zcash.Snark.ZeroKnowledge.ActionGateActivationCoverage
 import Zcash.Snark.ZeroKnowledge.ActionLookupActivationCoverage
 import Zcash.Snark.ZeroKnowledge.StoredActionInstanceCost
 import Zcash.Snark.ZeroKnowledge.StoredActionInitialCost
@@ -1357,6 +1358,9 @@ assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleSimulatorCosted_cost_l
 assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBitSimulator +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBitSimulator_law +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ZeroKnowledge.storedActionOracleBit_simulation_error_bound +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+
+-- Complete original Action gate activation coverage.
+assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_gateActivationCoverage +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 
 -- Complete original Action lookup activation coverage.
 assert_axioms Zcash.Snark.ZeroKnowledge.actionCircuit_lookupActivationCoverage +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
