@@ -1,6 +1,6 @@
 import Zcash.Snark.ZeroKnowledge.ActionOrderedSort
 import Zcash.Snark.ZeroKnowledge.ActionOrderedPlacement
-import Zcash.Snark.ZeroKnowledge.ActionCompressionInput
+import Zcash.Snark.ZeroKnowledge.ActionOrderedRegionStarts
 
 /-!
 # Exact Action starts in source order

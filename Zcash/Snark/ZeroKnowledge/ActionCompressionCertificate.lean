@@ -1,4 +1,5 @@
 import Zcash.Snark.ZeroKnowledge.ActionOrderedStarts
+import Zcash.Snark.ZeroKnowledge.ActionCompressionInput
 import Zcash.Snark.ZeroKnowledge.SelectorBitPacking
 
 /-!

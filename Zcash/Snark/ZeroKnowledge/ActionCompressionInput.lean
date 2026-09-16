@@ -1,13 +1,12 @@
-import Zcash.Snark.ZeroKnowledge.ActionOrderedShapes
+import Zcash.Snark.ZeroKnowledge.ActionOrderedRegionStarts
 import Zcash.Snark.ZeroKnowledge.ActionSourceSelectorTrace
-import Zcash.Snark.ZeroKnowledge.ActionTracePlacement
 import Zcash.Snark.ZeroKnowledge.ActionExpressionDegree
 import Zcash.Snark.ZeroKnowledge.SelectorCompressionCount
 
 /-!
 # Action compression from certified finite source data
 
-The ordered shape table, source activation trace, and degree vector determine the
+The ordered region starts, the source activation trace, and the degree vector determine the
 actual Action compiler's compression count. This interface removes the full
 witness computation from the numerical certificate. It proves the input
 correspondence used by the closed count in `ActionCompressionCertificate`.
@@ -16,21 +15,6 @@ correspondence used by the closed count in `ActionCompressionCertificate`.
 namespace Zcash.Snark.ZeroKnowledge
 
 open Halo2 Halo2.FloorPlanner Zcash.Circuits.Action
-
-/-- V1 placement of the exact certified source shapes. -/
-def actionOrderedRegionStarts : List ℕ :=
-  regionStartsFromSummary { regionShapes := actionOrderedRegionShapes }
-
-/-- Expose the finite planner calculation only when explicitly requested. -/
-theorem actionOrderedRegionStarts_def :
-    actionOrderedRegionStarts = (V1.planCandidate (indexRegionSummaries 0 actionOrderedRegionShapes)).1 :=
-  regionStartsFromSummary_def _
-
-/-- The actual Action compiler uses exactly the placement of the certified ordered shapes. -/
-theorem actionCircuit_regionStarts_eq_ordered :
-    actionCircuit.regionStarts = actionOrderedRegionStarts := by
-  rw [actionCircuit_regionStarts_eq_source, actionSourceRegionStarts_def, actionOrderedRegionShapes_eq_source]
-  exact actionOrderedRegionStarts_def.symm
 
 /-- Place the complete source selector trace at those certified source-shape starts. -/
 def actionOrderedSelectorActivations : List (ℕ × ℕ) :=
