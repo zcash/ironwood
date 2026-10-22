@@ -55,25 +55,25 @@ per-capture headliners with their literal ε live beside the random fixtures
 (`Fixtures/*/Random/Epsilon.lean`). Only that direction
 (deployed-accepts ⊆ model-accepts) is soundness-relevant *here*, which scopes this comparison
 rather than stating a position on completeness: completeness is a goal of the development,
-pursued for the Lean model, where it yields witness existence. The
-boundary artifact is per-proof: halo2's optional `BatchVerifier` — random-linear-combination
-batching of separate proof blobs — sits outside the single-bundle verifier formalized here, and
-any batching layer prices on top of the per-proof artifact without adding transcription surface.
+pursued for the Lean model, where it yields witness existence. The boundary artifact is per-proof:
+halo2's optional `BatchVerifier` — random-linear-combination batching of separate proof blobs —
+sits outside the single-bundle verifier formalized here.
 
 ## The boundary at the derived key
 
-The statements of record are the `nonInteractiveFingerprint_matches_derived` theorems — one per
-capture family, in the four `Fixtures/*/*/Boundary.lean` modules: the challenges
-are derived by Lean's schedule model (`deriveChallenges`), and the verifying key is spelled as
-`derivedVk` — its end-to-end derivation from the ported `configure`/keygen at the captured URS
-(`Keygen/Certificate.lean`, transported to the other families by their
+The strongest statements of record are the
+`nonInteractiveFingerprint_matches_derived_keyDigest` theorems — one per capture family, in the
+four `Fixtures/*/*/Boundary.lean` modules. They run the schedule through the concrete transcript
+hash, derive the digest that opens it from the pinned key description, and spell the verifying
+key as `derivedVk` — its end-to-end derivation from the ported `configure`/keygen at the captured
+URS (`Keygen/Certificate.lean`, transported to the other families by their
 `VkCertificate.lean` modules). This ties the σ- and fixed-column polynomial content
 into the boundary: the compared bases are deterministic URS commitments of Lean's own keygen
 output, so a transcription error in that content moves a base point and fails the match — an
 accidental error cannot produce a colliding commitment, and a deliberate one has to solve
 discrete log. The dumped key record, the per-field checks in
 `Fixtures/SingleAction/Honest/VkMatch.lean`, and the standalone schedule theorems stay as diagnostics
-that name what broke; as trust elements the derived-form match subsumes them.
+that name what broke; as trust elements the strongest derived form subsumes them.
 
 The two honest families (`SingleAction`, `MultiAction`) state the match on real accepting
 proofs; the two match-only families (`{SingleAction,MultiAction}/Random`) state it on random proof strings, so the slots whose honest values are
@@ -116,22 +116,40 @@ actual Vesta points,
 and the boundary statements above restate it at the derived key and schedule. The generator
 emits every distinct affine coordinate, validates it on `Vesta.curve`, and supplies the complete
 Halo2 URS. On the honest captures `capturedMsm_eval_eq_zero` computes the captured MSM to the
-identity, and each honest family composes the run into `capture_deployedAccepts` — a witness
-that `DeployedAccepts`, the hypothesis every soundness endpoint consumes, is satisfiable,
-which no match-only capture can provide. All four fixtures regenerate
-byte-for-byte from the pinned `zcash/orchard` 0.15.5 release via
+identity, and each honest family composes the run first into `capture_deployedAccepts`, then with
+its exact generated proof bytes, derived key digest, and BLAKE2b challenge schedule into
+`capture_deployedAcceptsBytes`. These witness that `DeployedAccepts`, the hypothesis every
+soundness endpoint consumes, is satisfiable from an exact parse, which no match-only capture can
+provide. All four fixtures regenerate
+byte-for-byte from exact `zcash/orchard#544` and `zcash/halo2#933` commits via
 `scripts/regenerate-fingerprint-fixtures.sh`, run in CI
 (`.github/workflows/fixtures.yml`); pins, seeds, and rationale in
 `Fixtures/PROVENANCE.md`.
 
-Eleven premises remain trusted rather than fixture-checked:
+Twelve premises remain trusted rather than fixture-checked:
 
 * capture faithfulness — the exporter is the deployed strategy minus the final `eval()`, a
   few-line reviewed diff;
 * rejection paths — the deployed accept path is straight-line in proof values post-decode
-  (`Core/ProofString.lean`), corroborated by the random captures running to completion;
-* byte→algebraic decode — deployed rejects non-canonical encodings, the safe direction;
-* Fiat–Shamir bytes and BLAKE2b — the typed schedule is not a transcript-binding model;
+  (`Core/ProofString.lean`); at the PR pins, each random driver also checks the six exact malformed
+  or sign-edited byte strings mirrored by the Lean fixtures;
+* byte→algebraic decode — `DeployedAcceptsBytes` composes exact `readProof?` parsing, the derived
+  digest, BLAKE2b challenge derivation, and typed `DeployedAccepts`, under the key relation
+  `Describes` and halo2's refusal of identity instance commitments. `Describes` checks the fields
+  represented in the description against the designated and used keys; it does not derive the
+  reader-only quotient-piece or point-set counts from that description. `readProof?` is canonical
+  and reads all four captures' generated bytes to their typed proofs. The deployed reader is
+  exercised on those exact captures and edits, not universally refined to the Lean function, and
+  `blindingFactors`, `delta`, `chunkLen`, the regular permutation partition, and the common-evaluation
+  layout stay named key/shape agreements of `Verifier/Key.lean`;
+* Fiat–Shamir bytes — `halo2Transcript` recomputes every captured challenge from bytes through a
+  Lean BLAKE2b (`Verifier/Transcript.lean`); BLAKE2b's identification with a random oracle stays
+  idealized;
+* BLAKE2b implementation agreement — `blake2b_simd`, which the deployed transcript hashes with, is
+  checked against the Lean RFC 7693 model (`Common/Hash/Blake2b.lean`) only on the captured
+  transcripts and the known-answer vectors; that the two agree on every other input is trusted. A
+  replacement diverging on the captures is caught, one agreeing there and diverging elsewhere is
+  not;
 * the pinned-point caveat — a published capture could be special-cased by a malicious edit,
   excluded by review and by seeds fixed before code;
 * sampled-point distribution — applying the literal ε treats scalar expansion from fixed public
@@ -141,16 +159,20 @@ Eleven premises remain trusted rather than fixture-checked:
   by the four pointwise matches;
 * positional frame stability — the base re-indexing that makes the `Perm` match positional stays
   fixed across the good event (`Fingerprint/Epsilon.lean`);
-* container-merge exclusion — the exporter rejects captures where Halo2 would merge equal-x terms
+* container-merge exclusion — the exporter rejects captures where Halo2 would merge same-base terms
   or drop identity bases. That these transforms preserve evaluation follows from code inspection,
   not a Lean theorem;
 * exporter determinism — the regenerate-and-diff pipeline above;
 * compiler trust for the fixture checks — censused per declaration in each family's
   `TrustBoundary.lean`.
 
-The comparison against Orchard's canonical Post-NU6.3 `PinnedVerificationKey` and Halo2's
-pinned-key serialization/BLAKE2b derivation remain the fixture-generation boundary rather than
-being reimplemented in Lean.
+Halo2's pinned-key digest is reimplemented: the pinned exporter emits its exact compact hash
+preimage as `capturedPinnedKeyDescription`; each family's `Transcript.lean` hashes it
+(`Verifier/KeyDigest.lean`) to the captured `transcript_repr`, and each honest family discharges
+the represented-field relation `Describes` required by `DeployedAcceptsBytes`.
+`Fixtures/PinnedKey.lean` separately records the printed keygen-only values. The
+exact exporter string, captured key, and Orchard's own key-description comparison stay at the
+fixture-generation boundary.
 -/
 
 namespace Zcash.Snark

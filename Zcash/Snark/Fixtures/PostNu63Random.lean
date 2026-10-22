@@ -60,6 +60,10 @@ theorem randomSingle_uses_same_permutationCommonCommitments :
       = Fixture.capturedPermutationCommonCommitments := by
   native_decide
 
+/-- The same exporter-emitted pinned key description, compared by the kernel. -/
+theorem randomSingle_uses_same_pinnedKeyDescription :
+    FixtureRandom.capturedPinnedKeyDescription = Fixture.capturedPinnedKeyDescription := rfl
+
 /-- The random single-action capture carries the honest single-action URS record;
 `Fixtures/SingleAction/Random/VkCertificate.lean` rewrites along this equality. -/
 theorem randomSingle_uses_same_urs : FixtureRandom.capturedURS = Fixture.capturedURS := by
@@ -116,6 +120,10 @@ theorem randomMulti_uses_same_permutationCommonCommitments :
     FixtureRandom2.capturedPermutationCommonCommitments
       = Fixture.capturedPermutationCommonCommitments := by
   native_decide
+
+/-- The same exporter-emitted pinned key description, compared by the kernel. -/
+theorem randomMulti_uses_same_pinnedKeyDescription :
+    FixtureRandom2.capturedPinnedKeyDescription = Fixture.capturedPinnedKeyDescription := rfl
 
 theorem randomMulti_uses_same_urs : FixtureRandom2.capturedURS = Fixture.capturedURS := by
   simp only [FixtureRandom2.capturedURS, Fixture.capturedURS, randomMulti_uses_same_ursG,

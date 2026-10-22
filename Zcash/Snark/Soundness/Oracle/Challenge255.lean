@@ -21,7 +21,7 @@ states the event form and `challenge255_weightedBias_le` proves the continuation
 `challenge255_badSet_le` runs one squeeze through the event transport.
 `challenge255_joint_charge_le_at_2pow123` prices the joint charge at the `2^123` work limit:
 an observer visiting at most `Q + (11 + k)` points, with `Q ≤ 2^123` and `k < 33`, pays under
-`2^-136` in total, which is the closed number the deployed Action capstone states.
+`2^-136` in total, which is the closed number the modeled Action capstone states.
 -/
 
 namespace Zcash.Snark

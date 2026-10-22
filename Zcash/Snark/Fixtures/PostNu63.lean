@@ -7,16 +7,20 @@ import Mathlib.Util.AssertNoSorry
 
 Cross-capture checks for the canonical Post-NU6.3 Orchard-protocol verifying key and URS. During
 fixture generation, the `orchard` implementation first compares the exact `PinnedVerificationKey`
-debug representation against its checked-in `circuit_description_post_nu6_3`; `halo2` then derives
-and emits the transcript representation below from that same verified key object.
+debug representation against its checked-in circuit description. The pinned `halo2` exporter then
+emits both the transcript representation below and the exact compact string it hashed.
 
-Lean does not reimplement `halo2`'s `Debug` serialization or BLAKE2b derivation. The hand-pinned
-scalar here makes fixture drift visible in this repository, while the Rust regeneration assertion
-binds it to the full canonical pinned key.
+The hand-pinned scalar here makes fixture drift visible in this repository, while the Rust
+regeneration assertion binds it to the full canonical pinned key. The fixture lane goes further:
+each family's `Transcript.lean` hashes the exporter-emitted description with Halo2's
+`Halo2-Verify-Key` BLAKE2b to this scalar, and `Fixtures/PinnedKey.lean` reads the description's
+fields back against the captured key, so the scalar is checked rather than only pinned.
 
 The point-level equalities below identify the two captures' URS and verifying-key commitment
-points; the multi-action verifying-key certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`)
-is transported from the single-action one along them.
+points, and `captures_use_same_pinnedKeyDescription` identifies their exporter-emitted pinned key
+descriptions; the multi-action verifying-key certificate
+(`Fixtures/MultiAction/Honest/VkCertificate.lean`) is transported from the single-action one along
+the point equalities.
 -/
 
 namespace Zcash.Snark.PostNu63Fixture
@@ -114,6 +118,12 @@ theorem captures_use_same_permutationCommonCommitments :
     Fixture2.capturedPermutationCommonCommitments
       = Fixture.capturedPermutationCommonCommitments := by
   native_decide
+
+/-- The two captures carry the same exporter-emitted pinned key description, so the field-by-field
+reading in `Fixtures/PinnedKey.lean`, stated over the single-action string, reads the multi-action
+capture's string as well. The two literals are compared by the kernel. -/
+theorem captures_use_same_pinnedKeyDescription :
+    Fixture2.capturedPinnedKeyDescription = Fixture.capturedPinnedKeyDescription := rfl
 
 /-- The two captures carry one and the same URS record; the multi-action verifying-key
 certificate (`Fixtures/MultiAction/Honest/VkCertificate.lean`) rewrites along this equality. -/
