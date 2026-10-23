@@ -7,9 +7,10 @@ import Zcash.Snark.Soundness.Circuit.Terminal
 
 This module transports the verifier artifacts produced by a straight-line AGM
 run to the derived key and public-input commitment of an arbitrary
-`TopLevelCircuit`. Circuit-specific gate, fixed, copy, and lookup work remains in
-the constructor of `TopLevelCircuitCorrectness`.
+`TopLevelCircuit`. Its compiler laws and the supplied challenge exclusions recover
+the gate, fixed, copy, and lookup constraints through the generic circuit terminal.
 -/
+
 
 namespace Zcash.Snark
 
@@ -51,6 +52,7 @@ def topLevelStatements_or_relation_of_decode
     [ProvableType PublicInput]
     (top : TopLevelCircuit Fp Config PublicInput)
     [TopLevelShape top]
+    [CircuitFieldSupport top]
     (pp : ProofParams) (urs : URS G)
     (hk : top.domainExponent = urs.k)
     (inputs : Fin pp.numProofs → PublicInput Fp)
@@ -68,7 +70,6 @@ def topLevelStatements_or_relation_of_decode
       DeployedAccepts (top.shape.withProofParams pp) urs hk
         (top.toVerifierKey urs)
         (top.instanceCommitment urs inputs) ps ch)
-    (domainExponent_lt : top.domainExponent < 33)
     (hxgood :
       let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
       let model :=
@@ -96,23 +97,15 @@ def topLevelStatements_or_relation_of_decode
               top.toVerifierKey_blindingFactors_lt_n urs)
             haccepts).constraints
           top.n j))
-    {cell : Type} [DecidableEq cell] [Fintype cell]
-    (correctness :
-      let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
-      (CanonicalMemberConstraintRelation.acceptedModel
-        (memberDecode := memberDecode)
-        (hblinding :=
-          top.toVerifierKey_blindingFactors_lt_n urs)
-        haccepts).CircuitSat
-          ch.y
-          (CanonicalMemberConstraintRelation.acceptedPolynomial
-            (memberDecode := memberDecode) haccepts .vanishingH)
-          top.n a →
-      TopLevelCircuitCorrectness top pp urs ch
-        (CanonicalMemberConstraintRelation.acceptedPolynomial
-          (memberDecode := memberDecode) haccepts)
-        cell
-        (AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w)) :
+    (permutationExclusions : ResolverPermutationChallengeExclusions
+      pp.numProofs (top.toVerifierKey urs) ch
+      (CanonicalMemberConstraintRelation.acceptedPolynomial
+          (shape := top.shape.withProofParams pp)
+          (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts) (top.usableRowsAt top.domainExponent))
+    (lookupExclusions : TopLevelLookup.ChallengeExclusions top pp urs ch
+      (CanonicalMemberConstraintRelation.acceptedPolynomial
+          (shape := top.shape.withProofParams pp)
+          (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)) :
     (∀ proofIndex, top.Statement (inputs proofIndex)) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
   let memberDecode := fun i hi => decode.toMemberDecode hchar i hi
@@ -124,13 +117,14 @@ def topLevelStatements_or_relation_of_decode
     rfl
     (fun slot point hpoint =>
       PSum.inl (decode.memberBinding hchar slot point hpoint))
-    domainExponent_lt hxgood hgoodY correctness
+    hxgood hgoodY permutationExclusions lookupExclusions
 
 /-- Transport the run's decode to any identified verifier artifacts. -/
 def straightLineRunDecodeAt
     {shape : Shape}
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) → VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp)
@@ -138,7 +132,7 @@ def straightLineRunDecodeAt
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (hvk : family.vk basis = vk)
     (hI : family.instanceCommitment basis = instanceCommitment)
-    (hdecoded : family.straightLineConstraintDecoded static basis O) :
+    (hdecoded : family.straightLineConstraintDecoded basis O) :
     let pnu := straightLineRunOutput family basis O
     DeployedAlgebraicDecode shape (ursOfAugmentedBasis shape.k basis) rfl
       vk instanceCommitment
@@ -147,14 +141,15 @@ def straightLineRunDecodeAt
       (pnu.1.aMulti (wrappedPreIpaReads pnu))
       (pnu.1.multiU (wrappedPreIpaReads pnu))
       (pnu.1.multiBlind (wrappedPreIpaReads pnu)) :=
-  hI ▸ hvk ▸ (straightLineDecode family static basis O hdecoded).reRound
+  hI ▸ hvk ▸ (straightLineDecode family basis O hdecoded).reRound
     (runRounds family.toFamily basis O)
 
 /-- Transport the run's verifier acceptance to any identified verifier artifacts. -/
 theorem straightLineRunAcceptsAt
     {shape : Shape}
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) → VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) → Fp)
@@ -162,13 +157,13 @@ theorem straightLineRunAcceptsAt
     (instanceCommitment : Fin shape.numProofs → ℕ → VestaG)
     (hvk : family.vk basis = vk)
     (hI : family.instanceCommitment basis = instanceCommitment)
-    (hdecoded : family.straightLineConstraintDecoded static basis O) :
+    (hdecoded : family.straightLineConstraintDecoded basis O) :
     let pnu := straightLineRunOutput family basis O
     DeployedAccepts shape (ursOfAugmentedBasis shape.k basis) rfl
       vk instanceCommitment
       pnu.1.proof.1
       (straightLineRunRecord family basis O) :=
   hI ▸ hvk ▸ straightLineAccepts_of_decoded
-    family static basis O hdecoded
+    family basis O hdecoded
 
 end Zcash.Snark

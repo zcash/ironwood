@@ -1,6 +1,7 @@
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Clean.Halo2.Keygen.Layout
+import Zcash.Circuits.Halo2.PermutationRows
 import Zcash.Arithmetic
 import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft
@@ -17,7 +18,7 @@ namespace Zcash.Snark.Keygen
 
 open Zcash.Snark
 open Zcash.Arithmetic (deltaFp omegaOf)
-open Halo2
+open Halo2 Halo2.Layout
 -- The concrete fast MSM lives in the CompElliptic pin; opening `Curves.Pasta` is what makes its
 -- `Fast.Msm.*` spellings resolve here.
 open CompElliptic.Curves.Pasta
@@ -36,13 +37,6 @@ def commitLagrangeWith (blind : G) (basis : List G) (coeffs : List Fp) : G :=
     (fun i => (coeffs.getD i 0).val • basis.getD i 0)).sum + blind
 
 /-! ## Commitment helpers over Clean-compiled fixed rows -/
-
-/-- V1 constant allocations in the legacy copy-list tuple order. Values remain
-field-valued in Clean; only this permutation-copy adapter reads their canonical `Fp.val`. -/
-def constantCopyEntries (cs : ConstraintSystem Fp) (ops : Operations Fp) :
-    List (ℕ × ℕ × ℕ) :=
-  (FloorPlanner.V1.constantAssignments ops (cs.constants.map (·.index))).map
-    fun (value, column, row) => (value.val, column, row)
 
 /-- Commit Clean-compiled fixed rows with one task per column. -/
 def fixedCommitmentsWith (commit : List Fp → G)
@@ -78,79 +72,17 @@ def fixedCommitmentsOf (blind : G) (lagrange : List G)
 
 /-! ## Derived permutation commitments (`plonk/permutation/keygen.rs:102-152`) -/
 
-/-- The permutation columns as `ColRef`s in `enable_equality` order
-(`cs.permutationColumns`) — the order the keygen `Assembly` mapping and the `δ^i` scaling
-are indexed by, and the column shape `V1.copyList` resolves cells against. -/
-def permColsOf (cs : ConstraintSystem Fp) : List Halo2.Layout.ColRef :=
-  cs.permutationColumns.map fun c =>
-    match c.kind with
-    | .advice => .advice c.index
-    | .fixed => .fixed c.index
-    | .instance => .instance c.index
-
-/-- Translating the keygen permutation columns back to Clean columns is lossless. -/
-theorem permColsOf_map_toAny (cs : ConstraintSystem Fp) :
-    (permColsOf cs).map Halo2.Layout.ColRef.toAny =
-      cs.permutationColumns := by
-  rw [permColsOf, List.map_map]
-  induction cs.permutationColumns with
-  | nil => rfl
-  | cons column rest ih =>
-      simp only [List.map_cons]
-      rw [ih]
-      rcases column with ⟨kind, index⟩
-      cases kind <;> rfl
-
-/-- `[ω^0, ω^1, …, ω^(n−1)]` (`build_vk`'s `omega_powers`, `permutation/keygen.rs:108-116`;
-map form rather than iterated multiplication so entries are `getElem`-transparent for the
-σ-row identification — `ZMod` powers are binary-fast, so the cost difference is noise). -/
-def omegaPowersArr (omega : Fp) (n : ℕ) : Array Fp :=
-  (Array.range n).map (omega ^ ·)
-
-/-- `[δ^0, δ^1, …, δ^(m−1)]` (`build_vk`'s `cur *= DELTA`, `permutation/keygen.rs:118-133`;
-map form, see `omegaPowersArr`). -/
-def deltaPowersArr (delta : Fp) (m : ℕ) : Array Fp :=
-  (Array.range m).map (delta ^ ·)
-
-/-- In-range lookup returns the corresponding power of `omega`. -/
-@[simp] theorem omegaPowersArr_getElem! (omega : Fp) {n j : ℕ} (hj : j < n) :
-    (omegaPowersArr omega n)[j]! = omega ^ j := by
-  simp [omegaPowersArr, hj]
-
-/-- In-range lookup returns the corresponding power of `delta`. -/
-@[simp] theorem deltaPowersArr_getElem! (delta : Fp) {m j : ℕ} (hj : j < m) :
-    (deltaPowersArr delta m)[j]! = delta ^ j := by
-  simp [deltaPowersArr, hj]
-
-/-- The per-column permutation polynomials in Lagrange form:
-`p_i[j] = deltaomega[i'][j'] = δ^{i'} · ω^{j'}` where `(i', j') = mapping[i][j]`
-(`build_vk`, `permutation/keygen.rs:135-146`), over the keygen `Assembly` mapping
-(`Assembly::copy` replay, `Layout.runAssembly`) of the derived V1 copy list. -/
-def permPolysOf (k : ℕ) (cs : ConstraintSystem Fp) (ops : Operations Fp) :
-    List (List Fp) :=
-  let n := 2 ^ k
-  let permCols := permColsOf cs
-  let copyList := Layout.V1.copyList permCols (FloorPlanner.V1.starts ops) ops
-    (constantCopyEntries cs ops)
-  let mapping := Layout.runAssembly n permCols.length copyList
-  let omegaPows := omegaPowersArr (omegaOf k) n
-  let deltaPows := deltaPowersArr deltaFp permCols.length
-  (List.range permCols.length).map fun i =>
-    (List.range n).map fun j =>
-      let pij := (mapping[i]!)[j]!
-      deltaPows[pij.1]! * omegaPows[pij.2]!
-
 /-- The derived permutation common commitments at an explicit per-column committer
 (see `fixedCommitmentsWith`). -/
 def permutationCommitmentsWith (commit : List Fp → G) (k : ℕ)
     (cs : ConstraintSystem Fp) (ops : Operations Fp) : List G :=
   -- `parMap`: one task per column (`parMap_eq_map` — evaluation strategy only)
-  (permPolysOf k cs ops).parMap commit
+  (permutationRows k cs ops).parMap commit
 
 /-- Sequential variant of `permutationCommitmentsWith` (see `fixedCommitmentsSeqWith`). -/
 def permutationCommitmentsSeqWith (commit : List Fp → G) (k : ℕ)
     (cs : ConstraintSystem Fp) (ops : Operations Fp) : List G :=
-  (permPolysOf k cs ops).map commit
+  (permutationRows k cs ops).map commit
 
 omit [AddCommGroup G] [Inhabited G] in
 /-- Sequential and parallel permutation commitment helpers return the same list. -/
@@ -161,14 +93,6 @@ theorem permutationCommitmentsSeqWith_eq (commit : List Fp → G) (k : ℕ)
   simp only [permutationCommitmentsSeqWith, permutationCommitmentsWith,
     List.parMap_eq_map]
 
-/-- Every permutation polynomial is a full-domain row vector. -/
-theorem permPolysOf_mem_length (k : ℕ) (cs : ConstraintSystem Fp) (ops : Operations Fp) :
-    ∀ l ∈ permPolysOf k cs ops, l.length = 2 ^ k := by
-  intro l hl
-  simp only [permPolysOf, List.mem_map] at hl
-  obtain ⟨i, -, rfl⟩ := hl
-  simp
-
 omit [AddCommGroup G] [Inhabited G] in
 /-- The permutation twin of `fixedCommitmentsSeqWith_congr`. -/
 theorem permutationCommitmentsSeqWith_congr {f g : List Fp → G} (k : ℕ)
@@ -176,7 +100,7 @@ theorem permutationCommitmentsSeqWith_congr {f g : List Fp → G} (k : ℕ)
     (h : ∀ l : List Fp, l.length = 2 ^ k → f l = g l) :
     permutationCommitmentsSeqWith f k cs ops = permutationCommitmentsSeqWith g k cs ops := by
   simp only [permutationCommitmentsSeqWith]
-  exact List.map_congr_left fun c hc => h c (permPolysOf_mem_length k cs ops c hc)
+  exact List.map_congr_left fun c hc => h c (permutationRows_mem_length k cs ops c hc)
 
 /-- The derived permutation common commitments — `commit_lagrange` of each permutation
 polynomial with the default blind (`build_vk`, `permutation/keygen.rs:147-151`;

@@ -4,6 +4,7 @@ import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Zcash.Circuits.Integration.ExprRich
+import Zcash.Circuits.Halo2.FieldSupport
 import Clean.Halo2.Keygen.Layout
 import Clean.Halo2.Keygen
 import Clean.Halo2.TopLevel
@@ -11,6 +12,7 @@ import Zcash.Arithmetic
 import Zcash.Snark.Keygen.Commitments
 import Zcash.Snark.Verifier.Assemble
 import Zcash.Snark.Verifier.Circuit
+import Zcash.Snark.Verifier.FieldSupport
 
 /-!
 # `TopLevelCircuit.toVerifierKey` — the circuit-side half of halo2 `keygen_vk`, generic
@@ -34,6 +36,8 @@ Action capture certification lives in `Certificate.lean`.
 * Fixed commitments: `plonk/keygen.rs:230-240` (`keygen_vk`'s `fixed_commitments`).
 * Permutation commitments: `plonk/permutation/keygen.rs:102-152` (`Assembly::build_vk`).
 -/
+
+open Zcash.Arithmetic (omegaOf)
 
 namespace Halo2.TopLevelCircuit
 
@@ -72,21 +76,6 @@ def permutationCommitments
     [TopLevelShape top] (urs : URS G) : List G :=
   permutationCommitmentsOf urs.w (derivedUrsGLagrange urs) top.domainExponent
     top.constraintSystem (top.operations)
-
-/-- The fitting-domain generator used by the circuit's verifier. -/
-def omega (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top] : Fp :=
-  Zcash.Arithmetic.omegaOf top.domainExponent
-
-/-- The fitting-domain generator is nonzero whenever its exponent lies in
-Pasta's supported range. -/
-theorem omega_ne_zero
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (hbound : top.domainExponent ≤ 32) :
-    top.omega ≠ 0 :=
-  (Zcash.Arithmetic.omegaOf_isPrimitiveRoot
-    top.domainExponent hbound).isUnit (by positivity) |>.ne_zero
 
 /-- **The verifying key of a closed top-level circuit**: the `TopLevelCircuit` carries
 unit configuration and synthesis inputs, so the only remaining input is the URS —
@@ -150,6 +139,18 @@ theorem toVerifierKey_blindingFactors
     (top.toVerifierKey urs).delta =
       Zcash.Arithmetic.deltaFp := by
   simp only [toVerifierKey]
+
+/-- Field compatibility of a compiled key is independent of the URS contents. -/
+instance toVerifierKeyFieldSupport
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] [CircuitFieldSupport top] (urs : URS G) :
+    VerifyingKey.FieldSupport (top.toVerifierKey urs) where
+  n_eq := (top.toVerifierKey_n urs).trans top.n_eq_two_pow_domainExponent
+  omega_eq := top.toVerifierKey_omega urs
+  delta_eq := (top.toVerifierKey_delta urs).trans
+    Zcash.Arithmetic.pastaDomain_delta_eq.symm
+  domainExponent_le := CircuitFieldSupport.domainExponent_le (top := top)
+  permutationColumnCount_le := CircuitFieldSupport.permutationColumnCount_le (top := top)
 
 /-- The derived key uses the circuit-owned permutation chunk width. -/
 @[simp] theorem toVerifierKey_chunkLen

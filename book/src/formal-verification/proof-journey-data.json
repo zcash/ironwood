@@ -784,7 +784,7 @@
         "The 2^-83 term is an independent statistical soundness error, and the endpoint requires no externally supplied traces, cuts, or views."
       ],
       "residuals": [
-        "The endpoints keep named structural premisses: B != 0 for the DLOG challenge point and injectivity of the basis query map, plus the static-check and x-squeeze-schedule interfaces on the straight-line rungs.",
+        "The endpoints keep named structural premisses: B != 0 for the DLOG challenge point and injectivity of the basis query map, plus the key-lawfulness and x-squeeze-schedule interfaces on the straight-line rungs.",
         "The recorded work factors are accounting scales the reduction was evaluated at, not proven end-to-end security levels."
       ],
       "durationMs": 10000

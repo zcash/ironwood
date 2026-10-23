@@ -1,6 +1,8 @@
 import Zcash.Snark.Keygen.Certificate
 import Zcash.Snark.Fixtures.MultiAction.Honest.Fixture
 import Zcash.Snark.Fixtures.PostNu63
+import Zcash.Circuits.Action.FieldSupport
+import Zcash.Circuits.Integration.PermutationCompiler
 import Mathlib.Util.AssertNoSorry
 
 /-!
@@ -39,6 +41,18 @@ theorem vk_eq_derived : vk = derivedVk := by
 
 /-- Compatibility spelling: the captured key is the circuit's derived verifier key. -/
 theorem vk_eq_toVerifierKey : vk = derivedVk := vk_eq_derived
+
+/-- The capture inherits the derived key's domain and coset laws. -/
+instance vkFieldSupport : VerifyingKey.FieldSupport vk := by
+  rw [vk_eq_derived]
+  exact VerifyingKey.fieldSupport_cast actionCircuitShape_eq
+    (actionCircuit.toVerifierKey capturedURS)
+
+/-- The capture inherits the compiler's query and permutation layout laws. -/
+instance vkWellFormed : VerifyingKey.WellFormed vk := by
+  rw [vk_eq_derived]
+  exact VerifyingKey.wellFormed_cast actionCircuitShape_eq
+    (actionCircuit.toVerifierKey capturedURS)
 
 assert_no_sorry vk_eq_derived
 assert_no_sorry vk_eq_toVerifierKey

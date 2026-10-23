@@ -44,21 +44,23 @@ abbrev straightLineRunOutput
 /-- The exact computed constraint witness retained by a successful straight-line adapter. -/
 def straightLineConstraintWitness
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
-  ((family.straightLineConstraintSuccess? static basis O).get h).witness
+    (h : family.straightLineConstraintDecoded basis O) :=
+  ((family.straightLineConstraintSuccess? basis O).get h).witness
 
 /-- The run's own algebraic decode exists whenever the computed constraint adapter succeeds. -/
 theorem straightLineConstraintDecoded_nonempty_decode
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :
+    (h : family.straightLineConstraintDecoded basis O) :
     Nonempty (DeployedAlgebraicDecode shape (ursOfAugmentedBasis shape.k basis) rfl
       (family.vk basis) (family.instanceCommitment basis)
       (straightLineRunOutput family basis O).1.proof.1
@@ -69,17 +71,18 @@ theorem straightLineConstraintDecoded_nonempty_decode
         (wrappedPreIpaReads (straightLineRunOutput family basis O)))
       ((straightLineRunOutput family basis O).1.multiBlind
         (wrappedPreIpaReads (straightLineRunOutput family basis O)))) :=
-  ⟨(straightLineConstraintWitness family static basis O h).decode⟩
+  ⟨(straightLineConstraintWitness family basis O h).decode⟩
 
 /-- The decode projected from the computed straight-line constraint witness. -/
 def straightLineDecode
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
-  (straightLineConstraintWitness family static basis O h).decode
+    (h : family.straightLineConstraintDecoded basis O) :=
+  (straightLineConstraintWitness family basis O h).decode
 
 /-- The run's complete challenge record: the squeezed pre-IPA reads and the true IPA rounds.
 The root layer's `wrappedPreIpaRecord` zeroes the rounds; acceptance holds at this record. -/
@@ -108,15 +111,16 @@ theorem straightLineRunReads_eq
 run's proof string and complete challenge record. -/
 theorem straightLineAccepts_of_decoded
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (basis : AugmentedIndex (2 ^ shape.k) -> VestaG)
     (O : BTranscript Fp VestaG
       (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :
+    (h : family.straightLineConstraintDecoded basis O) :
     DeployedAccepts shape (ursOfAugmentedBasis shape.k basis) rfl (family.vk basis)
       (family.instanceCommitment basis)
       (straightLineRunOutput family basis O).1.proof.1
       (straightLineRunRecord family basis O) :=
-  ((family.straightLineConstraintSuccess? static basis O).get h).accepts
+  ((family.straightLineConstraintSuccess? basis O).get h).accepts
 
 end Zcash.Snark

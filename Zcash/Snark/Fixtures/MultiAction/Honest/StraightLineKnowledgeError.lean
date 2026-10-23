@@ -19,7 +19,7 @@ open scoped ENNReal
 bounded sequential online-AGM Fiat–Shamir adversary — `SequentialPreXProver.lift` presents any
 such prover as a family, and this bound applies to the result.  The family supplies the staged
 IPA representation trace, the deployed root chronology, and the constraint-`x` chronology
-`x` pinning is derived from; the captured key discharges the static checks and degree budget.
+`x` pinning is derived from; the captured key discharges key lawfulness and the degree budget.
 The captured premise pins scalar metadata, layouts, and expressions only — no literal fixture
 commitment equality across sampled AGM bases.  The only computational term is the explicit
 finite-security Vesta DLOG profile.  Row-level semantics require the four additional budgets of
@@ -29,12 +29,13 @@ theorem orchard_deployed_straightline_captured_knowledge_error_bound
     (family : ComputedStraightLineDeployedFSFamily shape)
     (hvk : forall basis, CapturedVerifierKeyProfile (family.vk basis))
     (profile : family.StraightLineConstraintDlogProfile B) :
+    letI := fun basis => (hvk basis).fieldSupport
+    letI := fun basis => (hvk basis).wellFormed
     (PMF.uniformOfFintype
       ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B
-          (deployedConstraintStaticChecks_of_captured family.toRootFamily hvk)) <=
+        (family.straightLineConstraintFailureSet B) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -44,9 +45,10 @@ theorem orchard_deployed_straightline_captured_knowledge_error_bound
             (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
           1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
-          ((20470 : Nat) / (Fintype.card Fp : ENNReal)) :=
-  family.straightLineConstraintFailure_prob_le_of_dlogProfile B
-    (deployedConstraintStaticChecks_of_captured family.toRootFamily hvk)
+          ((20470 : Nat) / (Fintype.card Fp : ENNReal)) := by
+  letI := fun basis => (hvk basis).fieldSupport
+  letI := fun basis => (hvk basis).wellFormed
+  exact family.straightLineConstraintFailure_prob_le_of_dlogProfile B
     (deployedConstraintXSqueezeSchedule_captured family.toConstraintFamily hvk) profile
 
 /-- Generator-random-oracle form of the captured straight-line **compressed-identity** endpoint;
@@ -59,13 +61,14 @@ theorem orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound
     (family : ComputedStraightLineDeployedFSFamily shape)
     (hvk : forall basis, CapturedVerifierKeyProfile (family.vk basis))
     (profile : family.StraightLineConstraintDlogProfile B) :
+    letI := fun basis => (hvk basis).fieldSupport
+    letI := fun basis => (hvk basis).wellFormed
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent
-            (deployedConstraintStaticChecks_of_captured family.toRootFamily hvk)) <=
+          family.straightLineConstraintFailureEvent) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -75,9 +78,11 @@ theorem orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound
             (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
           1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
-          ((20470 : Nat) / (Fintype.card Fp : ENNReal)) :=
-  family.straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
-    B hB query hquery (deployedConstraintStaticChecks_of_captured family.toRootFamily hvk)
+          ((20470 : Nat) / (Fintype.card Fp : ENNReal)) := by
+  letI := fun basis => (hvk basis).fieldSupport
+  letI := fun basis => (hvk basis).wellFormed
+  exact family.straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
+    B hB query hquery
     (deployedConstraintXSqueezeSchedule_captured family.toConstraintFamily hvk) profile
 
 /-- **Direct captured-key adapter endpoint.**  Unlike the theorem above, this form does not ask a
@@ -102,13 +107,16 @@ theorem orchard_deployed_straightline_captured_direct_generatorRO_knowledge_erro
       family.StraightLineConstraintDlogProfile B) :
     let family := ComputedStraightLineDeployedFSFamily.ofCovered
       online rootTrace ipaTrace xTrace
+    letI : ∀ basis, VerifyingKey.FieldSupport (family.vk basis) :=
+      fun basis => (hvk basis).fieldSupport
+    letI : ∀ basis, VerifyingKey.WellFormed (family.vk basis) :=
+      fun basis => (hvk basis).wellFormed
     (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent
-            (deployedConstraintStaticChecks_of_captured family.toRootFamily hvk)) <=
+          family.straightLineConstraintFailureEvent) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -120,6 +128,11 @@ theorem orchard_deployed_straightline_captured_direct_generatorRO_knowledge_erro
         (family.Q + 1 : Nat) *
           ((20470 : Nat) / (Fintype.card Fp : ENNReal)) := by
   dsimp only
+  let family := ComputedStraightLineDeployedFSFamily.ofCovered online rootTrace ipaTrace xTrace
+  letI : ∀ basis, VerifyingKey.FieldSupport (family.vk basis) :=
+    fun basis => (hvk basis).fieldSupport
+  letI : ∀ basis, VerifyingKey.WellFormed (family.vk basis) :=
+    fun basis => (hvk basis).wellFormed
   exact orchard_deployed_straightline_captured_generatorRO_knowledge_error_bound
     B hB query hquery
     (ComputedStraightLineDeployedFSFamily.ofCovered online rootTrace ipaTrace xTrace)

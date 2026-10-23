@@ -472,7 +472,7 @@ theorem orchard_action_adaptiveStatement_deployed_2pow123_knowledge_finite_secur
   refine challenge255_joint_charge_le_at_2pow123 deployment.profile.queryBound ?_
     deployment.challengeQueryBound_le
   rw [Halo2.CircuitShape.withProofParams_k, ← Halo2.TopLevelCircuit.domainExponent]
-  exact ActionConstraintBounds.domainExponent_lt
+  exact actionCircuit.domainExponent_lt
 
 /-- The selected proof's direct-decode source fits the `2^90` endpoint envelope.  All
 proof-controlled and instance entries have shape-indexed lengths; the sole list-valued input is

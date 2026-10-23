@@ -1,10 +1,9 @@
 import Zcash.Common.RelationWitness
-import Zcash.Snark.Soundness.Canonical.InstanceCommitment
-import Zcash.Circuits.Integration.FixedLayout
+import Zcash.Snark.Soundness.Multiopen.RowBinding
+import Zcash.Circuits.Halo2.Fixed
 import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
-import Zcash.Circuits.Integration.SelectorCoherence
-import Zcash.Circuits.Integration.OperationLookups
-import Zcash.Circuits.Integration.TopLevelAssignment
+import Zcash.Circuits.Halo2.SelectorCompression
+import Zcash.Circuits.Integration.Assignment
 import Zcash.Snark.Keygen.Lagrange
 
 /-!
@@ -20,6 +19,8 @@ The result is generic in the fixed row vector and its Lagrange commitment key.
 `TopLevelCircuit` keygen supplies those vectors; the Action endpoint only selects
 the circuit-owned instance.
 -/
+
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -194,226 +195,23 @@ theorem topLevelFixedLayout_of_assembledQuery
   exact ⟨rotation, by
     simpa only [top.toVerifierKey_fixedQueryLayout] using hlayout⟩
 
-/-- Sparse table and region-local fixed assignments emitted by top-level keygen. -/
-def topLevelFixedOperationEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.tableAssignments
-      (top.usableRowsAt top.domainExponent) top.operations ++
-    Layout.regionAssignments top.regionStarts
-      (indexedRegions top.operations 0).1
-
-/--
-Sparse packed-selector assignments emitted by top-level keygen.
-
-The current full-circuit realization check also fails closed if two selector
-activations assign incompatible values to the same packed cell: the final dense
-cell cannot realize both sparse entries. That failure is intentionally safe but
-opaque. The structural replacement should instead derive non-overlap (or compatible
-composition) from selector packing and region-placement invariants.
--/
-def topLevelSelectorEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.selectorAssignments top.selectorMap top.selectorActivations
-
-/-- Fixed cells allocated for `constrainConstant` values by the V1 floor planner. -/
-def topLevelConstantEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.constantAssignments
-    (FloorPlanner.V1.constantAssignments top.operations
-      (top.constraintSystem.constants.map (·.index)))
-
-/-- The canonical ordered stream of every fixed write emitted by top-level keygen. -/
-def topLevelCompilerFixedEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  Layout.rawAssignments
-    (top.usableRowsAt top.domainExponent)
-    top.selectorMap top.constraintSystem top.operations
-
-theorem mem_topLevelCompilerFixedEntries_of_operation
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {assignment : Layout.FixedAssignment Fp}
-    (hassignment : assignment ∈ topLevelFixedOperationEntries top) :
-    assignment ∈ topLevelCompilerFixedEntries top := by
-  simp only [topLevelFixedOperationEntries, topLevelCompilerFixedEntries,
-    Layout.rawAssignments, List.mem_append] at hassignment ⊢
-  aesop
-
-theorem mem_topLevelCompilerFixedEntries_of_constant
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {assignment : Layout.FixedAssignment Fp}
-    (hassignment : assignment ∈ topLevelConstantEntries top) :
-    assignment ∈ topLevelCompilerFixedEntries top := by
-  simp only [topLevelConstantEntries, topLevelCompilerFixedEntries,
-    Layout.rawAssignments, List.mem_append] at hassignment ⊢
-  aesop
-
-theorem mem_topLevelCompilerFixedEntries_of_selector
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    {assignment : Layout.FixedAssignment Fp}
-    (hassignment : assignment ∈ topLevelSelectorEntries top) :
-    assignment ∈ topLevelCompilerFixedEntries top := by
-  simpa only [topLevelSelectorEntries, topLevelCompilerFixedEntries,
-    Layout.rawAssignments, List.mem_append] using Or.inl (Or.inr hassignment)
-
-/-- Every compiler-emitted fixed cell consumed by the semantic bridge. -/
-def topLevelRequiredFixedEntries
-    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top] :
-    List (Layout.FixedAssignment Fp) :=
-  topLevelCompilerFixedEntries top
-
-/-- Compiler-emitted fixed assignments are generically in bounds and realized by the
-top-level circuit's canonical dense fixed rows. -/
-theorem topLevelCompilerFixedEntry_realized
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (assignment : Layout.FixedAssignment Fp)
-    (hassignment : assignment ∈ topLevelCompilerFixedEntries top) :
-    assignment.2.1 < top.n ∧
-      assignment.1 < top.fixedColumnCount ∧
-      (top.fixedRows.getD assignment.1 []).getD assignment.2.1 0 =
-        assignment.2.2 := by
-  have hbounds := top.fixedAssignment_bounds_of_mem_raw assignment hassignment
-  exact ⟨hbounds.2, hbounds.1,
-    top.fixedRows_getD_getD_eq_of_mem_raw assignment hassignment⟩
-
-/-- Every required fixed entry is realized by the canonical dense compiler output. -/
-theorem topLevelRequiredFixedEntry_realized
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (assignment : Layout.FixedAssignment Fp)
-    (hassignment : assignment ∈ topLevelRequiredFixedEntries top) :
-    assignment.2.1 < top.n ∧
-      assignment.1 < top.fixedColumnCount ∧
-      (top.fixedRows.getD assignment.1 []).getD assignment.2.1 0 =
-        assignment.2.2 :=
-  topLevelCompilerFixedEntry_realized top assignment hassignment
-
-/--
-The fixed-row part of a top-level circuit's keygen boundary.
-
-The canonical Lagrange commitment key agrees with every circuit-derived fixed row.
-Fixed-row realization, query coverage, and bounds follow generically from the
-top-level compiler.
--/
-def TopLevelFixedCoherence
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G) : Prop :=
-  ∀ column, column < top.fixedColumnCount →
-    (top.fixedCommitments urs).getD column 0 =
-      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-        (top.fixedRows.getD column []) 1
-
-namespace TopLevelFixedCoherence
-
-omit [DecidableEq G] in
-/-- The circuit-derived VK's fixed commitment at one in-range column is the
-full-list commitment of the corresponding keygen row vector. -/
-theorem fixedCommitment_eq_commitInstance
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G)
-    (hk : top.domainExponent = urs.k)
-    (hlen : (derivedUrsGLagrange urs).length = 2 ^ urs.k)
-    (hgenerators : ∀ i : Fin (2 ^ urs.k),
-      (derivedUrsGLagrange urs).getD (i : ℕ) 0 =
-        commit urs (polynomialCoefficients (2 ^ urs.k)
-          (rowPolynomial top.omega
-            (Pi.single i (1 : Fp)))))
-    (column : ℕ) (hcolumn : column < top.fixedColumnCount) :
-    (top.fixedCommitments urs).getD column 0 =
-      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-          (top.fixedRows.getD column []) 1 := by
-  have hcolumnRows : column < top.fixedRows.length := by
-    simpa only [top.fixedRows_length] using hcolumn
-  have hget :
-      (top.fixedRows.map
-        (Fast.Msm.commitLagrangeFastWith
-          Fast.Msm.defaultWindow urs.w
-          (derivedUrsGLagrange urs))).getD column 0 =
-        Fast.Msm.commitLagrangeFastWith
-          Fast.Msm.defaultWindow urs.w
-          (derivedUrsGLagrange urs)
-          (top.fixedRows.getD column []) := by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_eq_getElem hcolumnRows,
-      List.getD_eq_getElem?_getD,
-      List.getElem?_eq_getElem hcolumnRows]
-    rfl
-  rw [TopLevelCircuit.fixedCommitments, List.parMap_eq_map, hget]
-  rw [show LagrangeCommitmentKey.canonical urs top.omega =
-      LagrangeCommitmentKey.ofFullList
-        urs top.omega (derivedUrsGLagrange urs) hgenerators from
-    Subsingleton.elim _ _]
-  apply Keygen.commitLagrangeFastWith_eq_ofFullList_commitInstance
-    urs top.omega hlen hgenerators
-  rw [top.fixedRows_getD_length column hcolumn]
-  simp only [TopLevelCircuit.n, hk]
-
-/-- Construct fixed coherence from the derived Lagrange basis of any top-level
-circuit whose domain is supported by the Pasta field. -/
-def ofDerived
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    (top : TopLevelCircuit Fp Config PublicInput)
-    [TopLevelShape top]
-    (urs : URS G)
-    (hk : top.domainExponent = urs.k)
-    (hdomainExponent : top.domainExponent < 33) :
-    TopLevelFixedCoherence top urs := by
-  have hkUrs : urs.k ≤ 32 := by
-    rw [← hk]
-    exact Nat.le_of_lt_succ hdomainExponent
-  have homega : top.omega = omegaOf urs.k := by
-    simp only [TopLevelCircuit.omega, hk]
-  apply fixedCommitment_eq_commitInstance top urs hk
-    (derivedUrsGLagrange_length urs)
-  intro i
-  simpa only [homega] using
-    Keygen.ofPrefix_setup_of_closed urs hkUrs
-      (Keygen.derivedUrsGLagrange_generator_eq urs hkUrs) i
-      (by
-        rw [derivedUrsGLagrange_length]
-        exact i.isLt)
-
-end TopLevelFixedCoherence
-
 omit [AddCommGroup G] [Inhabited G] [Module Fp G] [DecidableEq G] in
 /--
 Binding every fixed-column resolver polynomial to the circuit's dense keygen rows
-supplies the exact fixed-column encoding expected by `TopLevelAssignment`.
+identifies their evaluations with the circuit's compiled fixed values.
 -/
 theorem topLevelFixedColumnEncoding_of_binding
     {Config : Type} {PublicInput : TypeMap}
     [ProvableType PublicInput]
     {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {numProofs : ℕ} {proofIndex : Fin numProofs}
-    (assignment :
-      TopLevelAssignment top numProofs proofIndex)
-    (hrows : Function.Injective
-      fun row : Fin top.n =>
-        top.omega ^ (row : ℕ))
-    (hroot :
-      top.omega ^
-        top.n = 1)
+    [TopLevelShape top] [CircuitFieldSupport top]
+    (poly : CommitmentId → CPoly)
     (binding : ∀ column,
-      assignment.polynomial (.fixedCol column) =
+      poly (.fixedCol column) =
         instanceRowPolynomial top.n
           top.omega
           (top.fixedRows.getD column [])) :
-    assignment.FixedColumnEncoding := by
+    top.FixedColumnEncoding poly := by
   intro column row
   rw [binding column.index]
   let domainRow : Fin top.n :=
@@ -425,161 +223,14 @@ theorem topLevelFixedColumnEncoding_of_binding
     simpa only [domainRow] using
       zpow_eq_pow_natMod
         top.omega
-        top.n top.n_pos hroot row
+        top.n top.n_pos top.omega_pow_n row
   rw [hpow]
   have heval :=
     instanceRowPolynomial_eval
       (values := top.fixedRows.getD column.index [])
-      hrows domainRow
+      top.domainRowsInjective domainRow
   rw [top.fixedValue_eq_fixedRows_getD]
   simpa only [domainRow] using heval
-
-omit [Module Fp G] [DecidableEq G] in
-/--
-One required sparse fixed entry reads back from its canonically bound dense-row
-polynomial, or the caller's shared exceptional branch fires.
-
-This is the pointwise form used by consumers such as constant-copy replay; the
-family theorem below merely applies it to selectors and fixed/table operations.
--/
-theorem topLevelFixedEntryRead_of_column
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams} {urs : URS G}
-    (poly : CommitmentId → CPoly)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    (proofIndex : Fin pp.numProofs)
-    {column row : ℕ} {value : Fp}
-    (hentry :
-      (column, row, value) ∈ topLevelRequiredFixedEntries top)
-    (hpolyEq : poly (.fixedCol column) =
-      instanceRowPolynomial (2 ^ urs.k)
-        top.omega (top.fixedRows.getD column [])) :
-    (resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent)).fixed
-          ⟨column⟩ (row : ℤ) = value := by
-  obtain ⟨hrow, hcolumn, hvalue⟩ :=
-    topLevelRequiredFixedEntry_realized top (column, row, value) hentry
-  have hrow' : row < 2 ^ urs.k := by
-    rwa [← hn]
-  rw [resolverEnvironment_fixed, hpolyEq]
-  simpa using
-    (instanceRowPolynomial_eval hrows
-      ⟨row, hrow'⟩).trans hvalue
-
-omit [Module Fp G] [DecidableEq G] in
-/--
-The same entry read, carrying the caller's shared exceptional branch as data: either the entry
-reads back, or the binding family has computed a break at this entry's column.
--/
-def topLevelFixedEntryRead_or_bad
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams} {urs : URS G}
-    (poly : CommitmentId → CPoly)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    {Bad : Type}
-    (binding : ∀ column,
-      column < top.fixedColumnCount →
-        poly (.fixedCol column) =
-            instanceRowPolynomial (2 ^ urs.k)
-              top.omega (top.fixedRows.getD column []) ⊕'
-          Bad)
-    (proofIndex : Fin pp.numProofs)
-    {column row : ℕ} {value : Fp}
-    (hentry :
-      (column, row, value) ∈ topLevelRequiredFixedEntries top) :
-    (resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent)).fixed
-          ⟨column⟩ (row : ℤ) = value ⊕'
-      Bad :=
-  bindOrRelationWitness
-    (binding column
-      (topLevelRequiredFixedEntry_realized top (column, row, value) hentry).2.1)
-    (topLevelFixedEntryRead_of_column poly hrows hn proofIndex hentry)
-
-omit [Module Fp G] [DecidableEq G] in
-/--
-Polynomial binding for every used fixed column supplies selector and fixed/table
-semantics. This lemma is independent of decoded-member provenance; callers choose
-the exceptional event carried by `binding`.
--/
-def topLevelFixedConstraints_or_bad
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams} {urs : URS G}
-    (poly : CommitmentId → CPoly)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    {Bad : Type}
-    (binding : ∀ column,
-      column < top.fixedColumnCount →
-        poly (.fixedCol column) =
-            instanceRowPolynomial (2 ^ urs.k)
-              top.omega (top.fixedRows.getD column []) ⊕'
-          Bad)
-    (proofIndex : Fin pp.numProofs) :
-    (SelectorActivationsRealized
-        top.selectorMap top.selectorActivations
-        (resolverEnvironment
-          (top.toVerifierKey urs) poly proofIndex
-          (top.usableRowsAt top.domainExponent)) ∧
-      CircuitConstraintFamily.constraints .fixed top.placement
-        (resolverEnvironment
-          (top.toVerifierKey urs) poly proofIndex
-          (top.usableRowsAt top.domainExponent))
-        (top.operations) 0) ⊕' Bad :=
-  bindOrRelationWitness
-    (boundedForallOrRelationWitness (n := top.fixedColumnCount) binding)
-    fun hbinding => by
-    let environment :=
-      resolverEnvironment
-        (top.toVerifierKey urs) poly proofIndex
-        (top.usableRowsAt top.domainExponent)
-    have fixedRead :
-        ∀ {column row value},
-          (column, row, value) ∈
-              topLevelRequiredFixedEntries top →
-            environment.fixed ⟨column⟩ (row : ℤ) = value := by
-      intro column row value hentry
-      exact
-        topLevelFixedEntryRead_of_column
-          poly hrows hn proofIndex hentry
-          (hbinding column
-            (topLevelRequiredFixedEntry_realized
-              top (column, row, value) hentry).2.1)
-    change
-      SelectorActivationsRealized
-          top.selectorMap top.selectorActivations environment ∧
-        CircuitConstraintFamily.constraints .fixed
-          (Layout.place top.regionStarts) environment
-          (top.operations) 0
-    constructor
-    · apply selectorActivationsRealized_of_selectorAssignments
-      intro assignment hentry
-      apply fixedRead
-      exact mem_topLevelCompilerFixedEntries_of_selector top hentry
-    · exact FixedLayout.constraints_of_entries
-        top.regionStarts (top.usableRowsAt top.domainExponent)
-        (top.operations) 0 environment rfl
-        (fun column row value hentry => fixedRead (by
-          exact mem_topLevelCompilerFixedEntries_of_operation top hentry))
 
 namespace CanonicalMemberConstraintRelation
 
@@ -640,90 +291,6 @@ theorem polynomial_eq_zero_of_not_assembled
   rw [hnone]
 
 /--
-A canonically routed fixed-column opening is the polynomial interpolating its
-keygen rows, or it exhibits an augmented commitment relation.
-
-`hcommit` is the circuit-keygen side of the boundary: the fixed commitment stored
-in the derived VK is the Lagrange commitment to `rows` with Halo 2's default blind
-`1`. It is independent of the proof and can be established once for the generic
-`TopLevelCircuit.toVerifierKey` construction.
--/
-def fixedColumn_eq_rowPolynomial_or_relation
-    (relation : CanonicalMemberConstraintRelation
-      urs hk vk instanceCommitment ps ch pU pW a
-      batchOpenings memberDecode hblinding y hpoly deg)
-    (column : ℕ)
-    (key : LagrangeCommitmentKey urs vk.omega)
-    (rows : List Fp)
-    (hcommit :
-      vk.fixedCommitment column =
-        key.commitInstance rows 1)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) => vk.omega ^ (i : ℕ))
-    (hquery : ∃ q ∈ assembleQueries vk instanceCommitment ps ch,
-      q.commId = .fixedCol column) :
-    relation.polynomial (.fixedCol column) =
-        instanceRowPolynomial (2 ^ urs.k) vk.omega rows ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hsome : (relation.route (.fixedCol column)).isSome := by
-    obtain ⟨q, hq, hqid⟩ := hquery
-    have routed := assembledQueryMemberRoute_faithful
-      (instanceCommitment := instanceCommitment) vk ps ch relation.groupingCount
-      relation.noDuplicateQueries q hq
-    unfold CanonicalMemberConstraintRelation.route
-    rw [← hqid, routed.route_eq]
-    rfl
-  let slot := (relation.route (.fixedCol column)).get hsome
-  have routedFixed :
-      relation.route (.fixedCol column) = some slot := (Option.some_get hsome).symm
-  have hid :
-      (deployedSetCommIds (instanceCommitment := instanceCommitment)
-        vk ps ch slot.setIndex).getD
-          (slot.memberIndex : ℕ) .vanishingH =
-        .fixedCol column := by
-    apply assembledQueryMemberRoute_id
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount relation.noDuplicateQueries
-      (.fixedCol column) slot
-    simpa [CanonicalMemberConstraintRelation.route] using routedFixed
-  have href :=
-    deployedMemberRef_eq_fixedCommitment
-      (instanceCommitment := instanceCommitment)
-      vk ps ch relation.groupingCount slot column hid
-  let decoded :=
-    memberDecode slot.setIndex slot.setIndex_lt
-  have hopen :
-      commit urs (decoded.cols slot.memberIndex) +
-          decoded.uComp slot.memberIndex • urs.u +
-          decoded.wComp slot.memberIndex • urs.w =
-        key.commitInstance rows 1 := by
-    calc
-      commit urs (decoded.cols slot.memberIndex) +
-            decoded.uComp slot.memberIndex • urs.u +
-            decoded.wComp slot.memberIndex • urs.w =
-          ((deployedSetQueries
-              (instanceCommitment := instanceCommitment)
-              vk ps ch slot.setIndex).getD
-            (slot.memberIndex : ℕ) (.point 0, [])).1.eval
-              ⟨shape.k, hk ▸ urs.g, urs.w, urs.u⟩ :=
-        decoded.commitment slot.memberIndex
-      _ = vk.fixedCommitment column := by
-        rw [href]
-        rfl
-      _ = key.commitInstance rows 1 := hcommit
-  have hbound :=
-    coeffsToPoly_eq_instanceRowPolynomial_or_relation
-      key rows 1
-      (decoded.cols slot.memberIndex)
-      (decoded.uComp slot.memberIndex)
-      (decoded.wComp slot.memberIndex)
-      hrows hopen
-  refine bindOrRelationWitness hbound fun heq => ?_
-  rw [CanonicalMemberConstraintRelation.polynomial,
-    decodedPolynomialResolver, routedFixed]
-  exact heq
-
-/--
 All fixed-column resolver polynomials encode the circuit's complete dense fixed
 rows, or commitment binding has produced the shared nontrivial relation.
 
@@ -768,14 +335,13 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
       urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
       batchOpenings memberDecode
         (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly deg)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) => top.omega ^ (i : ℕ)) :
+    [CircuitFieldSupport top] :
     (∀ column,
       relation.polynomial (.fixedCol column) =
         instanceRowPolynomial (2 ^ urs.k)
           top.omega (top.fixedRows.getD column [])) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
+  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
   have hrowsVk : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
         (top.toVerifierKey urs).omega ^ (i : ℕ) := by
@@ -790,18 +356,26 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
               (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
                 (top.fixedRows.getD column []) 1 := by
           rw [top.toVerifierKey_fixedCommitment]
-          exact coherence column hcolumn
+          exact top.fixedCommitments_getD_eq_commitInstance urs hk column hcolumn
         have source :=
-          relation.fixedColumn_eq_rowPolynomial_or_relation
-            column (LagrangeCommitmentKey.canonical urs top.omega)
-            (top.fixedRows.getD column [])
-            hcommitment hrowsVk
+          decodedPolynomialResolver_eq_rowPolynomial_or_relation
+            (shape := top.shape.withProofParams pp) (urs := urs) (hk := hk)
+            (vk := top.toVerifierKey urs) (ps := ps) (ch := ch)
+            (instanceCommitment := instanceCommitment) (memberDecode := memberDecode)
+            relation.groupingCount relation.noDuplicateQueries
+            (.fixedCol column) (LagrangeCommitmentKey.canonical urs top.omega)
+            (top.fixedRows.getD column []) 1
+            (fun q hq hid => (assembleQueries_fixed_commitment
+              (shape := top.shape.withProofParams pp)
+              (top.toVerifierKey urs) instanceCommitment ps ch q hq column hid).trans
+                (congrArg _ hcommitment)) hrowsVk
             (by
               obtain ⟨rotation, hlayout⟩ :=
                 top.exists_rotation_mem_fixedQueryLayout_of_lt column hcolumn
               exact topLevelFixedQuery_of_layout top urs pp
                 instanceCommitment ps ch column rotation hlayout)
-        simpa only [top.toVerifierKey_omega] using source))
+        simpa only [CanonicalMemberConstraintRelation.polynomial,
+          CanonicalMemberConstraintRelation.route, top.toVerifierKey_omega] using source))
     fun hinrange => by
     intro column
     by_cases hcolumn : column < top.fixedColumnCount
@@ -825,172 +399,6 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
         exact Nat.le_of_not_gt hcolumn
       rw [hrowsDefault]
       simp [instanceRowPolynomial, zeroPaddedRows, rowPolynomial]
-
-/--
-Circuit-derived fixed rows discharge both consumers of fixed-column semantics:
-packed selector activations and explicit fixed/table operations. Commitment binding
-is retained as an explicit alternative.
--/
-def topLevelFixedConstraints_or_relation
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams}
-    {urs : URS G}
-    {hk : top.domainExponent = urs.k}
-    {instanceCommitment :
-      Fin pp.numProofs → ℕ → G}
-    {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.domainExponent Fp}
-    {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
-    {batchOpenings :
-      OpenedBatchOpenings urs (evalVector urs.k ch.x3)
-        (x4BatchCommitments
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          urs hk (top.toVerifierKey urs) ps ch)
-        (x4BatchEvals
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch)
-        a pU pW}
-    {memberDecode : ∀ i (hi : i <
-        deployedX4PairCount
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch),
-      OpenedMemberDecode
-        (shape := top.shape.withProofParams pp)
-        (instanceCommitment := instanceCommitment)
-        urs hk (top.toVerifierKey urs) ps ch batchOpenings i hi}
-    {y : Fp} {hpoly : CPoly}
-    (relation :
-      CanonicalMemberConstraintRelation
-        (shape := top.shape.withProofParams pp)
-        urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
-        batchOpenings memberDecode
-          (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly top.n)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    (proofIndex : Fin pp.numProofs) :
-    (SelectorActivationsRealized
-        top.selectorMap top.selectorActivations
-        (resolverEnvironment
-          (top.toVerifierKey urs) relation.polynomial proofIndex
-          (top.usableRowsAt top.domainExponent)) ∧
-      CircuitConstraintFamily.constraints .fixed top.placement
-        (resolverEnvironment
-          (top.toVerifierKey urs) relation.polynomial proofIndex
-          (top.usableRowsAt top.domainExponent))
-        (top.operations) 0) ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  apply topLevelFixedConstraints_or_bad
-    relation.polynomial
-      hrows hn
-  · intro column hcolumn
-    have hcommitment :
-        (top.toVerifierKey urs).fixedCommitment column =
-          (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-            (top.fixedRows.getD column []) 1 := by
-      rw [top.toVerifierKey_fixedCommitment]
-      exact coherence column hcolumn
-    exact relation.fixedColumn_eq_rowPolynomial_or_relation
-      column (LagrangeCommitmentKey.canonical urs top.omega)
-      (top.fixedRows.getD column [])
-      hcommitment hrows
-      (by
-        obtain ⟨rotation, hlayout⟩ :=
-          top.exists_rotation_mem_fixedQueryLayout_of_lt column hcolumn
-        exact fixedQuery_of_layout
-          (shape := top.shape.withProofParams pp)
-          (top.toVerifierKey urs) instanceCommitment ps ch
-          column rotation (top.toVerifierKey_fixedQueryCount urs) hlayout)
-
-/--
-Pointwise fixed-cell realization at the canonical decoded-member relation.
-Constants replay uses this theorem for the V1-allocated constants cells; selector
-and fixed/table family proofs use its bundled sibling above.
--/
-def topLevelFixedEntryRead_or_relation
-    {Config : Type} {PublicInput : TypeMap}
-    [ProvableType PublicInput]
-    {top : TopLevelCircuit Fp Config PublicInput}
-    [TopLevelShape top]
-    {pp : ProofParams}
-    {urs : URS G}
-    {hk : top.domainExponent = urs.k}
-    {instanceCommitment :
-      Fin pp.numProofs → ℕ → G}
-    {ps : ProofString (top.shape.withProofParams pp) Fp G}
-    {ch : Challenges top.domainExponent Fp}
-    {pU pW : Fp} {a : Fin (2 ^ urs.k) → Fp}
-    {batchOpenings :
-      OpenedBatchOpenings urs (evalVector urs.k ch.x3)
-        (x4BatchCommitments
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          urs hk (top.toVerifierKey urs) ps ch)
-        (x4BatchEvals
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch)
-        a pU pW}
-    {memberDecode : ∀ i (hi : i <
-        deployedX4PairCount
-          (shape := top.shape.withProofParams pp)
-          (instanceCommitment := instanceCommitment)
-          (top.toVerifierKey urs) ps ch),
-      OpenedMemberDecode
-        (shape := top.shape.withProofParams pp)
-        (instanceCommitment := instanceCommitment)
-        urs hk (top.toVerifierKey urs) ps ch batchOpenings i hi}
-    {y : Fp} {hpoly : CPoly}
-    (relation :
-      CanonicalMemberConstraintRelation
-        (shape := top.shape.withProofParams pp)
-        urs hk (top.toVerifierKey urs) instanceCommitment ps ch pU pW a
-        batchOpenings memberDecode
-          (top.toVerifierKey_blindingFactors_lt_n urs) y hpoly top.n)
-    (coherence : TopLevelFixedCoherence top urs)
-    (hrows : Function.Injective
-      fun i : Fin (2 ^ urs.k) =>
-        top.omega ^ (i : ℕ))
-    (hn : top.n = 2 ^ urs.k)
-    (proofIndex : Fin pp.numProofs)
-    {column row : ℕ} {value : Fp}
-    (hentry :
-      (column, row, value) ∈ topLevelRequiredFixedEntries top) :
-    (resolverEnvironment
-        (top.toVerifierKey urs) relation.polynomial proofIndex
-        (top.usableRowsAt top.domainExponent)).fixed
-          ⟨column⟩ (row : ℤ) = value ⊕'
-      AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  apply topLevelFixedEntryRead_or_bad
-    relation.polynomial
-      hrows hn
-  · intro fixedColumn hcolumn
-    have hcommitment :
-        (top.toVerifierKey urs).fixedCommitment fixedColumn =
-          (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
-            (top.fixedRows.getD fixedColumn []) 1 := by
-      rw [top.toVerifierKey_fixedCommitment]
-      exact coherence fixedColumn hcolumn
-    exact relation.fixedColumn_eq_rowPolynomial_or_relation
-      fixedColumn (LagrangeCommitmentKey.canonical urs top.omega)
-      (top.fixedRows.getD fixedColumn [])
-      hcommitment hrows
-      (by
-        obtain ⟨rotation, hlayout⟩ :=
-          top.exists_rotation_mem_fixedQueryLayout_of_lt fixedColumn hcolumn
-        exact fixedQuery_of_layout
-          (shape := top.shape.withProofParams pp)
-          (top.toVerifierKey urs) instanceCommitment ps ch
-          fixedColumn rotation (top.toVerifierKey_fixedQueryCount urs) hlayout)
-  · exact hentry
 
 end CanonicalMemberConstraintRelation
 

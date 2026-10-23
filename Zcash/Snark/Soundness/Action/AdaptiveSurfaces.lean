@@ -1267,7 +1267,8 @@ def adaptiveActionSurfaceAt
     ↑(TopLevelLookup.thetaBadSet
       actionCircuit pp urs poly)
   else if _h1 : (n : Nat) = 1 then
-    ↑(allResolverPermutationBetaBadSet pp.numProofs vk poly actionActiveRows) ∪
+    ↑(allResolverPermutationBetaBadSet pp.numProofs vk poly
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
       ↑(allResolverLookupBetaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta 0
           (k := (actionCircuit.shape.withProofParams pp).k)) poly
@@ -1275,7 +1276,8 @@ def adaptiveActionSurfaceAt
   else if _h2 : (n : Nat) = 2 then
     ↑(allResolverPermutationGammaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta ch.beta
-          (k := (actionCircuit.shape.withProofParams pp).k)) poly actionActiveRows) ∪
+          (k := (actionCircuit.shape.withProofParams pp).k)) poly
+            (actionCircuit.usableRowsAt actionCircuit.domainExponent)) ∪
       ↑(allResolverLookupGammaBadSet pp.numProofs vk
         (ActionTerminal.semanticChRecord ch.theta ch.beta
           (k := (actionCircuit.shape.withProofParams pp).k)) poly
@@ -1427,7 +1429,8 @@ theorem adaptiveActionSurfaceAt_congr
       pp basis inputs ps ps' source source ch rfl ha hi ht
     have hsPerm := congrArg (fun s : Finset Fp => (↑s : Set Fp))
       (allResolverPermutationBetaBadSet_congr
-        pp.numProofs (ActionTerminal.vkAt basis) actionActiveRows hpPerm)
+        pp.numProofs (ActionTerminal.vkAt basis)
+          (actionCircuit.usableRowsAt actionCircuit.domainExponent) hpPerm)
     have hsLookup := congrArg (fun s : Finset Fp => (↑s : Set Fp))
       (allResolverLookupBetaBadSet_congr
         pp.numProofs (ActionTerminal.vkAt basis)
@@ -1446,7 +1449,7 @@ theorem adaptiveActionSurfaceAt_congr
       pp basis inputs ps ps' source source ch rfl ha hi ht
     have hsPerm := congrArg (fun s : Finset Fp => (↑s : Set Fp))
       (allResolverPermutationGammaBadSet_congr
-        pp.numProofs (ActionTerminal.vkAt basis) actionActiveRows
+        pp.numProofs (ActionTerminal.vkAt basis) (actionCircuit.usableRowsAt actionCircuit.domainExponent)
         (ch₁ := ActionTerminal.semanticChRecord ch.theta ch.beta
           (k := (actionCircuit.shape.withProofParams pp).k))
         (ch₂ := ActionTerminal.semanticChRecord ch.theta ch.beta

@@ -8,10 +8,8 @@ a closed `TopLevelCircuit` and its circuit-derived keygen data into ironwood-nat
 interfaces:
 
 * an ironwood `VerifyingKey` and pinned constraint view;
-* reconstruction of Clean operation satisfaction from ironwood polynomial
-  satisfaction;
-* semantic projection of configured lookup tuples into the verifier's
-  query-index expression language;
+* compiled row satisfaction from ironwood polynomial satisfaction;
+* interpretation of compiled expressions in the verifier's query-index language;
 * a final circuit statement expressed without exposing Clean implementation details
   to verifier or soundness callers.
 
@@ -21,50 +19,60 @@ written during circuit integration:
 * pure verifier algebra, decoded constraint models, permutation/lookup semantics, and
   challenge arguments remain under `Zcash/Snark/`;
 * pure circuit definitions and semantics remain under `Zcash/Circuits/`, and reusable
-  Halo2 compiler facts should migrate upstream to Clean;
+  Halo2 compiler facts live locally in `Circuits/Halo2` pending upstreaming to Clean;
 * only code that genuinely translates between the two sides belongs here.
 
 The normative architecture rule and current migration guidance are in
 [`clean-boundary.md`](../../../book/src/formal-verification/clean-boundary.md).
 
-The lookup bridge is split deliberately:
+The semantic bridge is split by responsibility:
 
-* `LookupProjection.lean` proves the query-erasure and selector-substitution
-  compiler semantics for configured lookups;
-* `LookupSelectorRows.lean` derives exact expression-level selector projection from
-  singleton packed-selector cells and the generic fixed-row realization theorem;
-  `ActionEncoding.lean` supplies Action's compositionally proved selector anchor;
-* `TopLevelLookups.lean` routes synthesis-enabled lookups through the
-  circuit-derived verifying key, derives selector coverage, table freedom, tuple
-  arity, and activation-row fit from Clean's top-level keygen invariants, reduces
-  the remaining projection boundary to exact packed-selector values, packages the
-  bundle-wide `β`/`γ`/`θ` exclusions into the per-proof witness conditions, and
-  constructs the deployed witnesses consumed by the generic full-circuit bridge.
-* `TopLevelBridge.lean` is the generic join: it derives gate and lookup families
-  from the canonical circuit-owned constraint model and combines them with the
-  fixed/table and copy-replay streams into `FullCircuitBridge`.
-* `TopLevelCorrectness.lean` is the interface exported to core soundness. It
-  packages the named gate, fixed/selector, copy, and lookup representation facts
-  for one canonical assignment, but contains neither the desired circuit statement
-  nor an opaque encoding implication.
+* `Halo2/CompiledGates.lean` and `Halo2/CompiledLookups.lean` recover source
+  constraints from compiled row semantics. Query erasure, selector substitution,
+  activation routing, and fixed-row realization belong to that compiler layer.
+* `PolynomialConstraints.lean` derives compiled gate vanishing from polynomial divisibility
+  and compiled tuple membership from the scalar lookup
+  argument and the existing `β`/`γ`/`θ` exclusions. Tuple decompression is required
+  only at compiler-derived activation rows, with every usable table row available.
+  The `θ` event and its executable checks compare compiled tuples; their budget
+  depends only on the compiled arities, activation count, usable rows, and proof count.
+  Finite-family tuple collision mathematics lives in `Snark/Soundness/Pricing/TupleCompression`.
+* `Halo2/CompiledCopies.lean` derives source copy constraints from equality on
+  resolved copy pairs. The circuit-owned environment realizes allocated constants.
+  `Halo2/CopyPermutation.lean` exports the compiled permutation, its usable-row
+  preservation, and recovery of copies from cycle equality. `Halo2/PermutationAssembly.lean`
+  proves that executable assembly implements that permutation;
+  `Halo2/PermutationRows.lean` computes the row vectors that Keygen commits.
+* `PermutationCompiler.lean` proves query routing and chunk-layout facts.
+  `Permutation.lean` identifies the compiled permutation with the verifier's sigma
+  polynomials and combines that identification with permutation challenge exclusions
+  to prove compiled copy equality.
+  Verifier-generic coordinate changes live in `Snark/Soundness/Canonical/PermutationCoordinates`.
+* `TopLevelInterpretation.lean` assembles `ConstraintsCompiled` and applies
+  `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
+  `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.
+  `Assignment.lean` provides the witness types and identifies polynomial column reads
+  with the circuit's canonical proof assignment and public-input layout.
+  `CircuitFieldSupport top` supplies only numerical compatibility bounds;
+  `Arithmetic.FieldDomainParams` derives roots and permutation-column separation
+  from a certified field generator and its two-adic factorization. The field's
+  chosen parameter instance and the circuit's exponent determine `top.omega`.
 * `TopLevelInstanceCommitment.lean` derives the verifier's instance commitments
   from any top-level circuit's public-input layout and binds accepted instance
   polynomials back to the supplied public inputs, for arbitrary column and proof
   counts.
-* `ActionCorrectness.lean` contains only the genuinely Action-specific
-  construction of `TopLevelCircuitCorrectness`.
-* `ActionTerminal.lean` retains the accepted-node-binding specialization. It
-  specializes the verifier-native decoded-model terminal to the circuit-derived
-  Action verification key and produces `Action.BundleStatement` or explicit
-  augmented-basis relation data.
-  `Snark/Soundness/Action/StraightLineTerminal.lean` executes that terminal on the
-  retained one-run decode, and `Snark/Soundness/Action/StraightLineEvent.lean`
-  charges its relation branch through one combined constraint-plus-Action finder.
-  No Clean type is introduced into
-  `Zcash/Snark/Soundness/Canonical/Terminal.lean`.
+
+Fixed, permutation, and instance commitments share the verifier-native opening comparison
+in `Snark/Soundness/Multiopen/RowBinding.lean`; `Multiopen/InstanceColumns.lean` supplies
+the public-instance query routing. Integration supplies compiler provenance for fixed and
+permutation rows. Generic list chunking theory lives in `Common/ListChunks.lean`.
+`Multiopen/PermutationColumns.lean` provides the verifier-native σ-column commitment
+binding argument. `PolynomialEnvironment.lean` translates verifier query feeds to Clean
+column reads in the polynomial environment.
 
 The circuit-generic terminal lives outside this boundary.
 `Snark/Soundness/Circuit/Terminal` turns canonical constraint satisfaction and
-`TopLevelCircuitCorrectness` into the circuit-owned statements at the public inputs supplied to the
-verifier. The Action-specific terminal and event modules under `Snark/Soundness/Action` reach it
-without a free semantic proposition, encoding callback, decoder, or column-feed choice.
+challenge exclusions into circuit-owned witnesses at the verifier's supplied public
+inputs. `Snark/Soundness/Action/StraightLineTerminal.lean` specializes it to Action;
+the Action event modules charge its relation branch. The compiler-to-polynomial
+interpretation is shared by all top-level circuits.

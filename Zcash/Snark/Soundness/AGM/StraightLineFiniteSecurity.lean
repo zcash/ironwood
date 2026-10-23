@@ -116,7 +116,8 @@ theorem StraightLineConstraintDlogProfile.fixedCalls
 /-- Finite-security spelling of the straight-line constraint capstone. -/
 theorem straightLineConstraintFailure_prob_le_of_dlogProfile
     (B : VestaG) (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     {epsilonX : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
     (profile : StraightLineConstraintDlogProfile B family) :
@@ -124,7 +125,7 @@ theorem straightLineConstraintFailure_prob_le_of_dlogProfile
       ((AugmentedIndex (2 ^ shape.k) -> Fp) ×
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static) <=
+        (family.straightLineConstraintFailureSet B) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -134,7 +135,7 @@ theorem straightLineConstraintFailure_prob_le_of_dlogProfile
             (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
           1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) * epsilonX :=
-  family.straightLineConstraintFailure_prob_le_of_fixedCallsTextbookDL B static schedule
+  family.straightLineConstraintFailure_prob_le_of_fixedCallsTextbookDL B schedule
     profile.fixedCalls
 
 /-- Generator-random-oracle form of the finite-security capstone. -/
@@ -143,7 +144,8 @@ theorem straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
     (B : VestaG) (hB : B ≠ 0)
     (query : AugmentedIndex (2 ^ shape.k) -> T) (hquery : Function.Injective query)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     {epsilonX : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
     (profile : StraightLineConstraintDlogProfile B family) :
@@ -152,7 +154,7 @@ theorem straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
         (BTranscript Fp VestaG
           (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) <=
+          family.straightLineConstraintFailureEvent) <=
       (family.Q + 1 : Nat) * (1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) *
           (shape.k * (2 / (Fintype.card Fp : ENNReal))) +
@@ -163,9 +165,9 @@ theorem straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
           1 / Fintype.card Fp) +
         (family.Q + 1 : Nat) * epsilonX := by
   rw [family.straightLineConstraintFailure_prob_eq_of_uniformURS
-    (orchardGeneratorROSetup query) B static (orchardGeneratorROBasis query)
+    (orchardGeneratorROSetup query) B (orchardGeneratorROBasis query)
     (orchard_uniformURSIdentification_of_generatorRO shape.k B hB query hquery)]
-  exact family.straightLineConstraintFailure_prob_le_of_dlogProfile B static schedule profile
+  exact family.straightLineConstraintFailure_prob_le_of_dlogProfile B schedule profile
 
 /-- **Semantic straight-line capstone.** The compressed-identity finite-security bound is
 augmented by the four named challenge budgets; `hsemantic` supplies the row-level upgrade exactly
@@ -175,7 +177,8 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_generatorRO_dlogProfile
     (B : VestaG) (hB : B ≠ 0)
     (query : AugmentedIndex (2 ^ shape.k) -> T) (hquery : Function.Injective query)
     (family : ComputedStraightLineDeployedFSFamily shape)
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (semanticDecoded : (basis : AugmentedIndex (2 ^ shape.k) -> VestaG) ->
       (BTranscript Fp VestaG
         (preIpaLen shape family.init.length 10 + 3 * shape.k) -> Fp) -> Prop)
@@ -186,7 +189,7 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_generatorRO_dlogProfile
     {epsilonX yBound betaBound gammaBound thetaBound : ENNReal}
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily epsilonX)
     (profile : StraightLineConstraintDlogProfile B family)
-    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained static
+    (hsemantic : family.StraightLineConstraintSemanticUpgradeContained
       semanticDecoded badY badBeta badGamma badTheta)
     (hY : (independentProductPMF (orchardGeneratorROSetup query)
       (PMF.uniformOfFintype
@@ -224,10 +227,10 @@ theorem straightLineConstraintSemanticFailure_prob_le_of_generatorRO_dlogProfile
             1 / Fintype.card Fp) +
           (family.Q + 1 : Nat) * epsilonX)
         + (yBound + (betaBound + (gammaBound + thetaBound))) :=
-  family.straightLineConstraintSemanticFailure_prob_le_of_compressed_bound query static
+  family.straightLineConstraintSemanticFailure_prob_le_of_compressed_bound query
     semanticDecoded badY badBeta badGamma badTheta hsemantic
     (family.straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
-      B hB query hquery static schedule profile)
+      B hB query hquery schedule profile)
     hY hBeta hGamma hTheta
 
 /-! ## Work-factor arithmetic -/

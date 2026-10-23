@@ -11,7 +11,6 @@ import Zcash.Snark.Soundness.Argument.GrandProductBridge
 import Zcash.Snark.Soundness.Argument.LookupAssembly
 import Zcash.Snark.Soundness.Canonical.LookupSemantics
 import Zcash.Snark.Soundness.Canonical.PermutationSemantics
-import Zcash.Circuits.Integration.OperationLookups
 import Zcash.Common.RelationWitness
 
 /-!
@@ -793,65 +792,6 @@ theorem theta_failure_measure_le {N r : ℕ} (inputT tableT : ℕ → List Fp)
           ((hlen q.2 (mem_range.mp h2)).2)
   · simp [mul_assoc]
 
-/-! The operation-level lookup bridge has one `thetaBadSet` per enabled lookup activation (and per
-proof assignment). The following family union is the exact finite event a shared `θ` squeeze must
-avoid; unlike `theta_failure_measure_le`, it retains the Clean placement and environment needed by
-the eventual bridge constructor. -/
-
-/-- The union of the tuple-compression collision sets for an arbitrary finite family of enabled
-lookup activations. -/
-def enabledLookupThetaBadSetFamily
-    {ι : Type*} [Fintype ι]
-    (place : ι → RegionIndex → ℕ) (env : ι → Environment Fp)
-    (lookup : ι → EnabledLookup Fp) : Finset Fp :=
-  (Finset.univ : Finset ι).biUnion fun i =>
-    (lookup i).thetaBadSet (place i) (env i)
-
-/-- Avoiding the family union supplies the `θ` exclusion for every enabled activation. -/
-theorem not_mem_enabledLookupThetaBadSetFamily_iff
-    {ι : Type*} [Fintype ι]
-    (place : ι → RegionIndex → ℕ) (env : ι → Environment Fp)
-    (lookup : ι → EnabledLookup Fp) (theta : Fp) :
-    theta ∉ enabledLookupThetaBadSetFamily place env lookup ↔
-      ∀ i, theta ∉ (lookup i).thetaBadSet (place i) (env i) := by
-  classical
-  simp [enabledLookupThetaBadSetFamily]
-
-/-- The family collision set costs the sum of `usableRows × tupleArity` over its activations. -/
-theorem enabledLookupThetaBadSetFamily_card_le
-    {ι : Type*} [Fintype ι]
-    (place : ι → RegionIndex → ℕ) (env : ι → Environment Fp)
-    (lookup : ι → EnabledLookup Fp)
-    (hlength : ∀ i row, row < (env i).usableRows →
-      ((lookup i).inputValues (place i) (env i)).length =
-        ((lookup i).tableValues (env i) row).length) :
-    (enabledLookupThetaBadSetFamily place env lookup).card ≤
-      ∑ i : ι, (env i).usableRows *
-        ((lookup i).inputValues (place i) (env i)).length := by
-  classical
-  rw [enabledLookupThetaBadSetFamily]
-  refine le_trans Finset.card_biUnion_le ?_
-  exact Finset.sum_le_sum fun i _ =>
-    (lookup i).thetaBadSet_card_le (place i) (env i)
-      (fun row hrow => hlength i row hrow)
-
-/-- Uniform `θ` hits some activation in a finite enabled-lookup family with probability at most
-the sum of the individual row-by-arity budgets. -/
-theorem uniformChallenge_enabledLookupThetaBadSetFamily
-    {ι : Type*} [Fintype ι]
-    (place : ι → RegionIndex → ℕ) (env : ι → Environment Fp)
-    (lookup : ι → EnabledLookup Fp)
-    (hlength : ∀ i row, row < (env i).usableRows →
-      ((lookup i).inputValues (place i) (env i)).length =
-        ((lookup i).tableValues (env i) row).length) :
-    uniformChallenge.toOuterMeasure
-        (enabledLookupThetaBadSetFamily place env lookup)
-      ≤ (∑ i : ι, (env i).usableRows *
-          ((lookup i).inputValues (place i) (env i)).length : ℕ) /
-        (Fintype.card Fp : ℝ≥0∞) := by
-  rw [uniformChallenge_badSet]
-  gcongr
-  exact_mod_cast enabledLookupThetaBadSetFamily_card_le place env lookup hlength
 
 /-! ## Bundle-wide resolver permutation challenge pricing
 

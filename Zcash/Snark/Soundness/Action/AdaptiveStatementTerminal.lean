@@ -667,7 +667,7 @@ structure SemanticExclusionsV {pp : ProofParams}
     (adaptiveActionStatementVk pp basis) (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds)
     (CanonicalMemberConstraintRelation.acceptedPolynomial
       (memberDecode := fun i hi => run.decode.toMemberDecode run.hchar i hi) run.accepts)
-    actionActiveRows
+    (actionCircuit.usableRowsAt actionCircuit.domainExponent)
   lookup : TopLevelLookup.ChallengeExclusions actionCircuit pp
     (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
     (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds)

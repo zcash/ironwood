@@ -1,4 +1,5 @@
 import Zcash.Snark.Soundness.Action.AdaptiveStatementModel
+import Zcash.Snark.Soundness.Multiopen.PermutationColumns
 import Zcash.Snark.Soundness.AGM.ZeroFamily
 
 /-!
@@ -13,6 +14,8 @@ The derived Action key has nonzero fixed and permutation commitments, so the gen
 family does not apply. We instead provide each commitment's augmented-basis representation,
 including Halo2's default blind `1` on the `w` generator.
 -/
+
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 
@@ -79,14 +82,6 @@ section DerivedKey
 variable (pp : ProofParams)
   (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
 
-/-- The Action circuit's Lagrange-basis fixed-column coherence package at one AGM basis. -/
-def adaptiveStatementFixedCoherence :
-    TopLevelFixedCoherence actionCircuit
-      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) :=
-  TopLevelFixedCoherence.ofDerived actionCircuit
-    (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
-    ActionConstraintBounds.domainExponent_lt
-
 /-- Rewrite the derived Lagrange generators into the monomial form used by permutation
 commitments. -/
 theorem adaptiveStatementLagrangePrefix :
@@ -105,12 +100,12 @@ theorem adaptiveStatementLagrangePrefix :
     (by
       simpa only [ursOfAugmentedBasis_k, AdaptiveActionStatementShape,
         Halo2.CircuitShape.withProofParams_k] using
-          Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt)
+          Nat.le_of_lt_succ actionCircuit.domainExponent_lt)
     (derivedUrsGLagrange_generator_eq _
       (by
         simpa only [ursOfAugmentedBasis_k, AdaptiveActionStatementShape,
           Halo2.CircuitShape.withProofParams_k] using
-            Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt))
+            Nat.le_of_lt_succ actionCircuit.domainExponent_lt))
 
 /-- The canonical augmented-basis representation of a fixed-column commitment, using the dense
 keygen row and Halo2's default blind `1`. -/
@@ -122,7 +117,6 @@ def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCo
     1
     ((adaptiveActionStatementVk pp basis).fixedCommitment (column : ℕ))
     (by
-      have hcoh := adaptiveStatementFixedCoherence pp basis
       calc
         commit (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
               (instanceCoefficients (2 ^ (AdaptiveActionStatementShape pp).k) actionCircuit.omega
@@ -135,7 +129,9 @@ def canonicalActionFixedRepresentation (column : Fin actionCircuit.fixedColumnCo
           (LagrangeCommitmentKey.commitInstance_eq _ _ 1).symm
         _ = (actionCircuit.fixedCommitments
               (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)).getD (column : ℕ) 0 :=
-          (hcoh (column : ℕ) column.isLt).symm
+          (actionCircuit.fixedCommitments_getD_eq_commitInstance
+            (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis)
+            (ursOfAugmentedBasis_k _ _).symm (column : ℕ) column.isLt).symm
         _ = (adaptiveActionStatementVk pp basis).fixedCommitment (column : ℕ) :=
           (actionCircuit.toVerifierKey_fixedCommitment _ (column : ℕ)).symm)
 
@@ -151,8 +147,7 @@ def canonicalActionPermutationRepresentation
     AlgebraicPoint (F := Fp) basis :=
   algebraicPointOfCommit (basis := basis)
     (instanceCoefficients (2 ^ (AdaptiveActionStatementShape pp).k) actionCircuit.omega
-      ((permPolysOf (AdaptiveActionStatementShape pp).k actionCircuit.constraintSystem
-        actionCircuit.operations).getD (c : ℕ) []))
+      (actionCircuit.permutationRows (c : ℕ)))
     1
     ((adaptiveActionStatementVk pp basis).permutationCommonCommitment c)
     (by
@@ -160,24 +155,23 @@ def canonicalActionPermutationRepresentation
       have hk : actionCircuit.domainExponent = urs.k := rfl
       have hkUrs : urs.k ≤ 32 := by
         rw [← hk]
-        exact Nat.le_of_lt_succ ActionConstraintBounds.domainExponent_lt
+        exact Nat.le_of_lt_succ actionCircuit.domainExponent_lt
       let setup := LagrangePrefixSetup.ofDerived urs hkUrs
       have hcTop : (c : ℕ) < actionCircuit.permutationColumnCount := by
         simpa only [AdaptiveActionStatementShape,
           Halo2.CircuitShape.withProofParams_numPermutationColumns] using c.isLt
-      have hcommit := PermutationCommitmentCoherence.commitment_ofKeygen
-        actionCircuit urs hk setup (c : ℕ) hcTop
-      rw [topLevelPermutationCommitment] at hcommit
+      have hcommit := actionCircuit.permutationCommitments_getD_eq_commitInstance
+        urs hk setup.length_eq setup.generator_eq (c : ℕ) hcTop
       have hrows :
           commit urs
                 (instanceCoefficients (2 ^ urs.k) (omegaOf urs.k)
-                  (topLevelPermutationRows actionCircuit (c : ℕ))) +
+                  (actionCircuit.permutationRows (c : ℕ))) +
                 (1 : Fp) • urs.w =
               (actionCircuit.permutationCommitments urs).getD (c : ℕ) 0 := by
         calc
           _ = (LagrangeCommitmentKey.ofPrefix urs (omegaOf urs.k)
                 (derivedUrsGLagrange urs) setup.generator_eq).commitInstance
-                  (topLevelPermutationRows actionCircuit (c : ℕ)) 1 :=
+                  (actionCircuit.permutationRows (c : ℕ)) 1 :=
             (LagrangeCommitmentKey.commitInstance_eq _ _ 1).symm
           _ = _ := hcommit.symm
       let cTop : Fin actionCircuit.permutationColumnCount :=
@@ -186,13 +180,13 @@ def canonicalActionPermutationRepresentation
       have hVk :
           commit urs
                 (instanceCoefficients (2 ^ urs.k) (omegaOf urs.k)
-                  (topLevelPermutationRows actionCircuit (c : ℕ))) +
+                  (actionCircuit.permutationRows (c : ℕ))) +
                 (1 : Fp) • urs.w =
               (actionCircuit.toVerifierKey urs).permutationCommonCommitment cTop := by
         rw [actionCircuit.toVerifierKey_permutationCommonCommitment]
         simpa only [cTop, Fin.val_cast] using hrows
-      simpa only [urs, adaptiveActionStatementVk, topLevelPermutationRows,
-        TopLevelCircuit.omega, hk] using hVk)
+      simpa only [urs, adaptiveActionStatementVk,
+        TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, hk] using hVk)
 
 @[simp] theorem canonicalActionPermutationRepresentation_point
     (c : Fin (AdaptiveActionStatementShape pp).numPermutationColumns) :

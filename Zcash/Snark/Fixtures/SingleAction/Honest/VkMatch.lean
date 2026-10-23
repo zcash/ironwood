@@ -26,6 +26,8 @@ Like the fingerprint match, these are `native_decide` facts about one capture, n
 theorems.
 -/
 
+open Zcash.Arithmetic (omegaOf)
+
 namespace Zcash.Snark.Fixture
 
 open Zcash.Arithmetic (deltaFp omegaOf)

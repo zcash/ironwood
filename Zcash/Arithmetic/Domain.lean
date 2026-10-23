@@ -1,17 +1,16 @@
 import CompElliptic.Curves.Pasta
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Zcash.Arithmetic.Field
+import Zcash.Arithmetic.FieldDomainParams
+import Mathlib.Tactic.NormNum.Parity
 
 /-!
 # Evaluation-domain scalars (pasta `Fp` constants and facts)
 
 halo2's domain data as pure functions: binary exponentiation (`powFast`), the size-`2^k`
-domain root of unity `omegaOf` (CompElliptic's certified Pasta `ROOT_OF_UNITY` squared
-down, `EvaluationDomain::new`), `Fp::DELTA`, and the domain facts (primitive-root, power
-injectivity, size nonvanishing) derived from the certificate's order fact.
-Moved out of `Zcash/Bridge` per the Clean-boundary architecture
-(`book/src/formal-verification/clean-boundary.md`): these are verifier-native arithmetic
-facts, not bridge plumbing.
+domain root of unity `omegaOf`, `Fp::DELTA`, and the supported-domain facts. Root
+order and column separation follow from the certified multiplicative generator
+in `FieldDomainParams`.
 -/
 
 namespace Zcash.Arithmetic
@@ -67,37 +66,10 @@ theorem rootOfUnityFp_eq_certified :
 
 /-- The size-`2^k` domain's root of unity: the Pasta root (`ROOT_OF_UNITY = 5^((p−1)/2^32)`,
 pasta `Fp::GENERATOR = 5`) squared down `32 − k` times, exactly as `EvaluationDomain::new`
-does — so `omega = 5^((p−1)/2^k)`. Its order is a theorem of CompElliptic's certificate via
-`rootOfUnityFp_eq_certified`; agreement with the deployed key's omega is pinned by `VkMatch`
-against the captured VK. -/
+does — so `omega = 5^((p−1)/2^k)`. The generator-derived field parameters prove
+its order; `VkMatch` identifies the deployed key's root against the captured VK. -/
 def omegaOf (k : ℕ) : Fp :=
   powFast rootOfUnityFp (2 ^ (32 - k))
-
-/-- `omegaOf k` is a primitive size-`2^k` domain root for every supported exponent. -/
-theorem omegaOf_isPrimitiveRoot (k : ℕ) (hk : k ≤ 32) :
-    IsPrimitiveRoot (omegaOf k) (2 ^ k) := by
-  have hroot :
-      IsPrimitiveRoot
-        CompElliptic.Fields.Pasta.pallasBase.rootOfUnity (2 ^ 32) :=
-    IsPrimitiveRoot.iff_orderOf.mpr
-      CompElliptic.Fields.Pasta.pallasBase.valid.rootOfUnity_order
-  unfold omegaOf
-  rw [rootOfUnityFp_eq_certified, powFast_eq_pow]
-  apply IsPrimitiveRoot.pow (by positivity) hroot
-  rw [← pow_add, Nat.sub_add_cancel hk]
-
-/-- Every point `omegaOf k ^ row` lies in the size-`2^k` evaluation domain. -/
-theorem omegaOf_domain (k row : ℕ) (hk : k ≤ 32) :
-    (omegaOf k ^ row) ^ (2 ^ k) = 1 := by
-  rw [← pow_mul, mul_comm, pow_mul]
-  rw [(omegaOf_isPrimitiveRoot k hk).pow_eq_one, one_pow]
-
-/-- Distinct row indices below `2^k` name distinct evaluation-domain points. -/
-theorem omegaOf_powers_injective (k : ℕ) (hk : k ≤ 32) :
-    Function.Injective fun row : Fin (2 ^ k) => omegaOf k ^ (row : ℕ) := by
-  intro left right heq
-  apply Fin.ext
-  exact (omegaOf_isPrimitiveRoot k hk).pow_inj left.isLt right.isLt heq
 
 /-- The supported evaluation-domain size is nonzero when cast into `Fp`. -/
 theorem domainSize_cast_ne_zero (k : ℕ) (hk : k ≤ 32) :
@@ -151,6 +123,61 @@ private theorem five_isPrimitiveRoot :
       CompElliptic.Fields.Pasta.PALLAS_BASE_CARD]
   · exact ZMod.pow_card_sub_one_eq_one (by decide : (5 : Fp) ≠ 0)
   · exact five_prattPart.out
+
+/-- Pasta's multiplicative generator and certified two-adic factorization. -/
+instance pastaDomain : FieldDomainParams Fp where
+  twoAdicity := 32
+  oddPart := deltaFpOrder
+  generator := 5
+  card_eq := by
+    norm_num [Nat.card_eq_fintype_card, ZMod.card, deltaFpOrder, scalarFieldOrder,
+      CompElliptic.Fields.Pasta.PALLAS_BASE_CARD]
+  oddPart_odd := by
+    norm_num [deltaFpOrder, scalarFieldOrder, CompElliptic.Fields.Pasta.PALLAS_BASE_CARD]
+  twoAdicity_pos := by decide
+  generator_isPrimitiveRoot := by
+    simpa only [Nat.card_eq_fintype_card, ZMod.card] using five_isPrimitiveRoot
+
+theorem pastaDomain_twoAdicity_eq : FieldDomainParams.twoAdicity Fp = 32 := rfl
+
+theorem pastaDomain_oddPart_eq : FieldDomainParams.oddPart Fp = deltaFpOrder := rfl
+
+theorem pastaDomain_generator_eq : FieldDomainParams.generator (F := Fp) = 5 := rfl
+
+/-- The generator-derived maximal root agrees with the deployed Pasta constant. -/
+theorem pastaDomain_rootOfUnity_eq :
+    FieldDomainParams.rootOfUnity (F := Fp) = rootOfUnityFp := by
+  decide +kernel
+
+/-- The generic column separator is Halo2's existing Pasta delta. -/
+theorem pastaDomain_delta_eq : FieldDomainParams.delta (F := Fp) = deltaFp := by
+  simp only [FieldDomainParams.delta_eq_pow, pastaDomain_generator_eq,
+    pastaDomain_twoAdicity_eq, deltaFp, powFast_eq_pow]
+
+/-- The generic root construction agrees with the efficient Pasta domain implementation. -/
+theorem pastaDomain_omega_eq (k : ℕ) : FieldDomainParams.omega k = omegaOf k := by
+  rw [FieldDomainParams.omega_eq_pow, pastaDomain_rootOfUnity_eq]
+  simp only [pastaDomain_twoAdicity_eq, omegaOf, powFast_eq_pow]
+
+/-- `omegaOf k` is a primitive size-`2^k` domain root for every supported exponent. -/
+theorem omegaOf_isPrimitiveRoot (k : ℕ) (hk : k ≤ 32) :
+    IsPrimitiveRoot (omegaOf k) (2 ^ k) := by
+  simpa only [pastaDomain_omega_eq] using
+    FieldDomainParams.omega_isPrimitiveRoot (F := Fp)
+      (by simpa only [pastaDomain_twoAdicity_eq] using hk)
+
+/-- Every point `omegaOf k ^ row` lies in the size-`2^k` evaluation domain. -/
+theorem omegaOf_domain (k row : ℕ) (hk : k ≤ 32) :
+    (omegaOf k ^ row) ^ (2 ^ k) = 1 := by
+  rw [← pow_mul, mul_comm, pow_mul]
+  rw [(omegaOf_isPrimitiveRoot k hk).pow_eq_one, one_pow]
+
+/-- Distinct row indices below `2^k` name distinct evaluation-domain points. -/
+theorem omegaOf_powers_injective (k : ℕ) (hk : k ≤ 32) :
+    Function.Injective fun row : Fin (2 ^ k) => omegaOf k ^ (row : ℕ) := by
+  intro left right heq
+  apply Fin.ext
+  exact (omegaOf_isPrimitiveRoot k hk).pow_inj left.isLt right.isLt heq
 
 /-- Halo2's permutation coset generator has the full odd order obtained by
 removing Pasta's `2^32` evaluation subgroup from `Fpˣ`. -/

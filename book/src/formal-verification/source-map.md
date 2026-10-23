@@ -388,7 +388,7 @@ and their events are retired.
 
 `Action.lean` is the only endpoint file here. The `Action/` subdirectory below it holds what
 discharges those endpoints at the captured key: `Base` carries the shape identification the
-chain is stated over, `Checks` the captured key's scalars and static checks, and `Budgets` the
+chain is stated over, `Checks` the captured key’s scalars and shape counts, and `Budgets` the
 semantic surfaces. Those three are instance-level — stated at the capture and reaching it through
 their imports — which is why they sit here rather than under `Soundness/`, a subtree that imports
 no fixture so that the captures stay off `lake build Zcash`'s path.
@@ -457,20 +457,32 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   allocated by that same program; the per-check modules are `ValueCommit`, `DeriveNullifier`,
   `SpendAuthority`, and `AddressIntegrity`; `Bundle` is the end-to-end statement against protocol
   spec §4.17.4; and `TopLevel` presents the whole thing as a closed `TopLevelCircuit`.
-- **`Integration/`** — the Clean-to-Ironwood boundary, and the largest directory in the tree. Only
+- **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
+  `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
+  `SelectorCompression`, `SelectorEvaluation`, and `Queries` justify that translation.
+  `CompiledLookups` recovers source lookups from tuple membership at compiled activation rows;
+  `LookupSelectors` and `LookupProjection` justify exact selector substitution and query indexing.
+  `Fixed` derives fixed assignments and table constraints from the canonical environment, and
+  `CompiledCopies` recovers source copy constraints from resolved column/row equalities.
+  `CopyPermutation` derives those equalities from compiled cycles; `PermutationAssembly`
+  proves the executable mapping correct, and `PermutationRows` supplies its row vectors to Keygen.
+  `ConstraintsCompiled` assembles these row-level semantics into TLC soundness;
+  `ConstraintFamilies` decomposes operation constraints by argument family.
+- **`Integration/`** — the Clean-to-Ironwood boundary. Only
   modules that *translate* belong here; pure verifier-native constraint, permutation and lookup
-  mathematics stays in `Zcash/Snark/`. It compiles the circuit's declared structure into what the
-  verifier's soundness model quantifies over: gates and lookups from the operation stream
-  (`OperationGates`, `OperationLookups`, `OperationFixed`, `OperationCopies`), the permutation
-  round trip (`PermutationCompiler`, `PermutationReplay`, `CopyListMembership`), the layout and
-  selector compilers (`FixedLayout`, `SelectorCoherence`, `LookupSelectorRows`, `QueryLayouts`),
-  the commitment provenance of the fixed, σ and instance columns (`FixedColumns`,
-  `PermutationColumns`, `InstanceColumns`), the resolver-backed environments (`ResolverGates`,
-  `ResolverQueryEnvironment`, `PolynomialEnvironment`, `ExprRich`), and the reassembly of full
-  circuit satisfaction (`CircuitSatisfaction`, `CircuitIntegration`). The `Action*` modules
-  specialize all of that to the deployed Action circuit and land at `ActionTerminal`; the
-  `TopLevel*` modules are the circuit-generic versions. `Soundness/Action/StraightLineTerminal`
-  reaches that same terminal from one accepting execution, and
+  mathematics stays in `Zcash/Snark/`. It interprets accepted polynomial data in circuit semantics:
+  compiled gate and lookup evaluations (`PolynomialConstraints`), using the tuple
+  collision bounds in `Snark/Soundness/Pricing/TupleCompression`, the permutation interpretation
+  (`PermutationCompiler`, `Permutation`),
+  fixed-column provenance (`FixedColumns`), and public inputs (`TopLevelInstanceCommitment`).
+  Shared opening comparison, σ-column commitment binding, and public-instance routing live in
+  `Snark/Soundness/Multiopen/{RowBinding,PermutationColumns,InstanceColumns}`.
+  Integration also provides the polynomial-backed environments
+  (`PolynomialEnvironment`, `ExprRich`), the assignment/witness interface (`Assignment`),
+  and the reassembly of full
+  compiled satisfaction (`TopLevelInterpretation`). These arguments
+  apply to any supported top-level circuit and feed `Soundness/Circuit/Terminal`.
+  `Soundness/Action/StraightLineTerminal` specializes the generic endpoint to Action, and
   `Soundness/Action/StraightLineEvent` bounds the probability loss from the challenge exclusions it
   leaves open — the probability that an accepting run carries neither the bundle statement nor a
   nontrivial relation.

@@ -24,8 +24,8 @@ open Zcash.Arithmetic (Msm)
 
 variable {G : Type*} [AddCommGroup G] [Module Fp G]
 
--- Semantic reach of the chain built on this predicate: `TopLevelCircuitCorrectness`'s component
--- conditions are discharged for the deployed Action circuit, so the adaptive-statement stack ends
+-- Semantic reach of the chain built on this predicate: the generic circuit terminal interprets
+-- the deployed Action circuit's accepted polynomials, so the adaptive-statement stack ends
 -- at `ActionTerminal.ActionBundleWitness` — the circuit's private witnesses with their `ActionSpec`
 -- satisfaction proofs at the adversary's public inputs — rather than at gate satisfaction. The
 -- remaining output-side boundary is composing `ActionSpec`, including its `HashGuarded` Sinsemilla

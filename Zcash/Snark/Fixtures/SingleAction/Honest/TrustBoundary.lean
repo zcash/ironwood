@@ -50,7 +50,6 @@ assert_axioms Zcash.Snark.Fixture.vk_advice_layout_length
 assert_axioms Zcash.Snark.Fixture.vk_instance_layout_length
 assert_axioms Zcash.Snark.Fixture.vk_fixed_layout_length
 assert_axioms Zcash.Snark.Fixture.vk_omega_order +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture.vk_n_cast_ne_zero
@@ -305,7 +304,6 @@ assert_axioms Zcash.Snark.Keygen.certificate +native(
 assert_axioms Zcash.Snark.Keygen.actionShape_eq_fixtureShape +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Keygen.vk_eq_toVerifierKey +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -333,7 +331,6 @@ assert_axioms Zcash.Snark.nonInteractiveFingerprint
 assert_axioms Zcash.Snark.Fixture.derivedVk +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
@@ -341,7 +338,6 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived +nat
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
   Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
@@ -370,15 +366,13 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
 #print axioms Zcash.Snark.Fixture.capturedPublicInstances_within_lagrange
 
 /-- info: 'Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived' depends on axioms: [propext,
-Classical.choice,
-Quot.sound,
-CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_1,
-CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_2,
-Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule._native.native_decide.ax_1_1,
-Zcash.Snark.Fixture.fingerprint_matches._native.native_decide.ax_1_1,
-Zcash.Snark.Fixture.instance_commitments_derived._native.native_decide.ax_1_1,
-Zcash.Snark.Keygen.certificate._native.native_decide.ax_1_1,
-CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
-CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
+ Classical.choice,
+ Quot.sound,
+ Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule._native.native_decide.ax_1_1,
+ Zcash.Snark.Fixture.fingerprint_matches._native.native_decide.ax_1_1,
+ Zcash.Snark.Fixture.instance_commitments_derived._native.native_decide.ax_1_1,
+ Zcash.Snark.Keygen.certificate._native.native_decide.ax_1_1,
+ CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
+ CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived
