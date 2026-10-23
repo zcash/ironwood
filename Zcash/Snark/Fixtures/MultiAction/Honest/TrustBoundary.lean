@@ -88,7 +88,7 @@ assert_axioms Zcash.Snark.Fixture2.capturedInit_eq_initialTranscript +native(
 assert_axioms Zcash.Snark.Fixture2.deriveChallengesForStatement_matches_captured_schedule +native(
   Zcash.Snark.Fixture2.instance_commitments_derived,
   Zcash.Snark.Fixture2.deriveChallenges_matches_captured_schedule)
-assert_computable Zcash.Snark.Fixture2.capturedRawInstances +choice
+assert_efficient Zcash.Snark.Fixture2.capturedRawInstances +choice
 assert_axioms Zcash.Snark.Fixture2.capturedRawInstances_have_expected_column_count
 assert_axioms Zcash.Snark.Fixture2.capturedRawInstances_columns_fit
 assert_axioms Zcash.Snark.Fixture2.capturedRawInstances_commitments_eq
@@ -642,7 +642,7 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived +na
 -- which is what makes the constraint-`x` stage discharge.
 -- The key data itself stays executable; the families above it are noncomputable only because a
 -- root set is a `szBadSet` of a polynomial, so they are censused for their axiom base instead.
-assert_computable Zcash.Snark.Fixture2.capturedZeroVk +choice
+assert_efficient Zcash.Snark.Fixture2.capturedZeroVk +choice
 assert_axioms Zcash.Snark.Fixture2.capturedZeroStraightLineFamily +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedZeroDeployedConstraintFamily +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedZeroStaticChecks +native(
@@ -652,7 +652,7 @@ assert_axioms Zcash.Snark.Fixture2.capturedZeroStaticChecks +native(
 assert_axioms Zcash.Snark.Fixture2.capturedZeroConstraintSchedule +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The live-instance layers at the full captured shape: the root and IPA layers run with both
 -- sub-proofs; the constraint-x stage is the honest-prover boundary and is deliberately absent.
-assert_computable Zcash.Snark.Fixture2.capturedLiveZeroVk +choice
+assert_efficient Zcash.Snark.Fixture2.capturedLiveZeroVk +choice
 assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroRootFamily +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroIpaTrace +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.capturedLiveZeroStraightLineFamily +native(

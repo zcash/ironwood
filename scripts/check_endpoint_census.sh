@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # Check that every deliverable soundness endpoint is named in a census pin.
 #
-# `assert_axioms` / `assert_computable` (and Mathlib's `assert_no_sorry`) are built on
-# `Lean.collectAxioms`, which traverses a declaration's transitive *dependencies*. An endpoint
-# that nothing pinned depends on is therefore invisible to every census entry: a `sorry` or a
-# stray `native_decide` in its own proof reaches no assertion, and the build stays green. That
-# is the "trusted-base escape the census fails to catch" failure mode, and it applies exactly to
-# the top-level leaves — which is what the advertised capstones are.
+# `assert_axioms`, `assert_computable`, and `assert_efficient` (and Mathlib's `assert_no_sorry`)
+# are built on `Lean.collectAxioms`, which traverses a declaration's transitive *dependencies*.
+# An endpoint that nothing pinned depends on is therefore invisible to every census entry: a
+# `sorry` or a stray `native_decide` in its own proof reaches no assertion, and the build stays
+# green. That is the "trusted-base escape the census fails to catch" failure mode, and it applies
+# exactly to the top-level leaves — which is what the advertised capstones are.
 #
 # The rule this script enforces: a declaration whose base name matches one of the endpoint
-# naming patterns below must be named directly in an `assert_axioms` or `assert_computable`
-# entry in one of the census files. Direct, not transitive: an endpoint states the trust tier of
-# its own conclusion, and coverage that happens to flow through some other pin disappears
-# silently the moment that dependent is refactored.
+# naming patterns below must be named directly in an `assert_axioms`, `assert_computable`, or
+# `assert_efficient` entry in one of the census files. Direct, not transitive: an endpoint states
+# the trust tier of its own conclusion, and coverage that happens to flow through some other pin
+# disappears silently the moment that dependent is refactored.
 #
 # `assert_no_sorry` does NOT satisfy the rule. It bounds only sorries, while the census claim is
 # a bound on the whole trusted base; an endpoint carrying only `assert_no_sorry` can still reach
@@ -111,14 +111,14 @@ fi
 # read as nothing at all. The elaborated `CensusCheck` remains the backstop for the
 # declaration side.
 pins=$(echo "$census" | xargs awk '
-  /^assert_(axioms|computable)[[:space:]]+[^[:space:]]/ {
+  /^assert_(axioms|computable|efficient)[[:space:]]+[^[:space:]]/ {
     name = $2
     sub(/^_root_\./, "", name)
     if (name == "" || name ~ /[+(),]/) name = "PARSE_ERROR"
     print name
     next
   }
-  /^assert_(axioms|computable)[[:space:]]*$/ { pending = 1; next }
+  /^assert_(axioms|computable|efficient)[[:space:]]*$/ { pending = 1; next }
   pending {
     name = $1
     sub(/^_root_\./, "", name)
@@ -133,7 +133,7 @@ pins=$(echo "$census" | xargs awk '
 # `pipefail` the SIGPIPE it sends a still-writing `echo` would turn a MATCH into a
 # failed pipeline, silently skipping this guard.
 if grep -q '^PARSE_ERROR$' <<< "$pins"; then
-  echo "VIOLATION: unparseable assert_axioms/assert_computable entry layout in census files" >&2
+  echo "VIOLATION: unparseable assert_axioms/assert_computable/assert_efficient entry layout in census files" >&2
   exit 1
 fi
 
@@ -180,7 +180,7 @@ while IFS= read -r file; do
     # takes SIGPIPE, and `pipefail` would report that as a failed lookup — turning a pinned
     # endpoint into an intermittent false violation.
     if ! grep -qxF "$qualified" <<< "$pins"; then
-      echo "VIOLATION: endpoint ${qualified} (${file}) has no assert_axioms/assert_computable entry in any TrustBoundary.lean" >&2
+      echo "VIOLATION: endpoint ${qualified} (${file}) has no assert_axioms/assert_computable/assert_efficient entry in any TrustBoundary.lean" >&2
       status=1
     fi
   done < "$file"

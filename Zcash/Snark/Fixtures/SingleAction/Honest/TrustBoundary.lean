@@ -79,7 +79,7 @@ assert_axioms Zcash.Snark.Fixture.capturedInit_eq_initialTranscript +native(
 assert_axioms Zcash.Snark.Fixture.deriveChallengesForStatement_matches_captured_schedule +native(
   Zcash.Snark.Fixture.instance_commitments_derived,
   Zcash.Snark.Fixture.deriveChallenges_matches_captured_schedule)
-assert_computable Zcash.Snark.Fixture.capturedRawInstances +choice
+assert_efficient Zcash.Snark.Fixture.capturedRawInstances +choice
 assert_axioms Zcash.Snark.Fixture.capturedRawInstances_have_expected_column_count
 assert_axioms Zcash.Snark.Fixture.capturedRawInstances_columns_fit
 assert_axioms Zcash.Snark.Fixture.capturedRawInstances_commitments_eq

@@ -6,6 +6,8 @@ import Lean.Compiler.ExternAttr
 import Lean.Compiler.CSimpAttr
 import Mathlib.Util.AssertNoSorry
 import Zcash.Meta.EndpointCensus
+import Zcash.Meta.Efficient
+import Zcash.Meta.EfficientPrelude
 
 /-!
 # `assert_axioms` — a concise, build-checked trust-boundary bound
@@ -18,7 +20,13 @@ declared tier (a `sorry`, an unexpected axiom, or `native_decide` where none was
 
 The `#guard_msgs`-pinned form remains the right tool when the *exact* axiom set is the claim.
 
-Both commands also police the *compiled* side of the trusted base: an axiom footprint says nothing
+`assert_computable` is the breaks-as-computed-data form: the declaration must be a plain `def`,
+and `Classical.choice` is excluded unless `+choice` says where it enters. `assert_efficient` is
+the stronger form of that. It makes the same checks, and then requires a cost function for the
+declaration, derived by `efficient def` or registered by `efficient_cost` (`Zcash.Meta.Efficient`).
+So a security reduction can be pinned as efficient, not only as computable.
+
+The commands also police the *compiled* side of the trusted base: an axiom footprint says nothing
 about what compiled code runs, and the fixtures' faithfulness certificates are `native_decide`
 proofs that run it. Two sections below cover the two ways compiled behaviour comes apart from kernel
 meaning — a substituted body (`@[implemented_by]`, `@[extern]`) and a `partial` declaration inside a
@@ -32,10 +40,10 @@ manipulates declaration ranges outright (`Lean.addDeclarationRanges` under `run_
 no innocuous reading in a diff. Treat any declaration-emitting metaprogram entering this
 repository as census-relevant on review.
 
-Both commands require their argument to be written fully qualified (`checkFullyQualified`):
-an unqualified name resolves through the census file's `open`s, so a same-base-name cousin in
-an opened namespace can silently capture an entry meant for a declaration that is not in scope
-at all — the assertion then reads as covering one theorem while checking another.
+The commands require their argument to be written fully qualified (`checkFullyQualified`): an
+unqualified name resolves through the census file's `open`s, so a same-base-name cousin in an opened
+namespace can silently capture an entry meant for a declaration that is not in scope at all — the
+assertion then reads as covering one theorem while checking another.
 -/
 
 open Lean Elab Command
@@ -447,7 +455,8 @@ so the assertion additionally rejects a definition whose compiled body is substi
 censused-scope declaration that substitutes one (`checkNoCompiledBodyOverride`,
 `checkCompiledBodyDisclosure`); `Zcash.Meta.Tests.CompiledOverride` pins both rejections.
 -/
-elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : command => do
+def checkComputable (n : Ident) (allowChoice : Bool) (native : Option (TSyntax ``nativeFlag)) :
+    CommandElabM Name := do
   let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo n
   checkFullyQualified n name
   let env ← getEnv
@@ -461,7 +470,6 @@ elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : com
     throwError "{n} is marked noncomputable"
   checkNoCompiledBodyOverride n name
   let axs ← collectAxioms name
-  let allowChoice := choice.isSome
   if allowChoice && !axs.contains ``Classical.choice then
     throwError "{n} does not depend on Classical.choice; drop the '+choice' flag"
   let allowed ← resolveNativeAnnotation native
@@ -475,5 +483,28 @@ elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : com
     throwError "{n} depends on unexpected axiom(s): {unexpected.toList}"
   checkCompiledBodyDisclosure n
   recordCensusPin name
+  return name
+
+/-- `assert_computable foo`, `+choice`, and `+native(...)`: see `checkComputable`'s docstring,
+which is the specification of both this command and `assert_efficient`'s first half. -/
+elab "assert_computable " n:ident choice:("+choice")? native:(nativeFlag)? : command => do
+  discard <| checkComputable n choice.isSome native
+
+/--
+`assert_efficient foo` fails the build unless `foo` passes every check of `assert_computable` and
+has a cost function: one registered by `efficient_cost`, derived by `efficient def`, or derived
+here on demand from `foo`'s definition and the definitions of everything it calls
+(`Zcash.Meta.Efficient`). The derivation fails, and says why, at a primitive without a cost
+function, at a well-founded recursion whose measure Lean cannot settle by itself, and at the
+higher-order constructs the prototype does not price. `+choice` and `+native(D₁, ...)` mean what
+they mean for `assert_computable`, and the census records the pin in the same way. So an
+`assert_computable` pin becomes an `assert_efficient` pin by changing the keyword.
+
+The cost function is required to exist; no bound on it is checked here. A bound is an ordinary
+theorem about `foo.cost`.
+-/
+elab "assert_efficient " n:ident choice:("+choice")? native:(nativeFlag)? : command => do
+  let name ← checkComputable n choice.isSome native
+  discard <| liftTermElabM <| Efficient.ensureCost {} name
 
 end Zcash.Meta

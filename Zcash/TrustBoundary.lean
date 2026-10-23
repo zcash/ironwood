@@ -277,8 +277,8 @@ The computed reductions from a key-binding break to an up-to-sign random-oracle 
 `ofOpeningBreak` from a bare commitment-opening break, `ofBreak` from a full key-binding
 break. -/
 
-assert_computable Zcash.Security.RandomOracle.CollisionUpToSign.ofOpeningBreak +choice
-assert_computable Zcash.Security.RandomOracle.CollisionUpToSign.ofBreak +choice
+assert_efficient Zcash.Security.RandomOracle.CollisionUpToSign.ofOpeningBreak +choice
+assert_efficient Zcash.Security.RandomOracle.CollisionUpToSign.ofBreak +choice
 
 /-! ## Key binding — theorems
 
@@ -317,13 +317,13 @@ measure bounded through the birthday collision count, in adaptive, query-bounded
 and product forms, culminating in `toInterface_break_measure_le` — the games-facing bound
 inherited by the ledger key-binding arms. -/
 
-assert_computable Zcash.Security.KeyBinding.finalQueryEquiv
+assert_efficient Zcash.Security.KeyBinding.finalQueryEquiv
 assert_axioms Zcash.Security.KeyBinding.eval_restrict
 assert_axioms Zcash.Security.KeyBinding.pair_shifted_collision_measure_le
 assert_axioms Zcash.Security.KeyBinding.finset_shifted_collision_measure_le
 assert_axioms Zcash.Security.KeyBinding.ofBreak_queries
 assert_axioms Zcash.Security.KeyBinding.break_measure_le
-assert_computable Zcash.Security.KeyBinding.badList
+assert_efficient Zcash.Security.KeyBinding.badList
 assert_axioms Zcash.Security.KeyBinding.mem_badList
 assert_axioms Zcash.Security.KeyBinding.badList_measure_le
 assert_axioms Zcash.Security.KeyBinding.escapesWithHistory
@@ -333,13 +333,13 @@ assert_axioms Zcash.Security.KeyBinding.CollidesDuring.of_pair
 assert_axioms Zcash.Security.KeyBinding.sum_two_mul_add
 assert_axioms Zcash.Security.KeyBinding.collidesDuring_measure_le
 assert_axioms Zcash.Security.KeyBinding.queries_pair_collision_measure_le
-assert_computable Zcash.Security.KeyBinding.derivQueries
+assert_efficient Zcash.Security.KeyBinding.derivQueries
 assert_axioms Zcash.Security.KeyBinding.break_measure_le_adaptive
 assert_axioms Zcash.Security.KeyBinding.break_measure_le_of_queryBound
 assert_axioms Zcash.Security.KeyBinding.toOuterMeasure_bind_le
 assert_axioms Zcash.Security.KeyBinding.break_measure_le_mixture
 assert_axioms Zcash.Security.KeyBinding.uniformOfFintype_prod
-assert_computable Zcash.Security.KeyBinding.evalEquiv
+assert_efficient Zcash.Security.KeyBinding.evalEquiv
 assert_axioms Zcash.Security.KeyBinding.uniform_triple_eval
 assert_axioms Zcash.Security.KeyBinding.break_measure_le_product
 assert_axioms Zcash.Security.toInterface_break_measure_le
@@ -354,10 +354,10 @@ tree-hash collision (`collisionOfWrongLeaf`), a note-commitment opening collisio
 alone (it decides an `nk`-equality branch on `DecidableEq NK`); the reduction data is a
 direct term of the inputs. -/
 
-assert_computable Zcash.Security.RandomOracle.Collision.upToSign
-assert_computable Zcash.Security.Ledger.Merkle.collisionOfWrongLeaf
-assert_computable Zcash.Security.Ledger.noteCommitBreakOfNe
-assert_computable Zcash.Security.Ledger.nfOldEqOrBreak +choice
+assert_efficient Zcash.Security.RandomOracle.Collision.upToSign
+assert_efficient Zcash.Security.Ledger.Merkle.collisionOfWrongLeaf
+assert_efficient Zcash.Security.Ledger.noteCommitBreakOfNe
+assert_efficient Zcash.Security.Ledger.nfOldEqOrBreak +choice
 
 /-! ## Statement-layer pinning theorems
 
@@ -372,19 +372,19 @@ assert_axioms Zcash.Security.Ledger.nk_eq_or_break
 The ledger-model definitions are plain computable data over public ledger contents; the
 theorems are deterministic list facts. -/
 
-assert_computable Zcash.Security.Ledger.Model.posVal
-assert_computable Zcash.Security.Ledger.Merkle.subRoot
-assert_computable Zcash.Security.Ledger.Merkle.authChildren
+assert_efficient Zcash.Security.Ledger.Model.posVal
+assert_efficient Zcash.Security.Ledger.Merkle.subRoot
+assert_efficient Zcash.Security.Ledger.Merkle.authChildren
 assert_axioms Zcash.Security.Ledger.Merkle.Path.compress_isSome
 assert_axioms Zcash.Security.Ledger.Merkle.path_of_root
-assert_computable Zcash.Security.Ledger.Model.leafList
-assert_computable Zcash.Security.Ledger.Model.leafFun
-assert_computable Zcash.Security.Ledger.Model.rootAfter
-assert_computable Zcash.Security.Ledger.Model.nullifiers
-assert_computable Zcash.Security.Ledger.Model.transparentPoolBalance
-assert_computable Zcash.Security.Ledger.Model.outputActions
-assert_computable Zcash.Security.Ledger.Model.outputOpenings
-assert_computable Zcash.Security.Ledger.Model.positionedOutputs
+assert_efficient Zcash.Security.Ledger.Model.leafList
+assert_efficient Zcash.Security.Ledger.Model.leafFun
+assert_efficient Zcash.Security.Ledger.Model.rootAfter
+assert_efficient Zcash.Security.Ledger.Model.nullifiers
+assert_efficient Zcash.Security.Ledger.Model.transparentPoolBalance
+assert_efficient Zcash.Security.Ledger.Model.outputActions
+assert_efficient Zcash.Security.Ledger.Model.outputOpenings
+assert_efficient Zcash.Security.Ledger.Model.positionedOutputs
 assert_computable Zcash.Security.Ledger.Model.nonZeroSpends
 assert_computable Zcash.Security.Ledger.Model.shieldedPoolBalance
 assert_axioms Zcash.Security.Ledger.Model.shieldedPoolBalance_zero
@@ -403,7 +403,7 @@ anchor search (`Nat.find`, itself axiom-free) keep the branch decisions decidabl
 through Mathlib proof terms in `Prop` positions (e.g. `List.getD_eq_getElem`'s proof),
 never the data path. -/
 
-assert_computable Zcash.Security.Ledger.Model.findPair
+assert_efficient Zcash.Security.Ledger.Model.findPair
 assert_axioms Zcash.Security.Ledger.Model.findPair_spec
 assert_axioms Zcash.Security.Ledger.Model.findPair_none
 assert_axioms Zcash.Security.Ledger.Model.flatMap_sublist
@@ -414,7 +414,7 @@ assert_axioms Zcash.Security.Ledger.Model.spendActions_map_nf_sublist
 assert_axioms Zcash.Security.Ledger.Model.length_leafList
 assert_axioms Zcash.Security.Ledger.Model.length_positionedOutputs
 assert_axioms Zcash.Security.Ledger.Model.positionedOutputs_getElem
-assert_computable Zcash.Security.Ledger.Model.noteCommitBreakOfOutputNe
+assert_efficient Zcash.Security.Ledger.Model.noteCommitBreakOfOutputNe
 assert_axioms Zcash.Security.Ledger.Model.satisfied_of_spendMem
 assert_axioms Zcash.Security.Ledger.Model.anchor_of_spendMem
 assert_computable Zcash.Security.Ledger.Model.spendPinnedOrBreak +choice
@@ -430,15 +430,15 @@ and shielded-pool non-negativity (`shieldedPoolBalance_nonneg`). `+choice` on th
 reductions is the erased-positions tier: choice arrives with the `ring`/`omega` proof
 terms, never the data path. -/
 
-assert_computable Zcash.Security.Ledger.Model.txNetValue
-assert_computable Zcash.Security.Ledger.Model.issuanceTotal
+assert_efficient Zcash.Security.Ledger.Model.txNetValue
+assert_efficient Zcash.Security.Ledger.Model.issuanceTotal
 assert_axioms Zcash.Security.Ledger.Model.transparentPoolBalance_eq
 assert_axioms Zcash.Security.Ledger.Model.positionedOutputs_value_sum
 assert_axioms Zcash.Security.Ledger.Model.nonZeroSpends_value_sum
 assert_axioms Zcash.Security.Ledger.Model.shieldedPoolBalance_eq_neg
-assert_computable Zcash.Security.Ledger.Model.allConservedOrBreak
-assert_computable Zcash.Security.Ledger.Model.balanceConservationOrBreak +choice
-assert_computable Zcash.Security.Ledger.Model.shieldedBalanceCapOrBreak +choice
+assert_efficient Zcash.Security.Ledger.Model.allConservedOrBreak
+assert_efficient Zcash.Security.Ledger.Model.balanceConservationOrBreak +choice
+assert_efficient Zcash.Security.Ledger.Model.shieldedBalanceCapOrBreak +choice
 assert_axioms Zcash.Security.Ledger.Model.sum_val_le_of_le
 assert_axioms Zcash.Security.Ledger.Model.positionedOutputs_value_sum_mono
 assert_axioms Zcash.Security.Ledger.Model.shieldedPoolBalance_nonneg
@@ -451,8 +451,8 @@ flagless tier; the nullifier split and the persistence theorem are deterministic
 facts. -/
 
 assert_axioms Zcash.Security.Ledger.Model.nullifiers_append
-assert_computable Zcash.Security.Ledger.Model.faerieGoldCore
-assert_computable Zcash.Security.Ledger.Model.respendOrBreak
+assert_efficient Zcash.Security.Ledger.Model.faerieGoldCore
+assert_efficient Zcash.Security.Ledger.Model.respendOrBreak
 assert_axioms Zcash.Security.Ledger.Model.validLedger_append
 
 /-! ## The nullifier-binding reduction
@@ -486,8 +486,8 @@ proof inside the receivability pinning, consumed only in `Prop` positions — ne
 data path. -/
 
 assert_axioms Zcash.Security.Ledger.Model.ivk_eq_of_receivable
-assert_computable Zcash.Security.Ledger.Model.spendAuthForgeryOrBreak +choice
-assert_computable Zcash.Security.Ledger.Model.spendAuthorityOrBreak +choice
+assert_efficient Zcash.Security.Ledger.Model.spendAuthForgeryOrBreak +choice
+assert_efficient Zcash.Security.Ledger.Model.spendAuthorityOrBreak +choice
 
 /-! ## Honest-spend completeness and the Spendability capstone
 
@@ -498,11 +498,11 @@ roadblock branch decides nullifier membership and searches out the revealing act
 It carries no `+choice`: neither the decision nor the search reaches for choice, and
 no choice-bearing proof term survives in its erased `Prop` positions either. -/
 
-assert_computable Zcash.Security.Ledger.Model.honestTx
-assert_computable Zcash.Security.Ledger.Model.HonestAction.withDummySpend
+assert_efficient Zcash.Security.Ledger.Model.honestTx
+assert_efficient Zcash.Security.Ledger.Model.HonestAction.withDummySpend
 assert_axioms Zcash.Security.Ledger.Model.HonestAction.satisfied
 assert_axioms Zcash.Security.Ledger.Model.honestTx_valid
-assert_computable Zcash.Security.Ledger.Model.spendabilityOrBreak
+assert_efficient Zcash.Security.Ledger.Model.spendabilityOrBreak
 
 /-! ## Probabilistic capstones
 
@@ -540,7 +540,7 @@ assert_axioms Zcash.Circuits.Specs.Sinsemilla.noteCommitChunks_inj
 assert_axioms Zcash.Circuits.Specs.Sinsemilla.merkleChunks_inj
 assert_axioms Zcash.Security.Ledger.Bridge.preCoeffs_inj
 assert_axioms Zcash.Security.Concrete.PallasGroup.eq_of_toPoint_x_eq_of_y_parity_eq
-assert_computable Zcash.Security.Ledger.Bridge.toOrchardPoints +choice +native(
+assert_efficient Zcash.Security.Ledger.Bridge.toOrchardPoints +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.Bridge.note_eq_of_noteScalars_words_eq
 assert_computable Zcash.Security.Ledger.Bridge.relationOfChainVecPmEq +choice +native(
@@ -610,12 +610,12 @@ away from the one bad challenge of the representation's pivot slot, one is
 (`QueryRep.assembled_ne_zero_of_ne_badChallenge`). The knowledge-error block below composes
 this with the labeled squeeze and the relation-to-discrete-log reduction. -/
 
-assert_computable Zcash.Security.RedDSA.QueryRep.assembled
-assert_computable Zcash.Security.RedDSA.QueryRep.pivot
-assert_computable Zcash.Security.RedDSA.QueryRep.badChallenge
+assert_efficient Zcash.Security.RedDSA.QueryRep.assembled
+assert_efficient Zcash.Security.RedDSA.QueryRep.pivot
+assert_efficient Zcash.Security.RedDSA.QueryRep.badChallenge
 assert_axioms Zcash.Security.RedDSA.QueryRep.representationEval_key_of_pivot_eq_none
 assert_axioms Zcash.Security.RedDSA.QueryRep.assembled_ne_zero_of_ne_badChallenge
-assert_computable Zcash.Security.RedDSA.bindingSig_relation_of_nontrivial +choice
+assert_efficient Zcash.Security.RedDSA.bindingSig_relation_of_nontrivial +choice
 
 /-! ## The binding-signature knowledge error
 
@@ -652,7 +652,7 @@ assert_axioms Zcash.Security.RedDSA.relFiber_subset_relSet
 assert_axioms Zcash.Security.RedDSA.relFiber_measure_le
 assert_axioms Zcash.Security.RedDSA.kappaEvent_measure_le
 assert_axioms Zcash.Security.RedDSA.kappaEvent_measure_le_of_coins
-assert_computable Zcash.Security.RedDSA.zeroBasisRelationFinder +choice
+assert_efficient Zcash.Security.RedDSA.zeroBasisRelationFinder +choice
 assert_axioms Zcash.Security.RedDSA.textbookDLAdvantageLE_base_zero
 
 /-! ## The transaction-balance premiss in extractor-plus-knowledge-error form
@@ -667,9 +667,9 @@ the `vSum` shape, `maxActions * (valueBound - 1) + vBalanceBound < r`. The Orcha
 instantiation names the same bounds at the Orchard-protocol primitives; the integrity bound
 takes `ε_dlr + κ` in place of the opaque `ε_bindsig`. `+choice` is the erased-positions tier. -/
 
-assert_computable Zcash.Security.Ledger.Model.ValueShape.premissOrBreakFallible +choice
-assert_computable Zcash.Security.Ledger.Model.txBalancePremissFallible +choice
-assert_computable Zcash.Security.Ledger.Model.extractFailureOf +choice
+assert_efficient Zcash.Security.Ledger.Model.ValueShape.premissOrBreakFallible +choice
+assert_efficient Zcash.Security.Ledger.Model.txBalancePremissFallible +choice
+assert_efficient Zcash.Security.Ledger.Model.extractFailureOf +choice
 assert_axioms Zcash.Security.Ledger.Model.extractFailureOf_isSome
 assert_axioms Zcash.Security.Ledger.Model.txBalanceBreakEvent_fallible_subset
 assert_axioms Zcash.Security.Ledger.Model.balanceConservation_measure_le_kerr
@@ -691,12 +691,12 @@ oracle-free computable lookup (`kbPairOf` from the ledger for Balance; `kwAt` at
 announced indices for Spend Authority), identified with the reduction's pair by the
 localization theorems. -/
 
-assert_computable Zcash.Security.Ledger.Model.BalanceBreak.kbPair
+assert_efficient Zcash.Security.Ledger.Model.BalanceBreak.kbPair
 assert_computable Zcash.Security.Ledger.Model.kbPairOf
 assert_axioms Zcash.Security.Ledger.Model.spendPinnedOrBreak_kbPair
 assert_axioms Zcash.Security.Ledger.Model.allPinnedOrBreak_kbPair
 assert_axioms Zcash.Security.Ledger.Model.balanceSubsetOrBreak_kbPair
-assert_computable Zcash.Security.Ledger.Model.kwAt
+assert_efficient Zcash.Security.Ledger.Model.kwAt
 assert_axioms Zcash.Security.Ledger.Model.spendAuthorityOrBreak_pair
 assert_axioms Zcash.Security.Ledger.Model.balanceSubset_keyBindingArm_measure_le
 assert_axioms Zcash.Security.Ledger.Model.spendAuthority_keyBindingArm_measure_le
@@ -713,15 +713,15 @@ oracle-free (`failTxOfAnn`, identified with the reduction's own selection by the
 localization theorems) and returns its signature data. Any prefix's failure arm breaks at
 the ledger's first imbalanced transaction, so the containment costs no factor of `k`. -/
 
-assert_computable Zcash.Security.Ledger.Model.kappaPrimitivesAt +choice
-assert_computable Zcash.Security.Ledger.Model.kappaShapeAt +choice
-assert_computable Zcash.Security.Ledger.Model.kappaBindingAt +choice
+assert_efficient Zcash.Security.Ledger.Model.kappaPrimitivesAt +choice
+assert_efficient Zcash.Security.Ledger.Model.kappaShapeAt +choice
+assert_efficient Zcash.Security.Ledger.Model.kappaBindingAt +choice
 assert_computable Zcash.Security.Ledger.Model.kappaExtractor +choice
 assert_computable Zcash.Security.Ledger.Model.extractorAtBasis +choice
-assert_computable Zcash.Security.Ledger.Model.bvkAt +choice
-assert_computable Zcash.Security.Ledger.Model.failTxOfAnn
-assert_computable Zcash.Security.Ledger.Model.kappaOut +choice
-assert_computable Zcash.Security.Ledger.Model.kappaComposite +choice
+assert_efficient Zcash.Security.Ledger.Model.bvkAt +choice
+assert_efficient Zcash.Security.Ledger.Model.failTxOfAnn
+assert_efficient Zcash.Security.Ledger.Model.kappaOut +choice
+assert_efficient Zcash.Security.Ledger.Model.kappaComposite +choice
 assert_axioms Zcash.Security.Ledger.Model.bvkAt_eq
 assert_axioms Zcash.Security.Ledger.Model.kappaComposite_queryBound
 assert_computable Zcash.Security.Ledger.Model.allConservedOrBreak_extractFail +choice
@@ -821,8 +821,8 @@ assert_computable Zcash.Security.Ledger.Bridge.kappaOrchardBalanceSubsetOrRelati
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.Bridge.orchardBalanceIntegrityBefore_measure_le_experiment_idealizedks +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_computable Zcash.Security.Ledger.Bridge.orchardQueryOf +choice
-assert_computable Zcash.Security.Ledger.Bridge.pallasGen +choice
+assert_efficient Zcash.Security.Ledger.Bridge.orchardQueryOf +choice
+assert_efficient Zcash.Security.Ledger.Bridge.pallasGen +choice
 assert_axioms Zcash.Security.Ledger.Bridge.orchardQueryOf_injective
 assert_axioms Zcash.Security.Ledger.Bridge.pallasGen_ne_zero
 assert_axioms Zcash.Security.Ledger.Bridge.orchardBalanceIntegrity_measure_le_idealizedks +native(
@@ -837,9 +837,9 @@ assert_axioms Zcash.Security.Ledger.Bridge.orchardShieldedBalanceCap_measure_le_
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.Bridge.orchardBalanceIntegrity_measure_le_idealizedks_deployed +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_computable Zcash.Security.Ledger.Bridge.noteCommitBreakAtBasis +choice +native(
+assert_efficient Zcash.Security.Ledger.Bridge.noteCommitBreakAtBasis +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
-assert_computable Zcash.Security.Ledger.Bridge.noteCommitBreakOfKappa +choice +native(
+assert_efficient Zcash.Security.Ledger.Bridge.noteCommitBreakOfKappa +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Security.Ledger.Bridge.orchardBalanceSubsetOrRelationAtBasis +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
@@ -943,11 +943,11 @@ and the bundle-mod, bundle-int, Orchard, and Sapling variants). `+choice` enters
 through erased `Prop` certificate fields; the relation coefficients are direct terms of
 the inputs. -/
 
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.ofImbalance +choice
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.ofBundleModImbalance +choice
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.ofBundleIntImbalance +choice
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.ofOrchardImbalance +choice
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.ofSaplingImbalance +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.ofImbalance +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.ofBundleModImbalance +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.ofBundleIntImbalance +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.ofOrchardImbalance +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.ofSaplingImbalance +choice
 
 /-!
 ## SNARK soundness stack
@@ -993,8 +993,8 @@ assert_axioms Zcash.Snark.nonempty_nontrivialRelation_vesta +native(
 
 /-! ### Binding reductions from IPA/CommitFold collisions -/
 
-assert_computable Zcash.Snark.NontrivialDLRelation.ofCollision +choice
-assert_computable Zcash.Snark.NontrivialDLRelation.ofIpaOpenings +choice
+assert_efficient Zcash.Snark.NontrivialDLRelation.ofCollision +choice
+assert_efficient Zcash.Snark.NontrivialDLRelation.ofIpaOpenings +choice
 
 /-! ### Verifier-equation correspondence -/
 
@@ -1004,7 +1004,7 @@ assert_axioms Zcash.Snark.deployedAccepts_verifierEq
 
 The combination-collision reduction returns computed relation data as a plain `def`. -/
 
-assert_computable Zcash.NontrivialRelation.ofCombinationCollision +choice
+assert_efficient Zcash.NontrivialRelation.ofCombinationCollision +choice
 
 /-! ### AGM / Fiat–Shamir soundness
 
@@ -1016,18 +1016,18 @@ pinned under their `Zcash.` names; the AGM restriction enters with the represent
 assert_computable Zcash.discreteLogOfBasis_of_relation +choice
 assert_computable Zcash.discreteLogOfChallenge_of_relation +choice
 assert_computable Zcash.programmedExtractOrMiss +choice
-assert_computable Zcash.Snark.relationWitnessOfCollision +choice
+assert_efficient Zcash.Snark.relationWitnessOfCollision +choice
 assert_computable Zcash.discreteLogOfAugmentedRelationAtChallenge +choice
 assert_computable Zcash.discreteLogOfU_of_augmentedRelation +choice
 assert_computable Zcash.discreteLogOfW_of_augmentedRelation +choice
-assert_computable Zcash.NontrivialRelation.ofParts +choice
-assert_computable Zcash.AlgebraicRelationWitness.embed +choice
-assert_computable Zcash.Snark.separateOrRelationWitness +choice
+assert_efficient Zcash.NontrivialRelation.ofParts +choice
+assert_efficient Zcash.AlgebraicRelationWitness.embed +choice
+assert_efficient Zcash.Snark.separateOrRelationWitness +choice
 assert_computable Zcash.Snark.algebraicPowerBatchWithSourceOrRelation +choice
-assert_computable Zcash.Snark.finForallOrRelationWitness
-assert_computable Zcash.Snark.constructIntermediateSets_comm_route +choice
+assert_efficient Zcash.Snark.finForallOrRelationWitness
+assert_efficient Zcash.Snark.constructIntermediateSets_comm_route +choice
 assert_computable Zcash.Snark.deployed_slot_route_of_checks +choice
-assert_computable Zcash.Snark.deployedRouteSelectorOfSpecs +choice
+assert_efficient Zcash.Snark.deployedRouteSelectorOfSpecs +choice
 assert_computable Zcash.Snark.deployedConstraintQuotientAgreementOrRelation +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.deployedConstraintQuotientFinder +choice +native(
@@ -1049,11 +1049,11 @@ assert_computable Zcash.Snark.deployedX4BatchOfCoveredWithSourceOrRelation +choi
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.deployedRootOutcomeOfCovered +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.ComputedDeployedRootFSFamily.ofCovered +choice +native(
+assert_efficient Zcash.Snark.ComputedDeployedRootFSFamily.ofCovered +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.ComputedDeployedConstraintFSFamily.ofCovered +choice +native(
+assert_efficient Zcash.Snark.ComputedDeployedConstraintFSFamily.ofCovered +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.deployedConstraintFinderOfOutcome +choice +native(
+assert_efficient Zcash.Snark.deployedConstraintFinderOfOutcome +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.OrchardUniformURSIdentification +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -1083,7 +1083,7 @@ assert_axioms Zcash.Snark.fsWinsFull_mapDomain_measure_eq
 assert_axioms Zcash.Snark.fsWinsFull_splitDomain
 assert_axioms Zcash.Snark.fsWinsFull_unbounded_measure_le
 assert_axioms Zcash.Snark.truncateTranscript
-assert_computable Zcash.Security.BindingSignature.NontrivialRelation.toAlgebraicRelationWitnessAt +choice
+assert_efficient Zcash.Security.BindingSignature.NontrivialRelation.toAlgebraicRelationWitnessAt +choice
 assert_computable Zcash.Security.BindingSignature.NontrivialRelation.toDiscreteLog +choice
 assert_axioms Zcash.Security.BindingSignature.orchardImbalanceToDiscreteLog
 assert_axioms Zcash.Security.BindingSignature.saplingImbalanceToDiscreteLog
@@ -1283,21 +1283,21 @@ These checks pin each charged relation finder as a plain executable `def`. `+cho
 only through erased proof fields. Noncomputable events and probability theorems are censused
 separately with `assert_axioms`. -/
 
-assert_computable Zcash.Snark.bindOrRelationWitness
-assert_computable Zcash.Snark.finForallOrRelationWitness
-assert_computable Zcash.Snark.finForallOption
-assert_computable Zcash.Snark.listForallOrRelationWitness
+assert_efficient Zcash.Snark.bindOrRelationWitness
+assert_efficient Zcash.Snark.finForallOrRelationWitness
+assert_efficient Zcash.Snark.finForallOption
+assert_efficient Zcash.Snark.listForallOrRelationWitness
 assert_computable Zcash.Snark.boundedForallOrRelationWitness
-assert_computable Zcash.Snark.szBadSetAvoidance? +choice
+assert_efficient Zcash.Snark.szBadSetAvoidance? +choice
 assert_computable Zcash.Snark.foldSplitAvoidance? +choice
 assert_computable Zcash.Snark.ActionTerminal.foldSplitAvoidance? +choice
 assert_computable Zcash.Snark.resolverPermutationGoodChallenges? +choice
 assert_computable Zcash.Snark.resolverPermutationChallengeExclusions? +choice
 assert_computable Zcash.Snark.resolverLookupGoodChallenges? +choice
 assert_computable Zcash.Snark.resolverLookupBundleExclusions? +choice
-assert_computable Zcash.Snark.EnabledLookup.thetaAvoidance? +choice
+assert_efficient Zcash.Snark.EnabledLookup.thetaAvoidance? +choice
 assert_computable Zcash.Snark.TopLevelLookup.topLevelLookupChallengeExclusions? +choice
-assert_computable Zcash.Snark.FullCircuitSatisfaction.of_components_or_bad
+assert_efficient Zcash.Snark.FullCircuitSatisfaction.of_components_or_bad
 assert_computable Zcash.Snark.declaredCopies_satisfied_or_bad_of_replay +choice
 assert_computable Zcash.Snark.copy_constraints_or_bad_of_replay +choice
 assert_computable Zcash.Snark.CopyReplayWitness.constraints_or_bad +choice
@@ -1666,7 +1666,7 @@ assert_axioms Zcash.Snark.ActionTerminal.ActionSequentialCuts.xy_probability_bou
 assert_axioms Zcash.Snark.deployedConstraintXBadSet_witness +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.witnessConstraintXTrace +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.witnessDeployedConstraintFamily +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.witnessStraightLineIpaTrace +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_efficient Zcash.Snark.witnessStraightLineIpaTrace +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.witnessStraightLineDeployedFamily +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The shape-generic keystone for a captured-shape constant family's staged IPA trace: a
 -- zero-coordinate proof pins the zero polynomial at every round.
@@ -1701,14 +1701,14 @@ assert_axioms Zcash.Snark.assembleQueries_refZeroData
 assert_axioms Zcash.Snark.constructIntermediateSets_sets_ref_provenance
 assert_axioms Zcash.Snark.assembledMsm_zeroData
 assert_axioms Zcash.Snark.multiopenCommitment_zeroData
-assert_computable Zcash.Snark.zeroProofString
-assert_computable Zcash.Snark.zeroAlgebraicProofString +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_efficient Zcash.Snark.zeroProofString
+assert_efficient Zcash.Snark.zeroAlgebraicProofString +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.zeroProofString_wellFormed
 assert_computable Zcash.Snark.zeroWfProof +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.zeroWfProof_canonical +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.zeroWfProof_aMulti +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.zeroFamily_membersCovered +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.zeroOnlineMemberFamily +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_efficient Zcash.Snark.zeroOnlineMemberFamily +choice +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The zero data's deployed batches exist at every pair count: zero column and member
 -- commitments, with the `x₄` batch's own coordinates as the `x₁` aggregates.
 assert_axioms Zcash.Snark.refZeroData_eval
@@ -1753,7 +1753,7 @@ assert_computable Zcash.Snark.witnessOnlineMemberFamily +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.witnessRootStage +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_computable Zcash.Snark.witnessRootTrace +choice +native(
+assert_efficient Zcash.Snark.witnessRootTrace +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.witnessDeployedRootFamily +choice +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -1766,7 +1766,7 @@ assert_axioms Zcash.Snark.aggregate_opens_deployedCommitment +native(
 -- The direct path's total-cost model (`Composition.DirectPathCost`): executable modeled counts,
 -- and a shape-polynomial bound with no adversary-dependent spread premise or `|F|` term. Choice
 -- enters the total only through erased `Prop` positions of the finite sum.
-assert_computable Zcash.Snark.directColumnDecodeOps
+assert_efficient Zcash.Snark.directColumnDecodeOps
 assert_computable Zcash.Snark.deployedDirectDecodeOps +choice
 -- The semantic challenge remainder (`Composition.SemanticChallengeRemainder`): the bundle-wide
 -- permutation and lookup exclusions priced from their card bounds, summed with the `y` fold-split
@@ -1875,7 +1875,7 @@ assert_axioms Zcash.Snark.ActionTerminal.actionXYFailureEvent_subset_surfaces +n
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.DeployedAlgebraicDecode.memberBinding
 assert_axioms Zcash.Snark.DeployedAlgebraicDecode.toOpenedBatch_current
-assert_computable Zcash.Snark.pinnedPoints +choice
+assert_efficient Zcash.Snark.pinnedPoints +choice
 assert_axioms Zcash.Snark.pinnedPoints_injective
 assert_axioms Zcash.Snark.PrefixDeterminedAt +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.hstab_of_prefixDeterminedAt +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
@@ -1964,7 +1964,7 @@ assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveSt
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- Pin the zero-query adversary that witnesses the adaptive-statement interface is inhabited.
-assert_computable Zcash.Snark.zeroAdaptiveStatementFamily +choice +native(
+assert_efficient Zcash.Snark.zeroAdaptiveStatementFamily +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.adaptiveStatementInterface_nonempty +native(
@@ -2053,7 +2053,7 @@ elements, and the `Module Fq PallasGroup` instance is built from the Pallas poin
 is the same witness the circuit layer above carries, reaching this file through the group's
 scalar action rather than a certificate check. -/
 
-assert_computable Zcash.Security.Ledger.Bridge.breakCoeffs +choice
+assert_efficient Zcash.Security.Ledger.Bridge.breakCoeffs +choice
 assert_computable Zcash.Security.Ledger.Bridge.relationOfBreakData +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Security.Ledger.Bridge.classifyRelation +choice +native(
@@ -2072,7 +2072,7 @@ circuit-side algebraic relation (`actionLedgerOutcome`), with `actionLedgerExtra
 its ledger projection and `actionLedgerEscapeFinder` its computed escape arm; the
 composition adds no new undefinedness. Data end to end. -/
 
-assert_computable Zcash.Security.Ledger.ActionBundleBridge.memberSatisfying +choice +native(
+assert_efficient Zcash.Security.Ledger.ActionBundleBridge.memberSatisfying +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_computable Zcash.Security.Ledger.ActionBundleBridge.memberLedgerData +choice +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
@@ -2132,14 +2132,14 @@ binding and malformed-instance rejection. The module documentation in
 `Zcash.Snark.Verifier.Deployed` records the opaque-key-representation and commitment-level limits of
 that binding claim. -/
 
-assert_computable Zcash.Snark.absorbInstanceCommitments
+assert_efficient Zcash.Snark.absorbInstanceCommitments
 assert_axioms Zcash.Snark.absorbInstanceCommitments_congr
-assert_computable Zcash.Snark.initialTranscript
+assert_efficient Zcash.Snark.initialTranscript
 assert_axioms Zcash.Snark.initialTranscript_congr
 assert_computable Zcash.Snark.deriveChallengesForStatement
 assert_axioms Zcash.Snark.deriveChallengesForStatement_congr
 assert_computable Zcash.Snark.preThetaTranscriptForStatement
-assert_computable Zcash.Snark.validateInstances?
+assert_efficient Zcash.Snark.validateInstances?
 assert_computable Zcash.Snark.assembleInstances? +choice
 assert_computable Zcash.Snark.assembleNonInteractiveInstances? +choice
 assert_axioms Zcash.Snark.columnQueries_congr_commitment
