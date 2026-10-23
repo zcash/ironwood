@@ -1,0 +1,5 @@
+# Per-artifact provenance for the zcash-test-vectors fixtures (ironwood#204).
+# Tab-separated: path, sha256, generator, source, invocation.
+# Written and checked by scripts/regenerate-test-vectors.sh.
+Zcash/Circuits/Tests/TestVectors/OrchardPoseidonData.lean	035f46dbaa2919582fa8d4a0549c29ca747946115c39a36567f3b7d72b66d681	scripts/test_vectors_to_lean.py	zcash/zcash-test-vectors@78321beacb0e0477e33cd002b56585a107c2708c	python3 -I scripts/test_vectors_to_lean.py <checkout> 78321beacb0e0477e33cd002b56585a107c2708c poseidon
+Zcash/Circuits/Tests/TestVectors/OrchardGeneratorsData.lean	40f499876f7253add0099176ab6a2fb3ef76b0107406af04337d62a873255495	scripts/test_vectors_to_lean.py	zcash/zcash-test-vectors@78321beacb0e0477e33cd002b56585a107c2708c	python3 -I scripts/test_vectors_to_lean.py <checkout> 78321beacb0e0477e33cd002b56585a107c2708c generators

@@ -29,7 +29,9 @@ The targets:
   fingerprint faithfulness checks run here; this target is separate because the
   captures are large and slow.
 * **`CircuitCheck`** — `Zcash.Circuits.Tests`: comparisons of the pinned verifying-key
-  and layout dumps against the Lean circuit model.
+  and layout dumps against the Lean circuit model, and of the Lean primitives against
+  the pinned [zcash-test-vectors](https://github.com/zcash/zcash-test-vectors)
+  (`Zcash.Circuits.Tests.TestVectors`).
 * **`MetaCheck`** — tests of `Zcash.Meta.AxiomCheck` itself: forged axioms exercising
   its rejection paths, kept out of the production import graph.
 * **`SecurityCheck`** — `Zcash.Security.Ledger.BridgeTests`: regression checks

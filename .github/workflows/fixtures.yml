@@ -79,6 +79,9 @@ jobs:
       # recorded provenance on every run, not only when a full regeneration executes.
       - name: Check the fixture provenance manifest
         run: ./scripts/check_fixture_manifest.sh
+      # The same digest-level check for the zcash-test-vectors fixtures (no clone).
+      - name: Check the zcash-test-vectors provenance manifest
+        run: ./scripts/regenerate-test-vectors.sh --check-manifest
       # Regeneration is expensive (real k=11 Orchard proofs + verifier runs), so only run
       # it when a committed capture artifact or the pins change.
       #
