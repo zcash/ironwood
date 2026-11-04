@@ -1,5 +1,5 @@
 import Zcash.Circuits.Integration.FixedColumns
-import Zcash.Circuits.Halo2.ConstraintsCompiled
+import Clean.Halo2.Compiler.ConstraintsCompiled
 import Zcash.Common.RelationWitness
 import Zcash.Snark.Soundness.Multiopen.InstanceColumns
 import Zcash.Circuits.Integration.PolynomialConstraints

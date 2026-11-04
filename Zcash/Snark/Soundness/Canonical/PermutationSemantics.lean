@@ -305,7 +305,7 @@ theorem resolverPermutationPairs_length (chunk : Fin shape.numPermutationSets) :
 
 /-- Field separation and a well-formed chunk layout give unique cell names on
 every active prefix. The decoded column polynomials play no role in this fact. -/
-theorem permutationNamesInjective [Zcash.Arithmetic.FieldDomainParams Fp] [FieldSupport vk]
+theorem permutationNamesInjective [FieldDomainParams Fp] [FieldSupport vk]
     {activeRows : ℕ} (hactive : activeRows ≤ vk.n) :
     Function.Injective fun c : ResolverPermutationCell vk poly p activeRows =>
       chunkRowName vk.omega vk.delta vk.chunkLen c.1 c.2.1 c.2.2 := by

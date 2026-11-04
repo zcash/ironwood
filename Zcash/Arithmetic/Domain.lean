@@ -1,7 +1,7 @@
 import CompElliptic.Curves.Pasta
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Zcash.Arithmetic.Field
-import Zcash.Arithmetic.FieldDomainParams
+import Clean.Utils.FieldDomainParams
 import Mathlib.Tactic.NormNum.Parity
 
 /-!

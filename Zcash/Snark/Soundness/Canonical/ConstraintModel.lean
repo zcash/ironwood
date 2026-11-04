@@ -160,7 +160,7 @@ evaluation domain.
 -/
 theorem constraintModel_selectorEvaluations
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     (vk : VerifyingKey shape Fp G) [FieldSupport vk] (ch : Challenges shape.k Fp)
     (poly : CommitmentId → CPoly)
     (hblinding : vk.blindingFactors < vk.n)
@@ -182,7 +182,7 @@ and field support supply its chunk, selector and last-rotation properties.
 -/
 theorem ResolverPermutationDomain.ofCanonicalConstraintModel
     {shape : CircuitShape} {numProofs : ℕ} {G : Type*}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     (vk : VerifyingKey shape Fp G) [VerifyingKey.FieldSupport vk]
     [VerifyingKey.WellFormed vk] (ch : Challenges shape.k Fp)
     (poly : CommitmentId → CPoly)
@@ -212,7 +212,7 @@ through every row strictly before its final usable row.
 -/
 theorem ResolverLookupDomain.ofCanonicalPolynomials
     {shape : CircuitShape} {G : Type*}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     (vk : VerifyingKey shape Fp G) [VerifyingKey.FieldSupport vk]
     [VerifyingKey.WellFormed vk] :
     let selectors := canonicalLagrangePolynomials vk.omega

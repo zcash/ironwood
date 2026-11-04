@@ -1,4 +1,4 @@
-import Zcash.Common.PermutationConstruction
+import Clean.Utils.PermutationConstruction
 import Zcash.Snark.Soundness.Argument.Permutation
 
 /-! # Copy equalities from the permutation argument
@@ -7,7 +7,7 @@ The compiler's cycle partition and the permutation argument's value invariance
 jointly enforce all declared equality constraints.
 -/
 
-namespace Zcash.PermConstruction
+namespace PermConstruction
 
 open Zcash.Snark
 
@@ -35,4 +35,4 @@ theorem value_eq_of_mem {ι L V : Type*} [Fintype ι] [DecidableEq ι]
     value c = value d :=
   value_eq_of_constraints cs hlabel value h (Relation.EqvGen.rel c d hcd)
 
-end Zcash.PermConstruction
+end PermConstruction

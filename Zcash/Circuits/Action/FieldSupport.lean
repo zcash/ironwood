@@ -1,5 +1,5 @@
 import Zcash.Circuits.Action.Shape
-import Zcash.Circuits.Halo2.FieldSupport
+import Clean.Halo2.Compiler.FieldSupport
 import Zcash.Arithmetic.Domain
 
 /-! # The Action circuit fits the Pasta evaluation domain and column names -/

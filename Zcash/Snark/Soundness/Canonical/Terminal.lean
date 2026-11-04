@@ -155,7 +155,7 @@ same opening family; they are not independent terminal premises.
 -/
 def ofOpenings
     {shape : Shape}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
     {vk : VerifyingKey shape Fp G}
     [VerifyingKey.FieldSupport vk] [VerifyingKey.WellFormed vk]
@@ -301,7 +301,7 @@ chooses the route, and node binding supplies all assembled openings.
 -/
 def ofNodeBinding_or_relation
     {shape : Shape}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     {urs : URS G} {hk : shape.k = urs.k}
     {vk : VerifyingKey shape Fp G}
     [VerifyingKey.FieldSupport vk] [VerifyingKey.WellFormed vk]
@@ -708,7 +708,7 @@ supplied by node binding.
 -/
 def acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
     {shape : Shape}
-    [Zcash.Arithmetic.FieldDomainParams Fp]
+    [FieldDomainParams Fp]
     {R : Sort u}
     (urs : URS G) (hk : shape.k = urs.k)
     (vk : VerifyingKey shape Fp G)

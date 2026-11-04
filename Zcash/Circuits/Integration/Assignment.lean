@@ -1,4 +1,4 @@
-import Zcash.Circuits.Halo2.FieldSupport
+import Clean.Halo2.Compiler.FieldSupport
 import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Snark.Keygen.Pipeline
 import Zcash.Common.Satisfying

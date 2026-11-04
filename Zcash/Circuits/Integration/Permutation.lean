@@ -4,9 +4,9 @@ import Zcash.Circuits.Integration.PermutationCompiler
 import Zcash.Snark.Soundness.Canonical.PermutationCoordinates
 import Zcash.Circuits.Integration.Assignment
 import Zcash.Circuits.Integration.TopLevelConstraintModel
-import Zcash.Circuits.Halo2.CopyPermutation
+import Clean.Halo2.Compiler.CopyPermutation
 import Zcash.Snark.Soundness.Multiopen.PermutationColumns
-import Zcash.Circuits.Halo2.CompiledCopies
+import Clean.Halo2.Compiler.CompiledCopies
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
 
 /-! # Circuit-generic keygen permutation semantics
@@ -530,7 +530,8 @@ theorem permutationRows_eq_chunkRowName
     ((flatten ⟨chunk, row, column⟩).2, row)
   have hrow : (flatten ⟨chunk, row, column⟩).1 = row :=
     PermutationCoordinates.chunkFlatten_apply_row _ _ _ _
-  rw [top.permutationRows_getD cell, chunkRowName, rowName]
+  rw [top.permutationRows_getD cell, Zcash.Arithmetic.pastaDomain_delta_eq,
+    chunkRowName, rowName]
   have himage :
       fullSigma top pp urs poly proofIndex ⟨chunk, row, column⟩ =
         flatten.symm ((top.copyPermutation cell).2, (top.copyPermutation cell).1) := by

@@ -1,9 +1,9 @@
-import Zcash.Circuits.Halo2.CompiledGates
-import Zcash.Circuits.Halo2.FieldSupport
+import Clean.Halo2.Compiler.CompiledGates
+import Clean.Halo2.Compiler.FieldSupport
 import Zcash.Snark.Soundness.Argument.PermutationRows
 import Zcash.Circuits.Integration.PolynomialEnvironment
 import Zcash.Circuits.Integration.TopLevelConstraintModel
-import Zcash.Circuits.Halo2.CompiledLookups
+import Clean.Halo2.Compiler.CompiledLookups
 import Zcash.Snark.Soundness.Pricing.TupleCompression
 import Zcash.Snark.Soundness.Canonical.ConstraintModel
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
@@ -14,7 +14,7 @@ import Zcash.Circuits.Integration.Assignment
 
 Polynomial divisibility supplies vanishing on domain rows. Query-feed interpretation
 and fixed-column binding transport this to the compiler's row semantics; selector
-compression and source gate soundness belong to `Circuits/Halo2`.
+compression and source gate soundness belong to `Clean.Halo2.Compiler`.
 Lookup scalar membership and tuple-compression exclusions similarly establish
 the compiler's tuple-membership predicate at activation rows.
 -/

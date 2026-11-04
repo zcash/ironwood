@@ -19,7 +19,7 @@ written during circuit integration:
 * pure verifier algebra, decoded constraint models, permutation/lookup semantics, and
   challenge arguments remain under `Zcash/Snark/`;
 * pure circuit definitions and semantics remain under `Zcash/Circuits/`, and reusable
-  Halo2 compiler facts live locally in `Circuits/Halo2` pending upstreaming to Clean;
+  compiler theory lives in `Clean.Halo2.Compiler`;
 * only code that genuinely translates between the two sides belongs here.
 
 The normative architecture rule and current migration guidance are in
@@ -27,7 +27,7 @@ The normative architecture rule and current migration guidance are in
 
 The semantic bridge is split by responsibility:
 
-* `Halo2/CompiledGates.lean` and `Halo2/CompiledLookups.lean` recover source
+* `Clean.Halo2.Compiler.CompiledGates` and `Clean.Halo2.Compiler.CompiledLookups` recover source
   constraints from compiled row semantics. Query erasure, selector substitution,
   activation routing, and fixed-row realization belong to that compiler layer.
 * `PolynomialConstraints.lean` derives compiled gate vanishing from polynomial divisibility
@@ -37,12 +37,12 @@ The semantic bridge is split by responsibility:
   The `θ` event and its executable checks compare compiled tuples; their budget
   depends only on the compiled arities, activation count, usable rows, and proof count.
   Finite-family tuple collision mathematics lives in `Snark/Soundness/Pricing/TupleCompression`.
-* `Halo2/CompiledCopies.lean` derives source copy constraints from equality on
+* `Clean.Halo2.Compiler.CompiledCopies` derives source copy constraints from equality on
   resolved copy pairs. The circuit-owned environment realizes allocated constants.
-  `Halo2/CopyPermutation.lean` exports the compiled permutation, its usable-row
-  preservation, and recovery of copies from cycle equality. `Halo2/PermutationAssembly.lean`
+  `Clean.Halo2.Compiler.CopyPermutation` exports the compiled permutation, its usable-row
+  preservation, and recovery of copies from cycle equality. `Clean.Halo2.Compiler.PermutationAssembly`
   proves that executable assembly implements that permutation;
-  `Halo2/PermutationRows.lean` computes the row vectors that Keygen commits.
+  `Clean.Halo2.Compiler.PermutationRows` computes the row vectors that Keygen commits.
 * `PermutationCompiler.lean` proves query routing and chunk-layout facts.
   `Permutation.lean` identifies the compiled permutation with the verifier's sigma
   polynomials and combines that identification with permutation challenge exclusions
@@ -50,7 +50,7 @@ The semantic bridge is split by responsibility:
   Verifier-generic coordinate changes live in `Snark/Soundness/Canonical/PermutationCoordinates`.
 * `TopLevelInterpretation.lean` assembles `ConstraintsCompiled` and applies
   `top.soundness_compiled` to extract executable witnesses. The compiler theorem in
-  `Halo2/ConstraintsCompiled.lean` supplies source constraints and invokes TLC soundness.
+  `Clean.Halo2.Compiler.ConstraintsCompiled` supplies source constraints and invokes TLC soundness.
   `Assignment.lean` provides the witness types and identifies polynomial column reads
   with the circuit's canonical proof assignment and public-input layout.
   `CircuitFieldSupport top` supplies only numerical compatibility bounds;

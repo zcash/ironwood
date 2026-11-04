@@ -1,7 +1,7 @@
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Clean.Halo2.Keygen.Layout
-import Zcash.Circuits.Halo2.PermutationRows
+import Clean.Halo2.Compiler.PermutationRows
 import Zcash.Arithmetic
 import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft

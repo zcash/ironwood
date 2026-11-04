@@ -1,5 +1,5 @@
 import Zcash.Snark.Verifier.Key
-import Zcash.Arithmetic.FieldDomainParams
+import Clean.Utils.FieldDomainParams
 
 /-! # Field support for verifying keys
 
@@ -9,8 +9,6 @@ consequences of the certified field parameters, not independent assumptions.
 -/
 
 namespace Zcash.Snark.VerifyingKey
-
-open Zcash.Arithmetic
 
 variable {shape : CircuitShape} {F G : Type*} [Field F]
     [params : FieldDomainParams F]

@@ -4,7 +4,7 @@ import Zcash.Arithmetic.Domain
 import Zcash.Arithmetic.Fft
 import CompElliptic.Curves.Pasta.Fast.Msm
 import Zcash.Circuits.Integration.ExprRich
-import Zcash.Circuits.Halo2.FieldSupport
+import Clean.Halo2.Compiler.FieldSupport
 import Clean.Halo2.Keygen.Layout
 import Clean.Halo2.Keygen
 import Clean.Halo2.TopLevel

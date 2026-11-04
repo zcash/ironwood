@@ -486,7 +486,7 @@ them as data (`SpecOrBreak`) rather than assuming them away.
   allocated by that same program; the per-check modules are `ValueCommit`, `DeriveNullifier`,
   `SpendAuthority`, and `AddressIntegrity`; `Bundle` is the end-to-end statement against protocol
   spec §4.17.4; and `TopLevel` presents the whole thing as a closed `TopLevelCircuit`.
-- **`Halo2/`** — compiler semantics and field compatibility, independent of the verifier and
+- **`Clean.Halo2.Compiler`** — compiler semantics and field compatibility, independent of the verifier and
   `Integration/`. `CompiledGates` derives source gate constraints from compiled row evaluations;
   `SelectorCompression`, `SelectorEvaluation`, and `Queries` justify that translation.
   `CompiledLookups` recovers source lookups from tuple membership at compiled activation rows;
