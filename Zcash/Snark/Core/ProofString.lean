@@ -9,8 +9,9 @@ assembles one MSM, and checks `MSM = identity`, never branching on a proof eleme
 (established by auditing the verify call graph). This module captures that post-decoding proof
 string as plain data, cross-referenced against the reads in `plonk/verifier.rs`. The
 byte-level decoding beneath — `read_point`/`read_scalar`, rejecting non-canonical encodings and the
-identity — is `readProof?` in `Verifier/ProofBytes.lean`, which is canonical: the typed proof is the
-unique preimage of the bytes read.
+identity — is modeled by `readProof?` in `Verifier/ProofBytes.lean`, which is canonical: the typed
+proof is the unique preimage of the bytes read. That Rust's reader agrees with the model beyond the
+captures is trusted (`Fingerprint/Match.lean`).
 
 A single Orchard proof covers a whole bundle: `Proof::verify`
 ([zcash/orchard#531](https://github.com/zcash/orchard/pull/531) `src/circuit.rs`) passes all `N` actions'

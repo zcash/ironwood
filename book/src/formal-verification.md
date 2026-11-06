@@ -165,16 +165,19 @@ typed proofs through a canonical reader (`Snark/Verifier/ProofBytes.lean`).
 `DeployedAcceptsBytes` composes that exact parser, the key digest derived from the pinned
 description, and the BLAKE2b schedule into typed `DeployedAccepts`, requiring the description to
 describe the key (`Describes`) and excluding identity instance commitments as halo2 does; both
-honest captures witness the composition. BLAKE2b's idealization as a random oracle,
-`blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, universal
-refinement of Rust's reader to the Lean decoder, and identification of the pinned description as
-Rust's exact exporter output remain external. `Snark/Fingerprint/Match.lean` enumerates the
-boundary, while `Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement
-as the explicit `rustAcceptsRefinesLeanRaw` deployment assumption. The probability endpoint bounds
-the record's typed oracle observer rather than Rust acceptance; the Rust-containment theorem is
-separate and covers one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized
-aggregation of separate proof blobs is outside the formalization. The byte-layer implementation
-and landing history are recorded in
+honest captures witness the composition. The `Describes` requirement is not consumed by any theorem:
+it is evidence on the captures for the identification of Rust's verifying key with the Lean key,
+which the deployment record assumes ([#232](https://github.com/zcash/ironwood/issues/232)).
+BLAKE2b's idealization as a random oracle, `blake2b_simd`'s agreement with the Lean BLAKE2b beyond
+the captured transcripts, universal refinement of Rust's reader to the Lean decoder, and
+identification of the pinned description as Rust's exact exporter output remain external.
+`Snark/Fingerprint/Match.lean` enumerates the boundary, while
+`Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement as the explicit
+`rustAcceptsRefinesLeanRaw` deployment assumption. The probability endpoint bounds the record's
+typed oracle observer rather than Rust acceptance; the Rust-containment theorem is separate and
+covers one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized aggregation
+of separate proof blobs is outside the formalization. The byte-layer implementation and landing
+history are recorded in
 [#215](https://github.com/zcash/ironwood/pull/215), which closes the scoped byte-encoding issue
 [#66](https://github.com/zcash/ironwood/issues/66). Neither claims to discharge the universal
 Rust-refinement assumption, which remains the explicit deployment boundary named above.

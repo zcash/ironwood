@@ -2453,16 +2453,17 @@ assert_computable Zcash.Snark.DebugValue.parse? +choice
 assert_computable Zcash.Snark.DebugValue.renderCompact
 assert_computable Zcash.Snark.DebugValue.expr? +choice
 assert_computable Zcash.Snark.DebugValue.point? +choice
--- `Describes` relates a description to a designated canonical key and to the key the verifier
--- uses — the relation `DeployedAcceptsBytes` carries. The description must be one exact compact
--- derived-`Debug` value (`DescriptionSyntaxCanonical`: struct names and field sequences pinned,
--- so duplicated, reordered, and unknown fields are rejected) whose represented fields read back to
--- the canonical key under canonical in-range field literals (`canonicalFieldNat?`), query-column
+-- `Describes` relates a description to a designated canonical key and to the key the verifier uses
+-- — the relation `DeployedAcceptsBytes` carries. The description must be one exact compact
+-- derived-`Debug` value (`DescriptionSyntaxCanonical`: struct names and field sequences pinned, so
+-- duplicated, reordered, and unknown fields are rejected) whose represented fields read back to the
+-- canonical key under canonical in-range field literals (`canonicalFieldNat?`), query-column
 -- bounds, and equal permutation column/commitment arities. The used key must separately agree with
 -- the canonical one on every verifier-reachable field (`VerifyingKeyAgrees`), including fields
 -- halo2's description omits: `blindingFactors`, `delta`, `chunkLen`, and the permutation partition.
--- This constrains the deployment record; it is not consumed by the modeled probability bound.
--- Its decidability is what each honest capture evaluates.
+-- It is not consumed by any theorem: the bridge into typed family acceptance discards the conjunct,
+-- and the refinement assumption names the Lean-derived key directly (#232). Its decidability is
+-- what each honest capture evaluates.
 assert_computable Zcash.Snark.toQuerySpace +choice
 assert_computable Zcash.Snark.queryLayoutColumnsInRange
 assert_computable Zcash.Snark.DebugValue.hasStructFields

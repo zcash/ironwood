@@ -10,7 +10,8 @@ personalization, no key, no salt, and the sequential (fanout 1, depth 1) mode. T
 transcript hashes with `blake2b_simd`; this module lets Lean recompute those digests, so the byte
 layer beneath the typed challenge schedule can be checked against the captured runs instead of
 idealized away. Agreement with `blake2b_simd` beyond the captured transcripts and the known-answer
-vectors below is trusted, not proved.
+vectors below is trusted, not proved, and the captures exercise only the compression path
+(portable, SSE4.1, or AVX2) that `blake2b_simd` selected at run time on the capturing machine.
 
 Everything here is a total function on lists and fixed-length vectors — no `IO`, no `extern`, no
 `implemented_by` — so the kernel and compiled evaluation compute the same definitions. The

@@ -286,17 +286,16 @@ be missed.
   built into what counts as an adversary at all, rather than appearing as a hypothesis you can
   read off a theorem. An attacker that does not play along is outside the claim entirely — not
   covered with a weaker bound.
-* **Attacks do not depend on specific encodings**. The formalization covers the byte-level
-  encodings used in the SNARK: canonical decoding of curve points and field elements from the
-  proof string, and encoding absorbed elements into the Fiat–Shamir transcript bytes that the
-  hash sees. Both are checked against captured runs, down to the verifying-key digest that
-  opens the transcript, which is recomputed from the pinned key description. The encodings of
-  other transmitted protocol messages (e.g. note plaintexts, keys, and transaction fields) are
-  still expressed through the specification's abstract types. This is a potentially significant
-  category of gap, because (despite substantial attention to this area in audits and code
-  review) Zcash implementations have had quite a few significant security bugs due to
-  unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
-  It is a longer-term goal to extend the formalization to the remaining byte-level encodings.
+* **Attacks do not depend on specific encodings**. The formalization models the byte-level encodings
+  used in the SNARK: canonical decoding of curve points and field elements from the proof string,
+  and the encoding of absorbed elements into the Fiat–Shamir transcript bytes that the hash sees.
+  Both are checked against captured runs; [How Fiat–Shamir is modeled](#how-fiatshamir-is-modeled)
+  below says what that establishes and what remains assumed. The encodings of other transmitted
+  protocol messages (e.g. note plaintexts, keys, and transaction fields) are not modeled at all.
+  This is a potentially significant category of gap, because (despite substantial attention to this
+  area in audits and code review) Zcash implementations have had quite a few significant security
+  bugs due to unintentionally non-canonical encodings, mishandling of exceptional cases in decoding,
+  etc. It is a longer-term goal to extend the formalization to the remaining byte-level encodings.
 
 ### The fixed list of curve points
 
@@ -328,15 +327,22 @@ transcripts are distinct hash inputs. Lean also proves that one encoded transcri
 of another exactly when the corresponding typed transcript is a prefix of the other. Extending
 a typed transcript therefore extends its byte encoding; the set of all transcript encodings is
 not prefix-free. Even the verifying-key digest that opens the transcript is recomputed, from a
-pinned key description whose represented fields are checked against the derived key.
+pinned key description whose represented fields are checked against the derived key. That field
+check is evidence for the identification of Rust's verifying key with the Lean key, which the
+deployment record assumes, and it is not consumed by any theorem; see
+[#232](https://github.com/zcash/ironwood/issues/232).
 
-Four boundaries remain outside the universal proof. The security argument idealizes the
-BLAKE2b digest as uniform; `blake2b_simd` is not
-proved equal to Lean's BLAKE2b on every input; Rust's transcript reader is not proved equal to
-`readProof?` on every proof byte string; and the pinned description's identification with the
-unique string emitted by Rust remains deployment provenance. The captures check all three
-implementation-facing identifications on their concrete executions, but finite captures do not
-establish them for arbitrary inputs.
+Four boundaries remain outside the universal proof. The security argument idealizes the BLAKE2b
+digest as uniform; `blake2b_simd` is not proved equal to Lean's BLAKE2b on every input; Rust's
+transcript reader is not proved equal to `readProof?` on every proof byte string; and the pinned
+description's identification with the unique string emitted by Rust remains deployment provenance.
+The captures check all three implementation-facing identifications on their concrete executions, but
+finite captures do not establish them for arbitrary inputs. They also exercise only the compression
+path that `blake2b_simd` selected at run time on the capturing machine (portable, SSE4.1, or AVX2),
+not the others. Two further premisses the captures rest on are listed with the rest in
+`Snark/Fingerprint/Match.lean`: that the exporter records what the verifier consumed, and that the
+production code performs the ZIP 257 canonical-length check on which `readProof?`'s empty-suffix
+requirement relies (`Snark/Soundness/Main.lean`).
 
 The formalized verifier prices one proof bundle. Halo2's optional randomized `BatchVerifier`
 aggregation of separate proof blobs is outside the model and is not included in the probability
@@ -372,13 +378,16 @@ Everything above, collected.
    properties built on it. Discrete log hardness is not a binary property; the feasibility
    of attacks may vary over time and according to the capabilities of an adversary.
 2. **The hash behaves like a random oracle.** BLAKE2b is treated as fresh randomness with no
-   exploitable structure; its implementation is formalized and checked, but plays no role in
-   the argument.
+   exploitable structure; the algorithm (RFC 7693) is formalized and checked against the
+   captured transcripts, but plays no role in the argument. The deployed implementation,
+   `blake2b_simd`, is not proved equal to it.
 3. **The attacker is algebraic** — it shows its work for every curve point it outputs. One
    that does not is outside the claim rather than covered by it.
-4. **Attacks do not depend on specific encodings.** How curve points and field elements become
-   bytes in the proof string and in the Fiat–Shamir transcript is covered and checked against
-   captures; their encodings elsewhere in protocol messages are not.
+4. **Attacks do not depend on specific encodings.** How curve points and field elements become bytes
+   in the proof string and in the Fiat–Shamir transcript is modeled in Lean and checked against
+   captures, but the model does not enter the security argument; that Rust agrees with the model
+   beyond the captures is assumed, as is the identification of Rust's verifying key with the Lean
+   key. Their encodings elsewhere in protocol messages are not modeled at all.
 5. **The deployed list of curve points is as good as a sampled one.** Security is proved for
    protocols that sample it; the real one is hashed into existence and baked in.
 6. **Encodings outside the proof.** The proof string and the transcript, key digest included,

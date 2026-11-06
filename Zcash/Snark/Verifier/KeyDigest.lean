@@ -33,6 +33,19 @@ model: BLAKE2b's 512-bit random-oracle output is reduced modulo `p`, with a birt
 governed by the field size. This consequence of the random-oracle model is not formalized here.
 Equal key digests mean the unreduced outputs are congruent modulo `p`, not necessarily equal
 (`challengeOfDigest_eq_iff_modEq`).
+
+## What consumes this module
+
+Only `keyDigest` is load-bearing: `DeployedAcceptsBytes` opens the transcript with it, and the
+deployment record's `pinnedVkDigestAgrees` ties it to the family's digest. The parser, the field
+extractors, and `Describes` are not consumed by any theorem. `DeployedAcceptsBytes` carries
+`Describes` as a conjunct, but the bridge into the typed family acceptance
+(`accepts_of_acceptsBytes`) discards it, and the refinement assumption `rustAcceptsRefinesLeanRaw`
+names the Lean-derived key directly, so the identification of Rust's verifying key with that key is
+assumed rather than derived from the description. The honest captures discharge `Describes` by
+evaluation; that is evidence for the assumption, not a theorem. Making the description load-bearing
+—stating byte acceptance and the refinement assumption at the key parsed from it— is tracked in
+#232.
 -/
 
 namespace Zcash.Snark

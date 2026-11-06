@@ -11,8 +11,8 @@ and this project adheres to Rust's notion of
 - The Fiat–Shamir byte layer: an executable BLAKE2b (`Zcash/Common/Hash/Blake2b.lean`), halo2's
   transcript encoding and the concrete oracle `halo2Transcript` (`Zcash/Snark/Verifier/
   Transcript.lean`), and per-family checks that recompute every captured challenge from bytes
-  (`Fixtures/*/*/Transcript.lean`), with the encoding proved injective and shown to preserve and
-  reflect prefixes.
+  (`Fixtures/*/*/Transcript.lean`), with the encoding proved injective, and one encoded
+  transcript proved a prefix of another exactly when the corresponding typed transcript is.
 - The proof-string byte layer: canonical `read_point`/`read_scalar` decoders and the reader and
   serializer in the verifier's read order (`Zcash/Snark/Verifier/ProofBytes.lean`), checked
   against the exporters' exact consumed proof bytes (`Fixtures/*/*/ProofBytes.lean`), plus
@@ -29,15 +29,18 @@ and this project adheres to Rust's notion of
   digest. Each generated fixture carries the exact compact description the pinned exporter hashed;
   all four carry the same one, compared by the kernel
   (`PostNu63Fixture.captures_use_same_pinnedKeyDescription` and its random counterparts).
-- `DeployedAcceptsBytes` requires the pinned description to describe the key (`Describes`, a
-  relation between the description, a designated canonical key, and the key the verifier uses:
-  the represented fields read back to the canonical key under an exact compact derived-`Debug`
-  syntax, and the used key agrees with it on every verifier-reachable field — `blindingFactors`,
-  `delta`, `chunkLen`, and the permutation partition included) and, as halo2's `common_point`
-  does, refuses identity instance commitments; each honest capture discharges both by evaluation,
-  a range-slack mutation is rejected from the description itself, and two-key coherence witnesses
-  show that a used key differing from the designated canonical key is rejected. `Describes`
-  constrains the deployment record; the current modeled probability bound does not consume it.
+- `DeployedAcceptsBytes` requires the pinned description to describe the key, and refuses identity
+  instance commitments as halo2's `common_point` does. The key requirement is `Describes`, a
+  relation between the description, a designated canonical key, and the key the verifier uses. Its
+  represented fields must read back to the canonical key under an exact compact derived-`Debug`
+  syntax, and the used key must agree with the canonical key on every verifier-reachable field,
+  including `blindingFactors`, `delta`, `chunkLen`, and the permutation partition, which the
+  description does not carry. Each honest capture discharges both requirements by evaluation, as
+  evidence for the key identification that the deployment record assumes; a range-slack mutation is
+  rejected from the description itself, and two-key coherence witnesses show that a used key
+  differing from the designated canonical key is rejected. `Describes` is not consumed by any
+  theorem: the bridge into typed family acceptance discards it, and the refinement assumption names
+  the Lean-derived key directly; making the parsed key load-bearing is #232.
 - `DeployedAcceptsRawBytes` (`Zcash/Snark/Soundness/Main.lean`): the raw entry point — halo2's
   instance column-count and usable-row checks first, commitments derived internally, then the
   exact parse — with its rejection paths as theorems; both honest captures reach it

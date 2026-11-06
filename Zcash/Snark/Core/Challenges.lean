@@ -23,7 +23,9 @@ The byte layer beneath — the serialization of absorbed points and scalars, the
 BLAKE2b, and the digest-to-field conversion — is `halo2Transcript` (`Verifier/Transcript.lean`),
 checked against every capture, and the verifying-key digest that opens the transcript is derived
 from the pinned key description (`Verifier/KeyDigest.lean`). What stays idealized is BLAKE2b's
-behaviour as a random oracle.
+behaviour as a random oracle; what stays trusted is that `blake2b_simd` and Rust's proof reader
+agree with the Lean byte layer beyond the captures (`Fingerprint/Match.lean`, *What remains
+external*).
 -/
 
 namespace Zcash.Snark

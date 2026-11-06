@@ -79,9 +79,12 @@ runtime fields. `Describes` checks its represented fields against `canonicalVk` 
 verifier-active field of `vk`, including `blindingFactors`, `delta`, `chunkLen`, the permutation
 partition, and common-evaluation indices, to that key. It remains a relation: the Action caller
 passes the same circuit-derived key in both key positions and separately pins the exact
-exporter-emitted description. `Describes` remains a conjunct of this byte predicate. At that
-capstone it constrains the deployment record; the bridge into the modeled family acceptance
-projects it away and the probability bound does not consume it.
+exporter-emitted description. `Describes` and the identity exclusion are conjuncts that are not
+consumed by any theorem: `accepts_of_acceptsBytes` discards both, since the soundness direction
+(Rust accepts, hence the model accepts) needs neither, and `rustAcceptsRefinesLeanRaw` names the
+Lean-derived key directly. They narrow this predicate towards halo2's behaviour, and the honest
+captures discharge them by evaluation as evidence for the key identification the deployment record
+assumes (#232).
 
 Nor does `Describes` derive every reader count. The caller's `Shape` supplies
 `numQuotientPieces` and `numPointSets`; the Action instantiation obtains the former from circuit

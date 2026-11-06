@@ -83,11 +83,12 @@ rather than proved, with its known strengthening named where one exists:
   recomputed from the exact exporter-emitted preimage: each family's `Transcript.lean` hashes that
   string, `Describes` reads its fields against the captured key, which is certified equal to the
   derived key, and `Fixtures/PinnedKey.lean` states that reading field by field. The fixture
-  inputs remain trusted. `Describes` is a deployment-record coherence obligation, not a premise
-  consumed by the modeled probability bound. Collision resistance of the reduced digest
-  `keyDigest` follows in the random-oracle model from reducing BLAKE2b's 512-bit random-oracle
-  output modulo `p`, with a birthday bound governed by the field size. This consequence of the
-  random-oracle model is not formalized here.
+  inputs remain trusted. `Describes` is not consumed by any theorem, neither by the modeled
+  probability bound nor by the Rust-containment theorem, whose refinement assumption names the
+  Lean-derived key directly; the captures discharge it as evidence for that assumption (#232).
+  Collision resistance of the reduced digest `keyDigest` follows in the random-oracle model from
+  reducing BLAKE2b's 512-bit random-oracle output modulo `p`, with a birthday bound governed by the
+  field size. This consequence of the random-oracle model is not formalized here.
 * *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
   challenge schedule into it, under `Describes` and halo2's refusal of identity instance
