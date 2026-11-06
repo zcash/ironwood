@@ -176,21 +176,6 @@ def DeployedAcceptsRawBytes [Inhabited VestaG] (shape : Shape) (urs : URS VestaG
     DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
       (valid.commitments commitColumn) proofBytes
 
-/-- Raw acceptance exposes the validated columns and enters the existing byte-level predicate with
-exactly their derived commitments. -/
-theorem deployedAcceptsRawBytes_to_bytes [Inhabited VestaG]
-    {shape : Shape} {urs : URS VestaG} {hk : shape.k = urs.k}
-    {canonicalVk vk : VerifyingKey shape Fp VestaG} {pinnedVkDescription : String}
-    {instances : RawInstances shape Fp} {commitColumn : List Fp → VestaG}
-    {proofBytes : List UInt8}
-    (h : DeployedAcceptsRawBytes shape urs hk canonicalVk vk pinnedVkDescription
-      instances commitColumn proofBytes) :
-    ∃ valid : ValidatedInstances vk,
-      validateInstances? vk instances = some valid ∧
-      DeployedAcceptsBytes shape urs hk canonicalVk vk pinnedVkDescription
-        (valid.commitments commitColumn) proofBytes :=
-  h
-
 /-- Successful raw acceptance exposes the validated public columns, the unique proof parsed from
 the complete byte string, its canonical serialization, and the typed acceptance judgment reached
 with commitments derived from those columns.  This is the complete Lean raw-to-typed bridge; it

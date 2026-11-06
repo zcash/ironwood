@@ -52,21 +52,19 @@ Fields split by status.  `challengeLawIsChallenge255` identifies the typed deplo
 with `challenge255`; `challenge255_joint_eventBias_le` then discharges the adaptive joint hybrid,
 with only the permanent BLAKE2b-to-uniform-digest floor behind that identification, and
 `challengeQueryBound_le` keeps the budget that hybrid is charged per query no looser than the
-experiment's own envelope. `basisIsGeneratorRO`
-is the GroupHash-as-random-oracle idealization, permanent up to the encoding-distribution
-groundwork.  `vkDigestAgreesOnCanonical` binds the family's opaque digest to the deployed one at
-the canonical key only — the capstones claim no cross-key binding. `idealizedAcceptsFaithful`
-identifies only the injectable-oracle observer's typed core; it is not a Rust-reader claim.
-`rustAcceptsRefinesLeanRaw` names that production claim separately, in the soundness direction
-actually required. It also carries the proof-reader shape agreement not derivable from the pinned
-description: the quotient-piece and multiopen point-set counts, and the permutation partition used
-by Rust, must be those in `AdaptiveActionStatementShape pp`. `instanceColumnsExact` and
-`numProofs_pos` pin the remaining call shape:
-exact ten-row instance columns
-(excluding the trailing-zero commitment alias) and one invocation per present bundle carrying
-its positive action count. `dlogAdvantageAgrees` prevents the record from
-carrying an unrelated advantage function: it must be the one used by `profile`.  Its concrete
-security interpretation remains the permanent external estimate. -/
+experiment's own envelope. `basisIsGeneratorRO` is the GroupHash-as-random-oracle idealization,
+permanent up to the encoding-distribution groundwork. `pinnedVkDigestAgrees` binds the family's
+opaque digest to the digest of the pinned description at the canonical key only — the capstones
+claim no cross-key binding. `idealizedAcceptsFaithful` identifies only the injectable-oracle
+observer's typed core; it is not a Rust-reader claim. `rustAcceptsRefinesLeanRaw` names that
+production claim separately, in the soundness direction actually required. It also carries the
+proof-reader shape agreement not derivable from the pinned description: the quotient-piece and
+multiopen point-set counts, and the permutation partition used by Rust, must be those in
+`AdaptiveActionStatementShape pp`. `instanceColumnsExact` and `numProofs_pos` pin the remaining call
+shape: exact ten-row instance columns (excluding the trailing-zero commitment alias) and one
+invocation per present bundle carrying its positive action count. `dlogAdvantageAgrees` prevents the
+record from carrying an unrelated advantage function: it must be the one used by `profile`. Its
+concrete security interpretation remains the permanent external estimate. -/
 structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofParams)
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (query : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → T)
@@ -95,13 +93,6 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   experiment.  Permanent under the GroupHash idealization. -/
   basisIsGeneratorRO :
     deployedBasisLaw = (orchardGeneratorROSetup query).map (orchardGeneratorROBasis query)
-  /-- The deployed verifying-key digest. -/
-  deployedVkDigest : VerifyingKey (AdaptiveActionStatementShape pp) Fp VestaG → Fp
-  /-- The family's opaque transcript digest agrees with the deployed digest at the canonical
-  key of every basis.  Single-key agreement only: no cross-key binding is claimed or needed. -/
-  vkDigestAgreesOnCanonical : ∀ basis,
-    family.vkHash basis (adaptiveActionStatementVk pp basis) =
-      deployedVkDigest (adaptiveActionStatementVk pp basis)
   /-- The pinned-key description supplied to the production verifier at each basis. -/
   pinnedVkDescription :
     (AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG) → String
@@ -168,7 +159,8 @@ structure ActionDeploymentInstantiation {T : Type*} [DecidableEq T] (pp : ProofP
   bundle's action count.  Zero models an absent bundle, never an empty verifier invocation
   (`book/src/formal-verification/source-map.md`), so a deployment record prices a positive
   count; that the count equals the deployed bundle's action count is part of the same
-  identification. -/
+  identification. This field is not consumed by any theorem: it scopes the record to the deployed
+  call shape, so that the claim is stated only for positive counts. -/
   numProofs_pos : 0 < pp.numProofs
   /-- Maximum number of distinct challenge points visited by the complete knowledge-failure
   experiment. -/

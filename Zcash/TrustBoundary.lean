@@ -2422,8 +2422,6 @@ assert_axioms Zcash.Snark.deployedAcceptsBytes_congr_instanceCommitment +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_computable Zcash.Snark.DeployedAcceptsRawBytes +choice +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Snark.deployedAcceptsRawBytes_to_bytes +native(
-  CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.deployedAcceptsRawBytes_canonical +native(
   CompElliptic.Fields.Pasta.vestaBase, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.deployedAcceptsRawBytes_not_of_wrong_column_count +native(

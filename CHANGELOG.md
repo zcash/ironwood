@@ -63,6 +63,11 @@ and this project adheres to Rust's notion of
   transcript with its pre-squeeze extension, so its injectivity fails; the deployed tags separate
   the same witnesses.
 
+### Removed
+- The deployment record's `deployedVkDigest` and `vkDigestAgreesOnCanonical` fields, which were
+  not consumed by any theorem (`pinnedVkDigestAgrees` constrains the same digest), and the theorem
+  `deployedAcceptsRawBytes_to_bytes`, a restatement of `DeployedAcceptsRawBytes`'s definition.
+
 ### Changed
 - `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
   `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
