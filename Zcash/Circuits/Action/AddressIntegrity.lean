@@ -22,11 +22,7 @@ separate building block; its output cell feeds in here as `ivk`):
    region (`ecc/chip.rs:474-488`), two copy constraints.
 
 The block returns the witnessed `pk_d_old`. `Spec` is knowledge-sound with no
-existential: `pk_d_old = ivk • g_d_old` at the input `ivk` cell (the phase-1 donor
-carried the whole `CommitIvk` call inside and an `∃ ivk` — here `ivk` is an input, so
-the statement is direct).
-
-Phase-1 donor: `Clean/Orchard/Action/AddressIntegrity.lean` (post-`CommitIvk` part).
+existential: `pk_d_old = ivk • g_d_old` at the input `ivk` cell.
 -/
 
 namespace Zcash.Circuits.Action.AddressIntegrity

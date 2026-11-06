@@ -782,7 +782,7 @@ theorem honest_yA (G : Generators) {s : State Fp} {p : Fp} {A : Point Fp} {r : �
   rw [hxA, hxP, hl1, hl2, hAr]
   exact hh.2.1.symm
 
-/-- A defined chain restricts to every prefix. Donor `HashPiece.range_prefix_some`. -/
+/-- A defined chain restricts to every prefix. -/
 theorem range_prefix_some (S : ℕ → Point Fp) (Q : Point Fp) (f : ℕ → ℕ) {n : ℕ} {B : Point Fp}
     (hn : hashToPoint S Q ((List.range n).map f) = some B)
     {r : ℕ} (hr : r ≤ n) :

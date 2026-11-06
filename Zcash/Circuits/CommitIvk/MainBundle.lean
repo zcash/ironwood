@@ -31,43 +31,6 @@ private theorem short_output (b : ℕ) (cfg : LookupRangeCheck.Config 10)
 
 /-! ## Value-level infrastructure -/
 
-/-- The ironwood `Chain.PieceChunks` is the donor's, verbatim. -/
-private theorem pieceChunks_donor_iff :
-    ∀ (ms : List ℕ) (pieces : Vector Fp ms.length) (chunks : List ℕ),
-      Sinsemilla.Chain.PieceChunks ms pieces chunks ↔
-      Sinsemilla.Chain.PieceChunks ms pieces chunks := by
-  intro ms
-  induction ms with
-  | nil =>
-    intro pieces chunks
-    simp only [Sinsemilla.Chain.PieceChunks, Sinsemilla.Chain.PieceChunks]
-  | cons n rest ih =>
-    intro pieces chunks
-    constructor
-    · rintro ⟨msf, h1, h2, tailChunks, h3, h4⟩
-      exact ⟨msf, h1, h2, tailChunks, h3, (ih _ _).mp h4⟩
-    · rintro ⟨msf, h1, h2, tailChunks, h3, h4⟩
-      exact ⟨msf, h1, h2, tailChunks, h3, (ih _ _).mpr h4⟩
-
-/-- The ironwood `Chain.ZsFacts` is the donor's, verbatim. -/
-private theorem zsFacts_donor_iff :
-    ∀ (ms : List ℕ) (chunks : List ℕ)
-      (zs : Sinsemilla.HVec (Sinsemilla.Chain.zLengths ms) Fp),
-      Sinsemilla.Chain.ZsFacts ms chunks zs ↔
-      Sinsemilla.Chain.ZsFacts ms chunks zs := by
-  intro ms
-  induction ms with
-  | nil =>
-    intro chunks zs
-    simp only [Sinsemilla.Chain.ZsFacts, Sinsemilla.Chain.ZsFacts]
-  | cons n rest ih =>
-    intro chunks zs
-    constructor
-    · rintro ⟨h1, h2⟩
-      exact ⟨h1, (ih _ _).mp h2⟩
-    · rintro ⟨h1, h2⟩
-      exact ⟨h1, (ih _ _).mpr h2⟩
-
 /-- The hash child's extracted running sums are the `bits`-column reads. -/
 private theorem hashExtract_zs (G : Generators) (Q : Point Fp) (hQ : Q.OnCurve)
     (cfg : Sinsemilla.HashPiece.Config)
@@ -160,21 +123,19 @@ theorem soundness (G : Generators) (R : FixedBase) (Q : Point Fp)
   simp only [circuit_norm] at hCmS
   obtain ⟨chunks, hPC, hZs, hContract⟩ := hCmS
   rw [hashExtract_zs] at hZs
-  have hPC' := (pieceChunks_donor_iff _ _ _).mp hPC
-  have hZs' := (zsFacts_donor_iff _ _ _).mp hZs
   -- the two hash running-sum value facts
   have hz13a := NoteCommit.zsFacts_cell ns _ chunks _
-    ⟨0, by decide⟩ hPC' hZs' (by decide) (r := 13) (by decide)
+    ⟨0, by decide⟩ hPC hZs (by decide) (r := 13) (by decide)
   rw [zs_get_z13a] at hz13a
   have hz13c := NoteCommit.zsFacts_cell ns _ chunks _
-    ⟨2, by decide⟩ hPC' hZs' (by decide) (r := 13) (by decide)
+    ⟨2, by decide⟩ hPC hZs (by decide) (r := 13) (by decide)
   rw [zs_get_z13c] at hz13c
   simp only [Nat.add_assoc, Nat.reduceAdd] at hz13a hz13c
   -- the piece value bounds
   have hpieceA := NoteCommit.pieceChunks_val_lt ns _ chunks
-    ⟨0, by decide⟩ hPC' (by decide)
+    ⟨0, by decide⟩ hPC (by decide)
   have hpieceC := NoteCommit.pieceChunks_val_lt ns _ chunks
-    ⟨2, by decide⟩ hPC' (by decide)
+    ⟨2, by decide⟩ hPC (by decide)
   -- ── the canonicity composite ──
   subcircuit_rw at hCan
   have hCanS := hCan (by rw [Canonicity.circuit_envAssumptions_eq]; exact ⟨hTableL, hDistinct⟩)
@@ -259,7 +220,7 @@ theorem soundness (G : Generators) (R : FixedBase) (Q : Point Fp)
     push_cast
     ring
   have hchunks := CommitIvk.pieceChunks_eq_commitIvkChunks_of_indexed_piece_values
-    hPC'
+    hPC
     (by with_unfolding_all exact hAv)
     (by with_unfolding_all exact hBv)
     (by with_unfolding_all exact hCv)
@@ -294,30 +255,6 @@ theorem soundness (G : Generators) (R : FixedBase) (Q : Point Fp)
   rfl
 
 /-! ## Completeness infrastructure -/
-
-private theorem pieceBounds_donor_iff :
-    ∀ (ms : List ℕ) (pieces : Vector Fp ms.length),
-      Sinsemilla.Chain.PieceBounds ms pieces ↔
-      Sinsemilla.Chain.PieceBounds ms pieces := by
-  intro ms
-  induction ms with
-  | nil =>
-    intro pieces
-    simp only [Sinsemilla.Chain.PieceBounds, Sinsemilla.Chain.PieceBounds]
-  | cons n rest ih =>
-    intro pieces
-    constructor
-    · rintro ⟨h1, h2⟩
-      exact ⟨h1, (ih _).mp h2⟩
-    · rintro ⟨h1, h2⟩
-      exact ⟨h1, (ih _).mpr h2⟩
-
-private theorem honestChunks_donor_eq :
-    ∀ (ms : List ℕ) (pieces : Vector Fp ms.length),
-      Sinsemilla.Chain.honestChunks ms pieces
-        = Sinsemilla.Chain.honestChunks ms pieces := by
-  intro ms pieces
-  rfl
 
 private theorem short_extract_eq' (b : ℕ) (cfg : LookupRangeCheck.Config 10)
     (i : RegionIndex) (env : Placed Environment Fp) :
@@ -493,22 +430,21 @@ theorem completeness (G : Generators) (R : FixedBase) (Q : Point Fp)
     (env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 4) : ℕ) : ℤ))
     (env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 6) : ℕ) : ℤ))
     hwa (by rw [hwb]) hwc (by rw [hwd])
-  obtain ⟨hPBdonor, hHonestDonor⟩ := hHF
+  obtain ⟨hPB₀, hHonest₀⟩ := hHF
   have hPB : Sinsemilla.Chain.PieceBounds ns
       #v[env.advice cfg.hashConfig.witnessPieces ((place i₀ : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 3) : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 4) : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 6) : ℕ) : ℤ)] :=
-    (pieceBounds_donor_iff _ _).mpr hPBdonor
+    hPB₀
   have hHonest : Sinsemilla.Chain.honestChunks ns
       #v[env.advice cfg.hashConfig.witnessPieces ((place i₀ : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 3) : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 4) : ℕ) : ℤ),
         env.advice cfg.hashConfig.witnessPieces ((place (i₀ + 6) : ℕ) : ℤ)]
       = commitIvkChunks (show Fp from input_ak).val (show Fp from input_nk).val := by
-    rw [honestChunks_donor_eq]
-    rw [hiak, hInputNk] at hHonestDonor
-    exact hHonestDonor
+    rw [hiak, hInputNk] at hHonest₀
+    exact hHonest₀
   -- ── derived commit contract (the composite's rely-conditions) ──
   have hPB2 : Sinsemilla.Chain.PieceBounds ns
       (eval (⟨place, env⟩ : Placed ProverEnvironment Fp)
@@ -544,19 +480,17 @@ theorem completeness (G : Generators) (R : FixedBase) (Q : Point Fp)
   rw [hashExtract_zs] at hZs
   rw [pieces_eval_eq_env] at hPC
   try simp only [circuit_norm, Nat.add_zero] at hPC
-  have hPC' := (pieceChunks_donor_iff _ _ _).mp hPC
-  have hZs' := (zsFacts_donor_iff _ _ _).mp hZs
   have hz13a := NoteCommit.zsFacts_cell ns _ chunks _
-    ⟨0, by decide⟩ hPC' hZs' (by decide) (r := 13) (by decide)
+    ⟨0, by decide⟩ hPC hZs (by decide) (r := 13) (by decide)
   rw [zs_get_z13a] at hz13a
   have hz13c := NoteCommit.zsFacts_cell ns _ chunks _
-    ⟨2, by decide⟩ hPC' hZs' (by decide) (r := 13) (by decide)
+    ⟨2, by decide⟩ hPC hZs (by decide) (r := 13) (by decide)
   rw [zs_get_z13c] at hz13c
   simp only [Nat.add_assoc, Nat.reduceAdd] at hz13a hz13c
   have hpieceA := NoteCommit.pieceChunks_val_lt ns _ chunks
-    ⟨0, by decide⟩ hPC' (by decide)
+    ⟨0, by decide⟩ hPC (by decide)
   have hpieceC := NoteCommit.pieceChunks_val_lt ns _ chunks
-    ⟨2, by decide⟩ hPC' (by decide)
+    ⟨2, by decide⟩ hPC (by decide)
   -- the b1/d1 gate-internal witnesses
   have hbits := canon_bit_witness (brWit input_var_ak 254 1) (brWit input_var_nk 254 1)
     (cfg.gate, cfg.lookupConfig) _ (i₀ + 11) place env hWCan

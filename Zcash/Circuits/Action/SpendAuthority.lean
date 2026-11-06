@@ -18,12 +18,11 @@ synthesis.
 
 ## Knowledge soundness
 
-The phase-1 donor (`Clean/Orchard/Action/SpendAuthority.lean`) could only state
-`∃ alpha, rk = α • SpendAuthG + ak_P` — vacuous, since `SpendAuthG` generates the group.
-Here `α` is the `FullWidth` child's extraction data (the scalar its witnessed window
-cells encode), so the `Spec` is the real knowledge-soundness statement: the extractor
-reads `α` off any satisfying assignment and `rk = α • SpendAuthG + ak_P` holds at that
-`α`, with no existential.
+An existential `∃ α, rk = α • SpendAuthG + ak_P` would be vacuous, since `SpendAuthG`
+generates the group. Instead `α` is the `FullWidth` child's extraction data (the scalar
+encoded by the child's witnessed window cells), so the `Spec` is a real knowledge-soundness
+statement. The extractor reads `α` off any satisfying assignment, and
+`rk = α • SpendAuthG + ak_P` holds at that `α`, with no existential.
 -/
 
 namespace Zcash.Circuits.Action.SpendAuthority

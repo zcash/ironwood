@@ -21,8 +21,6 @@ in source order:
    `Ecc.MulFixed.BaseFieldElem` bundle);
 4. `cm.add(product)` (region `"complete point addition"`, `ecc/chip.rs:582-595`); the
    returned nullifier is `.extract_p()` — the x-coordinate.
-
-Phase-1 donor: `Clean/Orchard/Action/DeriveNullifier.lean`.
 -/
 
 namespace Zcash.Circuits.Action.DeriveNullifier
@@ -42,7 +40,7 @@ structure Input (F : Type) where
 deriving ProvableStruct
 
 /-- The `ConstantLength<2>` hash value is the one-padded-block hash at capacity
-`2·2^{64}`: the message is exactly one rate-2 block, so the donor scheduler's fold
+`2·2^{64}`: the message is exactly one rate-2 block, so the `ConstantLength` scheduler's fold
 is a single absorb/permute step — the value-level bridge onto the Orchard-protocol
 `Poseidon.hash` bundle's `HashPaddedBlock` contract. -/
 theorem constantLength_value_two (a b : Fp) :
@@ -162,7 +160,7 @@ def synthesize (K : FixedBase)
 
 /-- Rust `gadget.rs::derive_nullifier`: the Poseidon hash of `(nk, rho)`, the add-chip
 sum with `psi`, the `scalar • NullifierK` base-field-element fixed-base mul, and the
-complete addition with `cm`. `Spec` is the donor contract: the nullifier is
+complete addition with `cm`. `Spec` is the contract: the nullifier is
 `extract_p(cm + (poseidon_hash(nk, rho) + psi) • NullifierK)` — the x-coordinate of the
 complete sum. -/
 def circuit (K : FixedBase) : FormalCircuit Fp

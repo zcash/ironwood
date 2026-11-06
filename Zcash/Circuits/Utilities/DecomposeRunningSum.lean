@@ -65,13 +65,13 @@ private theorem eval_foldl_rangeCheck (l : List ℕ) (acc word : Expression Fp Q
     rw [List.foldl_cons, List.foldl_cons, ih]
     simp [circuit_norm]
 
-/-- The donor's `rangeCheckValues` in plain `List.map` form. -/
+/-- `rangeCheckValues` in plain `List.map` form. -/
 private theorem rangeCheckValues_eq (range : ℕ) :
     rangeCheckValues (F := Fp) range
       = ((List.range range).drop 1).map (fun i : ℕ => (i : Fp)) := by
   simp [rangeCheckValues, List.map_eq_flatMap]
 
-/-- `rangeCheckExpr` evaluates to the donor's `rangeCheckPoly` of the evaluated word —
+/-- `rangeCheckExpr` evaluates to `rangeCheckPoly` of the evaluated word —
 the bridge to the `InRange` machinery (`Utilities.RunningSum`). -/
 theorem eval_rangeCheckExpr (range : ℕ) (word : Expression Fp Query) (f : Query → Fp) :
     (rangeCheckExpr range word).eval f = rangeCheckPoly range (word.eval f) := by

@@ -8,14 +8,12 @@ Reference (ported from actual Rust, not memory):
   its own `"Witness element"` region, witnessing `a' = a + 2^130 - t_P`.
 - the gate regions (`"NoteCommit input g_d"` etc.): the per-input canonicity gates, one
   region each.
-Phase-1 donors: `Clean/Orchard/Action/NoteCommit.lean`
-(`NoteCommit.{Gd,Pkd,Rho,Psi}Canonicity` — Telescoped copy-check + gate).
 
 Each composite is a two-child layouter `FormalCircuit`: the `witnessCheck` child pins the
 shifted value's telescoped decomposition (the gate bundle's `∃ lo` rely-condition), the
 gate bundle carries the semantic canonicity contract, and the shift equation itself is
 the gate's own constraint (derived inside the gate bundle's soundness). `Spec` is the
-donor composite's bit-slice payoff.
+composite's bit-slice guarantee.
 -/
 
 namespace Zcash.Circuits.NoteCommit
@@ -115,7 +113,7 @@ theorem synth_regionCount (gcfg : GdCanonicity.Config) (lcfg : LookupRangeCheck.
     operations_assignRegion, Operations.regionCount]
 
 /-- Rust `gd_x_canonicity` (`note_commit.rs`): `witness_check(a', 13)` then the
-`"NoteCommit input g_d"` gate region. `Spec` is the donor composite payoff:
+`"NoteCommit input g_d"` gate region. `Spec` is the composite's guarantee:
 `a`/`b0`/`b1` are the canonical bit slices of `x(g_d)`. -/
 def circuit :
     FormalCircuit Fp (GdCanonicity.Config × LookupRangeCheck.Config 10)
@@ -210,12 +208,12 @@ def circuit :
     rw [LookupRangeCheck.rangeCheckAt_spec_eq, rangeCheckAt_output] at hWSpec
     simp only [circuit_norm, show (10 * 13 : ℕ) = 130 from by norm_num] at hWSpec
     obtain ⟨hz0eq, lo, hlo, htel⟩ := hWSpec
-    -- the gate child: discharge its rely-conditions, harvest the donor gate `Spec`
+    -- the gate child: discharge its rely-conditions, harvest the gate `Spec`
     rw [rangeCheckAt_output] at hGate
     simp only [gateChild_assumptions_eq, gateChild_spec_eq, circuit_norm] at hGate
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2, lo, hlo, by rw [hz0eq]; exact htel⟩
-    simp only [GdCanonicity.toDonor, NoteCommit.GdCanonicity.Gate.Spec] at hGSpec
+    simp only [GdCanonicity.toGateRow, NoteCommit.GdCanonicity.Gate.Spec] at hGSpec
     exact ⟨hGSpec.1, hGSpec.2.1, hGSpec.2.2.1⟩
 
   completeness := by
@@ -248,12 +246,12 @@ def circuit :
       rw [rangeCheckAt_output]
       simp only [gateChild_assumptions_eq, circuit_norm, h_input]
       exact ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2, lo, hlo, by rw [hz0eq]; exact htel⟩
-    · -- the gate child's honest-prover precondition: the donor gate `Spec` + the shift
+    · -- the gate child's honest-prover precondition: the gate `Spec` + the shift
       rw [rangeCheckAt_output]
       simp only [gateChild_proverAssumptions_eq, circuit_norm]
       rw [h_input.2.2.2.1] at hWaP
       rw [h_input.1, h_input.2.1, h_input.2.2.1, h_input.2.2.2.1, h_input.2.2.2.2]
-      simp only [GdCanonicity.toDonor, NoteCommit.GdCanonicity.Gate.Spec]
+      simp only [GdCanonicity.toGateRow, NoteCommit.GdCanonicity.Gate.Spec]
       refine ⟨⟨hPA.1, hPA.2.1, hPA.2.2, ?_⟩, hWaP⟩
       -- honest tail of `a' = a + 2^130 - t_P`: with the top bit set, `a < t_P`, so the
       -- 130-bit shift stays below `2^130` and the running-sum tail vanishes
@@ -432,7 +430,7 @@ def circuit :
     simp only [gateChild_assumptions_eq, gateChild_spec_eq, circuit_norm] at hGate
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2, lo, hlo, by rw [hz0eq]; exact htel⟩
-    simp only [PkdCanonicity.toDonor, NoteCommit.PkdCanonicity.Gate.Spec] at hGSpec
+    simp only [PkdCanonicity.toGateRow, NoteCommit.PkdCanonicity.Gate.Spec] at hGSpec
     exact ⟨hGSpec.1, hGSpec.2.1, hGSpec.2.2.1⟩
 
   completeness := by
@@ -467,7 +465,7 @@ def circuit :
       simp only [gateChild_proverAssumptions_eq, circuit_norm]
       rw [h_input.2.1, h_input.2.2.1] at hWaP
       rw [h_input.1, h_input.2.1, h_input.2.2.1, h_input.2.2.2.1, h_input.2.2.2.2]
-      simp only [PkdCanonicity.toDonor, NoteCommit.PkdCanonicity.Gate.Spec]
+      simp only [PkdCanonicity.toGateRow, NoteCommit.PkdCanonicity.Gate.Spec]
       refine ⟨⟨hPA.1, hPA.2.1, hPA.2.2, ?_⟩, by rw [hWaP]; ring⟩
       intro h1
       rw [hzLast, ← hz0eqP, hWaP]
@@ -641,7 +639,7 @@ def circuit :
     simp only [gateChild_assumptions_eq, gateChild_spec_eq, circuit_norm] at hGate
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2, lo, hlo, by rw [hz0eq]; exact htel⟩
-    simp only [RhoCanonicity.toDonor, NoteCommit.RhoCanonicity.Gate.Spec] at hGSpec
+    simp only [RhoCanonicity.toGateRow, NoteCommit.RhoCanonicity.Gate.Spec] at hGSpec
     exact ⟨hGSpec.1, hGSpec.2.1, hGSpec.2.2.1⟩
 
   completeness := by
@@ -676,7 +674,7 @@ def circuit :
       simp only [gateChild_proverAssumptions_eq, circuit_norm]
       rw [h_input.2.1, h_input.2.2.1] at hWaP
       rw [h_input.1, h_input.2.1, h_input.2.2.1, h_input.2.2.2.1, h_input.2.2.2.2]
-      simp only [RhoCanonicity.toDonor, NoteCommit.RhoCanonicity.Gate.Spec]
+      simp only [RhoCanonicity.toGateRow, NoteCommit.RhoCanonicity.Gate.Spec]
       refine ⟨⟨hPA.1, hPA.2.1, hPA.2.2, ?_⟩, by rw [hWaP]; ring⟩
       intro h1
       rw [hzLast, ← hz0eqP, hWaP]
@@ -855,7 +853,7 @@ def circuit :
     simp only [gateChild_assumptions_eq, gateChild_spec_eq, circuit_norm] at hGate
     have hGSpec := hGate trivial
       ⟨hA.1, hA.2.1, hA.2.2.1, hA.2.2.2.1, hA.2.2.2.2, lo, hlo, by rw [hz0eq]; exact htel⟩
-    simp only [PsiCanonicity.toDonor, NoteCommit.PsiCanonicity.Gate.Spec] at hGSpec
+    simp only [PsiCanonicity.toGateRow, NoteCommit.PsiCanonicity.Gate.Spec] at hGSpec
     exact ⟨hGSpec.1, hGSpec.2.1, hGSpec.2.2.1, hGSpec.2.2.2.1⟩
 
   completeness := by
@@ -891,7 +889,7 @@ def circuit :
       rw [h_input.2.2.1, h_input.2.2.2.2.1] at hWaP
       rw [h_input.1, h_input.2.1, h_input.2.2.1, h_input.2.2.2.1, h_input.2.2.2.2.1,
         h_input.2.2.2.2.2]
-      simp only [PsiCanonicity.toDonor, NoteCommit.PsiCanonicity.Gate.Spec]
+      simp only [PsiCanonicity.toGateRow, NoteCommit.PsiCanonicity.Gate.Spec]
       refine ⟨⟨hPA.1, hPA.2.1, hPA.2.2.1, hPA.2.2.2, ?_⟩, by rw [hWaP]; ring⟩
       intro h1
       rw [hzLast, ← hz0eqP, hWaP]

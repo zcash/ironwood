@@ -19,8 +19,6 @@ Reference (ported from actual Rust, not memory):
    bundle; the full-width scalar lives on the child's witness boundary — the caller's
    85 window witness programs encode it, and the scalar is the extraction data);
 3. `commitment.add(blind)` (region `"complete point addition"`, `ecc/chip.rs:582-595`).
-
-Phase-1 donor: `Clean/Orchard/Action/ValueCommit.lean`.
 -/
 
 namespace Zcash.Circuits.Action.ValueCommit
@@ -194,7 +192,7 @@ theorem synthesize_copyCellsAssignedFrom
 
 /-- Rust `gadget.rs::value_commit_orchard`: `v • ValueCommitV` (short signed),
 `rcv • ValueCommitR` (full-width; the scalar is the child's extraction data), and
-the final complete addition. `Spec` is the donor contract: the commitment is
+the final complete addition. `Spec` is the contract: the commitment is
 `(±m) • V + rcv • R` at the sign-resolved magnitude with `m < 2^{64}` and the
 extracted full-width scalar. -/
 def circuit (V : Ecc.MulFixed.Short.FixedBase) (R : FixedBase) :
