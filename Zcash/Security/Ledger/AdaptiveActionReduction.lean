@@ -162,6 +162,32 @@ theorem ledgerFailureEvent_subset {k maxActions : ℕ}
   · exact Or.inl (family.slotRelationEvent_subset_combined slot hrelation)
   · exact Or.inr (Set.mem_iUnion.mpr ⟨slot, hstatistical⟩)
 
+/-- **The one pricing step.** Any event covered by the combined relation event and a union
+of per-slot residuals costs one textbook DLOG bound plus the sum of the residuals' bounds.
+Every ledger bound below is this step applied to a distribution-free `…_subset` inclusion:
+the inclusions are what compose, and the probability bound is taken once, here. -/
+theorem event_prob_le_of_subset {k maxActions : ℕ}
+    (family : Family k maxActions) (B : VestaG)
+    (E : Set family.GroupSample) (statistical : Fin k → Set family.GroupSample)
+    (hE : E ⊆ family.combinedRelationEvent ∪ family.ledgerStatisticalEvent statistical)
+    {dlBound : ENNReal} (epsilon : Fin k → ENNReal)
+    (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound)
+    (hstat : ∀ slot,
+      (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
+        (family.scalarEvent B (statistical slot)) ≤ epsilon slot) :
+    (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure (family.scalarEvent B E) ≤
+      (dlBound + 1 / Fintype.card Fp) + ∑ slot, epsilon slot := by
+  refine le_trans (MeasureTheory.measure_mono (Set.preimage_mono hE)) ?_
+  rw [Set.preimage_union]
+  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
+  apply add_le_add
+  · exact family.combinedRelationEvent_prob_le_of_textbookDL B hDL
+  · unfold ledgerStatisticalEvent
+    simp only [Set.preimage_iUnion]
+    refine le_trans (MeasureTheory.measure_iUnion_le _) ?_
+    rw [tsum_fintype]
+    exact Finset.sum_le_sum fun slot _ => hstat slot
+
 /-- **Ledger reduction with no slot/count multiplier on DLOG.**  One textbook
 DLOG assumption covers all slots.  Only the statistical remainders are summed. -/
 theorem ledgerFailureEvent_prob_le {k maxActions : ℕ}
@@ -177,18 +203,9 @@ theorem ledgerFailureEvent_prob_le {k maxActions : ℕ}
         (family.scalarEvent B (statistical slot)) ≤ epsilon slot) :
     (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
         (family.scalarEvent B (family.ledgerFailureEvent failure)) ≤
-      (dlBound + 1 / Fintype.card Fp) + ∑ slot, epsilon slot := by
-  refine le_trans (MeasureTheory.measure_mono
-    (Set.preimage_mono (family.ledgerFailureEvent_subset failure statistical hslot))) ?_
-  rw [Set.preimage_union]
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-  apply add_le_add
-  · exact family.combinedRelationEvent_prob_le_of_textbookDL B hDL
-  · unfold ledgerStatisticalEvent
-    simp only [Set.preimage_iUnion]
-    refine le_trans (MeasureTheory.measure_iUnion_le _) ?_
-    rw [tsum_fintype]
-    exact Finset.sum_le_sum fun slot _ => hstat slot
+      (dlBound + 1 / Fintype.card Fp) + ∑ slot, epsilon slot :=
+  family.event_prob_le_of_subset B _ statistical
+    (family.ledgerFailureEvent_subset failure statistical hslot) epsilon hDL hstat
 
 /-- Uniform per-slot form.  The visible `k` multiplies only the statistical
 error; `maxActions` and `k` still do not multiply `dlBound`. -/
@@ -245,11 +262,8 @@ theorem ledgerKnowledgeFailureEvent_prob_le {k maxActions : ℕ}
     (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
         (family.scalarEvent B family.ledgerKnowledgeFailureEvent) ≤
       (dlBound + 1 / Fintype.card Fp) + (k : ENNReal) * epsilon := by
-  exact family.ledgerFailureEvent_prob_le_uniform B
-    (fun slot => (family.slotFamily slot).selectedKnowledgeFailureEvent)
-    (fun slot => (family.slotFamily slot).selectedStatisticalFailureEvent)
-    (fun slot => (family.slotFamily slot).selectedKnowledgeFailureEvent_subset)
-    hDL hstat
+  simpa using family.event_prob_le_of_subset B _ _
+    family.ledgerKnowledgeFailureEvent_subset (fun _ => epsilon) hDL hstat
 
 /-- The extraction arm used by a ledger proof: Action knowledge failure or an
 explicit ledger-bridge escape at one of the emitted slots. -/
@@ -299,22 +313,14 @@ theorem ledgerExtractionFailureEvent_prob_le {k maxActions : ℕ}
         (family.scalarEvent B (family.ledgerExtractionFailureEvent escape)) ≤
       (dlBound + 1 / Fintype.card Fp) +
         (k : ENNReal) * (epsilonStat + epsilonEscape) := by
-  apply family.ledgerFailureEvent_prob_le_uniform B
-    (fun slot => (family.slotFamily slot).selectedKnowledgeFailureEvent ∪ escape slot)
-    (fun slot => (family.slotFamily slot).selectedStatisticalFailureEvent ∪ escape slot)
-  · intro slot q hq
-    rcases hq with hknowledge | hesc
-    · rcases (family.slotFamily slot).selectedKnowledgeFailureEvent_subset hknowledge with
-        hrelation | hstatistical
-      · exact Or.inl hrelation
-      · exact Or.inr (Or.inl hstatistical)
-    · exact Or.inr (Or.inr hesc)
-  · exact hDL
-  · intro slot
-    unfold scalarEvent
-    rw [Set.preimage_union]
-    refine le_trans (MeasureTheory.measure_union_le _ _) ?_
-    exact add_le_add (hstat slot) (hescape slot)
+  have h := family.event_prob_le_of_subset B _ _
+    (family.ledgerExtractionFailureEvent_subset escape)
+    (fun _ => epsilonStat + epsilonEscape) hDL fun slot => by
+      unfold scalarEvent
+      rw [Set.preimage_union]
+      exact le_trans (MeasureTheory.measure_union_le _ _)
+        (add_le_add (hstat slot) (hescape slot))
+  simpa [mul_add] using h
 
 end Family
 end Zcash.Security.Ledger.AdaptiveActionReduction
