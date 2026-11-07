@@ -15,10 +15,6 @@ runs one labeled online-AGM adversary over the largest transcript domain and put
 the selected count in the adversary's output.  Consequently the count may depend
 on any earlier random-oracle answers and `Q` bounds the whole computation, rather
 than one separately sampled computation for every possible count.
-
-`ofFixedCount` proves backwards compatibility constructively: every existing
-fixed-count family embeds as the constant-count special case without changing its
-run or query budget.
 -/
 
 namespace Zcash.Snark
@@ -96,78 +92,6 @@ def widenAdaptiveActionCountTranscript {maxActions : ℕ} (n : Fin maxActions)
     (widenAdaptiveActionCountTranscript n t).val = t.val := by
   exact BTranscript.widen_val _ _
 
-theorem widenAdaptiveActionCountTranscript_injective {maxActions : ℕ}
-    (n : Fin maxActions) : Function.Injective (widenAdaptiveActionCountTranscript n) := by
-  intro a b h
-  apply Subtype.ext
-  simpa only [widenAdaptiveActionCountTranscript, BTranscript.widen_val,
-    normalizeAdaptiveActionCountTranscript_val] using
-    congrArg (fun t : AdaptiveActionCountTranscript maxActions => t.val) h
-
-/-- Transport an online-AGM annotation along transcript widening.  The point list is
-unchanged, so its algebraic representations are unchanged as well. -/
-def widenAdaptiveActionCountQuery {maxActions : ℕ} (n : Fin maxActions)
-    {basis : AdaptiveActionCountBasis}
-    {t : AdaptiveActionStatementTranscript (adaptiveActionCountParams n)}
-    (query : AlgebraicTranscriptQuery (F := Fp) basis t) :
-    AlgebraicTranscriptQuery (F := Fp) basis (widenAdaptiveActionCountTranscript n t) :=
-  { representedPoints := query.representedPoints
-    points_eq := query.points_eq }
-
-/-- Reindex a fixed-count labeled oracle computation into the shared transcript
-domain.  This changes neither its answers nor its adaptive control flow. -/
-def liftAdaptiveActionCountComp {maxActions : ℕ} (n : Fin maxActions)
-    {basis : AdaptiveActionCountBasis} {alpha : Type*} :
-    LabeledOracleComp
-        (AdaptiveActionStatementTranscript (adaptiveActionCountParams n)) Fp
-        (AlgebraicTranscriptQuery (F := Fp) basis) alpha →
-      LabeledOracleComp (AdaptiveActionCountTranscript maxActions) Fp
-        (AlgebraicTranscriptQuery (F := Fp) basis) alpha
-  | .pure a => .pure a
-  | .query t label next =>
-      .query (widenAdaptiveActionCountTranscript n t)
-        (widenAdaptiveActionCountQuery n label)
-        (fun answer => liftAdaptiveActionCountComp n (next answer))
-
-theorem erase_liftAdaptiveActionCountComp {maxActions : ℕ} (n : Fin maxActions)
-    {basis : AdaptiveActionCountBasis} {alpha : Type*}
-    (A : LabeledOracleComp
-      (AdaptiveActionStatementTranscript (adaptiveActionCountParams n)) Fp
-      (AlgebraicTranscriptQuery (F := Fp) basis) alpha) :
-    (liftAdaptiveActionCountComp n A).erase =
-      A.erase.mapDomain (widenAdaptiveActionCountTranscript n) := by
-  induction A with
-  | pure => rfl
-  | query t label next ih =>
-      simp only [liftAdaptiveActionCountComp, LabeledOracleComp.erase_query,
-        OracleComp.mapDomain]
-      congr
-      funext answer
-      exact ih answer
-
-@[simp] theorem run_liftAdaptiveActionCountComp {maxActions : ℕ} (n : Fin maxActions)
-    {basis : AdaptiveActionCountBasis} {alpha : Type*}
-    (A : LabeledOracleComp
-      (AdaptiveActionStatementTranscript (adaptiveActionCountParams n)) Fp
-      (AlgebraicTranscriptQuery (F := Fp) basis) alpha)
-    (O : AdaptiveActionCountTranscript maxActions → Fp) :
-    (liftAdaptiveActionCountComp n A).run O =
-      A.run (fun t => O (widenAdaptiveActionCountTranscript n t)) := by
-  unfold LabeledOracleComp.run
-  rw [erase_liftAdaptiveActionCountComp]
-  simpa only [Function.comp_apply] using
-    (OracleComp.run_mapDomain (widenAdaptiveActionCountTranscript n) A.erase O)
-
-theorem queryBound_liftAdaptiveActionCountComp {maxActions : ℕ} (n : Fin maxActions)
-    {basis : AdaptiveActionCountBasis} {alpha : Type*}
-    {A : LabeledOracleComp
-      (AdaptiveActionStatementTranscript (adaptiveActionCountParams n)) Fp
-      (AlgebraicTranscriptQuery (F := Fp) basis) alpha}
-    {Q : ℕ} (hQ : A.QueryBound Q) :
-    (liftAdaptiveActionCountComp n A).QueryBound Q := by
-  rw [LabeledOracleComp.QueryBound, erase_liftAdaptiveActionCountComp]
-  exact OracleComp.queryBound_mapDomain _ hQ
-
 /-- A count together with a well-typed output for precisely that selected count. -/
 structure AdaptiveActionCountOutput (maxActions : ℕ)
     (components : (n : Fin maxActions) → ComputedAdaptiveActionStatementFSFamily
@@ -198,39 +122,6 @@ def runOutput {maxActions : ℕ} (family : ComputedAdaptiveActionCountFSFamily m
     (basis : AdaptiveActionCountBasis) (O : family.Coins) :
     AdaptiveActionCountOutput maxActions family.components basis :=
   (family.adversary basis).run O
-
-/-- Embed a legacy fixed-count family as a constant-count adversary. -/
-def ofFixedCount {maxActions : ℕ}
-    (components : (n : Fin maxActions) → ComputedAdaptiveActionStatementFSFamily
-      (adaptiveActionCountParams n))
-    (n : Fin maxActions) : ComputedAdaptiveActionCountFSFamily maxActions where
-  components := components
-  adversary := fun basis =>
-    (liftAdaptiveActionCountComp n ((components n).adversary basis)).bind fun output =>
-      .pure { count := n, output := output }
-  Q := (components n).Q
-  queryBound := by
-    intro basis
-    rw [LabeledOracleComp.QueryBound, LabeledOracleComp.erase_bind]
-    simpa only [Nat.add_zero] using
-      OracleComp.queryBound_bind
-        (queryBound_liftAdaptiveActionCountComp n ((components n).queryBound basis))
-        (fun output => OracleComp.QueryBound.pure
-          ({ count := n, output := output } :
-            AdaptiveActionCountOutput maxActions components basis) 0)
-
-/-- The constant-count embedding preserves the complete fixed-family run. -/
-@[simp] theorem runOutput_ofFixedCount {maxActions : ℕ}
-    (components : (n : Fin maxActions) → ComputedAdaptiveActionStatementFSFamily
-      (adaptiveActionCountParams n))
-    (n : Fin maxActions) (basis : AdaptiveActionCountBasis)
-    (O : AdaptiveActionCountTranscript maxActions → Fp) :
-    runOutput (ofFixedCount components n) basis O =
-      { count := n
-        output := (components n).runOutput basis
-          (fun t => O (widenAdaptiveActionCountTranscript n t)) } := by
-  simp [runOutput, ofFixedCount, ComputedAdaptiveActionStatementFSFamily.runOutput]
-  exact run_liftAdaptiveActionCountComp n _ O
 
 end ComputedAdaptiveActionCountFSFamily
 end Zcash.Snark
