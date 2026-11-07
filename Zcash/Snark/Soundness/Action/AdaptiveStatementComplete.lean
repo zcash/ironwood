@@ -498,6 +498,73 @@ theorem identityRelationFinder_none_source {pp : ProofParams}
   · simp_all
   · assumption
 
+/-- A finder result known to be `none` can be replaced by `none` in the view-level identity
+finder; the facts function is a proof of a proposition, so only the result matters. -/
+theorem identityRelationFinderV_congr_none {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        scalarFieldOrder)
+    (finderResult : Option (AlgebraicRelationWitness (F := Fp) basis))
+    (hfacts : finderResult = none → family.SemanticStageFacts basis view)
+    (h : finderResult = none) :
+    family.identityRelationFinderV basis view hcharV finderResult hfacts =
+      family.identityRelationFinderV basis view hcharV none (fun _ => hfacts h) := by
+  subst h
+  rfl
+
+/-- A relation returned by the zero-difference semantic branch is visible to the
+view-level identity finder used by the shared-count reduction. -/
+theorem identityRelationFinderV_isSome_of
+    {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : ComputedAdaptiveActionStatementFSFamily.RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        Zcash.Arithmetic.scalarFieldOrder)
+    (facts : family.SemanticStageFacts basis view)
+    (witness : family.BatchWitnessV basis view)
+    (hout : family.batchOutcomeV basis view = PSum.inl witness)
+    (hroots : family.BatchGoodRootsV basis view witness)
+    (haccepts : family.acceptsV basis view)
+    (hz : view.pre 10 ≠ 0)
+    (hattack : ¬fullAlgebraicBindingAttackZ basis
+      (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof view.pre view.rounds)
+    (hidentity :
+      let hshifted := family.shiftedValueV_of_accept_not_attack
+        basis view haccepts hz hattack
+      let rawDecode := family.rawDecodeOfBatchGoodRootsV basis view witness hroots hshifted
+      (family.preXIdentityRelation?V basis view facts witness rawDecode rfl
+        haccepts hcharV).isSome) :
+    (family.identityRelationFinderV basis view hcharV none (fun _ => facts)).isSome := by
+  let hshifted := family.shiftedValueV_of_accept_not_attack
+    basis view haccepts hz hattack
+  let rawDecode := family.rawDecodeOfBatchGoodRootsV basis view witness hroots hshifted
+  have hacceptsSome := family.accepts?V_isSome_of basis view haccepts
+  obtain ⟨hacceptsProof, hacceptsEq⟩ := Option.isSome_iff_exists.mp hacceptsSome
+  have hrootsSome := family.batchGoodRoots?V_isSome_of basis view witness hroots
+  obtain ⟨hrootsProof, hrootsEq⟩ := Option.isSome_iff_exists.mp hrootsSome
+  obtain ⟨relation, hrelationEq⟩ := Option.isSome_iff_exists.mp hidentity
+  unfold ComputedAdaptiveActionStatementFSFamily.identityRelationFinderV
+    ComputedAdaptiveActionStatementFSFamily.identityRelationFinderWithAcceptanceV
+  rw [hacceptsEq]
+  dsimp only
+  rw [dif_pos hz, dif_neg hattack, hout]
+  dsimp only
+  rw [hrootsEq]
+  dsimp only
+  rw [hrelationEq]
+  rfl
+
 theorem identityRelationFinder_isSome_of {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (hchar : ∀ basis O, deployedX4PairCount (adaptiveActionStatementVk pp basis)
@@ -540,41 +607,22 @@ theorem identityRelationFinder_isSome_of {pp : ProofParams}
         (family.semanticStageFacts_of_sourceFinder_none basis O hsource)
         witness rawDecode rfl hacceptsFull hcharFull).isSome) :
     (family.identityRelationFinder hchar basis O).isSome := by
-  let hshifted := family.shiftedValue_of_accept_not_attack basis O haccepts hz hattack
-  let rawDecode := family.rawDecodeOfBatchGoodRoots basis O witness hroots hshifted
-  let hacceptsFull : DeployedAccepts (AdaptiveActionStatementShape pp)
-      (ursOfAugmentedBasis (AdaptiveActionStatementShape pp).k basis) rfl
-      (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1
-      (chRecord (family.runPreIpaReads basis O) (family.runIpaReads basis O)) := by
-    simpa only [accepts, family.runRecord_eq_chRecord] using haccepts
-  let hcharFull : deployedX4PairCount (adaptiveActionStatementVk pp basis)
-      (adaptiveActionStatementInstanceCommitment pp basis (family.runOutput basis O).inputs)
-      (family.runProof basis O).proof.1
-      (chRecord (family.runPreIpaReads basis O) (family.runIpaReads basis O)) <
-        scalarFieldOrder := by
-    simpa only [family.runRecord_eq_chRecord] using hchar basis O
-  have hacceptsSome := family.accepts?V_isSome_of basis (runView family basis O)
+  have hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis (runView family basis O).output.inputs)
+      (runView family basis O).output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) (runView family basis O).pre
+        (runView family basis O).rounds) < scalarFieldOrder := by
+    simpa only [runView_output, runView_pre, runView_rounds, family.runRecord_eq_chRecord] using
+      hchar basis O
+  have hV := family.identityRelationFinderV_isSome_of basis (runView family basis O) hcharV
+    (family.semanticStageFacts_of_sourceFinder_none basis O hsource) witness hout hroots
     (by simpa only [acceptsV, accepts, runView_output, runView_pre, runView_rounds,
       family.runRecord_eq_chRecord] using haccepts)
-  obtain ⟨hacceptsProof, hacceptsEq⟩ := Option.isSome_iff_exists.mp hacceptsSome
-  have hrootsSome := family.batchGoodRoots?V_isSome_of basis (runView family basis O)
-    witness hroots
-  obtain ⟨hrootsProof, hrootsEq⟩ := Option.isSome_iff_exists.mp hrootsSome
-  obtain ⟨relation, hrelationEq⟩ := Option.isSome_iff_exists.mp hidentity
-  unfold identityRelationFinder identityRelationFinderV
-    identityRelationFinderWithAcceptanceV
-  split
-  · simp_all
-  · rw [hacceptsEq]
-    dsimp only
-    rw [dif_pos hz, dif_neg hattack, hout]
-    dsimp only
-    rw [hrootsEq]
-    dsimp only
-    rw [hrelationEq]
-    rfl
+    hz hattack hidentity
+  show (family.identityRelationFinderV basis (runView family basis O) _
+    (family.semanticSourceMismatchRelationFinder basis O) _).isSome
+  rw [family.identityRelationFinderV_congr_none basis (runView family basis O) _ _ _ hsource]
+  exact hV
 
 /-- The existing nonzero semantic terminal returns relation data once its computed semantic
 projection does. -/
