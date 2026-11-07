@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-498c5711.js";
+            window.path_to_searchindex_js = "../searchindex-ac353582.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -206,7 +206,7 @@ supply chain integrity checks, etc. On the contrary, it should be interwoven wit
 instance by checking that the formalized objects are consistent with the specification and
 (where possible) that they match the same test vectors as the production implementation and
 the unoptimized reference.</p>
-<p>So, modelling gaps and the long-term task of closing them, gaining more and more confidence
+<p>So, modeling gaps and the long-term task of closing them, gaining more and more confidence
 as we go —and then maintaining the formalization in sync with the spec as the protocol
 evolves— are not a side-issue; that process is the entire point. It is a process that finds bugs
 just like any other assurance technique, but it is deeply more thorough than conventional
@@ -240,7 +240,7 @@ and the ledger layer (the high-level protocol security properties). Ideally they
 fit together. They don't quite do so yet.</p>
 <h2 id="scope-at-the-ledger-layer"><a class="header" href="#scope-at-the-ledger-layer">Scope at the ledger layer</a></h2>
 <p>The formalization of <em>Spendability</em> and <em>Spend authority</em> properties is not yet
-finished. It needs significant attention to the way honest parties are modelled: the
+finished. It needs significant attention to the way honest parties are modeled: the
 properties need to be strengthened by giving the adversary oracles that allow it to
 control how the honest parties create transactions, generate keys (without telling the
 adversary those keys), etc. That is how these properties were originally defined at
@@ -256,12 +256,12 @@ factor (<a href="https://github.com/zcash/ironwood/issues/214">#214</a>) — whi
 and Spend Authority games still consume annotations directly
 (<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Additional caveats are stated on
 the <a href="ledger-security-games.html">Ledger Security Games</a> page.</p>
-<p>For tractability, the modelled ledger also abstracts away from the real protocol in
+<p>For tractability, the modeled ledger also abstracts away from the real protocol in
 several directions:</p>
 <ul>
 <li>The real protocol has, at the time of writing, six chain value pools: the transparent pool;
 the lockbox (also transparent), and four shielded pools for Sprout, Sapling, Orchard, and
-Ironwood. The modelled ledger has one transparent pool, and one Orchard-protocol shielded
+Ironwood. The modeled ledger has one transparent pool, and one Orchard-protocol shielded
 pool (similar to either Orchard or Ironwood). We argue that this simplification is enough
 to capture realistic attacks, because the interaction of all other pools with a given
 shielded pool is as though the other pools are transparent. (It is a bit of an
@@ -273,7 +273,7 @@ affects the formalization of the Spendability and Spend authority properties, be
 depend on diversified address generation using <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathsf">DiversifyHash</span></span></span></span></span>, and so a realistic
 adversary has to be able to invoke the hash-to-curve. The first step is delivered: the
 deployed hash-to-curve is proven indifferentiable from a random oracle onto the group,
-with a concrete advantage bound, modelling the underlying field-element hash as a random
+with a concrete advantage bound, modeling the underlying field-element hash as a random
 oracle — see <a href="group-hash-indifferentiability.html">Group-Hash Indifferentiability</a>. What
 remains is to give the games' adversaries oracle access to it
 (<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</li>
@@ -284,7 +284,7 @@ remains is to give the games' adversaries oracle access to it
 Ironwood pool) can be followed with one idea from cryptography — that a proof system lets
 someone convince you of a claim without showing you the data behind it. Understanding that
 idea needs no Lean, no Halo 2, and no background in formal or succinct proof systems. The
-rest of this page tries to explain the modelling assumptions and heuristics the verifier
+rest of this page tries to explain the modeling assumptions and heuristics the verifier
 soundness claim rests on that are not established by a formal theorem, and therefore have
 to be assessed by other means.</p>
 <p>It is not a walkthrough of the proofs. The <a href="proof-map.html">proof map</a> shows how the results
@@ -295,7 +295,7 @@ From here on, the subject is the Action circuit; for the protocol properties bui
 of it, see <a href="ledger-security-games.html">Ledger Security Games</a>.</p>
 <h2 id="the-claim"><a class="header" href="#the-claim">The claim</a></h2>
 <blockquote>
-<p>If the deployed verifier accepts a proof, then whoever produced that proof could have
+<p>If the verifier modeled here accepts a proof, then whoever produced that proof could have
 handed you the secret data it is a proof <em>about</em> — unless they solved a problem that
 most cryptographers believe has been infeasibly difficult (although quantum computers
 could change this in a few years), or hit an event the theorem shows is vanishingly unlikely.</p>
@@ -304,10 +304,13 @@ could change this in a few years), or hit an event the theorem shows is vanishin
 <p><em>The secret data</em> means numbers satisfying the circuit's equations. That satisfying them
 amounts to a legitimate Orchard action — well-formed note, balanced value, correctly derived
 nullifier, authorized spend — is itself proven.</p>
-<p><em>The deployed verifier</em> means the verifier as Lean models it: checked against a circuit
-description Lean derives itself and compares against a captured copy, reading a proof already
-decoded from bytes into points and numbers. That the captured copy is what Zcash ships, and
-that the bytes on the wire decode to what the model is handed, are checked outside Lean.</p>
+<p><em>The verifier modeled here</em> checks a circuit description Lean derives itself against a captured
+copy, validates the raw public-input columns, decodes the complete canonical proof byte string,
+and reconstructs the transcript bytes and challenges before entering the typed verifier. Captures
+check those implementation-facing identifications on concrete executions; they do not prove
+universal Rust-to-Lean refinement. The formal probability endpoint measures the typed oracle
+observer, not Rust acceptance. The separate Rust-containment theorem is for one non-batched proof
+bundle at the concrete BLAKE2b table.</p>
 <h2 id="what-you-need-to-know-first"><a class="header" href="#what-you-need-to-know-first">What you need to know first</a></h2>
 <p><strong>Circuit and witness.</strong> The Action circuit is a large system of equations. The secret data —
 which note is spent, its value, the key authorizing the spend — assigns numbers to its
@@ -410,22 +413,24 @@ be missed.</p>
 <ul>
 <li><strong>The hash behaves like a truly random function</strong> — the <strong>random-oracle model</strong>. This covers
 BLAKE2b, the conversion of hash output into numbers, and the derivation of the public point
-list. BLAKE2b is not formalized anywhere: the model treats it as an opaque box and assumes
-the box is random.</li>
+list. BLAKE2b is formalized as executable Lean and checked against the captured transcripts,
+but the security argument uses none of its structure: the model treats its digest as random.</li>
 <li><strong>The attacker is algebraic</strong> — assumed to declare, for every curve point it outputs, a
 recipe building it from points it was given. Real attackers owe no such explanation. This is
 what lets the reduction read a relation off the adversary's own output. Note where it sits:
 built into what counts as an adversary at all, rather than appearing as a hypothesis you can
 read off a theorem. An attacker that does not play along is outside the claim entirely — not
 covered with a weaker bound.</li>
-<li><strong>Attacks do not depend on specific encodings</strong>. The formalization does not cover the
-concrete, byte-level encodings used to represent curve points, field elements, etc., either
-in transmitted protocol messages or in the Fiat–Shamir transcript. Instead, the formalization
-is expressed in terms of the abstract types used in the specification. This is a potentially
-significant category of gap, because (despite substantial attention to this area in audits
-and code review) Zcash implementations have had quite a few significant security bugs due to
-unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
-It is a longer-term goal to extend the formalization to cover the byte-level encodings.</li>
+<li><strong>Attacks do not depend on specific encodings</strong>. The formalization models the byte-level encodings
+used in the SNARK: canonical decoding of curve points and field elements from the proof string,
+and the encoding of absorbed elements into the Fiat–Shamir transcript bytes that the hash sees.
+Both are checked against captured runs; <a href="#how-fiatshamir-is-modeled">How Fiat–Shamir is modeled</a>
+below says what that establishes and what remains assumed. The encodings of other transmitted
+protocol messages (e.g. note plaintexts, keys, and transaction fields) are not modeled at all.
+This is a potentially significant category of gap, because (despite substantial attention to this
+area in audits and code review) Zcash implementations have had quite a few significant security
+bugs due to unintentionally non-canonical encodings, mishandling of exceptional cases in decoding,
+etc. It is a longer-term goal to extend the formalization to the remaining byte-level encodings.</li>
 </ul>
 <h3 id="the-fixed-list-of-curve-points"><a class="header" href="#the-fixed-list-of-curve-points">The fixed list of curve points</a></h3>
 <p>The reduction treats the public list as <em>independent</em>, which is what turns "find a relation
@@ -439,15 +444,37 @@ made against it. One such computation breaks the whole protocol at once, rather 
 transaction or one user. <a href="security-models.html#fixed-bases-the-group-hash-and-the-reference-string">Security
 Models</a> develops this at
 length.</p>
-<h3 id="how-fiatshamir-is-modelled"><a class="header" href="#how-fiatshamir-is-modelled">How Fiat–Shamir is modelled</a></h3>
+<h3 id="how-fiatshamir-is-modeled"><a class="header" href="#how-fiatshamir-is-modeled">How Fiat–Shamir is modeled</a></h3>
 <p>Lean models the hashing schedule exactly — what gets hashed, in what order, matching Halo 2's
 verifier. The order is load-bearing and it is checked: each round's message is hashed in
 <em>before</em> the challenge derived from it is drawn, so a later message cannot bend an earlier
 challenge, which is what makes it harmless that the prover can compute challenges too. Lean
 proves this of its own model, and captured fixtures check that model against real transcripts.</p>
-<p>The byte layer beneath is not modelled. The sequence of things hashed is verified; how they
-become bytes, and BLAKE2b itself, are not. Modelling the encoding would narrow the gap without
-closing it, since the hash would remain outside the proof.</p>
+<p>The byte layer of the SNARK is modeled too: how each absorbed element becomes bytes, the running
+BLAKE2b state, and the reduction of the digest to a field element are executable Lean, and every
+captured challenge is recomputed from bytes. The encoding is injective, so distinct typed
+transcripts are distinct hash inputs. Lean also proves that one encoded transcript is a prefix
+of another exactly when the corresponding typed transcript is a prefix of the other. Extending
+a typed transcript therefore extends its byte encoding; the set of all transcript encodings is
+not prefix-free. Even the verifying-key digest that opens the transcript is recomputed, from a
+pinned key description whose represented fields are checked against the derived key. That field
+check is evidence for the identification of Rust's verifying key with the Lean key, which the
+deployment record assumes, and it is not consumed by any theorem; see
+<a href="https://github.com/zcash/ironwood/issues/232">#232</a>.</p>
+<p>Four boundaries remain outside the universal proof. The security argument idealizes the BLAKE2b
+digest as uniform; <code>blake2b_simd</code> is not proved equal to Lean's BLAKE2b on every input; Rust's
+transcript reader is not proved equal to <code>readProof?</code> on every proof byte string; and the pinned
+description's identification with the unique string emitted by Rust remains deployment provenance.
+The captures check all three implementation-facing identifications on their concrete executions, but
+finite captures do not establish them for arbitrary inputs. They also exercise only the compression
+path that <code>blake2b_simd</code> selected at run time on the capturing machine (portable, SSE4.1, or AVX2),
+not the others. Two further premisses the captures rest on are listed with the rest in
+<code>Snark/Fingerprint/Match.lean</code>: that the exporter records what the verifier consumed, and that the
+production code performs the ZIP 257 canonical-length check on which <code>readProof?</code>'s empty-suffix
+requirement relies (<code>Snark/Soundness/Main.lean</code>).</p>
+<p>The formalized verifier prices one proof bundle. Halo2's optional randomized <code>BatchVerifier</code>
+aggregation of separate proof blobs is outside the model and is not included in the probability
+endpoint.</p>
 <h3 id="facts-checked-by-running-code-not-by-the-kernel"><a class="header" href="#facts-checked-by-running-code-not-by-the-kernel">Facts checked by running code, not by the kernel</a></h3>
 <p>A few closed numeric facts are established by compiling a program and running it rather than
 by checking them inside Lean's kernel. Each records an axiom noting the compiler was trusted,
@@ -473,16 +500,20 @@ the verifier's knowledge soundness; Pallas carries the Action circuit and the le
 properties built on it. Discrete log hardness is not a binary property; the feasibility
 of attacks may vary over time and according to the capabilities of an adversary.</li>
 <li><strong>The hash behaves like a random oracle.</strong> BLAKE2b is treated as fresh randomness with no
-exploitable structure, and is not formalized anywhere.</li>
+exploitable structure; the algorithm (RFC 7693) is formalized and checked against the
+captured transcripts, but plays no role in the argument. The deployed implementation,
+<code>blake2b_simd</code>, is not proved equal to it.</li>
 <li><strong>The attacker is algebraic</strong> — it shows its work for every curve point it outputs. One
 that does not is outside the claim rather than covered by it.</li>
-<li><strong>Attacks do not depend on specific encodings.</strong> The formalization speaks the
-specification's abstract types; how curve points and field elements become bytes, in
-protocol messages or in the transcript, is not covered.</li>
+<li><strong>Attacks do not depend on specific encodings.</strong> How curve points and field elements become bytes
+in the proof string and in the Fiat–Shamir transcript is modeled in Lean and checked against
+captures, but the model does not enter the security argument; that Rust agrees with the model
+beyond the captures is assumed, as is the identification of Rust's verifying key with the Lean
+key. Their encodings elsewhere in protocol messages are not modeled at all.</li>
 <li><strong>The deployed list of curve points is as good as a sampled one.</strong> Security is proved for
 protocols that sample it; the real one is hashed into existence and baked in.</li>
-<li><strong>The byte layer under the hashing schedule.</strong> What gets hashed, and in what order, is
-checked; how those things become bytes is not.</li>
+<li><strong>Encodings outside the proof.</strong> The proof string and the transcript, key digest included,
+are modeled to the byte; the encodings of other protocol messages are not.</li>
 <li><strong>Facts established by running code trust the compiler.</strong> Each is pinned to its
 owning declaration at build time, and each is independently re-checkable — but the
 compiled code they run is the whole fast native arithmetic, proven correct in the

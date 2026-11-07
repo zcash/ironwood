@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "../searchindex-498c5711.js";
+            window.path_to_searchindex_js = "../searchindex-ac353582.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-d4c2b103.js"></script>
@@ -245,11 +245,12 @@ toolchain needed.</li>
 </ul>
 <h2 id="fixture-regeneration"><a class="header" href="#fixture-regeneration">Fixture regeneration</a></h2>
 <p><strong><code>scripts/regenerate-fingerprint-fixtures.sh</code></strong> proves the committed captures
-regenerate byte-for-byte from their sources: it clones the pinned Orchard release,
-asserts the tag and its published lockfile checksums, regenerates every capture family
-plus the proof-byte siblings, and diffs each committed artifact. CI runs the full
-regeneration when a fixture-relevant path changes; on every other run, the manifest
-check above still binds the artifacts to their recorded digests.</p>
+regenerate byte-for-byte from their sources: it checks out exact Orchard #544 and
+Halo2 #933 snapshots through canonical URLs, asserts Orchard's lockfile resolves the
+pinned Halo2 commit, regenerates every capture family plus the proof-byte siblings,
+and diffs each committed artifact. CI runs the full regeneration when a
+fixture-relevant path changes; on every other run, the manifest check above still
+binds the artifacts to their recorded digests.</p>
 <p>The circuit-side layout dumps have no regeneration pipeline: their generator is
 unpublished one-off instrumentation in local halo2/orchard checkouts
 (<code>Zcash/Circuits/Fixtures/PROVENANCE.md</code> records the lineage). This should not be

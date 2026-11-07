@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-498c5711.js";
+            window.path_to_searchindex_js = "searchindex-ac353582.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d4c2b103.js"></script>
@@ -859,14 +859,15 @@ research document linked above records the observed Lake behaviour behind this r
 <p><strong>Concrete, closed facts with no free variables</strong> may additionally use <code>native_decide</code>
 (which discharges a goal by running compiled native code, adding a compiler-trust axiom) and
 the kernel's GMP-backed bignum arithmetic. The principal such facts in this repository are the
-four derived-form fingerprint boundary theorems <code>nonInteractiveFingerprint_matches_derived</code>
-(the generated per-capture <code>fingerprint_matches</code> are their raw forms): numeric checks that the
-Lean verifier's assembled multi-scalar multiplication equals the Rust verifier's on each
-captured proof — two honest, two at random inputs. The CompElliptic dependency applies the
-same discipline to its concrete curve-arithmetic facts (cardinalities, primality
+generated per-capture <code>fingerprint_matches</code> theorems: numeric checks that the Lean verifier's
+assembled multi-scalar multiplication equals the Rust verifier's on each captured proof — two
+honest, two at random inputs. Each family's strongest boundary theorem,
+<code>nonInteractiveFingerprint_matches_derived_keyDigest</code>, composes that captured anchor with the
+derived key, concrete transcript hash, and derived key digest. The CompElliptic dependency
+applies the same discipline to its concrete curve-arithmetic facts (cardinalities, primality
 certificates). Such facts are independently re-checkable (another implementation, or hand
-computation, would compute the same result), so a miscompiled or buggy oracle could in
-principle be caught by disagreement.</p>
+computation, would compute the same result), so a miscompiled or buggy oracle could in principle
+be caught by disagreement.</p>
 <p>These boundaries are <em>checked at build time</em>, not merely documented. <code>Zcash.TrustBoundary</code> is the
 top-level census for reusable library claims — the key-binding, birthday, ledger, and
 binding-signature break reductions together with the fixture-free SNARK
@@ -907,14 +908,34 @@ because for a captured fingerprint match the exact axiom set <em>is</em> the cla
 that every Lean module is reachable from it), and each <code>fingerprint_matches</code>'s
 <code>native_decide</code> compiles and runs the verifier, so anything <code>noncomputable</code> on the
 assembled-verifier path fails the build.</p>
-<p>What the fixture captures actually <em>check</em> is the statement of record in each family's
-<code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived</code> — with the quantified match and its
-ε in <code>Snark/Fingerprint/Epsilon.lean</code> and the per-capture headliners in
+<p>What the fixture captures actually <em>check</em> is the strongest statement of record in each family's
+<code>Boundary.lean</code> — <code>nonInteractiveFingerprint_matches_derived_keyDigest</code> — with the quantified
+match and its ε in <code>Snark/Fingerprint/Epsilon.lean</code> and the per-capture headliners in
 <code>Fixtures/*/Random/Epsilon.lean</code>. Capture lineage, seeds, and the reproducibility pipeline are in
-<code>Zcash/Snark/Fixtures/PROVENANCE.md</code>. Together, the captures and ε theorems support the typed,
-post-decoding Rust↔Lean boundary, not universal byte-level refinement. Byte encoding, transcript
-domain-prefix bytes, and BLAKE2b remain external; <code>Snark/Fingerprint/Match.lean</code> enumerates this
-boundary, tracked in <a href="https://github.com/zcash/ironwood/issues/66">#66</a>.</p>
+<code>Zcash/Snark/Fixtures/PROVENANCE.md</code>. Together, the captures and ε theorems support the typed
+Rust↔Lean boundary. The byte layer beneath it is modeled and checked against the captures: every
+captured challenge is recomputed from halo2's transcript encoding through a Lean BLAKE2b
+(<code>Snark/Verifier/Transcript.lean</code>), and all four captures' generated proof bytes decode to their
+typed proofs through a canonical reader (<code>Snark/Verifier/ProofBytes.lean</code>).
+<code>DeployedAcceptsBytes</code> composes that exact parser, the key digest derived from the pinned
+description, and the BLAKE2b schedule into typed <code>DeployedAccepts</code>, requiring the description to
+describe the key (<code>Describes</code>) and excluding identity instance commitments as halo2 does; both
+honest captures witness the composition. The <code>Describes</code> requirement is not consumed by any theorem:
+it is evidence on the captures for the identification of Rust's verifying key with the Lean key,
+which the deployment record assumes (<a href="https://github.com/zcash/ironwood/issues/232">#232</a>).
+BLAKE2b's idealization as a random oracle, <code>blake2b_simd</code>'s agreement with the Lean BLAKE2b beyond
+the captured transcripts, universal refinement of Rust's reader to the Lean decoder, and
+identification of the pinned description as Rust's exact exporter output remain external.
+<code>Snark/Fingerprint/Match.lean</code> enumerates the boundary, while
+<code>Snark/Soundness/Action/DeploymentRecord.lean</code> states production-reader refinement as the explicit
+<code>rustAcceptsRefinesLeanRaw</code> deployment assumption. The probability endpoint bounds the record's
+typed oracle observer rather than Rust acceptance; the Rust-containment theorem is separate and
+covers one non-batched proof bundle at the concrete BLAKE2b table. Optional randomized aggregation
+of separate proof blobs is outside the formalization. The byte-layer implementation and landing
+history are recorded in
+<a href="https://github.com/zcash/ironwood/pull/215">#215</a>, which closes the scoped byte-encoding issue
+<a href="https://github.com/zcash/ironwood/issues/66">#66</a>. Neither claims to discharge the universal
+Rust-refinement assumption, which remains the explicit deployment boundary named above.</p>
 <p><strong>The circuit-side layout fixtures are pinned, not regenerated.</strong> The CS and layout dumps behind
 <code>CircuitCheck</code>'s <code>TestVk*</code> comparisons (<code>Zcash/Circuits/Fixtures/*.json</code>) were emitted by one-off
 instrumentation of halo2/orchard that was never published, so unlike the verifier-fingerprint
@@ -922,7 +943,7 @@ captures they have no regenerate-and-diff pipeline: CI pins their bytes (<code>S
 set-equality check so an unpinned dump cannot be added), and those pins live in the same
 repository they guard. Independent anchoring exists at verifying-key granularity —
 <code>Keygen/Certificate.lean</code> checks the key derived from the ported circuit against the
-release-regenerated capture — but the row-level layout content below the key, and the
+upstream-regenerated capture — but the row-level layout content below the key, and the
 base-circuit dump (<code>actionBaseLayout.json</code>), which has no capture-side anchor at all, rest on the
 pinned bytes plus review. Lineage, and the follow-up to regenerate these from released sources,
 are recorded in <code>Zcash/Circuits/Fixtures/PROVENANCE.md</code>.</p>
@@ -968,7 +989,7 @@ supply chain integrity checks, etc. On the contrary, it should be interwoven wit
 instance by checking that the formalized objects are consistent with the specification and
 (where possible) that they match the same test vectors as the production implementation and
 the unoptimized reference.</p>
-<p>So, modelling gaps and the long-term task of closing them, gaining more and more confidence
+<p>So, modeling gaps and the long-term task of closing them, gaining more and more confidence
 as we go —and then maintaining the formalization in sync with the spec as the protocol
 evolves— are not a side-issue; that process is the entire point. It is a process that finds bugs
 just like any other assurance technique, but it is deeply more thorough than conventional
@@ -1002,7 +1023,7 @@ and the ledger layer (the high-level protocol security properties). Ideally they
 fit together. They don't quite do so yet.</p>
 <h2 id="scope-at-the-ledger-layer"><a class="header" href="#scope-at-the-ledger-layer">Scope at the ledger layer</a></h2>
 <p>The formalization of <em>Spendability</em> and <em>Spend authority</em> properties is not yet
-finished. It needs significant attention to the way honest parties are modelled: the
+finished. It needs significant attention to the way honest parties are modeled: the
 properties need to be strengthened by giving the adversary oracles that allow it to
 control how the honest parties create transactions, generate keys (without telling the
 adversary those keys), etc. That is how these properties were originally defined at
@@ -1018,12 +1039,12 @@ factor (<a href="https://github.com/zcash/ironwood/issues/214">#214</a>) — whi
 and Spend Authority games still consume annotations directly
 (<a href="https://github.com/zcash/ironwood/issues/155">#155</a>). Additional caveats are stated on
 the <a href="formal-verification/ledger-security-games.html">Ledger Security Games</a> page.</p>
-<p>For tractability, the modelled ledger also abstracts away from the real protocol in
+<p>For tractability, the modeled ledger also abstracts away from the real protocol in
 several directions:</p>
 <ul>
 <li>The real protocol has, at the time of writing, six chain value pools: the transparent pool;
 the lockbox (also transparent), and four shielded pools for Sprout, Sapling, Orchard, and
-Ironwood. The modelled ledger has one transparent pool, and one Orchard-protocol shielded
+Ironwood. The modeled ledger has one transparent pool, and one Orchard-protocol shielded
 pool (similar to either Orchard or Ironwood). We argue that this simplification is enough
 to capture realistic attacks, because the interaction of all other pools with a given
 shielded pool is as though the other pools are transparent. (It is a bit of an
@@ -1035,7 +1056,7 @@ affects the formalization of the Spendability and Spend authority properties, be
 depend on diversified address generation using <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathsf">DiversifyHash</span></span></span></span></span>, and so a realistic
 adversary has to be able to invoke the hash-to-curve. The first step is delivered: the
 deployed hash-to-curve is proven indifferentiable from a random oracle onto the group,
-with a concrete advantage bound, modelling the underlying field-element hash as a random
+with a concrete advantage bound, modeling the underlying field-element hash as a random
 oracle — see <a href="formal-verification/group-hash-indifferentiability.html">Group-Hash Indifferentiability</a>. What
 remains is to give the games' adversaries oracle access to it
 (<a href="https://github.com/zcash/ironwood/issues/188">#188</a>).</li>
@@ -1046,7 +1067,7 @@ remains is to give the games' adversaries oracle access to it
 Ironwood pool) can be followed with one idea from cryptography — that a proof system lets
 someone convince you of a claim without showing you the data behind it. Understanding that
 idea needs no Lean, no Halo 2, and no background in formal or succinct proof systems. The
-rest of this page tries to explain the modelling assumptions and heuristics the verifier
+rest of this page tries to explain the modeling assumptions and heuristics the verifier
 soundness claim rests on that are not established by a formal theorem, and therefore have
 to be assessed by other means.</p>
 <p>It is not a walkthrough of the proofs. The <a href="formal-verification/proof-map.html">proof map</a> shows how the results
@@ -1057,7 +1078,7 @@ From here on, the subject is the Action circuit; for the protocol properties bui
 of it, see <a href="formal-verification/ledger-security-games.html">Ledger Security Games</a>.</p>
 <h2 id="the-claim"><a class="header" href="#the-claim">The claim</a></h2>
 <blockquote>
-<p>If the deployed verifier accepts a proof, then whoever produced that proof could have
+<p>If the verifier modeled here accepts a proof, then whoever produced that proof could have
 handed you the secret data it is a proof <em>about</em> — unless they solved a problem that
 most cryptographers believe has been infeasibly difficult (although quantum computers
 could change this in a few years), or hit an event the theorem shows is vanishingly unlikely.</p>
@@ -1066,10 +1087,13 @@ could change this in a few years), or hit an event the theorem shows is vanishin
 <p><em>The secret data</em> means numbers satisfying the circuit's equations. That satisfying them
 amounts to a legitimate Orchard action — well-formed note, balanced value, correctly derived
 nullifier, authorized spend — is itself proven.</p>
-<p><em>The deployed verifier</em> means the verifier as Lean models it: checked against a circuit
-description Lean derives itself and compares against a captured copy, reading a proof already
-decoded from bytes into points and numbers. That the captured copy is what Zcash ships, and
-that the bytes on the wire decode to what the model is handed, are checked outside Lean.</p>
+<p><em>The verifier modeled here</em> checks a circuit description Lean derives itself against a captured
+copy, validates the raw public-input columns, decodes the complete canonical proof byte string,
+and reconstructs the transcript bytes and challenges before entering the typed verifier. Captures
+check those implementation-facing identifications on concrete executions; they do not prove
+universal Rust-to-Lean refinement. The formal probability endpoint measures the typed oracle
+observer, not Rust acceptance. The separate Rust-containment theorem is for one non-batched proof
+bundle at the concrete BLAKE2b table.</p>
 <h2 id="what-you-need-to-know-first"><a class="header" href="#what-you-need-to-know-first">What you need to know first</a></h2>
 <p><strong>Circuit and witness.</strong> The Action circuit is a large system of equations. The secret data —
 which note is spent, its value, the key authorizing the spend — assigns numbers to its
@@ -1172,22 +1196,24 @@ be missed.</p>
 <ul>
 <li><strong>The hash behaves like a truly random function</strong> — the <strong>random-oracle model</strong>. This covers
 BLAKE2b, the conversion of hash output into numbers, and the derivation of the public point
-list. BLAKE2b is not formalized anywhere: the model treats it as an opaque box and assumes
-the box is random.</li>
+list. BLAKE2b is formalized as executable Lean and checked against the captured transcripts,
+but the security argument uses none of its structure: the model treats its digest as random.</li>
 <li><strong>The attacker is algebraic</strong> — assumed to declare, for every curve point it outputs, a
 recipe building it from points it was given. Real attackers owe no such explanation. This is
 what lets the reduction read a relation off the adversary's own output. Note where it sits:
 built into what counts as an adversary at all, rather than appearing as a hypothesis you can
 read off a theorem. An attacker that does not play along is outside the claim entirely — not
 covered with a weaker bound.</li>
-<li><strong>Attacks do not depend on specific encodings</strong>. The formalization does not cover the
-concrete, byte-level encodings used to represent curve points, field elements, etc., either
-in transmitted protocol messages or in the Fiat–Shamir transcript. Instead, the formalization
-is expressed in terms of the abstract types used in the specification. This is a potentially
-significant category of gap, because (despite substantial attention to this area in audits
-and code review) Zcash implementations have had quite a few significant security bugs due to
-unintentionally non-canonical encodings, mishandling of exceptional cases in decoding, etc.
-It is a longer-term goal to extend the formalization to cover the byte-level encodings.</li>
+<li><strong>Attacks do not depend on specific encodings</strong>. The formalization models the byte-level encodings
+used in the SNARK: canonical decoding of curve points and field elements from the proof string,
+and the encoding of absorbed elements into the Fiat–Shamir transcript bytes that the hash sees.
+Both are checked against captured runs; <a href="formal-verification/guide.html#how-fiatshamir-is-modeled">How Fiat–Shamir is modeled</a>
+below says what that establishes and what remains assumed. The encodings of other transmitted
+protocol messages (e.g. note plaintexts, keys, and transaction fields) are not modeled at all.
+This is a potentially significant category of gap, because (despite substantial attention to this
+area in audits and code review) Zcash implementations have had quite a few significant security
+bugs due to unintentionally non-canonical encodings, mishandling of exceptional cases in decoding,
+etc. It is a longer-term goal to extend the formalization to the remaining byte-level encodings.</li>
 </ul>
 <h3 id="the-fixed-list-of-curve-points"><a class="header" href="#the-fixed-list-of-curve-points">The fixed list of curve points</a></h3>
 <p>The reduction treats the public list as <em>independent</em>, which is what turns "find a relation
@@ -1201,15 +1227,37 @@ made against it. One such computation breaks the whole protocol at once, rather 
 transaction or one user. <a href="formal-verification/security-models.html#fixed-bases-the-group-hash-and-the-reference-string">Security
 Models</a> develops this at
 length.</p>
-<h3 id="how-fiatshamir-is-modelled"><a class="header" href="#how-fiatshamir-is-modelled">How Fiat–Shamir is modelled</a></h3>
+<h3 id="how-fiatshamir-is-modeled"><a class="header" href="#how-fiatshamir-is-modeled">How Fiat–Shamir is modeled</a></h3>
 <p>Lean models the hashing schedule exactly — what gets hashed, in what order, matching Halo 2's
 verifier. The order is load-bearing and it is checked: each round's message is hashed in
 <em>before</em> the challenge derived from it is drawn, so a later message cannot bend an earlier
 challenge, which is what makes it harmless that the prover can compute challenges too. Lean
 proves this of its own model, and captured fixtures check that model against real transcripts.</p>
-<p>The byte layer beneath is not modelled. The sequence of things hashed is verified; how they
-become bytes, and BLAKE2b itself, are not. Modelling the encoding would narrow the gap without
-closing it, since the hash would remain outside the proof.</p>
+<p>The byte layer of the SNARK is modeled too: how each absorbed element becomes bytes, the running
+BLAKE2b state, and the reduction of the digest to a field element are executable Lean, and every
+captured challenge is recomputed from bytes. The encoding is injective, so distinct typed
+transcripts are distinct hash inputs. Lean also proves that one encoded transcript is a prefix
+of another exactly when the corresponding typed transcript is a prefix of the other. Extending
+a typed transcript therefore extends its byte encoding; the set of all transcript encodings is
+not prefix-free. Even the verifying-key digest that opens the transcript is recomputed, from a
+pinned key description whose represented fields are checked against the derived key. That field
+check is evidence for the identification of Rust's verifying key with the Lean key, which the
+deployment record assumes, and it is not consumed by any theorem; see
+<a href="https://github.com/zcash/ironwood/issues/232">#232</a>.</p>
+<p>Four boundaries remain outside the universal proof. The security argument idealizes the BLAKE2b
+digest as uniform; <code>blake2b_simd</code> is not proved equal to Lean's BLAKE2b on every input; Rust's
+transcript reader is not proved equal to <code>readProof?</code> on every proof byte string; and the pinned
+description's identification with the unique string emitted by Rust remains deployment provenance.
+The captures check all three implementation-facing identifications on their concrete executions, but
+finite captures do not establish them for arbitrary inputs. They also exercise only the compression
+path that <code>blake2b_simd</code> selected at run time on the capturing machine (portable, SSE4.1, or AVX2),
+not the others. Two further premisses the captures rest on are listed with the rest in
+<code>Snark/Fingerprint/Match.lean</code>: that the exporter records what the verifier consumed, and that the
+production code performs the ZIP 257 canonical-length check on which <code>readProof?</code>'s empty-suffix
+requirement relies (<code>Snark/Soundness/Main.lean</code>).</p>
+<p>The formalized verifier prices one proof bundle. Halo2's optional randomized <code>BatchVerifier</code>
+aggregation of separate proof blobs is outside the model and is not included in the probability
+endpoint.</p>
 <h3 id="facts-checked-by-running-code-not-by-the-kernel"><a class="header" href="#facts-checked-by-running-code-not-by-the-kernel">Facts checked by running code, not by the kernel</a></h3>
 <p>A few closed numeric facts are established by compiling a program and running it rather than
 by checking them inside Lean's kernel. Each records an axiom noting the compiler was trusted,
@@ -1235,16 +1283,20 @@ the verifier's knowledge soundness; Pallas carries the Action circuit and the le
 properties built on it. Discrete log hardness is not a binary property; the feasibility
 of attacks may vary over time and according to the capabilities of an adversary.</li>
 <li><strong>The hash behaves like a random oracle.</strong> BLAKE2b is treated as fresh randomness with no
-exploitable structure, and is not formalized anywhere.</li>
+exploitable structure; the algorithm (RFC 7693) is formalized and checked against the
+captured transcripts, but plays no role in the argument. The deployed implementation,
+<code>blake2b_simd</code>, is not proved equal to it.</li>
 <li><strong>The attacker is algebraic</strong> — it shows its work for every curve point it outputs. One
 that does not is outside the claim rather than covered by it.</li>
-<li><strong>Attacks do not depend on specific encodings.</strong> The formalization speaks the
-specification's abstract types; how curve points and field elements become bytes, in
-protocol messages or in the transcript, is not covered.</li>
+<li><strong>Attacks do not depend on specific encodings.</strong> How curve points and field elements become bytes
+in the proof string and in the Fiat–Shamir transcript is modeled in Lean and checked against
+captures, but the model does not enter the security argument; that Rust agrees with the model
+beyond the captures is assumed, as is the identification of Rust's verifying key with the Lean
+key. Their encodings elsewhere in protocol messages are not modeled at all.</li>
 <li><strong>The deployed list of curve points is as good as a sampled one.</strong> Security is proved for
 protocols that sample it; the real one is hashed into existence and baked in.</li>
-<li><strong>The byte layer under the hashing schedule.</strong> What gets hashed, and in what order, is
-checked; how those things become bytes is not.</li>
+<li><strong>Encodings outside the proof.</strong> The proof string and the transcript, key digest included,
+are modeled to the byte; the encodings of other protocol messages are not.</li>
 <li><strong>Facts established by running code trust the compiler.</strong> Each is pinned to its
 owning declaration at build time, and each is independently re-checkable — but the
 compiled code they run is the whole fast native arithmetic, proven correct in the
@@ -1614,7 +1666,7 @@ the <a href="formal-verification/proof-map.html"><strong>Proof Map</strong></a>;
 <h1 id="reading-the-security-bound"><a class="header" href="#reading-the-security-bound">Reading the Security Bound</a></h1>
 <blockquote>
 <p><strong>Bottom line:</strong> within the formal model, breaking the knowledge soundness of the
-deployed Action verifier is —up to a small statistical error— at least as hard as
+modeled Action verifier is —up to a small statistical error— at least as hard as
 solving Vesta discrete log: the reduction turns every covered attack into a DLOG
 solver with comparable resources. The benchmark therefore remains Vesta DLOG, whose
 best known classical attacks have an expected-work scale of about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span></span></span></span> group
@@ -1623,6 +1675,9 @@ for Vesta DLOG. At the certified profile, the constructed solver uses less than
 twice the attacker's group-work budget, giving this claim a conservative 125-bit
 computational-work headline; the advantage function below is the precise statement.</p>
 </blockquote>
+<p>The probability endpoint here measures the typed random-oracle observer, not production Rust
+acceptance. Captured Rust runs support the separately stated byte-to-typed boundary for one proof
+bundle; optional randomized batching of separate proof blobs is outside the model.</p>
 <p>Here “knowledge soundness” means that whoever produced an accepted proof must know a
 valid <em>witness</em>: the private data that justifies the proved statement. The extractor
 computes the witness from the prover's declared group-element representations, not
@@ -2813,8 +2868,8 @@ Anchors point to definitions under <code>Zcash/</code>, linked to their source f
 </section>
 <section>
 <div class="grp">Capstones</div>
-<div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Capstones/Action.lean">Capstones/Action.lean</a></span></div><div class="def">The adaptive-statement capstones prove a knowledge-failure bound for the deployed Action verifier against represented online algebraic adversaries, with Fiat–Shamir challenge derivation modelled as a random oracle. The adversary chooses the public statement and proof together, and the selected instance prefix is bound before <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>. For every consensus-valid Action count, a faithfully staged adversary bounded by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations has failure probability at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> (<a href="formal-verification/definitions.html#adv-dlog">arguments</a>), provided <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>. Erasure preserves the original game; one composed program value-threads the exact adversary path and cache through the reduction; and Lean checks the counter decomposition and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mord">×</span></span></span></span> arithmetic. The result remains conditional on two explicit shallow-language fidelity obligations: the supplied adversary program and the complete program's host callbacks must perform no hidden Vesta group work. Its three-decode bound is conditional on the family's required representation-length invariant, which is not a concrete deployment instance constructed here. The quoted powers are resource coverage —not a universal failure ceiling— and the result does not cover arbitrary non-algebraic adversaries or concrete BLAKE2b. The random oracle ranges over bounded transcripts of the deployed schedule; AGM representations accompany every query but are erased before the oracle answers. The family fixes its key digest and verifier representations per basis before oracle access, and bundle size is public, universally quantified up to the consensus maximum.</div></div>
-<div class="g"><div class="g-head"><span class="term">knowledge-failure event</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean">ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailureEvent</a></span></div><div class="def">The event that the deployed Action verifier accepts but the executable extractor does not return private witnesses for the entire bundle. The capstone bounds this event directly.</div></div>
+<div class="g"><div class="g-head"><span class="term">capstones</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Capstones/Action.lean">Capstones/Action.lean</a></span></div><div class="def">The adaptive-statement capstones prove a knowledge-failure bound for the modeled Action verifier against represented online algebraic adversaries, with Fiat–Shamir challenge derivation modelled as a random oracle. The adversary chooses the public statement and proof together, and the selected instance prefix is bound before <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>. For every consensus-valid Action count, a faithfully staged adversary bounded by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">125</span></span></span></span></span></span></span></span></span></span></span></span> group operations has failure probability at most <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">DLOG</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">124</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">126</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">83</span></span></span></span></span></span></span></span></span></span></span></span> (<a href="formal-verification/definitions.html#adv-dlog">arguments</a>), provided <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">123</span></span></span></span></span></span></span></span></span></span></span></span>. Erasure preserves the original game; one composed program value-threads the exact adversary path and cache through the reduction; and Lean checks the counter decomposition and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mord">×</span></span></span></span> arithmetic. The result remains conditional on two explicit shallow-language fidelity obligations: the supplied adversary program and the complete program's host callbacks must perform no hidden Vesta group work. Its three-decode bound is conditional on the family's required representation-length invariant, which is not a concrete deployment instance constructed here. The quoted powers are resource coverage —not a universal failure ceiling— and the result does not cover arbitrary non-algebraic adversaries, concrete BLAKE2b, or randomized aggregation of separate proofs. The random oracle ranges over bounded transcripts of the deployed schedule; AGM representations accompany every query but are erased before the oracle answers. The family fixes its key digest and verifier representations per basis before oracle access, and bundle size is public, universally quantified up to the consensus maximum. The deployment-record endpoint measures the typed oracle observer, not Rust acceptance; a separate theorem relates one non-batched Rust proof-bundle acceptance at the captured concrete table to typed acceptance.</div></div>
+<div class="g"><div class="g-head"><span class="term">knowledge-failure event</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementKnowledge.lean">ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailureEvent</a></span></div><div class="def">The event that the modeled Action verifier accepts but the executable extractor does not return private witnesses for the entire bundle. The capstone bounds this event directly.</div></div>
 <div class="g"><div class="g-head"><span class="term">semantic residuals</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/AdaptiveStatementEvent.lean">ComputedAdaptiveActionStatementFSFamily.semanticEvent</a></span></div><div class="def">The explicitly priced <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> challenge surfaces needed to promote the compressed constraint identity to row-level gate, permutation, and lookup semantics.</div></div>
 <div class="g"><div class="g-head"><span class="term">ledger composition · deployment provenance</span><span class="anchor"><a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Soundness/Action/StraightLineTerminal.lean">ActionBundleWitness</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Security/Ledger/Bridge.lean">actionSpec_to_ledger</a> ·&nbsp;<a href="https://github.com/zcash/ironwood/blob/main/Zcash/Snark/Keygen/Certificate.lean">Keygen.Certificate</a></span></div><div class="def">The capstone returns the deployed Action circuit's private witnesses and satisfaction proofs, and actionSpec_to_ledger already refines one such Action witness to the games-facing ledger statement or an exhibited break. The remaining output-side floor is composing every extracted bundle entry through that bridge. On the input side, Lean derives the verifying key and checks it against the capture; proving the ported circuit equal to the shipped Rust circuit and refining captured bytes and transcripts to the deployed run remain external.</div></div>
 </section>
@@ -2965,7 +3020,18 @@ against live in <code>Zcash/Arithmetic/</code>; <code>Core.lean</code> is a one-
 query back to the canonical group element it references.</li>
 <li><code>Expressions</code> recomputes the vanishing argument's <code>expected_h_eval</code>.</li>
 <li><code>Ipa</code> is the inner-product-argument opening (<code>compute_s</code> / <code>compute_b</code>).</li>
-<li><code>FiatShamir</code> models halo2's BLAKE2b challenge schedule as an abstract <code>squeeze</code>.</li>
+<li><code>FiatShamir</code> models halo2's challenge schedule over an abstract <code>squeeze</code>.</li>
+<li><code>Transcript</code> is the byte layer beneath it: halo2's tagged transcript encoding, an executable
+BLAKE2b (<code>Common/Hash/Blake2b</code>), and the concrete oracle <code>halo2Transcript</code> every capture family
+runs the schedule through. The encoding is proved injective. One encoded transcript is a
+prefix of another exactly when the corresponding typed transcript is a prefix of the other.</li>
+<li><code>ProofBytes</code> is the proof-string codec: canonical <code>read_point</code>/<code>read_scalar</code> decoders (a read
+succeeds exactly on the element's own encoding), the reader in the verifier's read order, and
+the serializer, checked against the random captures' raw bytes.</li>
+<li><code>KeyDigest</code> recomputes halo2's verifying-key digest — <code>Halo2-Verify-Key</code> BLAKE2b over the
+length-prefixed pinned description, reduced modulo <code>p</code> — and reads that description back in
+Rust's derived-<code>Debug</code> value language; <code>Describes</code> relates a description to a designated
+canonical key and to the key the verifier uses.</li>
 <li><code>AssembleSpec</code> says what the rejecting <code>assemble?</code> returns when it does not reject — exactly
 the total assembly's value — the operational interface both the fingerprint walk and the
 deployed soundness layer consume.</li>
@@ -3024,22 +3090,30 @@ with probability at most <code>(D + B)/p</code>. The random fixtures state the c
 less silent. This subtree is the <code>FixtureCheck</code> lake target, kept out of <code>lake build Zcash</code> (the
 captures are large, generated, and slow) but built by CI.
 <code>Shared/ScheduleMarker</code> re-encodes captured Fiat–Shamir schedules into the model's marker form;
-<code>Shared/TamperSweep</code> is the shared mutation vocabulary of the per-slot negative sweeps; <code>PostNu63</code> pins
+<code>Shared/TamperSweep</code> is the shared mutation vocabulary of the per-slot negative sweeps;
+<code>Shared/Hex</code> decodes the generated proof hex; <code>PinnedKey</code> reads the exporter-emitted pinned key
+description back against the captured key field by field; <code>PostNu63</code> pins
 the canonical post-NU6.3 verifying key and URS so fixture drift is visible here, and
 <code>PostNu63Random</code> extends the same point equalities to the random captures — kept separate so the
 honest lane does not depend on compiling the random data modules. (The join between the captured
 instance commitments and the circuit-derived family lives in <code>Keygen/InstanceCapture</code>.)</p>
 <p><code>SingleAction/Honest/</code> and <code>MultiAction/Honest/</code> hold the captured honest single- and
-multi-action proofs, each
-with its <strong>Fiat–Shamir</strong> schedule check, its <code>Boundary</code> statement of record at the Lean-derived
-key and schedule, its per-slot tamper sweep (<code>Negative/Sweep</code>), and its checked <code>TrustBoundary</code>
-turning the fingerprint match into
-build-time obligations; <code>SingleAction/Honest/VkMatch</code> computes the capture's constraint-system fields equal
-to the ones derived end to end from the ported <code>configure</code> as a standalone diagnostic, not a
-soundness or fixture-trust input. The multi-action capture additionally
+multi-action proofs. Examples of the checks in both families:</p>
+<ul>
+<li><strong>Fiat–Shamir</strong> checks the schedule, and <code>Transcript</code> recomputes every captured challenge from
+transcript bytes.</li>
+<li><code>ProofBytes</code> parses the generated proof bytes exactly and establishes <code>DeployedAcceptsBytes</code>
+and <code>DeployedAcceptsRawBytes</code>.</li>
+<li><code>Boundary</code> states the fingerprint match at the Lean-derived key and schedule.</li>
+<li><code>Negative/Sweep</code> runs the per-slot tamper checks.</li>
+<li><code>TrustBoundary</code> turns the fingerprint match into build-time obligations.</li>
+</ul>
+<p><code>SingleAction/Honest/VkMatch</code> checks that the capture's constraint-system fields equal those
+derived end to end from the ported <code>configure</code>. It is a standalone diagnostic, not a soundness
+or fixture-trust input. The multi-action capture additionally
 carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
 schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
-conditionally staged-certified <code>2^125</code> adversary-work one and the deployed <code>2^123</code> one, with the
+conditionally staged-certified <code>2^125</code> adversary-work one and the modeled <code>2^123</code> one, with the
 declared-profile <code>2^123</code> instantiation pinned as the latter's rung — data-coupled programmed-basis
 and verifier-commitment accounting, explicit adversary and
 complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
@@ -3048,7 +3122,8 @@ bound derived from a required family invariant, and a separate oracle-query budg
 captured key's own scalar data, so the staged IPA trace carries eleven live rounds.</p>
 <p>Each family's <code>Random/</code> subfolder holds the random match-only
 captures — the deployed verifier run on random proof strings, deliberately non-accepting. Each has
-the same schedule checks and <code>Faithfulness</code>, a <code>VkCertificate</code> transporting the single-action
+the same schedule checks, <code>Transcript</code> and <code>ProofBytes</code> lanes — the latter carrying the byte-level
+negatives — and <code>Faithfulness</code>, a <code>VkCertificate</code> transporting the single-action
 keygen certificate along <code>PostNu63Random</code>'s point equalities, its <code>Boundary</code> statement of record,
 aliveness guards in <code>Negative</code> (the model assembles at the random point, the capture is genuinely
 non-accepting, and one tamper canary), and its own <code>TrustBoundary</code> census. What the four families
@@ -3089,6 +3164,9 @@ machine-readable deployment-instantiation record — one identification field pe
 (challenge law, basis law, key digest, typed acceptance, discrete-log advantage), plus a
 certified ceiling on the failure observer's query budget, without which the joint Challenge255
 charge would be a free multiple — that a deployed interpretation of the capstones supplies.
+<code>ByteAcceptance</code> is the family's raw-byte entry: validated raw columns, the concrete BLAKE2b table
+<code>halo2Coins</code>, and the bridge from <code>DeployedAcceptsRawBytes</code> into the family's typed acceptance,
+which <code>DeploymentRecord</code>'s separate Rust-containment theorem consumes.
 <code>AdaptiveStatementModel</code>
 defines the game and binds the verifying key and selected instance commitments before <code>theta</code>;
 <code>Accounting</code>, <code>Terminal</code>, and <code>Surfaces</code> decode arbitrary statement prefixes and price the
@@ -3193,7 +3271,12 @@ one-level pinned-squeeze bound and the additive union of pinned root events (<co
 adaptive adversary model (<code>OracleComp</code>), the Fiat–Shamir-to-AGM handoff (<code>Algebraic</code>),
 oracle-domain reduction to finite support (<code>DomainReduction</code>), and the adaptive interface and
 pre-IPA query accounting (<code>Adaptive</code>, <code>PreIpa</code>, <code>Provenance</code>). These components use the bounded
-querying-adversary model to price straight-line pinned-root events.</li>
+querying-adversary model to price straight-line pinned-root events. <code>ActionCount</code> proves the
+schedule's oracle locality and that the pre-<code>θ</code> cones of different action counts are disjoint —
+typed and byte-level — so reprogramming the oracle on one count's cone changes no challenge of
+another. <code>TagMutation</code> deletes halo2's transcript domain tags and exhibits the collisions that
+appear — a point with two scalars, a transcript with its pre-squeeze extension — so the tags'
+role is checked rather than asserted.</li>
 <li><strong><code>Oracle/</code></strong> — the squeeze idealization and its deployed gap. <code>ChallengeUniform</code> gives the
 exactly-uniform challenge law over <code>Fp</code>; <code>Challenge255</code> prices the deployed conversion against
 that ideal — a uniform 512-bit digest reduced modulo <code>p</code> overshoots uniform by exactly
@@ -3212,13 +3295,14 @@ AGM unbatching chain; and <code>ConstraintResolver</code>, <code>CanonicalSelect
 semantic handoff to the formal circuit.</li>
 </ul>
 <h3 id="capstones--the-advertised-endpoints"><a class="header" href="#capstones--the-advertised-endpoints"><code>Capstones/</code> — the advertised endpoints</a></h3>
-<p>Where the deployed Action circuit's own statements are stated. <code>Action.lean</code> states the
+<p>Where the modeled Action circuit's own statements are stated. <code>Action.lean</code> states the
 endpoints — knowledge-soundness bounds for every consensus-valid bundle size, in compositional
 error-formula form with declared and with staged-certified group-work accounting, in the
 staged-certified finite-security form at <code>2^125</code> adversary work, and in
-the deployed form that consumes an <code>ActionDeploymentInstantiation</code>, charges the
+the deployment-record model that consumes an <code>ActionDeploymentInstantiation</code>, charges the
 joint Challenge255 bias once for the whole transcript, and prices that charge at <code>2^-136</code> against
-the record's certified query ceiling. Knowledge soundness is the only property advertised: it implies
+the record's certified query ceiling. This endpoint measures the record's typed oracle observer,
+not Rust acceptance. Knowledge soundness is the only property advertised: it implies
 the plain-soundness statement, so that is not stated separately. Legacy fixed-statement endpoints
 and their events are retired.</p>
 <p><code>Action.lean</code> is the only endpoint file here. The <code>Action/</code> subdirectory below it holds what
@@ -3429,11 +3513,12 @@ toolchain needed.</li>
 </ul>
 <h2 id="fixture-regeneration"><a class="header" href="#fixture-regeneration">Fixture regeneration</a></h2>
 <p><strong><code>scripts/regenerate-fingerprint-fixtures.sh</code></strong> proves the committed captures
-regenerate byte-for-byte from their sources: it clones the pinned Orchard release,
-asserts the tag and its published lockfile checksums, regenerates every capture family
-plus the proof-byte siblings, and diffs each committed artifact. CI runs the full
-regeneration when a fixture-relevant path changes; on every other run, the manifest
-check above still binds the artifacts to their recorded digests.</p>
+regenerate byte-for-byte from their sources: it checks out exact Orchard #544 and
+Halo2 #933 snapshots through canonical URLs, asserts Orchard's lockfile resolves the
+pinned Halo2 commit, regenerates every capture family plus the proof-byte siblings,
+and diffs each committed artifact. CI runs the full regeneration when a
+fixture-relevant path changes; on every other run, the manifest check above still
+binds the artifacts to their recorded digests.</p>
 <p>The circuit-side layout dumps have no regeneration pipeline: their generator is
 unpublished one-off instrumentation in local halo2/orchard checkouts
 (<code>Zcash/Circuits/Fixtures/PROVENANCE.md</code> records the lineage). This should not be
