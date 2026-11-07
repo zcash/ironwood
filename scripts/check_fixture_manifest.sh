@@ -2,7 +2,7 @@
 # Check the per-artifact provenance manifest of the machine-generated fingerprint captures.
 #
 # `scripts/regenerate-fingerprint-fixtures.sh` proves the committed captures regenerate
-# byte-for-byte from the pinned Orchard release, but only when a regeneration actually runs.
+# byte-for-byte from the pinned Orchard commit, but only when a regeneration actually runs.
 # This check binds each committed artifact to its recorded provenance on every CI run, with no
 # toolchain: every manifest entry (`Zcash/Snark/Fixtures/MANIFEST.tsv` — path, sha256,
 # generator, source, invocation) must name an existing file whose digest matches, and — the

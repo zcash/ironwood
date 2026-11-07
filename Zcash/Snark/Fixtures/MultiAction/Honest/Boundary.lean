@@ -1,11 +1,13 @@
 import Zcash.Snark.Fixtures.MultiAction.Honest.FiatShamir
+import Zcash.Snark.Fixtures.MultiAction.Honest.Transcript
 import Zcash.Snark.Fixtures.MultiAction.Honest.VkCertificate
 import Mathlib.Util.AssertNoSorry
 
 /-!
 # The trust boundary at the Lean-derived key (multi-action)
 
-The statement of record for the multi-action capture: the deployed verifier's fingerprint
+The boundary ladder for the multi-action capture starts by showing that the deployed verifier's
+fingerprint
 — `assemble` at the challenges Lean's Fiat–Shamir schedule model derives from the captured
 oracle — matches the captured MSM, with the verifying key spelled as its end-to-end
 derivation from the ported `configure`/keygen at the captured URS
@@ -16,6 +18,16 @@ The instance side stays `derivedInstanceCommitment` — already a derivation, th
 commitment of the captured public inputs, pinned to the captured points by
 `instance_commitments_derived` — since the multi-action capture has no
 `Keygen/InstanceCapture.lean` analogue.
+
+The byte-level intermediate, `nonInteractiveFingerprint_matches_derived_blake2b`, replaces the
+captured oracle table with the deployed hash itself, deriving every
+challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
+`deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
+separates a schedule error from an encoding or hash error.
+The strongest statement of record, `nonInteractiveFingerprint_matches_derived_keyDigest`, goes
+one step further: the key digest that opens the transcript is recomputed from the exact pinned-key
+string emitted by the exporter, rather than accepting the captured digest scalar. The preimage
+string remains capture data.
 -/
 
 namespace Zcash.Snark.Fixture2
@@ -34,5 +46,31 @@ theorem nonInteractiveFingerprint_matches_derived :
   exact nonInteractiveFingerprint_matches
 
 assert_no_sorry nonInteractiveFingerprint_matches_derived
+
+/-- **The fingerprint match at the derived key, from transcript bytes.** As
+`nonInteractiveFingerprint_matches_derived`, with the captured oracle table replaced by the
+deployed hash: every challenge is BLAKE2b over halo2's transcript encoding of the derived prefix
+and the proof. -/
+theorem nonInteractiveFingerprint_matches_derived_blake2b :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript (fun _ => capturedVkTranscriptRepr)
+        derivedVk derivedInstanceCommitment ps)
+      capturedMsm := by
+  have h : vk = derivedVk := vk_eq_derived
+  rw [← h]
+  exact nonInteractiveFingerprint_matches_blake2b
+
+/-- **The fingerprint match with the key-digest scalar recomputed.** As
+`nonInteractiveFingerprint_matches_derived_blake2b`, with the key digest that opens the
+transcript derived from the exporter-emitted pinned key description
+(`keyDigest_eq_capturedVkTranscriptRepr`) rather than taken from the captured scalar. -/
+theorem nonInteractiveFingerprint_matches_derived_keyDigest :
+    MsmMatch
+      (nonInteractiveFingerprintForStatement halo2Transcript
+        (fun _ => keyDigest capturedPinnedKeyDescription)
+        derivedVk derivedInstanceCommitment ps)
+      capturedMsm := by
+  rw [keyDigest_eq_capturedVkTranscriptRepr]
+  exact nonInteractiveFingerprint_matches_derived_blake2b
 
 end Zcash.Snark.Fixture2
