@@ -73,7 +73,7 @@ and this project adheres to Rust's notion of
   selected count's output is narrowed into the existing fixed-count reduction stages, giving one
   relation finder and one knowledge extractor for whatever count was selected. The ledger shell
   (`Zcash/Security/Ledger/AdaptiveActionReduction.lean`, `AdaptiveActionBundleBridge.lean`) runs
-  all `k` chain positions in one such execution and combines every position's relation into one
+  every chain position in one such execution and combines every position's relation into one
   finder, which a single textbook discrete-log hypothesis prices.
 
 ### Removed
@@ -87,10 +87,10 @@ and this project adheres to Rust's notion of
   family per chain position and bundle size. The Fiat–Shamir oracle is one table over a domain
   covering every action count, so the per-size tables and the modelling caveat on their
   presentation are gone (#224), and the Action discrete-log term is charged once, for the combined
-  relation finder, so that neither `k` nor `maxActions` multiplies it (#214). The `_of_dlogProfiles`
-  endpoints are replaced by the `_combinedDLR` endpoints, which carry every ledger-side relation
-  arm in `combinedDLRAdvantage` and take the bound on the selected count's statistical surfaces
-  as a hypothesis.
+  relation finder, so that neither the number of chain positions nor `maxActions` multiplies it
+  (#214). The `_of_dlogProfiles` endpoints are replaced by the `_combinedDLR` endpoints, which
+  carry every ledger-side relation arm in `combinedDLRAdvantage` and take the bound on the
+  selected count's statistical surfaces as a hypothesis.
 - `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
   `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
 - `Describes` takes the designated canonical key and the verifier-used key, and

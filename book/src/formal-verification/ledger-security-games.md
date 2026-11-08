@@ -138,13 +138,14 @@ On the composed route to the Balance goals, the `_combinedDLR` endpoints carry o
 hypothesis per kind of error. The Action discrete-log term is charged once: the proofs of
 every chain position come from one shared adaptive-count execution, whose combined
 relation finder (`combinedRelationFinder`) is the one discrete-log adversary, so neither
-the number of chain positions `k` nor `maxActions` multiplies that term. The selected
-count's statistical surfaces keep a `k`-fold union bound; the bound on them (`hstat`) is a
-hypothesis of these endpoints, and the fixed-count capstone's concrete bound is the
-template for discharging it. Every ledger-side relation arm —the bridge escapes, the
-Sinsemilla reducer's relations, and the value-DLR finder's— is carried by the single term
-`combinedDLRAdvantage`: one event over the composed deployed experiment, whose samples all
-compute nontrivial relations over the combined deployed basis (`orchardPoints`).
+`numChainPositions` nor `maxActions` multiplies that term. The selected count's
+statistical surfaces keep a union bound with factor `numChainPositions`; the bound on
+them (`hstat`) is a hypothesis of these endpoints, and the fixed-count capstone's
+concrete bound is the template for discharging it. Every ledger-side relation arm —the
+bridge escapes, the Sinsemilla reducer's relations, and the value-DLR finder's— is
+carried by the single term `combinedDLRAdvantage`: one event over the composed deployed
+experiment, whose samples all compute nontrivial relations over the combined deployed
+basis (`orchardPoints`).
 
 The Fiat–Shamir oracle of this model is one table over a transcript domain that covers
 every action count, read by every position at whatever count it selects, so no per-size

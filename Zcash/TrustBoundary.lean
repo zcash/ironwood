@@ -859,12 +859,12 @@ machine's requests are assembled with the extracted ledger data into the annotat
 chain (`assembleTx`, `assembleChain`), and the constructed annotated adversary runs
 the ledger machine and assembles its output (`toLA`). The laws (`runsLaw`,
 `toIdealizedKS`) are noncomputable measures over that chain. The proofs of every chain
-position come from one shared adaptive-count Action execution, so the Action discrete-log
-term is charged once, for its combined relation finder, and `k` multiplies only the
-selected count's statistical residual and the bridge escapes
-(`extractionFailureEvent_measure_le`). The
-`_combinedDLR` endpoints carry every ledger-side relation arm in the single combined term
-(`combinedDLRAdvantage`, over the combined deployed basis). -/
+position come from one shared adaptive-count Action execution, so the Action
+discrete-log term is charged once, for its combined relation finder, and the number of
+chain positions multiplies only the selected count's statistical residual and the bridge
+escapes (`extractionFailureEvent_measure_le`). The `_combinedDLR` endpoints carry every
+ledger-side relation arm in the single combined term (`combinedDLRAdvantage`, over the
+combined deployed basis). -/
 
 assert_computable Zcash.Security.Ledger.OrchardExtractionExperiment.ExtractionBalanceAdversary.assembleTx +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -1982,8 +1982,9 @@ assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveSt
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The adaptive-count reduction: the action count is part of one shared adversary output; the
--- selected fixed-count machinery consumes that retained run; and the ledger combines every emitted
--- slot's relation into one finder, which a single textbook discrete-log hypothesis bounds.
+-- selected fixed-count machinery consumes that retained run; and the ledger combines every
+-- emitted chain position's relation into one finder, which a single textbook discrete-log
+-- hypothesis bounds.
 assert_computable Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedRelationFinder +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)

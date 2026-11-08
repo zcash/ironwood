@@ -13,7 +13,7 @@ action of the output chain carries the witness for the Action statement. This mo
 builds that annotated adversary from a proof-emitting one. The composed adversary's
 proofs come from one shared adaptive-count Action execution
 (`AdaptiveActionReduction.Family`): one online-AGM adversary, one random-oracle table,
-and one query budget produce the proofs of all `k` chain positions, and each position's
+and one query budget produce the proofs at every chain position, and each position's
 action count is part of that execution's output. The sample space adds the generator
 table and that one shared transcript table; the annotations are computed by the
 composed ledger extractor (`selectedLedgerExtractor`) from the sampled run.
@@ -44,10 +44,9 @@ the lift is a preimage and so preserves inclusions and unions, and
 monotonicity and subadditivity give the sum. So the discrete-log term is charged once,
 for the combined finder (one `TextbookDLWithCoinsAdvantageLE` hypothesis), and only the
 selected count's statistical surfaces and the ledger-bridge escapes keep a union bound
-over the `k` chain positions. Neither `k` nor `maxActions` multiplies the discrete-log
-term. Throughout, `k` is the number of chain positions; the generator queries are indexed by
-`ActionBasisIndex`, the circuit's basis index, whose size `2 ^ actionCircuit.shape.k` involves
-halo2's unrelated `k`.
+over the chain positions. Neither `numChainPositions` nor `maxActions` multiplies the
+discrete-log term. The generator queries are indexed by `ActionBasisIndex`, the
+circuit's basis index.
 
 The bound `ε_stat` on the statistical surfaces of the selected count (`hstat`) is a
 hypothesis of the endpoints here. The surfaces are the four of the fixed-count families:
@@ -92,23 +91,23 @@ namespace Family
 shared adaptive-count oracle table. One table serves every action count, so the sample
 has no component per count: the adversary cannot obtain a fresh table by changing its
 count, and the discrete-log hypothesis is stated once, over this one table. -/
-abbrev Runs {k maxActions : ℕ} (family : Family k maxActions)
-    {T : Type*} [DecidableEq T]
+abbrev Runs {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions) {T : Type*} [DecidableEq T]
     (_query : ActionBasisIndex → T) :=
   (↥(Set.range _query) → VestaG) × family.Coins
 
 /-- The law of the runs component: a uniform generator table and a uniform shared
 transcript table. -/
-noncomputable def runsLaw {k maxActions : ℕ} (family : Family k maxActions)
-    {T : Type*} [DecidableEq T]
+noncomputable def runsLaw {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions) {T : Type*} [DecidableEq T]
     (query : ActionBasisIndex → T) : PMF (Runs family query) :=
   independentProductPMF (orchardGeneratorROSetup query)
     (PMF.uniformOfFintype family.Coins)
 
 /-- The lift of a reduction-layer event, stated over the group basis, to the generator
 table: a preimage, so it preserves inclusions and unions. -/
-def orchardEvent {k maxActions : ℕ} (family : Family k maxActions)
-    {T : Type*} [DecidableEq T]
+def orchardEvent {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions) {T : Type*} [DecidableEq T]
     (query : ActionBasisIndex → T)
     (event : Set family.GroupSample) : Set (Runs family query) :=
   (fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹' event
@@ -116,8 +115,8 @@ def orchardEvent {k maxActions : ℕ} (family : Family k maxActions)
 /-- A reduction-layer event has the same measure under the runs law as its scalar-basis
 form has under the uniform scalar sample, by the uniform-URS identification of the
 generator random oracle. -/
-theorem runsLaw_measure_orchardEvent {k maxActions : ℕ} (family : Family k maxActions)
-    {T : Type*} [DecidableEq T]
+theorem runsLaw_measure_orchardEvent {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions) {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
     (query : ActionBasisIndex → T)
     (hquery : Function.Injective query) (event : Set family.GroupSample) :
@@ -131,59 +130,60 @@ theorem runsLaw_measure_orchardEvent {k maxActions : ℕ} (family : Family k max
 
 /-- The extraction-failure arm at the reduction layer, over the generator table:
 selected-count knowledge failure or a supplied ledger-bridge escape at one of the
-emitted positions. -/
-def extractionFailureEvent {k maxActions : ℕ} (family : Family k maxActions)
-    {T : Type*} [DecidableEq T]
+emitted chain positions. -/
+def extractionFailureEvent {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions) {T : Type*} [DecidableEq T]
     (query : ActionBasisIndex → T)
-    (escape : Fin k → Set family.GroupSample) : Set (Runs family query) :=
+    (escape : Fin numChainPositions → Set family.GroupSample) : Set (Runs family query) :=
   orchardEvent family query (family.ledgerExtractionFailureEvent escape)
 
-/-- **Extraction failure with no `k * maxActions` discrete-log loss.** The bound is
-`(DLOG + 1 / |Fp|) + k * (statistical error + bridge escape)`: no term is multiplied by
-`maxActions`, and `k` does not multiply the discrete-log term. `maxActions` can enter only
-through `ε_stat`, the bound on the selected count's statistical surfaces, whose expected
-size the module doc gives. -/
-theorem extractionFailureEvent_measure_le {k maxActions : ℕ}
-    (family : Family k maxActions)
+/-- **Extraction failure with no `numChainPositions * maxActions` discrete-log loss.**
+The bound is `(DLOG + 1 / |Fp|) + numChainPositions * (statistical error + bridge escape)`:
+no term is multiplied by `maxActions`, and `numChainPositions` does not multiply the
+discrete-log term. `maxActions` can enter only through `ε_stat`, the bound on the selected
+count's statistical surfaces, whose expected size the module doc gives. -/
+theorem extractionFailureEvent_measure_le {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
     (query : ActionBasisIndex → T)
     (hquery : Function.Injective query)
-    (escape : Fin k → Set family.GroupSample)
+    (escape : Fin numChainPositions → Set family.GroupSample)
     {dlBound ε_stat ε_escape : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound)
-    (hstat : ∀ slot,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
         (family.scalarEvent B
-          (family.slotFamily slot).selectedStatisticalFailureEvent) ≤ ε_stat)
-    (hescape : ∀ slot,
+          (family.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat)
+    (hescape : ∀ position,
       (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
-        (family.scalarEvent B (escape slot)) ≤ ε_escape) :
+        (family.scalarEvent B (escape position)) ≤ ε_escape) :
     (runsLaw family query).toOuterMeasure
         (extractionFailureEvent family query escape) ≤
-      (dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * (ε_stat + ε_escape) := by
+      (dlBound + 1 / Fintype.card Fp) +
+        (numChainPositions : ℝ≥0∞) * (ε_stat + ε_escape) := by
   unfold extractionFailureEvent
   rw [runsLaw_measure_orchardEvent family B hB query hquery]
   exact family.ledgerExtractionFailureEvent_prob_le B escape hDL hstat hescape
 
 /-- The knowledge arm alone at the reduction layer: the selected-count knowledge failures
-of the emitted positions, bounded by the one discrete-log term and the per-position
-statistical residual. -/
-theorem knowledgeFailureEvent_measure_le {k maxActions : ℕ}
-    (family : Family k maxActions)
+of the emitted chain positions, bounded by the one discrete-log term and the
+per-position statistical residual. -/
+theorem knowledgeFailureEvent_measure_le {numChainPositions maxActions : ℕ}
+    (family : Family numChainPositions maxActions)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
     (query : ActionBasisIndex → T)
     (hquery : Function.Injective query)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound)
-    (hstat : ∀ slot,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
         (family.scalarEvent B
-          (family.slotFamily slot).selectedStatisticalFailureEvent) ≤ ε_stat) :
+          (family.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat) :
     (runsLaw family query).toOuterMeasure
         (orchardEvent family query family.ledgerKnowledgeFailureEvent) ≤
-      (dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * ε_stat := by
+      (dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * ε_stat := by
   rw [runsLaw_measure_orchardEvent family B hB query hquery]
   exact family.ledgerKnowledgeFailureEvent_prob_le B hDL hstat
 
@@ -207,7 +207,7 @@ structure TxRequest (MSG : Type) (maxActions : ℕ) where
   bindingSig : RedDSA.Sig Fq PallasGroup
 
 /-- **The proof-emitting balance adversary model, as a type.** One shared adaptive-count
-Action execution (`actionFamily`) produces the proofs of all `k` chain positions and
+Action execution (`actionFamily`) produces the proofs at every chain position and
 selects each position's action count; the ledger machine (`machine`) sees the generator
 table, the whole sampled transcript table, and the presented bases, and requests one
 transaction per position. It cannot resample a transcript for a different position or
@@ -217,13 +217,13 @@ structure ExtractionBalanceAdversary (MSG : Type) [Fintype MSG] [DecidableEq MSG
     [Inhabited MSG]
     (spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop)
     {T : Type} [DecidableEq T] (query : ActionBasisIndex → T)
-    (k maxActions : ℕ) : Type 1 where
+    (numChainPositions maxActions : ℕ) : Type 1 where
   /-- The adversary's coin space. -/
   ι : Type
   /-- The coin distribution. -/
   coins : PMF ι
-  /-- The shared adaptive-count Action execution producing every position's proof. -/
-  actionFamily : AdaptiveActionReduction.Family k maxActions
+  /-- The shared adaptive-count Action execution producing every chain position's proof. -/
+  actionFamily : AdaptiveActionReduction.Family numChainPositions maxActions
   /-- The ledger machine: from the coins, the sampled run, and the presented bases,
   request one transaction per chain position, with its announced binding
   representation. -/
@@ -241,9 +241,9 @@ namespace ExtractionBalanceAdversary
 variable {MSG : Type} [Fintype MSG] [DecidableEq MSG] [Inhabited MSG]
   {spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop}
   {T : Type} [DecidableEq T] {query : ActionBasisIndex → T}
-  {k maxActions : ℕ}
+  {numChainPositions maxActions : ℕ}
   (H_bind : PallasGroup → PallasGroup → MSG → Fq)
-  (A : ExtractionBalanceAdversary MSG spendAuthVerify query k maxActions)
+  (A : ExtractionBalanceAdversary MSG spendAuthVerify query numChainPositions maxActions)
 
 /-- The deployed annotated transaction type the assembled chain carries. -/
 abbrev AnnotatedTx :=
@@ -261,9 +261,9 @@ signatures. Returns nothing exactly when the composed extractor does: when the s
 proof's knowledge extraction fails, or a member of the extracted bundle escapes the
 bridge. The assembled chain then stops at this position, and such samples are counted in
 the extraction-failure arm of the composed bound rather than judged by ledger validity. -/
-def assembleTx (r : Runs A) (t : Fin k) (req : TxRequest MSG maxActions) :
+def assembleTx (r : Runs A) (position : Fin numChainPositions) (req : TxRequest MSG maxActions) :
     Option (AnnotatedTx (spendAuthVerify := spendAuthVerify) H_bind) :=
-  let family := A.actionFamily.slotFamily t
+  let family := A.actionFamily.positionFamily position
   let basis := orchardGeneratorROBasis query r.1
   let selected := (family.cachedExecution basis r.2).1
   match selectedLedgerExtractor family spendAuthVerify (redPallasBindingVerify H_bind)
@@ -286,11 +286,11 @@ def assembleChain (r : Runs A) :
     ℕ → List (TxRequest MSG maxActions × QueryRep Fq 2) →
       List (AnnotatedTx (spendAuthVerify := spendAuthVerify) H_bind × QueryRep Fq 2)
   | _, [] => []
-  | t, (req, rep) :: rest =>
-      if ht : t < k then
-        match assembleTx H_bind A r ⟨t, ht⟩ req with
+  | position, (req, rep) :: rest =>
+      if hposition : position < numChainPositions then
+        match assembleTx H_bind A r ⟨position, hposition⟩ req with
         | none => []
-        | some tx => (tx, rep) :: assembleChain r (t + 1) rest
+        | some tx => (tx, rep) :: assembleChain r (position + 1) rest
       else []
 
 /-- The constructed annotated adversary's machine: run the ledger machine on the
@@ -336,56 +336,58 @@ noncomputable def toIdealizedKS
 /-- The extraction-failure event of one chain position, over the group basis and the
 shared table: the selected proof is accepted, and the composed extractor returns
 nothing. -/
-def slotExtractionFailure (t : Fin k) : Set A.actionFamily.GroupSample :=
-  {p | (A.actionFamily.slotFamily t).selectedAccepts p.1 p.2 ∧
-    selectedLedgerExtractor (A.actionFamily.slotFamily t) spendAuthVerify
+def positionExtractionFailure (position : Fin numChainPositions) :
+    Set A.actionFamily.GroupSample :=
+  {p | (A.actionFamily.positionFamily position).selectedAccepts p.1 p.2 ∧
+    selectedLedgerExtractor (A.actionFamily.positionFamily position) spendAuthVerify
       (redPallasBindingVerify H_bind) p.1 p.2 = none}
 
-/-- The event that one position's selected proof is accepted and a member of its
+/-- The event that one chain position's selected proof is accepted and a member of its
 extracted bundle escapes the bridge. -/
-def slotEscape (t : Fin k) : Set A.actionFamily.GroupSample :=
-  {p | (A.actionFamily.slotFamily t).selectedAccepts p.1 p.2 ∧
-    (selectedLedgerEscapeFinder (A.actionFamily.slotFamily t) spendAuthVerify
+def positionEscape (position : Fin numChainPositions) : Set A.actionFamily.GroupSample :=
+  {p | (A.actionFamily.positionFamily position).selectedAccepts p.1 p.2 ∧
+    (selectedLedgerEscapeFinder (A.actionFamily.positionFamily position) spendAuthVerify
       (redPallasBindingVerify H_bind) p.1 p.2).isSome}
 
-/-- One position's extraction failure decomposes into its selected-count knowledge
-failure and its computed ledger escape (`selectedLedgerExtractor_eq_none_iff`). -/
-theorem slotExtractionFailure_subset (t : Fin k) :
-    slotExtractionFailure H_bind A t ⊆
-      (A.actionFamily.slotFamily t).selectedKnowledgeFailureEvent ∪
-        slotEscape H_bind A t := by
+/-- One chain position's extraction failure decomposes into its selected-count
+knowledge failure and its computed ledger escape (`selectedLedgerExtractor_eq_none_iff`). -/
+theorem positionExtractionFailure_subset (position : Fin numChainPositions) :
+    positionExtractionFailure H_bind A position ⊆
+      (A.actionFamily.positionFamily position).selectedKnowledgeFailureEvent ∪
+        positionEscape H_bind A position := by
   rintro p ⟨hacc, hnone⟩
-  rcases (selectedLedgerExtractor_eq_none_iff (A.actionFamily.slotFamily t)
+  rcases (selectedLedgerExtractor_eq_none_iff (A.actionFamily.positionFamily position)
       spendAuthVerify (redPallasBindingVerify H_bind) p.1 p.2).mp hnone with h | h
   · exact Or.inl ⟨hacc, h⟩
   · exact Or.inr ⟨hacc, h⟩
 
-/-- Extraction failure at some emitted position, over the runs component. -/
+/-- Extraction failure at some emitted chain position, over the runs component. -/
 def runExtractionFailureEvent : Set (Runs A) :=
   Family.orchardEvent A.actionFamily query
-    (A.actionFamily.ledgerFailureEvent (slotExtractionFailure H_bind A))
+    (A.actionFamily.ledgerFailureEvent (positionExtractionFailure H_bind A))
 
 /-- The knowledge arm over the runs component: selected-count knowledge failure at some
-emitted position. -/
+emitted chain position. -/
 def runKnowledgeFailureEvent : Set (Runs A) :=
   Family.orchardEvent A.actionFamily query A.actionFamily.ledgerKnowledgeFailureEvent
 
 /-- The escape arm over the runs component: a computed ledger escape at some emitted
-position. -/
+chain position. -/
 def runEscapeEvent : Set (Runs A) :=
   Family.orchardEvent A.actionFamily query
-    (A.actionFamily.ledgerFailureEvent (slotEscape H_bind A))
+    (A.actionFamily.ledgerFailureEvent (positionEscape H_bind A))
 
 /-- Extraction failure at the run level is covered by the reduction layer's
 knowledge-or-escape event. -/
 theorem runExtractionFailureEvent_subset :
     runExtractionFailureEvent H_bind A ⊆
-      Family.extractionFailureEvent A.actionFamily query (slotEscape H_bind A) := by
+      Family.extractionFailureEvent A.actionFamily query (positionEscape H_bind A) := by
   unfold runExtractionFailureEvent Family.extractionFailureEvent Family.orchardEvent
   apply Set.preimage_mono
   intro p hp
-  obtain ⟨t, ht⟩ := Set.mem_iUnion.mp hp
-  exact Set.mem_iUnion.mpr ⟨t, slotExtractionFailure_subset H_bind A t ht⟩
+  obtain ⟨position, hposition⟩ := Set.mem_iUnion.mp hp
+  exact Set.mem_iUnion.mpr
+    ⟨position, positionExtractionFailure_subset H_bind A position hposition⟩
 
 /-- Extraction failure at the run level is covered by the knowledge arm and the escape
 arm. -/
@@ -397,13 +399,13 @@ theorem runExtractionFailureEvent_subset_knowledge_union_escape :
   rw [← Set.preimage_union]
   apply Set.preimage_mono
   intro p hp
-  obtain ⟨t, ht⟩ := Set.mem_iUnion.mp hp
-  rcases slotExtractionFailure_subset H_bind A t ht with h | h
-  · exact Or.inl (Set.mem_iUnion.mpr ⟨t, h⟩)
-  · exact Or.inr (Set.mem_iUnion.mpr ⟨t, h⟩)
+  obtain ⟨position, hposition⟩ := Set.mem_iUnion.mp hp
+  rcases positionExtractionFailure_subset H_bind A position hposition with h | h
+  · exact Or.inl (Set.mem_iUnion.mpr ⟨position, h⟩)
+  · exact Or.inr (Set.mem_iUnion.mpr ⟨position, h⟩)
 
-/-- The extraction-failure arm of the composed experiment: some emitted position's
-selected proof is accepted and its composed extractor returns nothing. -/
+/-- The extraction-failure arm of the composed experiment: some emitted chain
+position's selected proof is accepted and its composed extractor returns nothing. -/
 def extractionFailureEvent :
     Set ((A.ι × Runs A) × (OrchardQuery MSG → Fq)) :=
   (fun x => x.1.2) ⁻¹' runExtractionFailureEvent H_bind A
@@ -445,10 +447,10 @@ theorem deployedExperiment_measure_runs
     _ = (runsLaw A).toOuterMeasure E := by rw [hmap]
 
 /-- **The extraction-failure arm of the composed experiment.** The discrete-log term
-is charged once, for the combined relation finder of the shared execution; `k`
-multiplies only the selected-count statistical surface and the computed bridge escape,
-and no term is multiplied by `maxActions`, which can enter only through `ε_stat` (whose
-expected size the module doc gives). -/
+is charged once, for the combined relation finder of the shared execution;
+`numChainPositions` multiplies only the selected-count statistical surface and the
+computed bridge escape, and no term is multiplied by `maxActions`, which can enter only
+through `ε_stat` (whose expected size the module doc gives). -/
 theorem extractionFailureEvent_measure_le
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -456,23 +458,24 @@ theorem extractionFailureEvent_measure_le
     (B : VestaG) (hB : B ≠ 0) (hquery : Function.Injective query)
     {dlBound ε_stat ε_escape : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat)
-    (hescape : ∀ t,
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat)
+    (hescape : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
-        (A.actionFamily.scalarEvent B (slotEscape H_bind A t)) ≤ ε_escape) :
+        (A.actionFamily.scalarEvent B (positionEscape H_bind A position)) ≤ ε_escape) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A) ≤
-      (dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * (ε_stat + ε_escape) := by
+      (dlBound + 1 / Fintype.card Fp) +
+        (numChainPositions : ℝ≥0∞) * (ε_stat + ε_escape) := by
   refine le_trans (le_of_eq (deployedExperiment_measure_runs H_bind A halg _)) ?_
   refine le_trans (MeasureTheory.measure_mono (runExtractionFailureEvent_subset H_bind A)) ?_
   exact Family.extractionFailureEvent_measure_le A.actionFamily B hB query hquery
-    (slotEscape H_bind A) hDL hstat hescape
+    (positionEscape H_bind A) hDL hstat hescape
 
 /-- The knowledge arm of the composed experiment, bounded on its own by the one
-discrete-log term and the per-position statistical residual. -/
+discrete-log term and each chain position's statistical residual. -/
 theorem knowledgeFailure_measure_le
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -480,14 +483,14 @@ theorem knowledgeFailure_measure_le
     (B : VestaG) (hB : B ≠ 0) (hquery : Function.Injective query)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat) :
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         ((fun x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) => x.1.2) ⁻¹'
           runKnowledgeFailureEvent A) ≤
-      (dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * ε_stat := by
+      (dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * ε_stat := by
   refine le_trans (le_of_eq (deployedExperiment_measure_runs H_bind A halg _)) ?_
   exact Family.knowledgeFailureEvent_measure_le A.actionFamily B hB query hquery hDL hstat
 
@@ -500,15 +503,15 @@ open ExtractionBalanceAdversary
 variable {MSG : Type} [Fintype MSG] [DecidableEq MSG] [Inhabited MSG]
   {spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop}
   {T : Type} [DecidableEq T] {query : ActionBasisIndex → T}
-  {k maxActions : ℕ}
+  {numChainPositions maxActions : ℕ}
   (H_bind : PallasGroup → PallasGroup → MSG → Fq)
-  (A : ExtractionBalanceAdversary MSG spendAuthVerify query k maxActions)
+  (A : ExtractionBalanceAdversary MSG spendAuthVerify query numChainPositions maxActions)
 
 /-- **Balance integrity for the proof-emitting adversary, at deployed Orchard.**
-Except with probability at most the bound, every emitted position whose selected proof
-the verifier accepts yields extracted ledger data, and the annotated chain assembled
-from that data —whenever it validates at the deployed value bases— satisfies balance
-integrity at every prefix below `k`.
+Except with probability at most the bound, every emitted chain position whose selected
+proof the verifier accepts yields extracted ledger data, and the annotated chain
+assembled from that data —whenever it validates at the deployed value bases— satisfies
+balance integrity at every prefix below `numChainPositions`.
 
 The event's validity conjunct is consensus validity together with the assembled
 annotations. Consensus validity itself is public and says nothing about openings; the
@@ -520,11 +523,11 @@ side.
 
 `hDL` is the one discrete-log hypothesis, on the combined relation finder of the shared
 Action execution; `hstat` bounds the selected count's statistical surfaces at each
-position, and `hescape` each position's Sinsemilla-escape event. The model's query
-budget `qH` —respected by the `queryBound` field— is what the bound's `(qH+1)/#F` term
-counts; `halg` is the algebraicity restriction at every presented basis. The remaining
-hypotheses and the second summand are the deployed KS-idealized integrity endpoint's,
-applied at the constructed adversary. -/
+chain position, and `hescape` each position's Sinsemilla-escape event. The model's
+query budget `qH` —respected by the `queryBound` field— is what the bound's `(qH+1)/#F`
+term counts; `halg` is the algebraicity restriction at every presented basis. The
+remaining hypotheses and the second summand are the deployed KS-idealized integrity
+endpoint's, applied at the constructed adversary. -/
 theorem orchardBalanceIntegrityExtraction_measure_le
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -533,32 +536,32 @@ theorem orchardBalanceIntegrityExtraction_measure_le
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat ε_escape ε_sinsemilladlr ε_valuedlr : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat)
-    (hescape : ∀ t,
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat)
+    (hescape : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
-        (A.actionFamily.scalarEvent B (slotEscape H_bind A t)) ≤ ε_escape)
+        (A.actionFamily.scalarEvent B (positionEscape H_bind A position)) ≤ ε_escape)
     (hsin : (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
       ((toIdealizedKS H_bind A halg).deployedSinsemillaRelationEvent issuance
-        maxActions k)
+        maxActions numChainPositions)
       ≤ ε_sinsemilladlr)
     (hrel : ∀ j, (PMF.uniformOfFintype (OrchardQuery MSG → Fq)).toOuterMeasure
-        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder k j table).isSome}
+        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder numChainPositions j table).isSome}
       ≤ ε_valuedlr) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => balanceIntegrityViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * (ε_stat + ε_escape)) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * (ε_stat + ε_escape)) +
         (ε_sinsemilladlr + (ε_valuedlr + ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq)) := by
   refine le_trans (MeasureTheory.measure_union_le _ _) ?_
   exact add_le_add
     (extractionFailureEvent_measure_le H_bind A halg B hB hquery hDL hstat hescape)
     (orchardBalanceIntegrity_measure_le_idealizedks_deployed
-      (toIdealizedKS H_bind A halg) issuance maxActions hmax k hsin hrel)
+      (toIdealizedKS H_bind A halg) issuance maxActions hmax numChainPositions hsin hrel)
 
 /-- **Balance conservation for the proof-emitting adversary, at deployed Orchard.**
 As the integrity endpoint (`orchardBalanceIntegrityExtraction_measure_le`), covering
@@ -572,32 +575,32 @@ theorem orchardBalanceConservationExtraction_measure_le
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat ε_escape ε_valuedlr : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat)
-    (hescape : ∀ t,
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat)
+    (hescape : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
-        (A.actionFamily.scalarEvent B (slotEscape H_bind A t)) ≤ ε_escape)
+        (A.actionFamily.scalarEvent B (positionEscape H_bind A position)) ≤ ε_escape)
     (hrel : ∀ j, (PMF.uniformOfFintype (OrchardQuery MSG → Fq)).toOuterMeasure
-        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder k j table).isSome}
+        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder numChainPositions j table).isSome}
       ≤ ε_valuedlr) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => balanceConservationViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * (ε_stat + ε_escape)) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * (ε_stat + ε_escape)) +
         (ε_valuedlr + ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq) := by
   refine le_trans (MeasureTheory.measure_union_le _ _) ?_
   exact add_le_add
     (extractionFailureEvent_measure_le H_bind A halg B hB hquery hDL hstat hescape)
     (orchardBalanceConservation_measure_le_idealizedks_deployed
-      (toIdealizedKS H_bind A halg) issuance maxActions hmax k hrel)
+      (toIdealizedKS H_bind A halg) issuance maxActions hmax numChainPositions hrel)
 
 /-- **Shielded balance cap for the proof-emitting adversary, at deployed Orchard.**
 As the conservation endpoint, for the shielded pool exceeding the minted issuance at
-some prefix below `k`. -/
+some prefix below `numChainPositions`. -/
 theorem orchardShieldedBalanceCapExtraction_measure_le
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -606,34 +609,34 @@ theorem orchardShieldedBalanceCapExtraction_measure_le
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat ε_escape ε_valuedlr : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat)
-    (hescape : ∀ t,
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat)
+    (hescape : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
-        (A.actionFamily.scalarEvent B (slotEscape H_bind A t)) ≤ ε_escape)
+        (A.actionFamily.scalarEvent B (positionEscape H_bind A position)) ≤ ε_escape)
     (hrel : ∀ j, (PMF.uniformOfFintype (OrchardQuery MSG → Fq)).toOuterMeasure
-        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder k j table).isSome}
+        {table | ((toIdealizedKS H_bind A halg).valueDLRFinder numChainPositions j table).isSome}
       ≤ ε_valuedlr) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => shieldedBalanceCapViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * (ε_stat + ε_escape)) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * (ε_stat + ε_escape)) +
         (ε_valuedlr + ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq) := by
   refine le_trans (MeasureTheory.measure_union_le _ _) ?_
   exact add_le_add
     (extractionFailureEvent_measure_le H_bind A halg B hB hquery hDL hstat hescape)
     (orchardShieldedBalanceCap_measure_le_idealizedks_deployed
-      (toIdealizedKS H_bind A halg) issuance maxActions hmax k hrel)
+      (toIdealizedKS H_bind A halg) issuance maxActions hmax numChainPositions hrel)
 
-/-- **The combined DLR event.** Some emitted position's selected proof is accepted and
-its extracted bundle escapes the bridge, the constructed adversary's valid chain
-computes a Sinsemilla relation at some prefix below `k`, or the value-DLR finder returns
-a relation. On every sample here the adversary's own data computes a nontrivial relation
-over the combined deployed basis (`orchardPoints`). -/
+/-- **The combined DLR event.** Some emitted chain position's selected proof is accepted
+and its extracted bundle escapes the bridge, the constructed adversary's valid chain
+computes a Sinsemilla relation at some prefix below `numChainPositions`, or the
+value-DLR finder returns a relation. On every sample here the adversary's own data
+computes a nontrivial relation over the combined deployed basis (`orchardPoints`). -/
 def combinedDLREvent
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -642,8 +645,8 @@ def combinedDLREvent
     Set ((A.ι × Runs A) × (OrchardQuery MSG → Fq)) :=
   ((fun x => x.1.2) ⁻¹' runEscapeEvent H_bind A) ∪
   ((toIdealizedKS H_bind A halg).deployedSinsemillaRelationEvent issuance maxActions
-      k ∪
-    {x | ((toIdealizedKS H_bind A halg).valueDLRFinder k x.1 x.2).isSome})
+      numChainPositions ∪
+    {x | ((toIdealizedKS H_bind A halg).valueDLRFinder numChainPositions x.1 x.2).isSome})
 
 /-- **The combined DLR advantage**, the single ledger-side relation term of the
 `_combinedDLR` endpoints: the probability that the composed deployed experiment lands
@@ -659,9 +662,9 @@ noncomputable def combinedDLRAdvantage
 /-- **Balance integrity for the proof-emitting adversary, at the combined deployed
 basis.** As `orchardBalanceIntegrityExtraction_measure_le`, with the ledger-side
 relation arms carried by the one combined term (`combinedDLRAdvantage`): the Action
-discrete-log term is charged once, `k` multiplies only the selected count's statistical
-residual, the escape union is one event inside the combined term, and the only counting
-term outside is the challenge-oracle squeeze `(qH+1)/#F`. -/
+discrete-log term is charged once, `numChainPositions` multiplies only the selected
+count's statistical residual, the escape union is one event inside the combined term,
+and the only counting term outside is the challenge-oracle squeeze `(qH+1)/#F`. -/
 theorem orchardBalanceIntegrityExtraction_measure_le_combinedDLR
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -670,28 +673,28 @@ theorem orchardBalanceIntegrityExtraction_measure_le_combinedDLR
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat) :
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => balanceIntegrityViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * ε_stat) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * ε_stat) +
         (combinedDLRAdvantage H_bind A halg issuance +
           ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq) := by
   have hsub : extractionFailureEvent H_bind A ∪
       (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
         (fun P => balanceIntegrityViolationBefore (P := P) (kv := keyBinding)
-          (issuance := issuance) (maxActions := maxActions) k) ⊆
+          (issuance := issuance) (maxActions := maxActions) numChainPositions) ⊆
       ((fun x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) => x.1.2) ⁻¹'
         runKnowledgeFailureEvent A) ∪
       (combinedDLREvent H_bind A halg issuance ∪
         {x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) | x.2 ∈ badFiberAt 2 1
           (kappaComposite 2 0 1 orchardQueryOf
-            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id k
+            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id numChainPositions
             ((toIdealizedKS H_bind A halg).LA x.1)) orchardValueBases}) := by
     rintro x (hx | hx)
     · rcases runExtractionFailureEvent_subset_knowledge_union_escape H_bind A hx with
@@ -701,21 +704,21 @@ theorem orchardBalanceIntegrityExtraction_measure_le_combinedDLR
     · rcases balanceIntegrityAt_subset 2 0 1 orchardQueryOf
           (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id
           (kv := keyBinding) (issuance := issuance) (maxActions := maxActions)
-          orchardValueBases (toIdealizedKS H_bind A halg).LA k hx with harm | hcons
+          orchardValueBases (toIdealizedKS H_bind A halg).LA numChainPositions hx with harm | hcons
       · exact Or.inr (Or.inl (Or.inr (Or.inl
           (balanceSubsetArmsAt_subset_orchardRelation spendAuthVerify
             (redPallasBindingVerify H_bind) issuance maxActions 2 0 1 orchardQueryOf id
-            (toIdealizedKS H_bind A halg).LA orchardValueBases k harm))))
+            (toIdealizedKS H_bind A halg).LA orchardValueBases numChainPositions harm))))
       · rcases conservationViolationAt_subset_dischargeAt 2 0 1 orchardQueryOf
             (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id
             (kv := keyBinding) (issuance := issuance) (maxActions := maxActions)
             (by decide)
             (fun j => (toIdealizedKS H_bind A halg).algebraic j orchardValueBases)
-            (orchard_ledger_no_overflow hmax) k x.1 hcons with hfib | hbad
+            (orchard_ledger_no_overflow hmax) numChainPositions x.1 hcons with hfib | hbad
         · have hmem : x.2 ∈ {table | ((toIdealizedKS H_bind A halg).valueDLRFinder
-              k x.1 table).isSome} :=
+              numChainPositions x.1 table).isSome} :=
             (toIdealizedKS H_bind A halg).conservationRelFiberAt_orchardValueBases
-              k x.1 ▸ hfib
+              numChainPositions x.1 ▸ hfib
           exact Or.inr (Or.inl (Or.inr (Or.inr hmem)))
         · exact Or.inr (Or.inr hbad)
   refine le_trans (MeasureTheory.measure_mono hsub) ?_
@@ -725,7 +728,7 @@ theorem orchardBalanceIntegrityExtraction_measure_le_combinedDLR
   exact challengeTableExperiment_badFiberAt_measure_le 2 0 1 orchardQueryOf
     (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id
     (toIdealizedKS H_bind A halg).coins
-    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) k
+    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) numChainPositions
 
 /-- **Balance conservation for the proof-emitting adversary, at the combined deployed
 basis.** As the integrity form
@@ -739,28 +742,28 @@ theorem orchardBalanceConservationExtraction_measure_le_combinedDLR
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat) :
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => balanceConservationViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * ε_stat) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * ε_stat) +
         (combinedDLRAdvantage H_bind A halg issuance +
           ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq) := by
   have hsub : extractionFailureEvent H_bind A ∪
       (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
         (fun P => balanceConservationViolationBefore (P := P) (kv := keyBinding)
-          (issuance := issuance) (maxActions := maxActions) k) ⊆
+          (issuance := issuance) (maxActions := maxActions) numChainPositions) ⊆
       ((fun x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) => x.1.2) ⁻¹'
         runKnowledgeFailureEvent A) ∪
       (combinedDLREvent H_bind A halg issuance ∪
         {x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) | x.2 ∈ badFiberAt 2 1
           (kappaComposite 2 0 1 orchardQueryOf
-            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id k
+            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id numChainPositions
             ((toIdealizedKS H_bind A halg).LA x.1)) orchardValueBases}) := by
     rintro x (hx | hx)
     · rcases runExtractionFailureEvent_subset_knowledge_union_escape H_bind A hx with
@@ -772,11 +775,11 @@ theorem orchardBalanceConservationExtraction_measure_le_combinedDLR
           (kv := keyBinding) (issuance := issuance) (maxActions := maxActions)
           (by decide)
           (fun j => (toIdealizedKS H_bind A halg).algebraic j orchardValueBases)
-          (orchard_ledger_no_overflow hmax) k x.1 hx with hfib | hbad
+          (orchard_ledger_no_overflow hmax) numChainPositions x.1 hx with hfib | hbad
       · have hmem : x.2 ∈ {table | ((toIdealizedKS H_bind A halg).valueDLRFinder
-            k x.1 table).isSome} :=
+            numChainPositions x.1 table).isSome} :=
           (toIdealizedKS H_bind A halg).conservationRelFiberAt_orchardValueBases
-            k x.1 ▸ hfib
+            numChainPositions x.1 ▸ hfib
         exact Or.inr (Or.inl (Or.inr (Or.inr hmem)))
       · exact Or.inr (Or.inr hbad)
   refine le_trans (MeasureTheory.measure_mono hsub) ?_
@@ -786,11 +789,11 @@ theorem orchardBalanceConservationExtraction_measure_le_combinedDLR
   exact challengeTableExperiment_badFiberAt_measure_le 2 0 1 orchardQueryOf
     (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id
     (toIdealizedKS H_bind A halg).coins
-    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) k
+    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) numChainPositions
 
 /-- **Shielded balance cap for the proof-emitting adversary, at the combined deployed
 basis.** As the conservation form, for the shielded pool exceeding the minted issuance
-at some prefix below `k`. -/
+at some prefix below `numChainPositions`. -/
 theorem orchardShieldedBalanceCapExtraction_measure_le_combinedDLR
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -799,28 +802,28 @@ theorem orchardShieldedBalanceCapExtraction_measure_le_combinedDLR
     (issuance : ℕ → ℕ) (hmax : maxActions < 2 ^ 16)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B A.actionFamily.combinedRelationFinder dlBound)
-    (hstat : ∀ t,
+    (hstat : ∀ position,
       (PMF.uniformOfFintype A.actionFamily.ScalarSample).toOuterMeasure
         (A.actionFamily.scalarEvent B
-          (A.actionFamily.slotFamily t).selectedStatisticalFailureEvent) ≤ ε_stat) :
+          (A.actionFamily.positionFamily position).selectedStatisticalFailureEvent) ≤ ε_stat) :
     (toIdealizedKS H_bind A halg).deployedExperiment.toOuterMeasure
         (extractionFailureEvent H_bind A ∪
           (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
             (fun P => shieldedBalanceCapViolationBefore (P := P) (kv := keyBinding)
-              (issuance := issuance) (maxActions := maxActions) k)) ≤
-      ((dlBound + 1 / Fintype.card Fp) + (k : ℝ≥0∞) * ε_stat) +
+              (issuance := issuance) (maxActions := maxActions) numChainPositions)) ≤
+      ((dlBound + 1 / Fintype.card Fp) + (numChainPositions : ℝ≥0∞) * ε_stat) +
         (combinedDLRAdvantage H_bind A halg issuance +
           ((A.qH + 1 : ℕ) : ℝ≥0∞) / Fintype.card Fq) := by
   have hsub : extractionFailureEvent H_bind A ∪
       (toIdealizedKS H_bind A halg).deployedViolationEvent issuance maxActions
         (fun P => shieldedBalanceCapViolationBefore (P := P) (kv := keyBinding)
-          (issuance := issuance) (maxActions := maxActions) k) ⊆
+          (issuance := issuance) (maxActions := maxActions) numChainPositions) ⊆
       ((fun x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) => x.1.2) ⁻¹'
         runKnowledgeFailureEvent A) ∪
       (combinedDLREvent H_bind A halg issuance ∪
         {x : (A.ι × Runs A) × (OrchardQuery MSG → Fq) | x.2 ∈ badFiberAt 2 1
           (kappaComposite 2 0 1 orchardQueryOf
-            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id k
+            (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id numChainPositions
             ((toIdealizedKS H_bind A halg).LA x.1)) orchardValueBases}) := by
     rintro x (hx | hx)
     · rcases runExtractionFailureEvent_subset_knowledge_union_escape H_bind A hx with
@@ -832,11 +835,11 @@ theorem orchardShieldedBalanceCapExtraction_measure_le_combinedDLR
           (kv := keyBinding) (issuance := issuance) (maxActions := maxActions)
           (by decide)
           (fun j => (toIdealizedKS H_bind A halg).algebraic j orchardValueBases)
-          (orchard_ledger_no_overflow hmax) k x.1 hx with hfib | hbad
+          (orchard_ledger_no_overflow hmax) numChainPositions x.1 hx with hfib | hbad
       · have hmem : x.2 ∈ {table | ((toIdealizedKS H_bind A halg).valueDLRFinder
-            k x.1 table).isSome} :=
+            numChainPositions x.1 table).isSome} :=
           (toIdealizedKS H_bind A halg).conservationRelFiberAt_orchardValueBases
-            k x.1 ▸ hfib
+            numChainPositions x.1 ▸ hfib
         exact Or.inr (Or.inl (Or.inr (Or.inr hmem)))
       · exact Or.inr (Or.inr hbad)
   refine le_trans (MeasureTheory.measure_mono hsub) ?_
@@ -846,7 +849,7 @@ theorem orchardShieldedBalanceCapExtraction_measure_le_combinedDLR
   exact challengeTableExperiment_badFiberAt_measure_le 2 0 1 orchardQueryOf
     (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id
     (toIdealizedKS H_bind A halg).coins
-    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) k
+    (fun j => (toIdealizedKS H_bind A halg).queryBound j orchardValueBases) numChainPositions
 
 end Endpoints
 
