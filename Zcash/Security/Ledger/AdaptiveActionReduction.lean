@@ -1,22 +1,30 @@
 import Zcash.Common.RelationProbabilityCoins
+import Zcash.Security.Ledger.Capstone
 import Zcash.Snark.Soundness.Action.AdaptiveCountReduction
 
 /-!
 # Ledger composition for adaptive Action extraction
 
-This is the ledger-side reduction shell for issue #214.  One online-AGM
-adversary emits all ledger slots under one random-oracle table and one query
-budget.  Each slot may choose its own Action count after arbitrary oracle
-queries.  `combinedRelationFinder` returns the first relation exposed by any
-actually emitted slot.
+One online-AGM adversary emits the Action proofs of every ledger slot under one
+random-oracle table and one query budget, and each slot may choose its own Action
+count after arbitrary oracle queries.
 
-The final theorem has the form
+The module follows the recipe of the book's Security Models page ("How the layers
+compose"). The computable reductions compose first: `combinedRelationFinder` returns
+the first relation that any slot's run exposes, so its event is the union of the slots'
+relation events (`combinedRelationEvent_eq_iUnion`), and one discrete-log hypothesis on
+that finder covers every slot. The containments come next (the `…_subset` lemmas):
+each slot's failure is covered by its relation event and its statistical residual, so
+the union of the failures is covered by the one combined relation event and the union
+of the residuals; these hold for every sample. Probability enters once, in
+`event_prob_le_of_subset`: `scalarEvent` lifts an event from the group basis to the
+scalar sample, the lift is a preimage and so preserves inclusions and unions, and the
+measure's monotonicity and subadditivity give the bound
 
-`DLOG + 1 / #Fp + sum(slot statistical error)`.
+`DLOG + 1 / |Fp| + (the sum over slots of that slot's statistical bound)`.
 
-In particular, neither the number of ledger slots nor `maxActions` multiplies
-the DLOG advantage.  Those cardinalities can occur only inside the separately
-supplied statistical remainder.
+Neither the number of slots nor `maxActions` multiplies the discrete-log advantage;
+those cardinalities can enter only through the separately supplied statistical bounds.
 -/
 
 namespace Zcash.Security.Ledger.AdaptiveActionReduction
@@ -94,15 +102,16 @@ theorem combinedRelationFinder_isSome_of_slot {k maxActions : ℕ}
   rw [hslotNone] at hslot
   exact Bool.false_ne_true hslot
 
-/-- Sample space before replacing the sampled scalar basis by group points. -/
+/-- The sample space before replacing the sampled scalar basis by group points. -/
 abbrev ScalarSample {k maxActions : ℕ} (family : Family k maxActions) :=
-  (AugmentedIndex (2 ^ actionCircuit.shape.k) → Fp) × family.Coins
+  (ActionBasisIndex → Fp) × family.Coins
 
-/-- Sample space seen by the algebraic relation finders. -/
+/-- The sample space seen by the algebraic relation finders. -/
 abbrev GroupSample {k maxActions : ℕ} (family : Family k maxActions) :=
   AdaptiveActionCountBasis × family.Coins
 
-/-- Pull a group-basis event back to the uniform scalar-basis experiment. -/
+/-- The lift of a group-basis event to the uniform scalar-basis experiment: a preimage,
+so it preserves inclusions and unions. -/
 def scalarEvent {k maxActions : ℕ} (family : Family k maxActions) (B : VestaG)
     (event : Set family.GroupSample) : Set family.ScalarSample :=
   (fun q => (scalarBasis B q.1, q.2)) ⁻¹' event
@@ -112,16 +121,45 @@ def combinedRelationEvent {k maxActions : ℕ} (family : Family k maxActions) :
     Set family.GroupSample :=
   {q | (family.combinedRelationFinder q.1 q.2).isSome}
 
+/-- The combined finder's event is the union of the slots' relation events: the finder
+takes the first relation that any slot exposes, so it exposes one exactly when some slot
+does. -/
+theorem combinedRelationEvent_eq_iUnion {k maxActions : ℕ}
+    (family : Family k maxActions) :
+    family.combinedRelationEvent =
+      ⋃ slot, {q : family.GroupSample |
+        ((family.slotFamily slot).selectedRelationFinder q.1 q.2).isSome} := by
+  ext q
+  simp only [combinedRelationEvent, Set.mem_setOf_eq, Set.mem_iUnion]
+  constructor
+  · intro hsome
+    by_contra hnone
+    rw [not_exists] at hnone
+    have hall : ∀ r ∈ List.ofFn fun slot =>
+        (family.slotFamily slot).selectedRelationFinder q.1 q.2, r = none := by
+      intro r hr
+      obtain ⟨slot, rfl⟩ := List.mem_ofFn.mp hr
+      exact Option.not_isSome_iff_eq_none.mp (hnone slot)
+    have hcombined : family.combinedRelationFinder q.1 q.2 = none :=
+      (ComputedAdaptiveOnlineAGMFSFamily.firstAdaptiveRelation?_eq_none_iff _).2 hall
+    rw [hcombined] at hsome
+    exact Bool.false_ne_true hsome
+  · rintro ⟨slot, hslot⟩
+    exact family.combinedRelationFinder_isSome_of_slot slot q.1 q.2 hslot
+
 /-- A per-slot relation event is contained in the one combined relation event. -/
 theorem slotRelationEvent_subset_combined {k maxActions : ℕ}
     (family : Family k maxActions) (slot : Fin k) :
     {q : family.GroupSample |
       ((family.slotFamily slot).selectedRelationFinder q.1 q.2).isSome} ⊆
         family.combinedRelationEvent := by
-  intro q hq
-  exact family.combinedRelationFinder_isSome_of_slot slot q.1 q.2 hq
+  rw [family.combinedRelationEvent_eq_iUnion]
+  exact Set.subset_iUnion (fun slot => {q : family.GroupSample |
+    ((family.slotFamily slot).selectedRelationFinder q.1 q.2).isSome}) slot
 
-/-- Textbook DLOG prices the combined ledger relation event exactly once. -/
+/-- Under the uniform scalar sample, the probability of the combined ledger relation
+event is at most the textbook discrete-log bound on the combined finder plus `1 / |Fp|`,
+with no factor for the number of slots. -/
 theorem combinedRelationEvent_prob_le_of_textbookDL {k maxActions : ℕ}
     (family : Family k maxActions) (B : VestaG) {dlBound : ENNReal}
     (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound) :
@@ -145,9 +183,10 @@ def ledgerStatisticalEvent {k maxActions : ℕ} (family : Family k maxActions)
     (statistical : Fin k → Set family.GroupSample) : Set family.GroupSample :=
   ⋃ slot, statistical slot
 
-/-- Distribution-free composition: if each emitted slot's failure is either a
-relation or its statistical residual, every ledger failure is covered by the
-single combined relation event plus the union of those residuals. -/
+/-- A set inclusion, holding for every sample without reference to a distribution: if
+each emitted slot's failure event is covered by that slot's relation event together
+with its statistical residual, then the union of the slots' failures is covered by the
+single combined relation event together with the union of the residuals. -/
 theorem ledgerFailureEvent_subset {k maxActions : ℕ}
     (family : Family k maxActions)
     (failure statistical : Fin k → Set family.GroupSample)
@@ -177,19 +216,21 @@ theorem event_prob_le_of_subset {k maxActions : ℕ}
         (family.scalarEvent B (statistical slot)) ≤ epsilon slot) :
     (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure (family.scalarEvent B E) ≤
       (dlBound + 1 / Fintype.card Fp) + ∑ slot, epsilon slot := by
-  refine le_trans (MeasureTheory.measure_mono (Set.preimage_mono hE)) ?_
-  rw [Set.preimage_union]
-  refine le_trans (MeasureTheory.measure_union_le _ _) ?_
+  refine le_trans (Model.toOuterMeasure_le_add₂ _
+    (show family.scalarEvent B E ⊆ family.scalarEvent B family.combinedRelationEvent ∪
+      family.scalarEvent B (family.ledgerStatisticalEvent statistical) from
+      Set.preimage_union ▸ Set.preimage_mono hE)) ?_
   apply add_le_add
   · exact family.combinedRelationEvent_prob_le_of_textbookDL B hDL
-  · unfold ledgerStatisticalEvent
+  · unfold ledgerStatisticalEvent scalarEvent
     simp only [Set.preimage_iUnion]
     refine le_trans (MeasureTheory.measure_iUnion_le _) ?_
     rw [tsum_fintype]
     exact Finset.sum_le_sum fun slot _ => hstat slot
 
-/-- **Ledger reduction with no slot/count multiplier on DLOG.**  One textbook
-DLOG assumption covers all slots.  Only the statistical remainders are summed. -/
+/-- **The ledger bound, with the discrete-log term taken once.** One textbook discrete-log
+hypothesis on the combined finder covers every slot; only the slots' statistical bounds
+are summed. -/
 theorem ledgerFailureEvent_prob_le {k maxActions : ℕ}
     (family : Family k maxActions) (B : VestaG)
     (failure statistical : Fin k → Set family.GroupSample)
@@ -207,8 +248,9 @@ theorem ledgerFailureEvent_prob_le {k maxActions : ℕ}
   family.event_prob_le_of_subset B _ statistical
     (family.ledgerFailureEvent_subset failure statistical hslot) epsilon hDL hstat
 
-/-- Uniform per-slot form.  The visible `k` multiplies only the statistical
-error; `maxActions` and `k` still do not multiply `dlBound`. -/
+/-- `ledgerFailureEvent_prob_le` with one bound `epsilon` for every slot's residual, so
+that the sum becomes `k * epsilon`. The number of slots `k` multiplies only the
+statistical bound; neither `maxActions` nor `k` multiplies `dlBound`. -/
 theorem ledgerFailureEvent_prob_le_uniform {k maxActions : ℕ}
     (family : Family k maxActions) (B : VestaG)
     (failure statistical : Fin k → Set family.GroupSample)
@@ -226,13 +268,16 @@ theorem ledgerFailureEvent_prob_le_uniform {k maxActions : ℕ}
   simpa using family.ledgerFailureEvent_prob_le B failure statistical hslot
     (fun _ => epsilon) hDL hstat
 
-/-- The actual Action knowledge-failure union for the emitted ledger slots. -/
+/-- The union over the emitted slots of the selected-count knowledge-failure events:
+the selected proof is accepted and the selected knowledge extractor returns nothing. -/
 def ledgerKnowledgeFailureEvent {k maxActions : ℕ} (family : Family k maxActions) :
     Set family.GroupSample :=
   family.ledgerFailureEvent fun slot =>
     (family.slotFamily slot).selectedKnowledgeFailureEvent
 
-/-- The no-relation statistical residuals for the emitted ledger slots. -/
+/-- The union over the emitted slots of the statistical residuals: the samples on which
+the selected finder returns no relation and the selected run lands on one of the four
+statistical surfaces. -/
 def ledgerActionStatisticalFailureEvent {k maxActions : ℕ}
     (family : Family k maxActions) : Set family.GroupSample :=
   family.ledgerStatisticalEvent fun slot =>
@@ -248,10 +293,11 @@ theorem ledgerKnowledgeFailureEvent_subset {k maxActions : ℕ}
     (fun slot => (family.slotFamily slot).selectedStatisticalFailureEvent)
     (fun slot => (family.slotFamily slot).selectedKnowledgeFailureEvent_subset)
 
-/-- **Action knowledge soundness composed at the ledger reduction layer.**
-The caller supplies a bound only for each slot's no-relation statistical
-residual.  The conclusion charges the combined DLOG finder once and multiplies
-only that residual by the number of emitted ledger slots. -/
+/-- **Action knowledge soundness composed at the ledger reduction layer.** The caller
+supplies one bound `epsilon` for each slot's statistical residual (the samples on which
+the selected finder returns no relation and the selected run lands on a statistical
+surface). The conclusion pays the discrete-log term once, for the combined finder, and
+multiplies only `epsilon` by the number of emitted slots. -/
 theorem ledgerKnowledgeFailureEvent_prob_le {k maxActions : ℕ}
     (family : Family k maxActions) (B : VestaG) {dlBound epsilon : ENNReal}
     (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound)
@@ -272,8 +318,9 @@ def ledgerExtractionFailureEvent {k maxActions : ℕ} (family : Family k maxActi
   family.ledgerFailureEvent fun slot =>
     (family.slotFamily slot).selectedKnowledgeFailureEvent ∪ escape slot
 
-/-- The statistical side of ledger extraction: the selected Action surfaces plus
-the independently priced ledger-bridge escape for each emitted slot. -/
+/-- The statistical side of ledger extraction: for each emitted slot, the selected
+count's statistical surfaces together with that slot's ledger-bridge escape event, whose
+probability the caller bounds separately (`hescape`). -/
 def ledgerExtractionStatisticalEvent {k maxActions : ℕ} (family : Family k maxActions)
     (escape : Fin k → Set family.GroupSample) : Set family.GroupSample :=
   family.ledgerStatisticalEvent fun slot =>
@@ -294,9 +341,9 @@ theorem ledgerExtractionFailureEvent_subset {k maxActions : ℕ}
     · exact Or.inr (Or.inl hstatistical)
   · exact Or.inr (Or.inr hescape)
 
-/-- **Ledger extraction with the issue #214 loss removed.** The DLOG term is
-charged once. The number of emitted slots multiplies only the Action statistical
-surface bound and the ledger-bridge escape bound; `maxActions` is absent. -/
+/-- **Ledger extraction failure, with the discrete-log term charged once.** The number
+of emitted slots multiplies only the Action statistical surface bound and the
+ledger-bridge escape bound; no term is multiplied by `maxActions`. -/
 theorem ledgerExtractionFailureEvent_prob_le {k maxActions : ℕ}
     (family : Family k maxActions) (B : VestaG)
     (escape : Fin k → Set family.GroupSample)

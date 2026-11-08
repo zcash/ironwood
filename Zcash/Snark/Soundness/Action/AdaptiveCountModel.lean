@@ -48,9 +48,13 @@ theorem adaptiveActionCountTranscriptLimit_mono {n m : ℕ} (h : n ≤ m) :
   unfold adaptiveActionCountTranscriptLimit
   omega
 
-/-- All Action counts use the same deployed degree-`2^k` augmented basis. -/
-abbrev AdaptiveActionCountBasis :=
-  AugmentedIndex (2 ^ actionCircuit.shape.k) → VestaG
+/-- The index set of the Action circuit's augmented basis: the circuit's domain has size
+`2 ^ actionCircuit.shape.k`, where `actionCircuit.shape.k` is halo2's `k`, the domain
+exponent, not a count of anything in the ledger. -/
+abbrev ActionBasisIndex := AugmentedIndex (2 ^ actionCircuit.shape.k)
+
+/-- All Action counts use the same deployed augmented basis. -/
+abbrev AdaptiveActionCountBasis := ActionBasisIndex → VestaG
 
 /-- `n : Fin maxActions` denotes a proof containing `n + 1` Actions. -/
 abbrev adaptiveActionCountParams (n : ℕ) := actionProofParamsFor (n + 1)

@@ -30,15 +30,35 @@ sound composition can take.
 The oracle of this model is the typed squeeze on transcript elements, over one domain
 large enough for every permitted action count (`AdaptiveActionCountTranscript`). Every
 count's schedule reads the same table, so no per-size presentation of the oracle is
-involved, and the count may depend on earlier oracle answers. The accounting follows
-(#214): the combined relation finder of the shared execution is charged to discrete log
-once (`combinedRelationFinder`, one `TextbookDLWithCoinsAdvantageLE` hypothesis), and
-only the selected count's statistical surfaces and the ledger-bridge escapes keep a
-per-position union bound. Neither `k` nor `maxActions` multiplies the discrete-log term.
-The bound on the statistical surfaces of the selected count (`hstat`) is a hypothesis
-of the endpoints here; the fixed-count capstone's concrete bound
-(`orchard_action_adaptiveStatement_knowledge_error_bound`) is the template for
-discharging it.
+involved, and the count may depend on earlier oracle answers.
+
+The bounds follow the recipe of the book's Security Models page. The computable
+reductions compose first: `combinedRelationFinder` returns the first relation that any
+chain position's run exposes, and `selectedLedgerExtractor` turns a position's accepted
+proof into its ledger data or a Sinsemilla escape. The set-level containments come next
+(`runExtractionFailureEvent_subset`, and the `…_subset` lemmas of
+`AdaptiveActionReduction`), holding for every sample. Probability enters once, at the
+end: `Family.orchardEvent` lifts an event from the group basis to the generator table,
+the lift is a preimage and so preserves inclusions and unions, and
+`runsLaw_measure_orchardEvent` carries its measure to the uniform scalar sample, where
+monotonicity and subadditivity give the sum. So the discrete-log term is charged once,
+for the combined finder (one `TextbookDLWithCoinsAdvantageLE` hypothesis), and only the
+selected count's statistical surfaces and the ledger-bridge escapes keep a union bound
+over the `k` chain positions. Neither `k` nor `maxActions` multiplies the discrete-log
+term. Throughout, `k` is the number of chain positions; the generator queries are indexed by
+`ActionBasisIndex`, the circuit's basis index, whose size `2 ^ actionCircuit.shape.k` involves
+halo2's unrelated `k`.
+
+The bound `ε_stat` on the statistical surfaces of the selected count (`hstat`) is a
+hypothesis of the endpoints here. The surfaces are the four of the fixed-count families:
+`z = 0`, the IPA binding discrepancy, a failed deployed-root check, and the five Action
+semantic surfaces. The fixed-count capstone bounds them by the query budget plus one,
+times a sum of surface degrees over `|Fp|`
+(`orchard_action_adaptiveStatement_knowledge_error_bound`), which is far below the
+discrete-log term for any feasible query budget. The same bound, with the degrees taken
+at the largest count, is expected for the shared execution and is not yet proved; until
+it is, the endpoints take `ε_stat` as a parameter, and a reader should judge them with
+that expected size in mind.
 
 The composed endpoints run at the deployed value bases (`deployedViolationEvent` over
 `deployedExperiment`): the extracted witnesses open the value commitments at the
@@ -69,25 +89,27 @@ open Zcash.Snark.ActionTerminal
 namespace Family
 
 /-- The runs component of the composed sample: the generator table paired with the one
-shared adaptive-count oracle table. There is no product over action counts. -/
+shared adaptive-count oracle table. One table serves every action count, so the sample
+has no component per count: the adversary cannot obtain a fresh table by changing its
+count, and the discrete-log hypothesis is stated once, over this one table. -/
 abbrev Runs {k maxActions : ℕ} (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
-    (_query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T) :=
+    (_query : ActionBasisIndex → T) :=
   (↥(Set.range _query) → VestaG) × family.Coins
 
 /-- The law of the runs component: a uniform generator table and a uniform shared
 transcript table. -/
 noncomputable def runsLaw {k maxActions : ℕ} (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T) : PMF (Runs family query) :=
+    (query : ActionBasisIndex → T) : PMF (Runs family query) :=
   independentProductPMF (orchardGeneratorROSetup query)
     (PMF.uniformOfFintype family.Coins)
 
-/-- Pull a reduction-layer event, stated over the group basis, back to the generator
-table. -/
+/-- The lift of a reduction-layer event, stated over the group basis, to the generator
+table: a preimage, so it preserves inclusions and unions. -/
 def orchardEvent {k maxActions : ℕ} (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : ActionBasisIndex → T)
     (event : Set family.GroupSample) : Set (Runs family query) :=
   (fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹' event
 
@@ -97,7 +119,7 @@ generator random oracle. -/
 theorem runsLaw_measure_orchardEvent {k maxActions : ℕ} (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : ActionBasisIndex → T)
     (hquery : Function.Injective query) (event : Set family.GroupSample) :
     (runsLaw family query).toOuterMeasure (orchardEvent family query event) =
       (PMF.uniformOfFintype family.ScalarSample).toOuterMeasure
@@ -112,20 +134,20 @@ selected-count knowledge failure or a supplied ledger-bridge escape at one of th
 emitted positions. -/
 def extractionFailureEvent {k maxActions : ℕ} (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : ActionBasisIndex → T)
     (escape : Fin k → Set family.GroupSample) : Set (Runs family query) :=
   orchardEvent family query (family.ledgerExtractionFailureEvent escape)
 
 /-- **Extraction failure with no `k * maxActions` discrete-log loss.** The bound is
 `(DLOG + 1 / |Fp|) + k * (statistical error + bridge escape)`: no term is multiplied by
 `maxActions`, and `k` does not multiply the discrete-log term. `maxActions` can enter only
-through `ε_stat`, the bound on the selected count's statistical surfaces, whose size grows
-with the count. -/
+through `ε_stat`, the bound on the selected count's statistical surfaces, whose expected
+size the module doc gives. -/
 theorem extractionFailureEvent_measure_le {k maxActions : ℕ}
     (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : ActionBasisIndex → T)
     (hquery : Function.Injective query)
     (escape : Fin k → Set family.GroupSample)
     {dlBound ε_stat ε_escape : ℝ≥0∞}
@@ -151,7 +173,7 @@ theorem knowledgeFailureEvent_measure_le {k maxActions : ℕ}
     (family : Family k maxActions)
     {T : Type*} [DecidableEq T]
     (B : VestaG) (hB : B ≠ 0)
-    (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    (query : ActionBasisIndex → T)
     (hquery : Function.Injective query)
     {dlBound ε_stat : ℝ≥0∞}
     (hDL : TextbookDLWithCoinsAdvantageLE B family.combinedRelationFinder dlBound)
@@ -194,7 +216,7 @@ them by extraction. -/
 structure ExtractionBalanceAdversary (MSG : Type) [Fintype MSG] [DecidableEq MSG]
     [Inhabited MSG]
     (spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop)
-    {T : Type} [DecidableEq T] (query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T)
+    {T : Type} [DecidableEq T] (query : ActionBasisIndex → T)
     (k maxActions : ℕ) : Type 1 where
   /-- The adversary's coin space. -/
   ι : Type
@@ -218,7 +240,7 @@ namespace ExtractionBalanceAdversary
 
 variable {MSG : Type} [Fintype MSG] [DecidableEq MSG] [Inhabited MSG]
   {spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop}
-  {T : Type} [DecidableEq T] {query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T}
+  {T : Type} [DecidableEq T] {query : ActionBasisIndex → T}
   {k maxActions : ℕ}
   (H_bind : PallasGroup → PallasGroup → MSG → Fq)
   (A : ExtractionBalanceAdversary MSG spendAuthVerify query k maxActions)
@@ -235,7 +257,10 @@ abbrev Runs := Family.Runs A.actionFamily query
 
 /-- Assemble one transaction at one chain position: extract that position's ledger data
 at its selected action count from the shared run, and zip it with the requested
-signatures. Returns nothing exactly when the composed extractor does. -/
+signatures. Returns nothing exactly when the composed extractor does: when the selected
+proof's knowledge extraction fails, or a member of the extracted bundle escapes the
+bridge. The assembled chain then stops at this position, and such samples are counted in
+the extraction-failure arm of the composed bound rather than judged by ledger validity. -/
 def assembleTx (r : Runs A) (t : Fin k) (req : TxRequest MSG maxActions) :
     Option (AnnotatedTx (spendAuthVerify := spendAuthVerify) H_bind) :=
   let family := A.actionFamily.slotFamily t
@@ -422,7 +447,8 @@ theorem deployedExperiment_measure_runs
 /-- **The extraction-failure arm of the composed experiment.** The discrete-log term
 is charged once, for the combined relation finder of the shared execution; `k`
 multiplies only the selected-count statistical surface and the computed bridge escape,
-and no term is multiplied by `maxActions`, which can enter only through `ε_stat`. -/
+and no term is multiplied by `maxActions`, which can enter only through `ε_stat` (whose
+expected size the module doc gives). -/
 theorem extractionFailureEvent_measure_le
     (halg : ∀ j, ∀ basis, AlgebraicAtBindingPointsAt 2 0 1 orchardQueryOf
       (primitives spendAuthVerify (redPallasBindingVerify H_bind)) id basis
@@ -473,7 +499,7 @@ open ExtractionBalanceAdversary
 
 variable {MSG : Type} [Fintype MSG] [DecidableEq MSG] [Inhabited MSG]
   {spendAuthVerify : PallasGroup → MSG → RedDSA.Sig Fq PallasGroup → Prop}
-  {T : Type} [DecidableEq T] {query : AugmentedIndex (2 ^ actionCircuit.shape.k) → T}
+  {T : Type} [DecidableEq T] {query : ActionBasisIndex → T}
   {k maxActions : ℕ}
   (H_bind : PallasGroup → PallasGroup → MSG → Fq)
   (A : ExtractionBalanceAdversary MSG spendAuthVerify query k maxActions)

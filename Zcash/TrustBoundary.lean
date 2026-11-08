@@ -1413,8 +1413,9 @@ assert_axioms Zcash.Snark.hstab_of_xPrefixDetermined +native(
 assert_axioms Zcash.Snark.preXSqueezePoint_inj
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`), at the typed level:
 -- the schedule's oracle locality, the disjointness of the pre-`θ` cones at different counts, and
--- the reprogramming corollary. This is the fact the extraction experiment's per-size Fiat–Shamir
--- tables rest on; its consumption in that experiment's sample space is #224.
+-- the reprogramming corollary. The extraction experiment samples one oracle table over a domain
+-- covering every action count, so it does not consume this separation; it remains the statement
+-- of what the deployed schedules guarantee at the typed level.
 assert_axioms Zcash.Snark.deriveChallenges_congr_of_agree_on_cone
 assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
 assert_axioms Zcash.Snark.preTheta_cones_disjoint
@@ -1980,9 +1981,9 @@ assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveSt
 assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeExtractor +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
--- Adaptive-count reduction (#214): the count is part of one shared adversary output, the selected
--- fixed-count machinery consumes that retained run, and the ledger combines every emitted slot's
--- relation before applying textbook DLOG once.
+-- The adaptive-count reduction: the action count is part of one shared adversary output; the
+-- selected fixed-count machinery consumes that retained run; and the ledger combines every emitted
+-- slot's relation into one finder, which a single textbook discrete-log hypothesis bounds.
 assert_computable Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedRelationFinder +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
