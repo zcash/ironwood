@@ -496,6 +496,39 @@ theorem adaptiveStatementKnowledgeExtractorV_isSome_of_good
               simpa only [run] using houtcomeEq]
             rfl
 
+/-- On an accepting view with `z ≠ 0`, an IPA binding attack that the terminal finder did not
+turn into a relation has a round whose challenge is a root of that round's straight-line
+quadratic. -/
+theorem terminalRelationFinderV_none_attack_root {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) <
+        scalarFieldOrder)
+    (hterminal : family.terminalRelationFinderV basis view hcharV = none)
+    (haccepts : family.acceptsV basis view) (hz : view.pre 10 ≠ 0)
+    (hattack : fullAlgebraicBindingAttackZ basis (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+      view.output.toAlgebraicWfProof view.pre view.rounds) :
+    ∃ j, view.rounds j ∈
+      szBadSet (view.output.toAlgebraicWfProof.straightLineIpaRootPolynomial
+        view.pre view.rounds j) := by
+  cases hsplit : view.output.toAlgebraicWfProof.straightLineBindingAttackZIndexedRootOrRelation
+      view.pre view.rounds hattack with
+  | inl root => exact root
+  | inr relation =>
+      exfalso
+      obtain ⟨hacceptsProof, hacceptsEq⟩ :=
+        Option.isSome_iff_exists.mp (family.accepts?V_isSome_of basis view haccepts)
+      unfold terminalRelationFinderV terminalRelationFinderWithAcceptanceV at hterminal
+      rw [hacceptsEq] at hterminal
+      dsimp only at hterminal
+      rw [dif_pos hz, dif_pos hattack, hsplit] at hterminal
+      simp at hterminal
+
 set_option maxRecDepth 10000 in
 theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -520,6 +553,16 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
   have hfacts := family.semanticStageFacts_of_sourceFinder_none basis O
     hsourceNone
   have hz : (runView family basis O).pre 10 ≠ 0 := fun h => hzeroEvent h
+  have hcharV : deployedX4PairCount (adaptiveActionStatementVk pp basis)
+      (adaptiveActionStatementInstanceCommitment pp basis (runView family basis O).output.inputs)
+      (runView family basis O).output.toAlgebraicWfProof.proof.1
+      (chRecord (k := (AdaptiveActionStatementShape pp).k) (runView family basis O).pre
+        (runView family basis O).rounds) < scalarFieldOrder := by
+    simpa only [runView_output, runView_pre, runView_rounds, family.runRecord_eq_chRecord] using
+      hchar basis O
+  have hacceptsV : family.acceptsV basis (runView family basis O) := by
+    simpa only [acceptsV, accepts, runView_output, runView_pre, runView_rounds,
+      family.runRecord_eq_chRecord] using haccepts
   have hattack : ¬fullAlgebraicBindingAttackZ basis
       (adaptiveActionStatementVk pp basis)
       (adaptiveActionStatementInstanceCommitment pp basis
@@ -527,31 +570,17 @@ theorem adaptiveStatementKnowledgeExtractor_isSome_of_no_events {pp : ProofParam
       (runView family basis O).output.toAlgebraicWfProof
       (runView family basis O).pre (runView family basis O).rounds := by
     intro hattack
-    cases hsplit : (runView family basis
-        O).output.toAlgebraicWfProof.straightLineBindingAttackZIndexedRootOrRelation
-        (runView family basis O).pre (runView family basis O).rounds hattack with
-    | inl root =>
-        obtain ⟨j, hj⟩ := root
-        apply hipaEvent
-        refine ⟨j, ?_⟩
-        change O (family.ipaPoint basis j (family.runOutput basis O)) ∈
-            outputIpaFallbackBad family basis j (family.runOutput basis O)
-              (family.ipaPoint basis j (family.runOutput basis O)) O ∧ _
-        rw [outputIpaFallbackBad_actual]
-        refine ⟨?_, hipaNone⟩
-        simpa only [runView_output, runView_pre, runView_rounds,
-          runIpaReads_apply, ipaPoint] using hj
-    | inr relation =>
-        have hacceptsSome := family.accepts?V_isSome_of basis (runView family basis O)
-          (by simpa only [acceptsV, accepts, runView_output, runView_pre, runView_rounds,
-            family.runRecord_eq_chRecord] using haccepts)
-        obtain ⟨hacceptsProof, hacceptsEq⟩ := Option.isSome_iff_exists.mp hacceptsSome
-        unfold terminalRelationFinder terminalRelationFinderV
-          terminalRelationFinderWithAcceptanceV at hterminalNone
-        rw [hacceptsEq] at hterminalNone
-        dsimp only at hterminalNone
-        rw [dif_pos hz, dif_pos hattack, hsplit] at hterminalNone
-        simp at hterminalNone
+    obtain ⟨j, hj⟩ := family.terminalRelationFinderV_none_attack_root basis
+      (runView family basis O) hcharV hterminalNone hacceptsV hz hattack
+    apply hipaEvent
+    refine ⟨j, ?_⟩
+    change O (family.ipaPoint basis j (family.runOutput basis O)) ∈
+        outputIpaFallbackBad family basis j (family.runOutput basis O)
+          (family.ipaPoint basis j (family.runOutput basis O)) O ∧ _
+    rw [outputIpaFallbackBad_actual]
+    refine ⟨?_, hipaNone⟩
+    simpa only [runView_output, runView_pre, runView_rounds,
+      runIpaReads_apply, ipaPoint] using hj
   have hsurface : ∀ n : Fin 5,
       let n11 : Fin 11 := Fin.castLE (by omega) n
       let nu := family.runPreIpaReads basis O

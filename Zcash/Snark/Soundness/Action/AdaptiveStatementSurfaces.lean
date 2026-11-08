@@ -42,21 +42,18 @@ def statementEarlierPrefix {pp : ProofParams}
     rw [List.length_take]
     exact le_trans (min_le_right _ _) t.prop⟩
 
-/-- Truncating an actual selected-statement pre-IPA point recovers its earlier verifier point. -/
+/-- Truncating a selected-statement pre-IPA point recovers its earlier verifier point. -/
 theorem statementEarlierPrefix_preIpaPoint {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11) (i : Fin (n : Nat)) :
-    statementEarlierPrefix
-        (family.preIpaPoint basis n (family.runOutput basis O))
-        (i.castLE (le_of_lt n.isLt)) =
-      family.preIpaPoint basis (i.castLE (le_of_lt n.isLt))
-        (family.runOutput basis O) := by
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11) (i : Fin (n : Nat)) :
+    statementEarlierPrefix (family.preIpaPoint basis n output) (i.castLE (le_of_lt n.isLt)) =
+      family.preIpaPoint basis (i.castLE (le_of_lt n.isLt)) output := by
   apply Subtype.ext
   have h := congrArg Subtype.val
     (adaptiveEarlierPrefix_algebraicFullPrefixesPre
-      ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-      (family.runOutput basis O).toAlgebraicWfProof n i)
+      (output.init (family.vkTranscriptRepr basis)) output.toAlgebraicWfProof n i)
   simpa [statementEarlierPrefix, preIpaPoint,
     AdaptiveActionStatementOutput.prefixesPre,
     adaptiveEarlierPrefix, adaptiveStatementInitLength] using h
@@ -255,15 +252,16 @@ noncomputable def decodeStatementIpaPrefix? {pp : ProofParams}
 theorem decodeStatementPrePrefix?_isSome {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11) :
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11) :
     (decodeStatementPrePrefix? n (family.preIpaPoint basis n
-      (family.runOutput basis O))).isSome := by
+      (output))).isSome := by
   have h : Nonempty (DecodedStatementPrePrefix pp n
-      (family.preIpaPoint basis n (family.runOutput basis O))) := ⟨
+      (family.preIpaPoint basis n (output))) := ⟨
     { vkTranscriptRepr := family.vkTranscriptRepr basis
       instanceCommitment := adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs
-      proof := (family.runOutput basis O).toAlgebraicWfProof.proof
+        output.inputs
+      proof := output.toAlgebraicWfProof.proof
       point_eq := by rfl }⟩
   rw [decodeStatementPrePrefix?, dif_pos h]
   rfl
@@ -272,15 +270,16 @@ theorem decodeStatementPrePrefix?_isSome {pp : ProofParams}
 theorem decodeStatementIpaPrefix?_isSome {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k) :
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k) :
     (decodeStatementIpaPrefix? j (family.ipaPoint basis j
-      (family.runOutput basis O))).isSome := by
+      (output))).isSome := by
   have h : Nonempty (DecodedStatementIpaPrefix pp j
-      (family.ipaPoint basis j (family.runOutput basis O))) := ⟨
+      (family.ipaPoint basis j (output))) := ⟨
     { vkTranscriptRepr := family.vkTranscriptRepr basis
       instanceCommitment := adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs
-      proof := (family.runOutput basis O).toAlgebraicWfProof.proof
+        output.inputs
+      proof := output.toAlgebraicWfProof.proof
       point_eq := by rfl }⟩
   rw [decodeStatementIpaPrefix?, dif_pos h]
   rfl
@@ -289,13 +288,13 @@ theorem decodeStatementIpaPrefix?_isSome {pp : ProofParams}
 theorem DecodedStatementPrePrefix.initialTranscript_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementPrePrefix pp n t)
-    (ht : t = family.preIpaPoint basis n (family.runOutput basis O)) :
+    (ht : t = family.preIpaPoint basis n (output)) :
     initialTranscript decoded.vkTranscriptRepr decoded.instanceCommitment =
-      (family.runOutput basis O).init (family.vkTranscriptRepr basis) := by
-  let output := family.runOutput basis O
+      output.init (family.vkTranscriptRepr basis) := by
   have hpoint : preIpaSqueezePoints
         (initialTranscript decoded.vkTranscriptRepr decoded.instanceCommitment)
         decoded.proof.1 n =
@@ -311,50 +310,52 @@ derived from the adversary-selected public statement. -/
 theorem DecodedStatementPrePrefix.instanceCommitment_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementPrePrefix pp n t)
-    (ht : t = family.preIpaPoint basis n (family.runOutput basis O))
+    (ht : t = family.preIpaPoint basis n (output))
     (p : Fin (AdaptiveActionStatementShape pp).numProofs)
     (column : Fin (AdaptiveActionStatementShape pp).numInstanceColumns) :
     decoded.instanceCommitment p column =
       adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs p column := by
+        output.inputs p column := by
   exact instanceCommitment_eq_of_initialTranscript_eq _ _ _ _
-    (decoded.initialTranscript_eq_output family basis O n ht) p column
+    (decoded.initialTranscript_eq_output family basis output n ht) p column
 
 /-- Bounded totalization turns configured-column equality into equality of the complete verifier
 function used by query-local surfaces. -/
 theorem DecodedStatementPrePrefix.boundedInstanceCommitment_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementPrePrefix pp n t)
-    (ht : t = family.preIpaPoint basis n (family.runOutput basis O)) :
+    (ht : t = family.preIpaPoint basis n (output)) :
     boundedAdaptiveStatementInstanceCommitment pp basis decoded.instanceCommitment =
       adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs := by
+        output.inputs := by
   rw [adaptiveActionStatementInstanceCommitment_eq_bounded]
   funext p column
   unfold boundedAdaptiveStatementInstanceCommitment
   by_cases hcolumn : column < (AdaptiveActionStatementShape pp).numInstanceColumns
   · rw [if_pos hcolumn, if_pos hcolumn]
-    exact decoded.instanceCommitment_eq_output family basis O n ht p ⟨column, hcolumn⟩
+    exact decoded.instanceCommitment_eq_output family basis output n ht p ⟨column, hcolumn⟩
   · rw [if_neg hcolumn, if_neg hcolumn]
 
 /-- Equal adaptive IPA query points likewise pin the canonical verifier prefix. -/
 theorem DecodedStatementIpaPrefix.initialTranscript_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementIpaPrefix pp j t)
-    (ht : t = family.ipaPoint basis j (family.runOutput basis O)) :
+    (ht : t = family.ipaPoint basis j (output)) :
     initialTranscript decoded.vkTranscriptRepr decoded.instanceCommitment =
-      (family.runOutput basis O).init (family.vkTranscriptRepr basis) := by
+      output.init (family.vkTranscriptRepr basis) := by
   subst t
-  let output := family.runOutput basis O
   let decodedInit := initialTranscript decoded.vkTranscriptRepr decoded.instanceCommitment
   let outputInit := output.init (family.vkTranscriptRepr basis)
   have hpoint := congrArg Subtype.val decoded.point_eq
@@ -384,35 +385,37 @@ statement's actual public-instance commitment. -/
 theorem DecodedStatementIpaPrefix.instanceCommitment_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementIpaPrefix pp j t)
-    (ht : t = family.ipaPoint basis j (family.runOutput basis O))
+    (ht : t = family.ipaPoint basis j (output))
     (p : Fin (AdaptiveActionStatementShape pp).numProofs)
     (column : Fin (AdaptiveActionStatementShape pp).numInstanceColumns) :
     decoded.instanceCommitment p column =
       adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs p column := by
+        output.inputs p column := by
   exact instanceCommitment_eq_of_initialTranscript_eq _ _ _ _
-    (decoded.initialTranscript_eq_output family basis O j ht) p column
+    (decoded.initialTranscript_eq_output family basis output j ht) p column
 
 /-- IPA-prefix counterpart of `boundedInstanceCommitment_eq_output`. -/
 theorem DecodedStatementIpaPrefix.boundedInstanceCommitment_eq_output {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k)
     {t : AdaptiveActionStatementTranscript pp}
     (decoded : DecodedStatementIpaPrefix pp j t)
-    (ht : t = family.ipaPoint basis j (family.runOutput basis O)) :
+    (ht : t = family.ipaPoint basis j (output)) :
     boundedAdaptiveStatementInstanceCommitment pp basis decoded.instanceCommitment =
       adaptiveActionStatementInstanceCommitment pp basis
-        (family.runOutput basis O).inputs := by
+        output.inputs := by
   rw [adaptiveActionStatementInstanceCommitment_eq_bounded]
   funext p column
   unfold boundedAdaptiveStatementInstanceCommitment
   by_cases hcolumn : column < (AdaptiveActionStatementShape pp).numInstanceColumns
   · rw [if_pos hcolumn, if_pos hcolumn]
-    exact decoded.instanceCommitment_eq_output family basis O j ht p ⟨column, hcolumn⟩
+    exact decoded.instanceCommitment_eq_output family basis output j ht p ⟨column, hcolumn⟩
   · rw [if_neg hcolumn, if_neg hcolumn]
 
 /-! ## Query-local coordinate sources -/
@@ -501,19 +504,16 @@ the final output's root source. -/
 theorem decodedRootQuerySource_eq_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11) (h5n : 5 ≤ (n : Nat))
-    (decoded : DecodedStatementPrePrefix pp n
-      (family.preIpaPoint basis n (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis n (family.runOutput basis O))
-      (family.adversary basis) O
-      (preIpaRepresentationTarget (family.runOutput basis O) n)) :
-    decodedRootQuerySource family basis h5n decoded pinned.query =
-      preIpaRepresentationTarget (family.runOutput basis O) n ++
-        family.fixedRepresentations basis := by
-  let output := family.runOutput basis O
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11) (h5n : 5 ≤ (n : Nat))
+    (decoded : DecodedStatementPrePrefix pp n (family.preIpaPoint basis n output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.preIpaPoint basis n output))
+    (fixed : SelectedQueryRepresentationFixed (family.preIpaPoint basis n output) query
+      (preIpaRepresentationTarget output n)) :
+    decodedRootQuerySource family basis h5n decoded query =
+      preIpaRepresentationTarget output n ++ family.fixedRepresentations basis := by
   let final := preIpaRepresentationTarget output n
-  have hinit := decoded.initialTranscript_eq_output family basis O n rfl
+  have hinit := decoded.initialTranscript_eq_output family basis output n rfl
   have hprefix : preIpaSqueezePoints
         (output.init (family.vkTranscriptRepr basis)) decoded.proof.1 n =
       preIpaSqueezePoints (output.init (family.vkTranscriptRepr basis))
@@ -545,30 +545,30 @@ theorem decodedRootQuerySource_eq_of_pinned {pp : ProofParams}
     funext p
     apply congrArg List.ofFn
     funext column
-    exact decoded.instanceCommitment_eq_output family basis O n rfl p column
+    exact decoded.instanceCommitment_eq_output family basis output n rfl p column
   have hpoints : decoded.rootPoints = final.map AlgebraicPoint.point := by
     rw [DecodedStatementPrePrefix.rootPoints, hordinary, hinstances,
       preIpaRepresentationTarget_points]
-  have hselected : pinned.query.representationsFor final pinned.covered = final :=
+  have hselected : query.representationsFor final fixed.covered = final :=
     algebraicPointList_eq_of_maps_eq
-      (pinned.query.representationsFor_points final pinned.covered)
-      pinned.coefficients_eq
+      (query.representationsFor_points final fixed.covered)
+      fixed.coefficients_eq
   let decodedCovered := decoded.rootPoints_covered h5n
   let finalCoveredPoints : ∀ P ∈ final.map AlgebraicPoint.point,
       P ∈ transcriptGroupPoints
         (family.preIpaPoint basis n output).val := by
     intro P hP
     obtain ⟨ap, hap, rfl⟩ := List.mem_map.mp hP
-    exact pinned.covered ap hap
-  have hqueryPoints : pinned.query.representationsForPoints
+    exact fixed.covered ap hap
+  have hqueryPoints : query.representationsForPoints
       decoded.rootPoints decodedCovered =
-      pinned.query.representationsForPoints
+      query.representationsForPoints
         (final.map AlgebraicPoint.point) finalCoveredPoints := by
-    exact pinned.query.representationsForPoints_congr _ _
+    exact query.representationsForPoints_congr _ _
       decodedCovered finalCoveredPoints hpoints
   unfold decodedRootQuerySource
   rw [hqueryPoints,
-    ← pinned.query.representationsFor_eq_representationsForPoints final pinned.covered,
+    ← query.representationsFor_eq_representationsForPoints final fixed.covered,
     hselected]
 
 /-! ## IPA-round coordinate sources -/
@@ -690,19 +690,17 @@ round annotation are exactly the final coordinates visible through that query. -
 theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
-    (decoded : DecodedStatementIpaPrefix pp j
-      (family.ipaPoint basis j (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.ipaPoint basis j (family.runOutput basis O))
-      (family.adversary basis) O
-      (ipaRepresentationTarget (family.runOutput basis O) j)) :
-    decodedIpaQueryCoordinates family basis decoded pinned.query =
-      ((family.runOutput basis O).proofData.adaptiveIpaCoordinates.prefix basis j) := by
-  let output := family.runOutput basis O
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k)
+    (decoded : DecodedStatementIpaPrefix pp j (family.ipaPoint basis j output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.ipaPoint basis j output))
+    (fixed : SelectedQueryRepresentationFixed (family.ipaPoint basis j output) query
+      (ipaRepresentationTarget output j)) :
+    decodedIpaQueryCoordinates family basis decoded query =
+      output.proofData.adaptiveIpaCoordinates.prefix basis j := by
   let final := ipaRepresentationTarget output j
   let outputInit := output.init (family.vkTranscriptRepr basis)
-  have hinit := decoded.initialTranscript_eq_output family basis O j rfl
+  have hinit := decoded.initialTranscript_eq_output family basis output j rfl
   have hpoint : fullPrefixes outputInit decoded.proof j =
       fullPrefixes outputInit output.toAlgebraicWfProof.proof j := by
     apply Subtype.ext
@@ -718,10 +716,10 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
   have hsplice : decoded.proof.1 = spliceIpa output.proofData.algebraicProof.erase
       decoded.proof.1.ipaRounds decoded.proof.1.ipaC decoded.proof.1.ipaF :=
     preIpaTranscript_inj outputInit decoded.proof.2 output.proofData.wellFormed hpre
-  have hselected : pinned.query.representationsFor final pinned.covered = final :=
+  have hselected : query.representationsFor final fixed.covered = final :=
     algebraicPointList_eq_of_maps_eq
-      (pinned.query.representationsFor_points final pinned.covered)
-      pinned.coefficients_eq
+      (query.representationsFor_points final fixed.covered)
+      fixed.coefficients_eq
   have hpreSubset : ∀ ap ∈ output.proofData.algebraicProof.preX1Points, ap ∈ final := by
     intro ap hap
     apply List.mem_append_left
@@ -765,8 +763,8 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
     funext column
     simp only [Function.comp_apply]
     rw [output.instanceRepresented]
-    exact decoded.instanceCommitment_eq_output family basis O j rfl p column
-  have hpreSelected : pinned.query.representationsForPoints
+    exact decoded.instanceCommitment_eq_output family basis output j rfl p column
+  have hpreSelected : query.representationsForPoints
       decoded.proof.1.preX1CommitmentPoints (by
         intro P hP
         exact decoded.ipaPoints_covered P (by
@@ -784,16 +782,16 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
         P ∈ transcriptGroupPoints (family.ipaPoint basis j output).val := by
       intro P hP
       obtain ⟨ap, hap, rfl⟩ := List.mem_map.mp hP
-      exact pinned.covered ap (hpreSubset ap hap)
-    have hqueryPoints := pinned.query.representationsForPoints_congr
+      exact fixed.covered ap (hpreSubset ap hap)
+    have hqueryPoints := query.representationsForPoints_congr
       decoded.proof.1.preX1CommitmentPoints
       (output.proofData.algebraicProof.preX1Points.map AlgebraicPoint.point)
       decodedCovered finalCovered hprePoints
     rw [hqueryPoints,
-      ← pinned.query.representationsFor_eq_representationsForPoints
+      ← query.representationsFor_eq_representationsForPoints
         output.proofData.algebraicProof.preX1Points]
-    exact pinned.representationsFor_eq_self_of_subset hpreSubset
-  have hinstanceSelected : pinned.query.representationsForPoints
+    exact fixed.representationsFor_eq_self_of_subset hpreSubset
+  have hinstanceSelected : query.representationsForPoints
       (statementInstancePoints decoded.instanceCommitment) (by
         intro P hP
         exact decoded.ipaPoints_covered P (List.mem_append_right _ hP)) =
@@ -808,15 +806,15 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
         P ∈ transcriptGroupPoints (family.ipaPoint basis j output).val := by
       intro P hP
       obtain ⟨ap, hap, rfl⟩ := List.mem_map.mp hP
-      exact pinned.covered ap (hinstanceSubset ap hap)
-    have hqueryPoints := pinned.query.representationsForPoints_congr
+      exact fixed.covered ap (hinstanceSubset ap hap)
+    have hqueryPoints := query.representationsForPoints_congr
       (statementInstancePoints decoded.instanceCommitment)
       ((adaptiveStatementInstanceRepresentationList output.instanceRepresentations).map
         AlgebraicPoint.point) decodedCovered finalCovered hinstancePoints
     rw [hqueryPoints,
-      ← pinned.query.representationsFor_eq_representationsForPoints
+      ← query.representationsFor_eq_representationsForPoints
         (adaptiveStatementInstanceRepresentationList output.instanceRepresentations)]
-    exact pinned.representationsFor_eq_self_of_subset hinstanceSubset
+    exact fixed.representationsFor_eq_self_of_subset hinstanceSubset
   have hqPoint : decoded.proof.1.multiopenQPrime =
       output.proofData.algebraicProof.multiopenQPrime.point := by
     rw [hsplice]
@@ -825,29 +823,29 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
       output.proofData.algebraicProof.ipaS.point := by
     rw [hsplice]
     rfl
-  have hqSelected : decodedIpaQueryRepresentation basis decoded pinned.query
+  have hqSelected : decodedIpaQueryRepresentation basis decoded query
       decoded.proof.1.multiopenQPrime
         (List.mem_append_left _ (decoded.proof.1.multiopenQPrime_mem_beforeRound j)) =
       output.proofData.algebraicProof.multiopenQPrime := by
     unfold decodedIpaQueryRepresentation
-    have htarget := pinned.query.representationOfPoint_eq_of_representationsFor_eq
-      final pinned.covered hselected output.proofData.algebraicProof.multiopenQPrime hqSubset
-    exact (pinned.query.representationOfPoint_congr _ _ _ _ hqPoint).trans htarget
-  have hsSelected : decodedIpaQueryRepresentation basis decoded pinned.query
+    have htarget := query.representationOfPoint_eq_of_representationsFor_eq
+      final fixed.covered hselected output.proofData.algebraicProof.multiopenQPrime hqSubset
+    exact (query.representationOfPoint_congr _ _ _ _ hqPoint).trans htarget
+  have hsSelected : decodedIpaQueryRepresentation basis decoded query
       decoded.proof.1.ipaS
         (List.mem_append_left _ (decoded.proof.1.ipaS_mem_beforeRound j)) =
       output.proofData.algebraicProof.ipaS := by
     unfold decodedIpaQueryRepresentation
-    have htarget := pinned.query.representationOfPoint_eq_of_representationsFor_eq
-      final pinned.covered hselected output.proofData.algebraicProof.ipaS hsSubset
-    exact (pinned.query.representationOfPoint_congr _ _ _ _ hsPoint).trans htarget
+    have htarget := query.representationOfPoint_eq_of_representationsFor_eq
+      final fixed.covered hselected output.proofData.algebraicProof.ipaS hsSubset
+    exact (query.representationOfPoint_congr _ _ _ _ hsPoint).trans htarget
   apply AdaptiveIpaCoordinateData.ext'
-  · change pinned.query.representationsForPoints
+  · change query.representationsForPoints
         decoded.proof.1.preX1CommitmentPoints _ ++
-        pinned.query.representationsForPoints
+        query.representationsForPoints
           (statementInstancePoints decoded.instanceCommitment) _ ++
         family.fixedRepresentations basis ++
-        [decodedIpaQueryRepresentation basis decoded pinned.query
+        [decodedIpaQueryRepresentation basis decoded query
           decoded.proof.1.multiopenQPrime _] = _
     rw [hpreSelected, hinstanceSelected, hqSelected]
     change output.proofData.algebraicProof.preX1Points ++
@@ -865,27 +863,27 @@ theorem decodedIpaQueryCoordinates_eq_of_pinned {pp : ProofParams}
         output.toAlgebraicWfProof.proof j i hij hpoint
       have hroundSubset :=
         output.proofData.algebraicProof.ipaRound_mem_representationsBeforeRound j i hij
-      have hL : decodedIpaQueryRepresentation basis decoded pinned.query
+      have hL : decodedIpaQueryRepresentation basis decoded query
           (decoded.proof.1.ipaRounds i).1
             (List.mem_append_left _
               (decoded.proof.1.ipaRound_mem_beforeRound j i hij).1) =
           (output.proofData.algebraicProof.ipaRounds i).1 := by
         unfold decodedIpaQueryRepresentation
-        have htarget := pinned.query.representationOfPoint_eq_of_representationsFor_eq
-          final pinned.covered hselected (output.proofData.algebraicProof.ipaRounds i).1
+        have htarget := query.representationOfPoint_eq_of_representationsFor_eq
+          final fixed.covered hselected (output.proofData.algebraicProof.ipaRounds i).1
             (List.mem_append_left _ hroundSubset.1)
-        exact (pinned.query.representationOfPoint_congr _ _ _ _
+        exact (query.representationOfPoint_congr _ _ _ _
           (congrArg Prod.fst hroundPoint)).trans htarget
-      have hR : decodedIpaQueryRepresentation basis decoded pinned.query
+      have hR : decodedIpaQueryRepresentation basis decoded query
           (decoded.proof.1.ipaRounds i).2
             (List.mem_append_left _
               (decoded.proof.1.ipaRound_mem_beforeRound j i hij).2) =
           (output.proofData.algebraicProof.ipaRounds i).2 := by
         unfold decodedIpaQueryRepresentation
-        have htarget := pinned.query.representationOfPoint_eq_of_representationsFor_eq
-          final pinned.covered hselected (output.proofData.algebraicProof.ipaRounds i).2
+        have htarget := query.representationOfPoint_eq_of_representationsFor_eq
+          final fixed.covered hselected (output.proofData.algebraicProof.ipaRounds i).2
             (List.mem_append_left _ hroundSubset.2)
-        exact (pinned.query.representationOfPoint_congr _ _ _ _
+        exact (query.representationOfPoint_congr _ _ _ _
           (congrArg Prod.snd hroundPoint)).trans htarget
       have hijFin : i ≤ j := hij
       change _ = (output.proofData.adaptiveIpaCoordinates.prefix basis j).rounds i
@@ -986,41 +984,36 @@ theorem statementIpaRoundRecord_update_self {pp : ProofParams}
     exact statementEarlierRoundPrefix_ne j t hlen i (by assumption)
   · rfl
 
-/-- At an actual selected-statement IPA point, the shorter pre-IPA views are its verifier
-prefixes. -/
+/-- At a selected-statement IPA point, the shorter pre-IPA views are its verifier prefixes. -/
 theorem statementIpaPreRecord_ipaPoint {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
     (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k) :
-    statementIpaPreRecord
-        (family.ipaPoint basis j (family.runOutput basis O)) O =
-      family.runPreIpaReads basis O := by
+    statementIpaPreRecord (family.ipaPoint basis j output) O =
+      fun n => O (family.preIpaPoint basis n output) := by
   funext n
-  unfold statementIpaPreRecord runPreIpaReads
-  simp only [preIpaReadsOfOutput, preIpaReadVectorOfOutput, challengeReadVector_get]
+  unfold statementIpaPreRecord
   apply congrArg O
   apply Subtype.ext
-  simpa only [statementEarlierPrefix, ipaPoint] using
-    (family.runOutput basis O).prefixes_take_pre
-      (family.vkTranscriptRepr basis) j n
+  simpa only [statementEarlierPrefix, ipaPoint, preIpaPoint] using
+    output.prefixes_take_pre (family.vkTranscriptRepr basis) j n
 
-/-- Answers at strict earlier IPA rounds agree with the selected statement's actual round reads. -/
+/-- Answers at strict earlier IPA rounds agree with the selected statement's round reads. -/
 theorem statementIpaRoundRecord_ipaPoint_before {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
     (O : family.Coins) (j i : Fin (AdaptiveActionStatementShape pp).k)
     (hij : i.val < j.val) :
-    statementIpaRoundRecord j
-        (family.ipaPoint basis j (family.runOutput basis O)) O i =
-      family.runIpaReads basis O i := by
-  unfold statementIpaRoundRecord runIpaReads
+    statementIpaRoundRecord j (family.ipaPoint basis j output) O i =
+      O (family.ipaPoint basis i output) := by
+  unfold statementIpaRoundRecord
   rw [dif_pos hij]
-  simp only [ipaReadsOfOutput, ipaReadVectorOfOutput, challengeReadVector_get]
   apply congrArg O
   apply Subtype.ext
   simpa only [statementEarlierRoundPrefix, ipaPoint] using
-    (family.runOutput basis O).prefixes_take_round
-      (family.vkTranscriptRepr basis) j i hij
+    output.prefixes_take_round (family.vkTranscriptRepr basis) j i hij
 
 /-- The round-`j` quadratic reconstructed from a decoded query and its first AGM annotation. -/
 noncomputable def decodedIpaSurface {pp : ProofParams}
@@ -1092,32 +1085,23 @@ theorem outputIpaSurface_measure_le {pp : ProofParams}
   · exact adaptiveIpaRootPolynomial_measure_le _ _ _ _ _ _ _ j
   · simp
 
-/-- The concrete final IPA squeeze selected by one adaptive-statement output. -/
-abbrev finalIpaPoint {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (j : Fin (AdaptiveActionStatementShape pp).k) (O : family.Coins) :
-    AdaptiveActionStatementTranscript pp :=
-  family.ipaPoint basis j ((family.adversary basis).run O)
 
 /-- A pinned first round annotation makes the decoded quadratic literally the final-output
 quadratic. -/
 theorem decodedIpaSurface_eq_output_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
-    (decoded : DecodedStatementIpaPrefix pp j
-      (family.ipaPoint basis j (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.ipaPoint basis j (family.runOutput basis O))
-      (family.adversary basis) O
-      (ipaRepresentationTarget (family.runOutput basis O) j))
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (j : Fin (AdaptiveActionStatementShape pp).k)
+    (decoded : DecodedStatementIpaPrefix pp j (family.ipaPoint basis j output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.ipaPoint basis j output))
+    (fixed : SelectedQueryRepresentationFixed (family.ipaPoint basis j output) query
+      (ipaRepresentationTarget output j))
     (nu : Fin 11 → Fp) (chi : Fin (AdaptiveActionStatementShape pp).k → Fp) :
-    decodedIpaSurface family basis j decoded pinned.query nu chi =
-      outputIpaSurface family basis j (family.runOutput basis O) nu chi := by
-  let output := family.runOutput basis O
+    decodedIpaSurface family basis j decoded query nu chi =
+      outputIpaSurface family basis j output nu chi := by
   let outputInit := output.init (family.vkTranscriptRepr basis)
-  have hinit := decoded.initialTranscript_eq_output family basis O j rfl
+  have hinit := decoded.initialTranscript_eq_output family basis output j rfl
   have hpoint : fullPrefixes outputInit decoded.proof j =
       fullPrefixes outputInit output.toAlgebraicWfProof.proof j := by
     apply Subtype.ext
@@ -1137,31 +1121,12 @@ theorem decodedIpaSurface_eq_output_of_pinned {pp : ProofParams}
       adaptiveIpaCanonicalProof output.proofData.algebraicProof.erase := by
     rw [hsplice]
     rfl
-  have hic := decoded.boundedInstanceCommitment_eq_output family basis O j rfl
+  have hic := decoded.boundedInstanceCommitment_eq_output family basis output j rfl
   have hcoordinates := decodedIpaQueryCoordinates_eq_of_pinned
-    family basis O j decoded pinned
+    family basis output j decoded query fixed
   unfold decodedIpaSurface outputIpaSurface
   dsimp only
   rw [hic, hcanonical, hcoordinates]
-
-/-- Literal-output form of `decodedIpaSurface_eq_output_of_pinned`, avoiding repeated reduction
-of the `runOutput` alias inside dependent transcript indices. -/
-theorem decodedIpaSurface_eq_adversary_output_of_pinned {pp : ProofParams}
-    (family : ComputedAdaptiveActionStatementFSFamily pp)
-    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
-    (decoded : DecodedStatementIpaPrefix pp j
-      (family.finalIpaPoint basis j O))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.finalIpaPoint basis j O)
-      (family.adversary basis) O
-      (ipaRepresentationTarget ((family.adversary basis).run O) j))
-    (nu : Fin 11 → Fp) (chi : Fin (AdaptiveActionStatementShape pp).k → Fp) :
-    decodedIpaSurface family basis j decoded pinned.query nu chi =
-      outputIpaSurface family basis j ((family.adversary basis).run O) nu chi := by
-  simpa only [ComputedAdaptiveActionStatementFSFamily.finalIpaPoint,
-    ComputedAdaptiveActionStatementFSFamily.runOutput] using
-    (decodedIpaSurface_eq_output_of_pinned family basis O j decoded pinned nu chi)
 
 /-- Annotation-decoded bad set at one arbitrary IPA-round query point. -/
 noncomputable def queriedIpaBad {pp : ProofParams}
@@ -1211,24 +1176,20 @@ noncomputable def outputIpaFallbackBad {pp : ProofParams}
 theorem queriedIpaBad_eq_output_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
     (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
-    (decoded : DecodedStatementIpaPrefix pp j
-      (family.ipaPoint basis j (family.runOutput basis O)))
-    (hdecode : decodeStatementIpaPrefix? j
-      (family.ipaPoint basis j (family.runOutput basis O)) = some decoded)
-    (pinned : SelectedQueryRepresentationPinned
-      (family.ipaPoint basis j (family.runOutput basis O))
-      (family.adversary basis) O
-      (ipaRepresentationTarget (family.runOutput basis O) j)) :
-    queriedIpaBad family basis j
-        (family.ipaPoint basis j (family.runOutput basis O)) pinned.query O =
-      outputIpaFallbackBad family basis j (family.runOutput basis O)
-        (family.ipaPoint basis j (family.runOutput basis O)) O := by
+    (decoded : DecodedStatementIpaPrefix pp j (family.ipaPoint basis j output))
+    (hdecode : decodeStatementIpaPrefix? j (family.ipaPoint basis j output) = some decoded)
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.ipaPoint basis j output))
+    (fixed : SelectedQueryRepresentationFixed (family.ipaPoint basis j output) query
+      (ipaRepresentationTarget output j)) :
+    queriedIpaBad family basis j (family.ipaPoint basis j output) query O =
+      outputIpaFallbackBad family basis j output (family.ipaPoint basis j output) O := by
   unfold queriedIpaBad outputIpaFallbackBad outputIpaBad
   rw [hdecode]
   dsimp only
   have hlen :
-      (family.ipaPoint basis j (family.runOutput basis O)).val.length =
+      (family.ipaPoint basis j (output)).val.length =
         preIpaLen (AdaptiveActionStatementShape pp)
             (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) 10 +
           3 * (j.val + 1) := by
@@ -1236,16 +1197,32 @@ theorem queriedIpaBad_eq_output_of_pinned {pp : ProofParams}
       AdaptiveActionStatementOutput.prefixes, adaptiveIpaRoundLen,
       adaptiveStatementInitLength] using
       (algebraicFullPrefixes_length_eq_adaptiveIpaRoundLen
-        ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-        (family.runOutput basis O).toAlgebraicWfProof j)
+        (output.init (family.vkTranscriptRepr basis))
+        output.toAlgebraicWfProof j)
   rw [if_pos hlen]
   rw [if_pos hlen]
   rw [decodedIpaSurface_eq_output_of_pinned
-    family basis O j decoded pinned
+    family basis output j decoded query fixed
       (statementIpaPreRecord
-        (family.ipaPoint basis j (family.runOutput basis O)) O)
+        (family.ipaPoint basis j (output)) O)
       (statementIpaRoundRecord j
-        (family.ipaPoint basis j (family.runOutput basis O)) O)]
+        (family.ipaPoint basis j (output)) O)]
+
+/-- `queriedIpaBad_eq_output_of_pinned` at a point given by an equation with the round point,
+for callers whose point is the round point only up to definitional unfolding. -/
+theorem queriedIpaBad_eq_output_of_pinned_at {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
+    {s : AdaptiveActionStatementTranscript pp} (hs : s = family.ipaPoint basis j output)
+    (decoded : DecodedStatementIpaPrefix pp j s)
+    (hdecode : decodeStatementIpaPrefix? j s = some decoded)
+    (query : AlgebraicTranscriptQuery (F := Fp) basis s)
+    (fixed : SelectedQueryRepresentationFixed s query (ipaRepresentationTarget output j)) :
+    queriedIpaBad family basis j s query O = outputIpaFallbackBad family basis j output s O := by
+  subst hs
+  exact queriedIpaBad_eq_output_of_pinned family basis output O j decoded hdecode query fixed
 
 theorem queriedIpaBad_update_self {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -1397,13 +1374,13 @@ theorem ipaBadWithoutRelation_cover {pp : ProofParams}
         rw [← hlabel]
         have hdecode : (decodeStatementIpaPrefix? j
             (family.ipaPoint basis j (family.runOutput basis O))).isSome :=
-          family.decodeStatementIpaPrefix?_isSome basis O j
+          family.decodeStatementIpaPrefix?_isSome basis (family.runOutput basis O) j
         cases hdec : decodeStatementIpaPrefix? j
             (family.ipaPoint basis j (family.runOutput basis O)) with
         | none => simp [hdec] at hdecode
         | some decoded =>
             rw [queriedIpaBad_eq_output_of_pinned
-              family basis O j decoded hdec pinned]
+              family basis (family.runOutput basis O) O j decoded hdec pinned.query pinned.fixed]
             generalize (family.ipaPoint basis j (family.runOutput basis O)) = t at hbad ⊢
             generalize (family.runOutput basis O) = output at hbad ⊢
             generalize (outputIpaFallbackBad family basis j) = fallback at hbad ⊢
@@ -1596,20 +1573,20 @@ selected statement's instance representations. -/
 theorem decodedSemanticQuerySource_eq_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 5)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 5)
     (decoded : DecodedStatementPrePrefix pp (Fin.castLE (by omega) n)
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O))
-      (family.adversary basis) O
-      (semanticRepresentationTarget (family.runOutput basis O) n)) :
-    decodedSemanticQuerySource family basis decoded pinned.query =
-      semanticRepresentationTarget (family.runOutput basis O) n ++
-        family.fixedRepresentations basis := by
-  let output := family.runOutput basis O
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output))
+    (fixed : SelectedQueryRepresentationFixed
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output) query
+      (semanticRepresentationTarget output n)) :
+    decodedSemanticQuerySource family basis decoded query =
+      semanticRepresentationTarget output n ++ family.fixedRepresentations basis := by
   let n11 : Fin 11 := Fin.castLE (by omega) n
   let final := semanticRepresentationTarget output n
-  have hinit := decoded.initialTranscript_eq_output family basis O n11 rfl
+  have hinit := decoded.initialTranscript_eq_output family basis output n11 rfl
   have hprefix : preIpaSqueezePoints
         (output.init (family.vkTranscriptRepr basis)) decoded.proof.1 n11 =
       preIpaSqueezePoints (output.init (family.vkTranscriptRepr basis))
@@ -1633,27 +1610,27 @@ theorem decodedSemanticQuerySource_eq_of_pinned {pp : ProofParams}
     funext p
     apply congrArg List.ofFn
     funext column
-    exact decoded.instanceCommitment_eq_output family basis O n11 rfl p column
+    exact decoded.instanceCommitment_eq_output family basis output n11 rfl p column
   have hpoints : decoded.semanticPoints = final.map AlgebraicPoint.point := by
     rw [DecodedStatementPrePrefix.semanticPoints, hordinary, hinstances,
       semanticRepresentationTarget_points]
-  have hselected : pinned.query.representationsFor final pinned.covered = final :=
+  have hselected : query.representationsFor final fixed.covered = final :=
     algebraicPointList_eq_of_maps_eq
-      (pinned.query.representationsFor_points final pinned.covered)
-      pinned.coefficients_eq
+      (query.representationsFor_points final fixed.covered)
+      fixed.coefficients_eq
   let decodedCovered := decoded.semanticPoints_covered
   let finalCovered : ∀ P ∈ final.map AlgebraicPoint.point,
       P ∈ transcriptGroupPoints
         (family.preIpaPoint basis n11 output).val := by
     intro P hP
     obtain ⟨ap, hap, rfl⟩ := List.mem_map.mp hP
-    exact pinned.covered ap hap
-  have hqueryPoints := pinned.query.representationsForPoints_congr
+    exact fixed.covered ap hap
+  have hqueryPoints := query.representationsForPoints_congr
     decoded.semanticPoints (final.map AlgebraicPoint.point)
     decodedCovered finalCovered hpoints
   unfold decodedSemanticQuerySource
   rw [hqueryPoints,
-    ← pinned.query.representationsFor_eq_representationsForPoints final pinned.covered,
+    ← query.representationsFor_eq_representationsForPoints final fixed.covered,
     hselected]
 
 /-- Exact semantic bad set over an explicit instance-commitment function. -/
@@ -1874,19 +1851,20 @@ selected-statement surface. -/
 theorem decodedSemanticSurface_eq_output_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 5)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 5)
     (decoded : DecodedStatementPrePrefix pp (Fin.castLE (by omega) n)
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O))
-      (family.adversary basis) O
-      (semanticRepresentationTarget (family.runOutput basis O) n))
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output))
+    (fixed : SelectedQueryRepresentationFixed
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output) query
+      (semanticRepresentationTarget output n))
     (earlier : Fin (n : Nat) → Fp) :
-    decodedSemanticSurface family basis n decoded pinned.query earlier =
-      outputSemanticSurface family basis n (family.runOutput basis O) earlier := by
-  let output := family.runOutput basis O
+    decodedSemanticSurface family basis n decoded query earlier =
+      outputSemanticSurface family basis n output earlier := by
   let n11 : Fin 11 := Fin.castLE (by omega) n
-  have hinit := decoded.initialTranscript_eq_output family basis O n11 rfl
+  have hinit := decoded.initialTranscript_eq_output family basis output n11 rfl
   have hprefix : preIpaSqueezePoints
         (output.init (family.vkTranscriptRepr basis)) decoded.proof.1 n11 =
       preIpaSqueezePoints (output.init (family.vkTranscriptRepr basis))
@@ -1897,9 +1875,9 @@ theorem decodedSemanticSurface_eq_output_of_pinned {pp : ProofParams}
         decoded.proof.1 n11) = _ at h
     rw [hinit] at h
     exact h
-  have hic := decoded.boundedInstanceCommitment_eq_output family basis O n11 rfl
+  have hic := decoded.boundedInstanceCommitment_eq_output family basis output n11 rfl
   have hsource := decodedSemanticQuerySource_eq_of_pinned
-    family basis O n decoded pinned
+    family basis output n decoded query fixed
   unfold decodedSemanticSurface outputSemanticSurface
   rw [hic, adaptiveActionSurfaceAtOf_action, adaptiveActionSurfaceAtOf_action]
   exact adaptiveActionSurfaceAt_congr pp
@@ -2023,27 +2001,28 @@ theorem outputSemanticBad_measure_le {pp : ProofParams}
   · simp
 
 /-- A pinned annotation puts the final semantic surface inside the query-time decoded set. -/
-private theorem mem_queriedSemanticBad_of_pinned {pp : ProofParams}
+theorem mem_queriedSemanticBad_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
     (O : family.Coins) (n : Fin 5)
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O))
-      (family.adversary basis) O
-      (semanticRepresentationTarget (family.runOutput basis O) n))
-    (hbad : O (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)) ∈
-      outputSemanticBad family basis n (family.runOutput basis O)
-        (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)) O) :
-    O (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)) ∈
+    (query : AlgebraicTranscriptQuery (F := Fp) basis
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output))
+    (fixed : SelectedQueryRepresentationFixed
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) output) query
+      (semanticRepresentationTarget output n))
+    (hbad : O (family.preIpaPoint basis (Fin.castLE (by omega) n) output) ∈
+      outputSemanticBad family basis n output
+        (family.preIpaPoint basis (Fin.castLE (by omega) n) output) O) :
+    O (family.preIpaPoint basis (Fin.castLE (by omega) n) output) ∈
       queriedSemanticBad family basis n
-        (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O))
-        pinned.query O := by
-  have hdecode := family.decodeStatementPrePrefix?_isSome basis O (Fin.castLE (by omega) n)
+        (family.preIpaPoint basis (Fin.castLE (by omega) n) output) query O := by
+  have hdecode := family.decodeStatementPrePrefix?_isSome basis output (Fin.castLE (by omega) n)
   change (decodeStatementPrePrefix? (Fin.castLE (by omega) n)
-    (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O))).isSome
+    (family.preIpaPoint basis (Fin.castLE (by omega) n) (output))).isSome
     at hdecode
   cases hdec : decodeStatementPrePrefix? (Fin.castLE (by omega) n)
-      (family.preIpaPoint basis (Fin.castLE (by omega) n) (family.runOutput basis O)) with
+      (family.preIpaPoint basis (Fin.castLE (by omega) n) (output)) with
   | none => simp [hdec] at hdecode
   | some decoded =>
       unfold queriedSemanticBad
@@ -2051,7 +2030,7 @@ private theorem mem_queriedSemanticBad_of_pinned {pp : ProofParams}
       rw [hdec]
       dsimp only
       have hlen : (family.preIpaPoint basis (Fin.castLE (by omega) n)
-          (family.runOutput basis O)).val.length =
+          (output)).val.length =
           preIpaLen (AdaptiveActionStatementShape pp)
             (adaptiveStatementInitLength (AdaptiveActionStatementShape pp))
             (Fin.castLE (by omega) n) := by
@@ -2059,11 +2038,11 @@ private theorem mem_queriedSemanticBad_of_pinned {pp : ProofParams}
           AdaptiveActionStatementOutput.prefixesPre,
           adaptiveStatementInitLength] using
           (preIpaSqueezePoints_length_eq
-            ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-            (family.runOutput basis O).toAlgebraicWfProof.proof.1
-            (family.runOutput basis O).toAlgebraicWfProof.proof.2 (Fin.castLE (by omega) n))
+            (output.init (family.vkTranscriptRepr basis))
+            output.toAlgebraicWfProof.proof.1
+            output.toAlgebraicWfProof.proof.2 (Fin.castLE (by omega) n))
       rw [if_pos hlen]
-      rw [decodedSemanticSurface_eq_output_of_pinned family basis O n decoded pinned]
+      rw [decodedSemanticSurface_eq_output_of_pinned family basis output n decoded query fixed]
       unfold outputSemanticBad at hbad
       dsimp only at hbad
       split at hbad
@@ -2118,8 +2097,8 @@ theorem semanticBadWithoutRelation_table_le {pp : ProofParams}
             have hlabel : pinned.query = label :=
               Option.some.inj (pinned.found.symm.trans hfind)
             subst label
-            exact mem_queriedSemanticBad_of_pinned family basis O n pinned
-              (by simpa using hbad)
+            exact mem_queriedSemanticBad_of_pinned family basis (family.runOutput basis O) O n
+              pinned.query pinned.fixed (by simpa using hbad)
   · exact fun t label O v => queriedSemanticBad_update_self
       family basis n t label O v
   · exact fun output t O v => outputSemanticBad_update_self
@@ -2410,18 +2389,16 @@ theorem outputRootSurface_measure_le {pp : ProofParams}
 theorem decodedRootSurface_eq_output_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 11) (h5n : 5 ≤ (n : Nat))
-    (decoded : DecodedStatementPrePrefix pp n
-      (family.preIpaPoint basis n (family.runOutput basis O)))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis n (family.runOutput basis O))
-      (family.adversary basis) O
-      (preIpaRepresentationTarget (family.runOutput basis O) n))
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (n : Fin 11) (h5n : 5 ≤ (n : Nat))
+    (decoded : DecodedStatementPrePrefix pp n (family.preIpaPoint basis n output))
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.preIpaPoint basis n output))
+    (fixed : SelectedQueryRepresentationFixed (family.preIpaPoint basis n output) query
+      (preIpaRepresentationTarget output n))
     (earlier : Fin (n : Nat) → Fp) :
-    decodedRootSurface family basis n h5n decoded pinned.query earlier =
-      outputRootSurface family basis n (family.runOutput basis O) earlier := by
-  let output := family.runOutput basis O
-  have hinit := decoded.initialTranscript_eq_output family basis O n rfl
+    decodedRootSurface family basis n h5n decoded query earlier =
+      outputRootSurface family basis n output earlier := by
+  have hinit := decoded.initialTranscript_eq_output family basis output n rfl
   have hprefix : preIpaSqueezePoints
         (output.init (family.vkTranscriptRepr basis)) decoded.proof.1 n =
       preIpaSqueezePoints (output.init (family.vkTranscriptRepr basis))
@@ -2437,8 +2414,8 @@ theorem decodedRootSurface_eq_output_of_pinned {pp : ProofParams}
     decoded.proof.1 output.toAlgebraicWfProof.proof.1
     decoded.proof.2 output.toAlgebraicWfProof.proof.2 hprefix
   unfold decodedRootSurface outputRootSurface
-  rw [decoded.boundedInstanceCommitment_eq_output family basis O n rfl,
-    decodedRootQuerySource_eq_of_pinned family basis O n h5n decoded pinned,
+  rw [decoded.boundedInstanceCommitment_eq_output family basis output n rfl,
+    decodedRootQuerySource_eq_of_pinned family basis output n h5n decoded query fixed,
     hproof]
 
 /-- Annotation-decoded bad set used at one arbitrary root-query point. -/
@@ -2532,42 +2509,40 @@ theorem outputRootBad_measure_le {pp : ProofParams}
     (fun _ earlier => outputRootSurface_measure_le family basis n h5n output earlier) t O
 
 /-- A pinned annotation puts the final root surface inside the query-time decoded set. -/
-private theorem mem_queriedRootBad_of_pinned {pp : ProofParams}
+theorem mem_queriedRootBad_of_pinned {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
     (O : family.Coins) (n : Fin 11) (h5n : 5 ≤ (n : Nat))
-    (pinned : SelectedQueryRepresentationPinned
-      (family.preIpaPoint basis n (family.runOutput basis O))
-      (family.adversary basis) O
-      (preIpaRepresentationTarget (family.runOutput basis O) n))
-    (hbad : O (family.preIpaPoint basis n (family.runOutput basis O)) ∈
-      outputRootBad family basis n (family.runOutput basis O)
-        (family.preIpaPoint basis n (family.runOutput basis O)) O) :
-    O (family.preIpaPoint basis n (family.runOutput basis O)) ∈
-      queriedRootBad family basis n h5n
-        (family.preIpaPoint basis n (family.runOutput basis O)) pinned.query O := by
-  have hdecode := family.decodeStatementPrePrefix?_isSome basis O n
+    (query : AlgebraicTranscriptQuery (F := Fp) basis (family.preIpaPoint basis n output))
+    (fixed : SelectedQueryRepresentationFixed (family.preIpaPoint basis n output) query
+      (preIpaRepresentationTarget output n))
+    (hbad : O (family.preIpaPoint basis n output) ∈
+      outputRootBad family basis n output (family.preIpaPoint basis n output) O) :
+    O (family.preIpaPoint basis n output) ∈
+      queriedRootBad family basis n h5n (family.preIpaPoint basis n output) query O := by
+  have hdecode := family.decodeStatementPrePrefix?_isSome basis output n
   change (decodeStatementPrePrefix? n
-    (family.preIpaPoint basis n (family.runOutput basis O))).isSome at hdecode
+    (family.preIpaPoint basis n (output))).isSome at hdecode
   cases hdec : decodeStatementPrePrefix? n
-      (family.preIpaPoint basis n (family.runOutput basis O)) with
+      (family.preIpaPoint basis n (output)) with
   | none => simp [hdec] at hdecode
   | some decoded =>
       unfold queriedRootBad
       rw [hdec]
       dsimp only
-      have hlen : (family.preIpaPoint basis n (family.runOutput basis O)).val.length =
+      have hlen : (family.preIpaPoint basis n (output)).val.length =
           preIpaLen (AdaptiveActionStatementShape pp)
             (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) n := by
         simpa [ComputedAdaptiveActionStatementFSFamily.preIpaPoint,
           AdaptiveActionStatementOutput.prefixesPre,
           adaptiveStatementInitLength] using
           (preIpaSqueezePoints_length_eq
-            ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-            (family.runOutput basis O).toAlgebraicWfProof.proof.1
-            (family.runOutput basis O).toAlgebraicWfProof.proof.2 n)
+            (output.init (family.vkTranscriptRepr basis))
+            output.toAlgebraicWfProof.proof.1
+            output.toAlgebraicWfProof.proof.2 n)
       rw [if_pos hlen]
-      rw [decodedRootSurface_eq_output_of_pinned family basis O n h5n decoded pinned]
+      rw [decodedRootSurface_eq_output_of_pinned family basis output n h5n decoded query fixed]
       unfold outputRootBad statementPrefixBad at hbad
       split at hbad
       all_goals exact hbad
@@ -2613,8 +2588,8 @@ theorem rootBadWithoutRelation_table_le {pp : ProofParams}
             have hlabel : pinned.query = label :=
               Option.some.inj (pinned.found.symm.trans hfind)
             subst label
-            exact mem_queriedRootBad_of_pinned family basis O n h5n pinned
-              (by simpa using hbad)
+            exact mem_queriedRootBad_of_pinned family basis (family.runOutput basis O) O n h5n
+              pinned.query pinned.fixed (by simpa using hbad)
   · exact fun t label O v => queriedRootBad_update_self
       family basis n h5n t label O v
   · exact fun output t O v => outputRootBad_update_self
@@ -2722,6 +2697,37 @@ theorem outputIpaSurface_eq_straightLine {pp : ProofParams}
       ((outputIpaPolynomial_chi_step family basis j output nu chi' chi hchi).trans
         (outputIpaPolynomial_canonical_step family basis j output nu chi)))
 
+/-- At a selected statement's round point, the fallback is exactly the straight-line IPA
+quadratic root set, for any challenge vectors read at the statement's own points. -/
+theorem outputIpaFallbackBad_eq_szBadSet {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (O : family.Coins) (j : Fin (AdaptiveActionStatementShape pp).k)
+    (preChallenges : Fin 11 → Fp)
+    (roundChallenges : Fin (AdaptiveActionStatementShape pp).k → Fp)
+    (hpre : ∀ i, preChallenges i = O (family.preIpaPoint basis i output))
+    (hrounds : ∀ i, roundChallenges i = O (family.ipaPoint basis i output)) :
+    outputIpaFallbackBad family basis j output (family.ipaPoint basis j output) O =
+      szBadSet (output.toAlgebraicWfProof.straightLineIpaRootPolynomial
+        preChallenges roundChallenges j) := by
+  have hlen : (family.ipaPoint basis j output).val.length =
+      preIpaLen (AdaptiveActionStatementShape pp)
+          (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) 10 +
+        3 * (j.val + 1) := by
+    simpa [ipaPoint, AdaptiveActionStatementOutput.prefixes,
+      adaptiveIpaRoundLen, adaptiveStatementInitLength] using
+      (algebraicFullPrefixes_length_eq_adaptiveIpaRoundLen
+        (output.init (family.vkTranscriptRepr basis)) output.toAlgebraicWfProof j)
+  unfold outputIpaFallbackBad outputIpaBad
+  rw [if_pos hlen, statementIpaPreRecord_ipaPoint family basis output O j,
+    show (fun n => O (family.preIpaPoint basis n output)) = preChallenges from
+      funext fun n => (hpre n).symm]
+  exact outputIpaSurface_eq_straightLine family basis j output preChallenges
+    (statementIpaRoundRecord j (family.ipaPoint basis j output) O) roundChallenges
+    (fun i hij => (statementIpaRoundRecord_ipaPoint_before family basis output O j i hij).trans
+      (hrounds i).symm)
+
 /-- At the selected statement's actual round point, the fallback is exactly the
 straight-line IPA quadratic root set. -/
 theorem outputIpaFallbackBad_actual {pp : ProofParams}
@@ -2731,24 +2737,36 @@ theorem outputIpaFallbackBad_actual {pp : ProofParams}
     outputIpaFallbackBad family basis j (family.runOutput basis O)
         (family.ipaPoint basis j (family.runOutput basis O)) O =
       szBadSet ((family.runOutput basis O).toAlgebraicWfProof.straightLineIpaRootPolynomial
-        (family.runPreIpaReads basis O) (family.runIpaReads basis O) j) := by
-  have hlen : (family.ipaPoint basis j (family.runOutput basis O)).val.length =
+        (family.runPreIpaReads basis O) (family.runIpaReads basis O) j) :=
+  outputIpaFallbackBad_eq_szBadSet family basis (family.runOutput basis O) O j
+    (family.runPreIpaReads basis O) (family.runIpaReads basis O)
+    (fun i => family.runPreIpaReads_apply basis O i)
+    (fun i => family.runIpaReads_apply basis O i)
+
+/-- At a selected statement's pre-IPA point, the root fallback is the root surface read at the
+statement's own earlier points. -/
+theorem outputRootBad_eq_outputRootSurface {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (O : family.Coins) (n : Fin 11) (preChallenges : Fin 11 → Fp)
+    (hpre : ∀ i, preChallenges i = O (family.preIpaPoint basis i output)) :
+    outputRootBad family basis n output (family.preIpaPoint basis n output) O =
+      outputRootSurface family basis n output
+        (fun i => preChallenges (i.castLE (le_of_lt n.isLt))) := by
+  unfold outputRootBad statementPrefixBad
+  have hlen : (family.preIpaPoint basis n output).val.length =
       preIpaLen (AdaptiveActionStatementShape pp)
-          (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) 10 +
-        3 * (j.val + 1) := by
-    simpa [ipaPoint, AdaptiveActionStatementOutput.prefixes,
-      adaptiveIpaRoundLen, adaptiveStatementInitLength] using
-      (algebraicFullPrefixes_length_eq_adaptiveIpaRoundLen
-        ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-        (family.runOutput basis O).toAlgebraicWfProof j)
-  unfold outputIpaFallbackBad outputIpaBad
+        (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) n := by
+    simpa [preIpaPoint, AdaptiveActionStatementOutput.prefixesPre,
+      adaptiveStatementInitLength] using
+      (preIpaSqueezePoints_length_eq (output.init (family.vkTranscriptRepr basis))
+        output.toAlgebraicWfProof.proof.1 output.toAlgebraicWfProof.proof.2 n)
   rw [if_pos hlen]
-  rw [statementIpaPreRecord_ipaPoint family basis O j]
-  exact outputIpaSurface_eq_straightLine family basis j (family.runOutput basis O)
-    (family.runPreIpaReads basis O)
-    (statementIpaRoundRecord j (family.ipaPoint basis j (family.runOutput basis O)) O)
-    (family.runIpaReads basis O)
-    (fun i hij => statementIpaRoundRecord_ipaPoint_before family basis O j i hij)
+  apply congrArg (outputRootSurface family basis n output)
+  funext i
+  rw [statementEarlierPrefix_preIpaPoint family basis output n i]
+  exact (hpre _).symm
 
 /-- At an actual selected-statement pre-IPA point, the root fallback reads precisely the earlier
 verifier challenges. -/
@@ -2760,26 +2778,37 @@ theorem outputRootBad_actual {pp : ProofParams}
         (family.preIpaPoint basis n (family.runOutput basis O)) O =
       outputRootSurface family basis n (family.runOutput basis O)
         (fun i => family.runPreIpaReads basis O
-          (i.castLE (le_of_lt n.isLt))) := by
-  unfold outputRootBad statementPrefixBad
-  have hlen : (family.preIpaPoint basis n (family.runOutput basis O)).val.length =
+          (i.castLE (le_of_lt n.isLt))) :=
+  outputRootBad_eq_outputRootSurface family basis (family.runOutput basis O) O n
+    (family.runPreIpaReads basis O) (fun i => family.runPreIpaReads_apply basis O i)
+
+/-- At a selected statement's pre-IPA point, the semantic fallback is the semantic surface read at
+the statement's own earlier points. -/
+theorem outputSemanticBad_eq_outputSemanticSurface {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (O : family.Coins) (n : Fin 5) (preChallenges : Fin 11 → Fp)
+    (hpre : ∀ i, preChallenges i = O (family.preIpaPoint basis i output)) :
+    let n11 : Fin 11 := Fin.castLE (by omega) n
+    outputSemanticBad family basis n output (family.preIpaPoint basis n11 output) O =
+      outputSemanticSurface family basis n output
+        (fun i => preChallenges (i.castLE (le_of_lt n11.isLt))) := by
+  simp only
+  let n11 : Fin 11 := Fin.castLE (by omega) n
+  unfold outputSemanticBad
+  have hlen : (family.preIpaPoint basis n11 output).val.length =
       preIpaLen (AdaptiveActionStatementShape pp)
-        (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) n := by
+        (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) n11 := by
     simpa [preIpaPoint, AdaptiveActionStatementOutput.prefixesPre,
       adaptiveStatementInitLength] using
-      (preIpaSqueezePoints_length_eq
-        ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-        (family.runOutput basis O).toAlgebraicWfProof.proof.1
-        (family.runOutput basis O).toAlgebraicWfProof.proof.2 n)
+      (preIpaSqueezePoints_length_eq (output.init (family.vkTranscriptRepr basis))
+        output.toAlgebraicWfProof.proof.1 output.toAlgebraicWfProof.proof.2 n11)
   rw [if_pos hlen]
-  apply congrArg (outputRootSurface family basis n (family.runOutput basis O))
+  apply congrArg (outputSemanticSurface family basis n output)
   funext i
-  unfold runPreIpaReads
-  rw [statementEarlierPrefix_preIpaPoint]
-  simp only [preIpaReadsOfOutput, preIpaReadVectorOfOutput, challengeReadVector_get]
-  apply congrArg O
-  apply Subtype.ext
-  rfl
+  rw [statementEarlierPrefix_preIpaPoint family basis output n11 i]
+  exact (hpre _).symm
 
 /-- At an actual selected-statement pre-IPA point, the semantic fallback reads precisely the
 earlier verifier challenges. -/
@@ -2792,28 +2821,9 @@ theorem outputSemanticBad_actual {pp : ProofParams}
         (family.preIpaPoint basis n11 (family.runOutput basis O)) O =
       outputSemanticSurface family basis n (family.runOutput basis O)
         (fun i => family.runPreIpaReads basis O
-          (i.castLE (le_of_lt n11.isLt))) := by
-  simp only
-  let n11 : Fin 11 := Fin.castLE (by omega) n
-  unfold outputSemanticBad
-  have hlen : (family.preIpaPoint basis n11 (family.runOutput basis O)).val.length =
-      preIpaLen (AdaptiveActionStatementShape pp)
-        (adaptiveStatementInitLength (AdaptiveActionStatementShape pp)) n11 := by
-    simpa [preIpaPoint, AdaptiveActionStatementOutput.prefixesPre,
-      adaptiveStatementInitLength] using
-      (preIpaSqueezePoints_length_eq
-        ((family.runOutput basis O).init (family.vkTranscriptRepr basis))
-        (family.runOutput basis O).toAlgebraicWfProof.proof.1
-        (family.runOutput basis O).toAlgebraicWfProof.proof.2 n11)
-  rw [if_pos hlen]
-  apply congrArg (outputSemanticSurface family basis n (family.runOutput basis O))
-  funext i
-  unfold runPreIpaReads
-  rw [statementEarlierPrefix_preIpaPoint]
-  simp only [preIpaReadsOfOutput, preIpaReadVectorOfOutput, challengeReadVector_get]
-  apply congrArg O
-  apply Subtype.ext
-  rfl
+          (i.castLE (le_of_lt n11.isLt))) :=
+  outputSemanticBad_eq_outputSemanticSurface family basis (family.runOutput basis O) O n
+    (family.runPreIpaReads basis O) (fun i => family.runPreIpaReads_apply basis O i)
 
 /-- The selected statement's `x₁` surface is the normalized decoder set. -/
 theorem outputRootSurface_five {pp : ProofParams}

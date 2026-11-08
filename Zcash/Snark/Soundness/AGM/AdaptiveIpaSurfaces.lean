@@ -180,6 +180,31 @@ def adaptiveIpaQueryRepresentation
 
 /-- A pinned first annotation selects every sublist of the final represented coordinates
 literally, not merely pointwise. -/
+theorem SelectedQueryRepresentationFixed.representationsFor_eq_self_of_subset
+    {basis : AugmentedIndex (2 ^ shape.k) → VestaG}
+    {L : Nat} {t : BTranscript Fp VestaG L}
+    {query : AlgebraicTranscriptQuery (F := Fp) basis t}
+    {final subset : List (AlgebraicPoint (F := Fp) basis)}
+    (fixed : SelectedQueryRepresentationFixed t query final)
+    (hsubset : ∀ ap ∈ subset, ap ∈ final) :
+    query.representationsFor subset (fun ap hap => fixed.covered ap (hsubset ap hap)) =
+      subset := by
+  have hselected : query.representationsFor final fixed.covered = final :=
+    algebraicPointList_eq_of_maps_eq
+      (query.representationsFor_points final fixed.covered)
+      fixed.coefficients_eq
+  induction subset with
+  | nil => rfl
+  | cons ap rest ih =>
+      simp only [AlgebraicTranscriptQuery.representationsFor]
+      have hap : ap ∈ final := hsubset ap (by simp)
+      rw [query.representationOfPoint_eq_of_representationsFor_eq
+        final fixed.covered hselected ap hap]
+      congr 1
+      exact ih (fun candidate hmem => hsubset candidate (by simp [hmem]))
+
+/-- `SelectedQueryRepresentationFixed.representationsFor_eq_self_of_subset` for a pinned
+annotation, through its adversary-free content. -/
 theorem SelectedQueryRepresentationPinned.representationsFor_eq_self_of_subset
     {α : Type*} {basis : AugmentedIndex (2 ^ shape.k) → VestaG}
     {L : Nat} {t : BTranscript Fp VestaG L}
@@ -190,20 +215,8 @@ theorem SelectedQueryRepresentationPinned.representationsFor_eq_self_of_subset
     (pinned : SelectedQueryRepresentationPinned t A O final)
     (hsubset : ∀ ap ∈ subset, ap ∈ final) :
     pinned.query.representationsFor subset (fun ap hap => pinned.covered ap (hsubset ap hap)) =
-      subset := by
-  have hselected : pinned.query.representationsFor final pinned.covered = final :=
-    algebraicPointList_eq_of_maps_eq
-      (pinned.query.representationsFor_points final pinned.covered)
-      pinned.coefficients_eq
-  induction subset with
-  | nil => rfl
-  | cons ap rest ih =>
-      simp only [AlgebraicTranscriptQuery.representationsFor]
-      have hap : ap ∈ final := hsubset ap (by simp)
-      rw [pinned.query.representationOfPoint_eq_of_representationsFor_eq
-        final pinned.covered hselected ap hap]
-      congr 1
-      exact ih (fun candidate hmem => hsubset candidate (by simp [hmem]))
+      subset :=
+  pinned.fixed.representationsFor_eq_self_of_subset hsubset
 
 /-- Deterministic point selection is insensitive to the proof terms establishing coverage. -/
 theorem AlgebraicTranscriptQuery.representationsForPoints_congr
