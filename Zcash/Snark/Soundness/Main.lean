@@ -66,13 +66,15 @@ theorem deployedAccepts_congr_instanceCommitment [DecidableEq G] [Inhabited G]
     ps ch hcommit]
   exact h
 
-/-- **Byte-level deployed acceptance.** The pinned description describes the designated canonical
-key and the key actually checked agrees with it on every verifier-reachable field
-(`Describes`); no absorbed instance commitment is the identity, which halo2's
-`common_point` refuses where the total `pointBytes` would encode it as `(0, 0)`; the whole proof
-byte string parses canonically and with no unread suffix; and the existing typed `DeployedAccepts`
-predicate holds at challenges derived by the deployed BLAKE2b transcript, opened with
-`keyDigest pinnedVkDescription`.
+/-- **Byte-level deployed acceptance.** Four conjuncts:
+
+* the pinned description describes the designated canonical key, and the key actually checked
+  agrees with it on every verifier-reachable field (`Describes`);
+* no absorbed instance commitment is the identity, which halo2's `common_point` refuses where the
+  total `pointBytes` would encode it as `(0, 0)`;
+* the whole proof byte string parses canonically and with no unread suffix; and
+* the existing typed `DeployedAccepts` predicate holds at challenges derived by the deployed
+  BLAKE2b transcript, opened with `keyDigest pinnedVkDescription`.
 
 The separate `canonicalVk` argument is necessary because Halo2's pinned description omits derived
 runtime fields. `Describes` checks its represented fields against `canonicalVk` and binds every
@@ -81,7 +83,7 @@ partition, and common-evaluation indices, to that key. It remains a relation: th
 passes the same circuit-derived key in both key positions and separately pins the exact
 exporter-emitted description. `Describes` and the identity exclusion are conjuncts that are not
 consumed by any theorem: `accepts_of_acceptsBytes` discards both, since the soundness direction
-(Rust accepts, hence the model accepts) needs neither, and `rustAcceptsRefinesLeanRaw` names the
+(Rust accepts, hence the model accepts) needs neither. `rustAcceptsRefinesLeanRaw` names the
 Lean-derived key directly. They narrow this predicate towards halo2's behaviour, and the honest
 captures discharge them by evaluation as evidence for the key identification the deployment record
 assumes (#232).

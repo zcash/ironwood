@@ -10,7 +10,7 @@ representation and every resulting instance commitment are then absorbed before 
 advice commitments and the first challenge. Binding the key here means binding its opaque transcript
 representation; this model itself does not connect `vkTranscriptRepr` to the fields of `vk`. At
 the byte level `DeployedAcceptsBytes` does, through `Describes` (`Verifier/KeyDigest.lean`), and
-the captures check it: each family's `Transcript.lean` derives the digest from the
+the captures check it. Each family's `Transcript.lean` derives the digest from the
 exporter-emitted pinned key description, and `Fixtures/PinnedKey.lean` reads the description's
 fields back against the captured key, which the keygen certificate connects to the derived key. The
 fixture inputs and collision resistance of the reduced digest — no other key hashing to it modulo

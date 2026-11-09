@@ -6,24 +6,23 @@ import Zcash.Snark.Verifier.Key
 
 The first element halo2 absorbs into the Fiat–Shamir transcript is `transcript_repr`, the
 verifying key's digest. `VerifyingKey::from_parts` computes it as BLAKE2b-512, personalized
-`Halo2-Verify-Key`, over the key's *pinned description* — the compact `Debug` rendering of
-`PinnedVerificationKey` — prefixed by that text's byte length as a little-endian `u64`, and
-reduces the digest modulo `p` exactly as a squeeze does. This module recomputes it (`keyDigest`)
-and reads the pinned description back into the verifier's own vocabulary, so the digest that
-opens the transcript can be checked to be the digest of the key Lean derives rather than a
-captured scalar.
+`Halo2-Verify-Key`, over the key's *pinned description*, the compact `Debug` rendering of
+`PinnedVerificationKey`, prefixed by that text's byte length as a little-endian `u64`. The digest
+is reduced modulo `p` exactly as a squeeze is. This module recomputes it (`keyDigest`) and reads
+the pinned description back into the verifier's own vocabulary. So the digest that opens the
+transcript can be checked to be the digest of the key Lean derives rather than a captured scalar.
 
 The description is Rust's derived-`Debug` value language: atoms (identifiers, numbers,
 `0x`-hex, quoted strings), `Name { field: value, … }` structs, `Name(a, b)` tuples, bare
 `(a, b)` tuples, and `[a, b]` lists. `DebugValue.parse?` reads it with whitespace ignored, so
 both the compact form that is hashed and the pretty form orchard commits parse to the same
-tree; `DebugValue.renderCompact` writes the compact form back, which is what `{:?}` prints for
+tree. `DebugValue.renderCompact` writes the compact form back, which is what `{:?}` prints for
 these shapes: `Name { f: v, g: w }`, `Name(a, b)`, `[a, b]`, and a bare `Name` for a
 field-less struct or argument-less tuple. The extractors at the end turn the pinned fields into
 `Expr`, `ColumnRef`, query layouts, and Vesta points — the shapes `VerifyingKey` carries.
 
 The parser and digest computation are checked, but the exporter-emitted string remains a deployment
-input: the fixture checks that hashing that exact string reproduces the captured digest, and
+input. The fixture checks that hashing that exact string reproduces the captured digest, and
 `Describes` below relates its represented fields to a designated canonical key and the key used by
 the verifier. It does not reconstruct Rust's unique `Debug` output from a key. In particular,
 proof-reader dimensions and printed keygen-only values have separate provenance, stated below
@@ -41,7 +40,7 @@ deployment record's `pinnedVkDigestAgrees` ties it to the family's digest. The p
 extractors, and `Describes` are not consumed by any theorem. `DeployedAcceptsBytes` carries
 `Describes` as a conjunct, but the bridge into the typed family acceptance
 (`accepts_of_acceptsBytes`) discards it, and the refinement assumption `rustAcceptsRefinesLeanRaw`
-names the Lean-derived key directly, so the identification of Rust's verifying key with that key is
+names the Lean-derived key directly. So the identification of Rust's verifying key with that key is
 assumed rather than derived from the description. The honest captures discharge `Describes` by
 evaluation; that is evidence for the assumption, not a theorem. Making the description load-bearing
 —stating byte acceptance and the refinement assumption at the key parsed from it— is tracked in
@@ -217,6 +216,7 @@ def hasStructFields (v : DebugValue) (typeName : String) (fieldNames : List Stri
   | .struct actual fields => actual = typeName ∧ fields.map Prod.fst = fieldNames
   | _ => False
 
+/-- `hasStructFields` is decidable by cases on the value. -/
 instance (v : DebugValue) (typeName : String) (fieldNames : List String) :
     Decidable (hasStructFields v typeName fieldNames) := by
   cases v with
@@ -599,39 +599,45 @@ def Describes {shape : CircuitShape} (s : String)
     (canonical used : VerifyingKey shape Fp VestaG) : Prop :=
   DescriptionFieldsMatch s canonical ∧ VerifyingKeyAgrees canonical used
 
-/-- `Describes` is a finite conjunction of decidable equations, so captures and key mutations can
-be checked by evaluation. -/
+/-- `VerifyingKeyAgrees` is decidable: its equations range over the key's finite layouts. -/
 instance decidableVerifyingKeyAgrees {shape : CircuitShape}
     (canonical used : VerifyingKey shape Fp VestaG) :
     Decidable (VerifyingKeyAgrees canonical used) := by
   unfold VerifyingKeyAgrees
   infer_instance
 
+/-- `DescriptionSyntaxCanonical` is decidable: the parse and the structure checks are. -/
 instance decidableDescriptionSyntaxCanonical (s : String) :
     Decidable (DescriptionSyntaxCanonical s) := by
   unfold DescriptionSyntaxCanonical
   infer_instance
 
+/-- `DescriptionCoreFieldsMatch` is decidable: a finite conjunction of decidable equations. -/
 instance decidableDescriptionCoreFieldsMatch {shape : CircuitShape} (s : String)
     (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionCoreFieldsMatch s vk) := by
   unfold DescriptionCoreFieldsMatch
   infer_instance
 
+/-- `DescriptionArgumentFieldsMatch` is decidable: a finite conjunction of decidable equations. -/
 instance decidableDescriptionArgumentFieldsMatch {shape : CircuitShape} (s : String)
     (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionArgumentFieldsMatch s vk) := by
   unfold DescriptionArgumentFieldsMatch
   infer_instance
 
+/-- `DescriptionCommitmentsMatch` is decidable: a finite conjunction of decidable equations. -/
 instance decidableDescriptionCommitmentsMatch {shape : CircuitShape} (s : String)
     (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionCommitmentsMatch s vk) := by
   unfold DescriptionCommitmentsMatch
   infer_instance
 
+/-- `DescriptionFieldsMatch` is decidable: the conjunction of the three decidable field checks. -/
 instance decidableDescriptionFieldsMatch {shape : CircuitShape} (s : String)
     (vk : VerifyingKey shape Fp VestaG) : Decidable (DescriptionFieldsMatch s vk) := by
   unfold DescriptionFieldsMatch
   infer_instance
 
+/-- `Describes` is a finite conjunction of decidable equations, so captures and key mutations can
+be checked by evaluation. -/
 instance decidableDescribes {shape : CircuitShape} (s : String)
     (canonical used : VerifyingKey shape Fp VestaG) : Decidable (Describes s canonical used) := by
   unfold Describes

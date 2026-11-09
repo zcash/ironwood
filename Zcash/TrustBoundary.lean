@@ -2375,8 +2375,8 @@ assert_axioms Zcash.Snark.LEOS2IP_digest_lt
 
 -- The proof-string byte layer (`Verifier/ProofBytes.lean`): canonical decoding of scalars and
 -- points in both directions, lifted through compound readers to the theorem that every successful
--- whole-proof parse reconstructs exactly the consumed serialization, and the byte accounting
--- that fixes every parse's consumed count at `proofLength` — from which truncation and
+-- whole-proof parse reconstructs exactly the consumed serialization. The byte accounting fixes
+-- every parse's consumed count at `proofLength`, from which truncation and
 -- non-canonical-final-scalar rejection are theorems. Point decoding runs
 -- Tonelli–Shanks on `vestaBase`, whose validity certificate is upstream compiler trust.
 assert_computable Zcash.Snark.decodeScalar32 +choice
@@ -2456,8 +2456,8 @@ assert_computable Zcash.Snark.DebugValue.point? +choice
 -- `Describes` relates a description to a designated canonical key and to the key the verifier uses
 -- — the relation `DeployedAcceptsBytes` carries. The description must be one exact compact
 -- derived-`Debug` value (`DescriptionSyntaxCanonical`: struct names and field sequences pinned, so
--- duplicated, reordered, and unknown fields are rejected) whose represented fields read back to the
--- canonical key under canonical in-range field literals (`canonicalFieldNat?`), query-column
+-- duplicated, reordered, and unknown fields are rejected). Its represented fields must read back to
+-- the canonical key under canonical in-range field literals (`canonicalFieldNat?`), query-column
 -- bounds, and equal permutation column/commitment arities. The used key must separately agree with
 -- the canonical one on every verifier-reachable field (`VerifyingKeyAgrees`), including fields
 -- halo2's description omits: `blindingFactors`, `delta`, `chunkLen`, and the permutation partition.

@@ -7,9 +7,9 @@ import Zcash.Snark.Verifier.KeyDigest
 The transcript's first element is the verifying key's digest, `transcript_repr`. The pinned
 Halo2 exporter emits the exact compact `Debug` string it hashed as
 `Fixture.capturedPinnedKeyDescription`. This module reads that string back through `DebugValue`
-and checks that its represented verifier fields are the captured key's fields — the domain,
-column counts, gates, query layouts, permutation columns, lookups, and both commitment vectors —
-with the moduli, `extended_k`, `num_selectors`, `constants`, and `minimum_degree` checked against
+and checks that its represented verifier fields are the captured key's fields: the domain,
+column counts, gates, query layouts, permutation columns, lookups, and both commitment vectors.
+The moduli, `extended_k`, `num_selectors`, `constants`, and `minimum_degree` are checked against
 the literals the deployed circuit has, since the verifier's key carries no counterpart for them.
 
 Each family's `Transcript.lean` hashes its own exporter-emitted string and checks the result at
@@ -21,13 +21,12 @@ captured key is the derived key (`Keygen/Certificate.lean`), so every comparison
 to `derivedVk`.
 
 The reading below is the relation `Describes` (`Verifier/KeyDigest.lean`) checks between a
-description and a designated key, stated here field by field: `pinned`, `cs`, and `domain` are its
+description and a designated key, stated here field by field. `pinned`, `cs`, and `domain` are its
 `descriptionValue`, `descriptionCs`, and `descriptionDomain`, and the permutation columns pass
-through its `toQuerySpace`. Each honest family discharges `Describes` for its own emitted string —
-the two families emit the same one (`PostNu63Fixture.captures_use_same_pinnedKeyDescription`) — as
-the key-identification conjunct of `DeployedAcceptsBytes`
-(`Fixtures/*/Honest/ProofBytes.lean`); the keygen-only literals checked here have no key
-counterpart and stay fixture pins.
+through its `toQuerySpace`. Each honest family discharges `Describes` for its own emitted string as
+the key-identification conjunct of `DeployedAcceptsBytes` (`Fixtures/*/Honest/ProofBytes.lean`);
+the two families emit the same string (`PostNu63Fixture.captures_use_same_pinnedKeyDescription`).
+The keygen-only literals checked here have no key counterpart and stay fixture pins.
 
 Cross-key binding remains outside these theorems. In the random-oracle model, collision
 resistance of the reduced digest `keyDigest` follows from modeling BLAKE2b as a random oracle
@@ -146,10 +145,10 @@ theorem fixed_queries_eq :
 
 /-- The permutation argument's columns are the captured chunks' columns, in order. The pinned
 description lists raw column indices where the captured chunks name each column by its
-rotation-0 query slot, so the comparison passes each pinned column through the same
+rotation-0 query slot. So the comparison passes each pinned column through the same
 `get_any_query_index` translation the deployed verifier applies when it reads a permutation
-column's evaluation (`toQuerySpace`, through the captured query layouts, themselves checked
-against the pinned ones by the `*_queries_eq` theorems). -/
+column's evaluation (`toQuerySpace`). That translation goes through the captured query layouts,
+themselves checked against the pinned ones by the `*_queries_eq` theorems. -/
 theorem permutation_columns_eq :
     (((cs.field? "permutation" >>= (·.field? "columns")) >>= listOf? columnRef?)
         >>= fun l => l.mapM (toQuerySpace Fixture.vk))

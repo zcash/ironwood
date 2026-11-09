@@ -39,6 +39,7 @@ separately pins the printed keygen-only fields. -/
 theorem capturedPinnedKeyDescription_describes : Describes capturedPinnedKeyDescription vk vk := by
   native_decide
 
+/-- Replace the value of field `fieldName` in a struct; any other value is returned unchanged. -/
 private def replaceStructField (fieldName : String) (replacement : DebugValue) :
     DebugValue → DebugValue
   | .struct name fields => .struct name (fields.map fun field =>
@@ -63,6 +64,8 @@ theorem capturedPinnedKeyDescription_rejects_omitted_fixed_coverage :
 canonical `vk`; `VerifyingKeyAgrees` then rejects a different verifier-used key. They do not claim
 that fields omitted from Rust's pinned description are reconstructed from its text. -/
 
+/-- Changing the used key's blinding count breaks `Describes`, which binds it to the canonical
+key's. -/
 theorem capturedPinnedKeyDescription_rejects_changed_used_blindingFactors :
     ¬ Describes capturedPinnedKeyDescription vk
       { vk with blindingFactors := vk.blindingFactors + 1 } := by
@@ -70,18 +73,21 @@ theorem capturedPinnedKeyDescription_rejects_changed_used_blindingFactors :
   have hEq := h.blindingFactors_eq
   simp at hEq
 
+/-- Changing the used key's permutation delta breaks `Describes`. -/
 theorem capturedPinnedKeyDescription_rejects_changed_used_delta :
     ¬ Describes capturedPinnedKeyDescription vk { vk with delta := vk.delta + 1 } := by
   intro h
   have hEq := h.delta_eq
   simp at hEq
 
+/-- Changing the used key's permutation chunk width breaks `Describes`. -/
 theorem capturedPinnedKeyDescription_rejects_changed_used_chunkLen :
     ¬ Describes capturedPinnedKeyDescription vk { vk with chunkLen := vk.chunkLen + 1 } := by
   intro h
   have hEq := h.chunkLen_eq
   simp at hEq
 
+/-- Emptying the used key's permutation partition breaks `Describes`. -/
 theorem capturedPinnedKeyDescription_rejects_changed_used_permutationChunks :
     ¬ Describes capturedPinnedKeyDescription vk { vk with permutationChunks := [] } := by
   intro h
