@@ -146,23 +146,27 @@ theorem BatchWitnessV.acceptedPolynomial_eq_online_of_query {pp : ProofParams}
   rw [hroute]
   exact hmember
 
-/-- An active selected-statement commitment available at stage `n` has an explicit point in the
-selected semantic source. -/
-theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
+/-- View-level form of `adaptiveStatementActive_point_mem_stage`.  The statement,
+proof, and challenges may come from a caller-supplied shared execution rather
+than from this fixed-count family's own adversary.  This is the deterministic
+bridge used when an outer adversary chooses the Action count adaptively. -/
+theorem adaptiveStatementActive_point_mem_stageV {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
     (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
-    (O : family.Coins) (n : Fin 5) (id : CommitmentId)
-    (hactive : adaptiveActionCommitmentActive (AdaptiveActionStatementShape pp) (adaptiveActionStatementVk pp basis) id)
+    (view : RunView pp family basis) (n : Fin 5) (id : CommitmentId)
+    (hactive : adaptiveActionCommitmentActive (AdaptiveActionStatementShape pp)
+      (adaptiveActionStatementVk pp basis) id)
     (havailable : adaptiveActionCommitmentAvailable n id) :
     ∃ P,
       assembledCommitment (adaptiveActionStatementVk pp basis)
-          (adaptiveActionStatementInstanceCommitment pp basis
-            (family.runOutput basis O).inputs)
-          (family.runProof basis O).proof.1 (family.runRecord basis O) id = .point P ∧
-        ∃ ap ∈ semanticRepresentationTarget (family.runOutput basis O) n ++
+          (adaptiveActionStatementInstanceCommitment pp basis view.output.inputs)
+          view.output.toAlgebraicWfProof.proof.1
+          (chRecord (k := (AdaptiveActionStatementShape pp).k) view.pre view.rounds) id =
+            .point P ∧
+        ∃ ap ∈ semanticRepresentationTarget view.output n ++
             family.fixedRepresentations basis,
           ap.point = P := by
-  let output := family.runOutput basis O
+  let output := view.output
   let data := output.proofData
   let ic := adaptiveActionStatementInstanceCommitment pp basis output.inputs
   cases id with
@@ -192,7 +196,7 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
         rw [finFnG, dif_pos hcolumn]
-        simp only [ap, data, output, runProof]
+        simp only [ap, data, output]
         rfl
       · apply List.mem_append.mpr
         apply Or.inl
@@ -212,7 +216,7 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
         rw [finFnG, dif_pos hs]
-        simp only [ap, data, output, runProof]
+        simp only [ap, data, output]
         rfl
       · apply List.mem_append.mpr
         apply Or.inl
@@ -228,7 +232,7 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
         rw [finFnG, dif_pos hl]
-        simp only [ap, data, output, runProof]
+        simp only [ap, data, output]
         rfl
       · apply List.mem_append.mpr
         apply Or.inl
@@ -244,7 +248,7 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
         rw [finFnG, dif_pos hl]
-        simp only [ap, data, output, runProof]
+        simp only [ap, data, output]
         rfl
       · apply List.mem_append.mpr
         apply Or.inl
@@ -260,7 +264,7 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       refine ⟨ap.point, ?_, ap, ?_, rfl⟩
       · rw [assembledCommitment, dif_pos hp]
         rw [finFnG, dif_pos hl]
-        simp only [ap, data, output, runProof]
+        simp only [ap, data, output]
         rfl
       · apply List.mem_append.mpr
         apply Or.inl
@@ -279,6 +283,26 @@ theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
       simp only [assembledCommitment, finFnG, dif_pos hc]
   | vanishingH => exact False.elim hactive
   | randomPoly => exact False.elim hactive
+
+/-- An active selected-statement commitment available at stage `n` has an explicit point in the
+selected semantic source. -/
+theorem adaptiveStatementActive_point_mem_stage {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (O : family.Coins) (n : Fin 5) (id : CommitmentId)
+    (hactive : adaptiveActionCommitmentActive (AdaptiveActionStatementShape pp) (adaptiveActionStatementVk pp basis) id)
+    (havailable : adaptiveActionCommitmentAvailable n id) :
+    ∃ P,
+      assembledCommitment (adaptiveActionStatementVk pp basis)
+          (adaptiveActionStatementInstanceCommitment pp basis
+            (family.runOutput basis O).inputs)
+          (family.runProof basis O).proof.1 (family.runRecord basis O) id = .point P ∧
+        ∃ ap ∈ semanticRepresentationTarget (family.runOutput basis O) n ++
+            family.fixedRepresentations basis,
+          ap.point = P := by
+  simpa only [runView_output, runView_pre, runView_rounds, family.runRecord_eq_chRecord] using
+    adaptiveStatementActive_point_mem_stageV family basis (runView family basis O) n id hactive
+      havailable
 
 /-- View-level semantic-stage facts an empty source-mismatch finder certifies: every active
 commitment available at stage `n` resolves to a stage representation point, and the full
@@ -310,6 +334,63 @@ structure SemanticStageFacts {pp : ProofParams}
         (semanticRepresentationTarget view.output n ++
           family.fixedRepresentations basis) P
 
+/-- An empty retained-output source finder means every one of its five source
+comparisons is empty. -/
+theorem semanticSourceMismatchRelationFinderOfOutput_none_at {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (output : AdaptiveActionStatementOutput pp basis (family.fixedRepresentations basis))
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis output = none)
+    (n : Fin 5) :
+    family.semanticSourceMismatchAtOfOutput? basis output n = none := by
+  have hall := (ComputedAdaptiveOnlineAGMFSFamily.firstAdaptiveRelation?_eq_none_iff _).1 hnone
+  apply hall
+  exact List.mem_ofFn.mpr ⟨n, rfl⟩
+
+/-- Outside the retained output's source-collision finder, the complete source
+and each semantic-stage source define the same polynomial at every stage point. -/
+theorem semanticStagePolynomialV_eq_full {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis view.output = none)
+    (n : Fin 5) (P : VestaG)
+    (hP : ∃ ap ∈ semanticRepresentationTarget view.output n ++
+      family.fixedRepresentations basis, ap.point = P) :
+    onlinePointPolynomial
+        (view.output.proofData.algebraicProof.preX1AssemblySource
+          (adaptiveStatementInstanceRepresentationList
+              view.output.instanceRepresentations ++
+            family.fixedRepresentations basis)) P =
+      onlinePointPolynomial
+        (semanticRepresentationTarget view.output n ++
+          family.fixedRepresentations basis) P := by
+  apply onlinePointPolynomial_eq_of_sourceMismatch_none
+  · intro ap hap
+    rw [semanticRepresentationTarget, List.append_assoc] at hap
+    exact AlgebraicProofString.actionStageSource_subset_preX1AssemblySource
+      view.output.proofData.algebraicProof
+      (adaptiveStatementInstanceRepresentationList
+          view.output.instanceRepresentations ++ family.fixedRepresentations basis)
+      n ap hap
+  · exact family.semanticSourceMismatchRelationFinderOfOutput_none_at
+      basis view.output hnone n
+  · exact hP
+
+/-- A source-finder verdict on an arbitrary shared run view supplies the same
+semantic-stage facts as the original table-indexed execution. -/
+theorem semanticStageFacts_of_sourceFinderV_none {pp : ProofParams}
+    (family : ComputedAdaptiveActionStatementFSFamily pp)
+    (basis : AugmentedIndex (2 ^ (AdaptiveActionStatementShape pp).k) → VestaG)
+    (view : RunView pp family basis)
+    (hnone : family.semanticSourceMismatchRelationFinderOfOutput basis view.output = none) :
+    family.SemanticStageFacts basis view := by
+  constructor
+  · intro n id hactive havailable
+    exact family.adaptiveStatementActive_point_mem_stageV basis view n id hactive havailable
+  · intro n P hmem
+    exact family.semanticStagePolynomialV_eq_full basis view hnone n P hmem
+
 /-- An empty source-mismatch finder certifies the stage facts at the selected run's view. -/
 theorem semanticStageFacts_of_sourceFinder_none {pp : ProofParams}
     (family : ComputedAdaptiveActionStatementFSFamily pp)
@@ -317,15 +398,8 @@ theorem semanticStageFacts_of_sourceFinder_none {pp : ProofParams}
     (O : family.Coins)
     (hsource : family.semanticSourceMismatchRelationFinder basis O = none) :
     family.SemanticStageFacts basis (runView family basis O) := by
-  constructor
-  · intro n id hactive havailable
-    simpa only [runView_output, runView_pre, runView_rounds,
-      family.runRecord_eq_chRecord] using
-      adaptiveStatementActive_point_mem_stage family basis O n id hactive havailable
-  · intro n P hmem
-    simpa only [runView_output] using
-      family.semanticStagePolynomial_eq_full basis O hsource n P
-        (by simpa only [runView_output] using hmem)
+  exact family.semanticStageFacts_of_sourceFinderV_none basis (runView family basis O)
+    (by simpa only [runView_output, semanticSourceMismatchRelationFinderOfOutput_eq] using hsource)
 
 
 /-- On an accepted selected-statement decode, every active commitment available at a semantic

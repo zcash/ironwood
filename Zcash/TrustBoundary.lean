@@ -18,6 +18,7 @@ import Zcash.Security.Ledger.ExtractionArm
 import Zcash.Security.Ledger.ExtractionKnowledgeError
 import Zcash.Security.Ledger.ValueRelationArm
 import Zcash.Security.Ledger.ConservationExperiment
+import Zcash.Security.Ledger.AdaptiveActionReduction
 import Zcash.Security.Ledger.IntegrityExperiment
 import Zcash.Security.RedDSA.Basic
 import Zcash.Security.RedDSA.Extraction
@@ -85,6 +86,7 @@ import Zcash.Snark.Soundness.AGM.AdaptiveIpaSurfaces
 import Zcash.Snark.Soundness.AGM.AdaptiveRootSurfaces
 import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
 import Zcash.Snark.Soundness.Action.AdaptiveStatementInhabitant
+import Zcash.Snark.Soundness.Action.AdaptiveCountSurfaces
 import Zcash.Snark.Soundness.Oracle.Challenge255
 import Zcash.Snark.Soundness.Composition.ZeroBasisAcceptance
 import Zcash.Snark.Soundness.Action.DeploymentRecord
@@ -857,11 +859,17 @@ The composed adversary model, with its data chain computable end to end: the led
 machine's requests are assembled with the extracted ledger data into the annotated
 chain (`assembleTx`, `assembleChain`), and the constructed annotated adversary runs
 the ledger machine and assembles its output (`toLA`). The laws (`runsLaw`,
-`toIdealizedKS`) are noncomputable measures over that chain. The `_of_dlogProfiles`
-endpoints discharge the per-slot-and-size knowledge hypotheses against the
-adaptive-statement capstone and carry every relation arm in the single combined term
-(`combinedDLRAdvantage`, over the combined deployed basis), with no named-ε
-hypotheses; only the knowledge arm keeps the `k * maxActions` factor. -/
+`toIdealizedKS`) are noncomputable measures over that chain. The proofs of every chain
+position come from one shared adaptive-count Action execution, so the Action
+discrete-log term is charged once, for its combined relation finder, and the number of
+chain positions multiplies only the selected count's statistical residual and the bridge
+escapes (`extractionFailureEvent_measure_le`). The statistical residual is priced over the
+shared table (`Family.positionStatisticalFailureEvent_prob_le`, from the capstone
+`orchard_action_adaptiveCount_statistical_error_bound`). That is why these endpoints carry
+the captured key's certificate and the degree caps read off it: the per-count surface
+bounds are stated against the captured key. The `_combinedDLR` endpoints carry every
+ledger-side relation arm in the single combined term (`combinedDLRAdvantage`, over the
+combined deployed basis). -/
 
 assert_computable Zcash.Security.Ledger.OrchardExtractionExperiment.ExtractionBalanceAdversary.assembleTx +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -875,68 +883,73 @@ assert_computable Zcash.Security.Ledger.OrchardExtractionExperiment.ExtractionBa
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.Family.positionStatisticalFailureEvent_prob_le +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.ExtractionBalanceAdversary.extractionFailureEvent_measure_le +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceIntegrityExtraction_measure_le +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceConservationExtraction_measure_le +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardShieldedBalanceCapExtraction_measure_le +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.knowledgeFailureUnion_measure_le +native(
-  CompElliptic.Fields.Pasta.pallasBase,
-  Zcash.Snark.Fixture.vk_chunk_width_le,
-  Zcash.Snark.Fixture.vk_gates_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_input_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.Family.extractionFailureEvent_measure_le +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.Family.knowledgeFailureEvent_measure_le +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.ExtractionBalanceAdversary.knowledgeFailure_measure_le +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Keygen.certificate,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.Model.challengeTableExperiment_badFiberAt_measure_le
-assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.runKnowledgeFailure_measure_le_of_dlogProfile +native(
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceIntegrityExtraction_measure_le_combinedDLR +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  Zcash.Snark.Fixture.vk_chunk_width_le,
-  Zcash.Snark.Fixture.vk_gates_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_input_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceIntegrityExtraction_measure_le_of_dlogProfiles +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceConservationExtraction_measure_le_combinedDLR +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  Zcash.Snark.Fixture.vk_chunk_width_le,
-  Zcash.Snark.Fixture.vk_gates_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_input_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardBalanceConservationExtraction_measure_le_of_dlogProfiles +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardShieldedBalanceCapExtraction_measure_le_combinedDLR +native(
   CompElliptic.Fields.Pasta.pallasBase,
-  Zcash.Snark.Fixture.vk_chunk_width_le,
-  Zcash.Snark.Fixture.vk_gates_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_input_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_table_degree_le,
+  Zcash.Snark.Fixture.vk_chunk_width_le, Zcash.Snark.Fixture.vk_gates_degree_le,
+  Zcash.Snark.Fixture.vk_lookup_input_degree_le, Zcash.Snark.Fixture.vk_lookup_table_degree_le,
   Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
-assert_axioms Zcash.Security.Ledger.OrchardExtractionExperiment.orchardShieldedBalanceCapExtraction_measure_le_of_dlogProfiles +native(
-  CompElliptic.Fields.Pasta.pallasBase,
-  Zcash.Snark.Fixture.vk_chunk_width_le,
-  Zcash.Snark.Fixture.vk_gates_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_input_degree_le,
-  Zcash.Snark.Fixture.vk_lookup_table_degree_le,
-  Zcash.Snark.Keygen.certificate,
-  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
-  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Binding-signature relation reductions
 
@@ -1437,8 +1450,9 @@ assert_axioms Zcash.Snark.hstab_of_xPrefixDetermined +native(
 assert_axioms Zcash.Snark.preXSqueezePoint_inj
 -- Separation across action counts (`Soundness/FiatShamir/ActionCount.lean`), at the typed level:
 -- the schedule's oracle locality, the disjointness of the pre-`θ` cones at different counts, and
--- the reprogramming corollary. This is the fact the extraction experiment's per-size Fiat–Shamir
--- tables rest on; its consumption in that experiment's sample space is #224.
+-- the reprogramming corollary. The extraction experiment samples one oracle table over a domain
+-- covering every action count, so it does not consume this separation; it remains the statement
+-- of what the deployed schedules guarantee at the typed level.
 assert_axioms Zcash.Snark.deriveChallenges_congr_of_agree_on_cone
 assert_axioms Zcash.Snark.preTheta_not_prefix_of_numProofs_lt
 assert_axioms Zcash.Snark.preTheta_cones_disjoint
@@ -2004,6 +2018,25 @@ assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveSt
 assert_computable Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeExtractor +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+-- The adaptive-count reduction: the action count is part of one shared adversary output; the
+-- selected fixed-count machinery consumes that retained run; and the ledger combines every
+-- emitted chain position's relation into one finder, which a single textbook discrete-log
+-- hypothesis bounds.
+assert_computable Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedRelationFinder +choice +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_computable Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedKnowledgeExtractor +choice +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_computable Zcash.Security.Ledger.AdaptiveActionReduction.Family.combinedRelationFinder +choice +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedKnowledgeFailureEvent_subset +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerKnowledgeFailureEvent_subset +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- Pin the zero-query adversary that witnesses the adaptive-statement interface is inhabited.
 assert_computable Zcash.Snark.zeroAdaptiveStatementFamily +choice +native(
   CompElliptic.Fields.Pasta.pallasBase,
@@ -2279,6 +2312,17 @@ assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.queriedSemanti
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statementLabeledPrefixBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statementPrefixBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.adaptiveRootSurfaceAt_measure_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+-- The same bad sets over the shared adaptive-count table, where the count is read off the query
+-- point's length and every count is priced at the largest count's budget; the two `iUnion` lemmas
+-- are the generic measure bounds for a union indexed by a length equation or a proposition.
+assert_axioms Zcash.Snark.iUnion_length_measure_le
+assert_axioms Zcash.Snark.iUnion_prop_measure_le
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedRootBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputRootBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedSemanticBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputSemanticBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedIpaBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputIpaBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Probability bounds spelled `_prob_le`
 
@@ -2293,7 +2337,14 @@ assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineRootZ
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineDeployedRoots_prob_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintBadX_prob_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statisticalSurfaceEvent_prob_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedStatisticalFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailure_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.event_prob_le_of_subset +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerFailureEvent_prob_le_uniform +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerKnowledgeFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerExtractionFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.combinedRelationEvent_prob_le_of_textbookDL +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Probability bounds qualified by a premise or an instance
 

@@ -4,7 +4,7 @@ The [proof map](proof-map.md) traces *verifier knowledge soundness* — the depl
 under `Zcash/Snark/`. This page is its companion for the other half of the development: the
 protocol **security properties** under `Zcash/Security/`. It covers:
 * the top-level capstones — the *ledger-model security games* of *Balance integrity*
-  (`orchardBalanceIntegrityExtraction_measure_le_of_dlogProfiles`), *Spendability*
+  (`orchardBalanceIntegrityExtraction_measure_le_combinedDLR`), *Spendability*
   (`faerieGoldCore`, `validLedger_append`), and *Spend authority*
   (`orchardSpendAuthority_measure_le`);
 * how each capstone connects, by reduction via intermediate security properties such as
@@ -134,23 +134,35 @@ together with the deployed violation events.
 The `_idealizedks` endpoints remain, stated directly over that annotated model —their
 names mark it— and the composed capstones consume them at the constructed adversary.
 
-On the composed route to the Balance goals, the `_of_dlogProfiles` endpoints carry no
-per-arm hypotheses at all. The knowledge arm is discharged by the adaptive-statement
-capstone, applied once per slot-size pair, and every relation arm —the per-pair escapes,
-the Sinsemilla reducer's relations, and the value-DLR finder's— is carried by the single
-term `combinedDLRAdvantage`: one event over the composed deployed experiment, whose
-samples all compute nontrivial relations over the combined deployed basis
-(`orchardPoints`). The k·maxActions factor multiplies only the knowledge arm and is
-tracked as [#214](https://github.com/zcash/ironwood/issues/214). The deployed forms
-state validity at the deployed value bases: the value commitment is definitionally the
-deployed one, with no reference-string step on the value side. Their accepted
-trade-offs —the binding challenge hash as a random oracle, the per-size finite
-presentation of the Fiat–Shamir oracle, and elided byte encodings— are documented at
-`IdealizedKSBalanceAdversary.deployedViolationEvent`. For Spendability and Spend
-Authority the annotations remain a modeling assumption: those games are not yet
-composed with the circuit layer, and
-[#155](https://github.com/zcash/ironwood/issues/155) tracks the oracle-machine layer
-for their capstone slots.
+On the composed route to the Balance goals, the `_combinedDLR` endpoints carry one
+hypothesis per kind of error. The Action discrete-log term is charged once: the proofs of
+every chain position come from one shared adaptive-count execution, whose combined
+relation finder (`combinedRelationFinder`) is the one discrete-log adversary, so neither
+`numChainPositions` nor `maxActions` multiplies that term. The statistical term is summed
+over the chain positions, and it is a proved bound rather than a hypothesis
+(`Family.statisticalBound`, from `orchard_action_adaptiveCount_statistical_error_bound`).
+It is the query budget plus one, times the probability that a challenge lands in one of
+the four bad sets, with that probability taken at the largest Action count. The count
+that the adversary chose can be read off the length of the transcript at each oracle
+query. So the proof does not pay for a union over the possible counts, and `maxActions`
+enters only through that largest-count probability. Every ledger-side relation arm
+—the bridge escapes, the Sinsemilla reducer's relations, and the value-DLR finder's— is
+carried by the single term `combinedDLRAdvantage`: one event over the composed deployed
+experiment, whose samples all compute nontrivial relations over the combined deployed
+basis (`orchardPoints`).
+
+The Fiat–Shamir oracle of this model is one table over a transcript domain that covers
+every action count, read by every position at whatever count it selects, so no per-size
+presentation of the oracle is involved. The deployed forms state validity at the deployed
+value bases: the value commitment is definitionally the deployed one, with no
+reference-string step on the value side. Their accepted trade-offs —the binding challenge
+hash as a random oracle and elided byte encodings— are documented at
+`IdealizedKSBalanceAdversary.deployedViolationEvent`.
+
+For Spendability and Spend Authority the annotations remain a modeling assumption: those
+games are not yet composed with the circuit layer, and
+[#155](https://github.com/zcash/ironwood/issues/155) tracks the oracle-machine layer for
+their capstone slots.
 
 Also open is RedDSA unforgeability. The RedDSA node is a named hypothesis rather than a
 terminal assumption: its discharge edge names the reduction for security of signatures

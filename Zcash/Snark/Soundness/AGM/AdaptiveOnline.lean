@@ -712,6 +712,33 @@ structure SelectedQueryRepresentationPinned
     (query.representationsFor final covered).map AlgebraicPoint.coeffs =
       final.map AlgebraicPoint.coeffs
 
+/-- What the surface identities use of a pinned annotation: `query` covers the final points, and
+selecting their representations through it reproduces the final coefficients. It does not name
+the computation that made the query, so it can be stated at a point of one transcript domain for a
+query made in a wider one. -/
+structure SelectedQueryRepresentationFixed
+    {F G ι : Type*} [Field F] [AddCommGroup G] [Module F G]
+    [DecidableEq G] [Fintype ι]
+    {basis : ι → G} {L : ℕ} (t : BTranscript F G L)
+    (query : AlgebraicTranscriptQuery (F := F) basis t)
+    (final : List (AlgebraicPoint (F := F) basis)) : Prop where
+  covered : ∀ ap ∈ final, ap.point ∈ transcriptGroupPoints t.val
+  coefficients_eq :
+    (query.representationsFor final covered).map AlgebraicPoint.coeffs =
+      final.map AlgebraicPoint.coeffs
+
+/-- A pinned annotation's content, without the computation that made the query. -/
+theorem SelectedQueryRepresentationPinned.fixed
+    {F G ι : Type*} [Field F] [AddCommGroup G] [Module F G]
+    [DecidableEq F] [DecidableEq G] [Fintype ι] {α : Type*}
+    {basis : ι → G} {L : ℕ} {t : BTranscript F G L}
+    {A : LabeledOracleComp (BTranscript F G L) F
+      (AlgebraicTranscriptQuery (F := F) basis) α} {O : BTranscript F G L → F}
+    {final : List (AlgebraicPoint (F := F) basis)}
+    (pinned : SelectedQueryRepresentationPinned t A O final) :
+    SelectedQueryRepresentationFixed t pinned.query final :=
+  ⟨pinned.covered, pinned.coefficients_eq⟩
+
 /-- For any selected final points already absorbed at `t`, either `t` was never queried, their
 coefficients equal the first pre-answer query annotations, or a mismatch computes a relation. -/
 def selectedQueryRepresentationProvenanceOrRelation
