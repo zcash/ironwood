@@ -111,11 +111,14 @@ it scale.
   canonical home — module docstring or the owning declaration — and every other docstring
   references it in one sentence ("reduction form (see the module docstring)"). Duplicated
   recaps drift; pointers don't.
-- **No private shorthand, no issue numbers.** Spell out repo-internal section numbers ("§1" →
-  "the transcription layer (`assembleFinalMsm`/`ipaFold`, checked by the fingerprint fixtures)").
-  Doc comments never cite issue numbers (#18, #14): state the fact ("binding the decode to the
-  witness is still open") and let the tracker own the numbering — issue refs rot and mean
-  nothing to a reader outside the repo's process.
+- **No private shorthand; issue numbers only for open tracked gaps.** Spell out repo-internal
+  section numbers ("§1" → "the transcription layer (`assembleFinalMsm`/`ipaFold`, checked by the
+  fingerprint fixtures)"). A doc comment cites an issue number only for a gap that is still open
+  and tracked there, and states the fact first so that the sentence stands without the tracker
+  ("`Describes` is not consumed by any theorem (#232)"). It never cites a closed issue, an issue
+  that the PR itself closes, or an issue in place of the fact. The `pr-preflight` skill audits
+  this: removing an open-issue reference for a tracked gap is blocking, and a reference is
+  removed when its issue closes.
 - **Module docstrings are maps, not walls.** Convert narrative paragraphs into: the families/
   endpoints as bullets, the proof route as a numbered chain (each step marked *proven* /
   *residual* / *proven up to X* with its Lean anchor), then an assumptions section.
