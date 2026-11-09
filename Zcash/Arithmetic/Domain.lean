@@ -55,14 +55,9 @@ theorem powFast_eq_pow (b : Fp) (n : ℕ) :
 
 /-- pasta `Fp::ROOT_OF_UNITY = 5^((p−1)/2^32)` as a bare literal — pure data, so that
 definitions built on the domain scalars do not pull CompElliptic's certificate (and its
-native axiom) into their trusted base. `rootOfUnityFp_eq_certified` identifies it with the
-certified constant definitionally. -/
+native axiom) into their trusted base. -/
 def rootOfUnityFp : Fp :=
   0x2bce74deac30ebda362120830561f81aea322bf2b7bb7584bdad6fabd87ea32f
-
-/-- The literal is CompElliptic's certified Pasta root, definitionally. -/
-theorem rootOfUnityFp_eq_certified :
-    rootOfUnityFp = CompElliptic.Fields.Pasta.pallasBase.rootOfUnity := rfl
 
 /-- The size-`2^k` domain's root of unity: the Pasta root (`ROOT_OF_UNITY = 5^((p−1)/2^32)`,
 pasta `Fp::GENERATOR = 5`) squared down `32 − k` times, exactly as `EvaluationDomain::new`

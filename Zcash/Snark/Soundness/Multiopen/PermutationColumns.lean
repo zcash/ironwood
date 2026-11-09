@@ -37,26 +37,6 @@ set_option maxHeartbeats 20000
 variable {G : Type} [AddCommGroup G] [Module Fp G]
   [DecidableEq G] [Inhabited G]
 
-/-- Total natural-number projection of a common-permutation commitment.
-The in-range theorem below reconnects it to the verifier's `Fin`-indexed
-interface without making every circuit-coherence record reduce its derived
-shape while elaborating. -/
-def permutationCommonCommitmentAt
-    {shape : Shape} {F G : Type} [Inhabited G]
-    (vk : VerifyingKey shape F G) (column : ℕ) : G :=
-  if hcolumn : column < shape.numPermutationColumns then
-    vk.permutationCommonCommitment ⟨column, hcolumn⟩
-  else default
-
-@[simp]
-theorem permutationCommonCommitmentAt_of_lt
-    {shape : Shape} {F G : Type} [Inhabited G]
-    (vk : VerifyingKey shape F G) (column : ℕ)
-    (hcolumn : column < shape.numPermutationColumns) :
-    permutationCommonCommitmentAt vk column =
-      vk.permutationCommonCommitment ⟨column, hcolumn⟩ := by
-  simp [permutationCommonCommitmentAt, hcolumn]
-
 /-- The setup facts needed by prefix-based Lagrange commitments. -/
 structure LagrangePrefixSetup (urs : URS G) : Prop where
   length_eq :

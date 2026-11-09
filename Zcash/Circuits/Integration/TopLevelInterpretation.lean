@@ -7,7 +7,6 @@ import Zcash.Snark.Soundness.Multiopen.CanonicalRelation
 import Zcash.Circuits.Integration.Assignment
 import Zcash.Circuits.Integration.Permutation
 import Zcash.Snark.Keygen.Pipeline
-import Mathlib.Util.AssertNoSorry
 
 /-! # Interpreting accepted polynomials in a top-level circuit
 

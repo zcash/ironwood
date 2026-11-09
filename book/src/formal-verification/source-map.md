@@ -215,11 +215,11 @@ multi-action proofs. Examples of the checks in both families:
 `SingleAction/Honest/VkMatch` checks that the capture's constraint-system fields equal those
 derived end to end from the ported `configure`. It is a standalone diagnostic, not a soundness
 or fixture-trust input. The multi-action capture additionally
-carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree,
-schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
-conditionally staged-certified `2^125` adversary-work one and the modeled `2^123` one, with the
-declared-profile `2^123` instantiation pinned as the latter's rung — data-coupled programmed-basis
-and verifier-commitment accounting, explicit adversary and
+carries the shape/VK **faithfulness** checks, the adversarial **negative** fixtures, the degree
+and schedule checks, verifying-key lawfulness proofs, the adaptive-statement knowledge-failure
+endpoints — the conditionally staged-certified `2^125` adversary-work one and the modeled
+`2^123` one, with the declared-profile `2^123` instantiation pinned as the latter's rung —
+data-coupled programmed-basis and verifier-commitment accounting, explicit adversary and
 complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
 bound derived from a required family invariant, and a separate oracle-query budget, and
 `CapturedZeroFamily` — the shape-generic zero prover instantiated at the
