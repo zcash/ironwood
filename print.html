@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "rust";
-            window.path_to_searchindex_js = "searchindex-ac353582.js";
+            window.path_to_searchindex_js = "searchindex-560f9d10.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-d4c2b103.js"></script>
@@ -3111,11 +3111,11 @@ and <code>DeployedAcceptsRawBytes</code>.</li>
 <p><code>SingleAction/Honest/VkMatch</code> checks that the capture's constraint-system fields equal those
 derived end to end from the ported <code>configure</code>. It is a standalone diagnostic, not a soundness
 or fixture-trust input. The multi-action capture additionally
-carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree,
-schedule and static-check modules, the adaptive-statement knowledge-failure endpoints — the
-conditionally staged-certified <code>2^125</code> adversary-work one and the modeled <code>2^123</code> one, with the
-declared-profile <code>2^123</code> instantiation pinned as the latter's rung — data-coupled programmed-basis
-and verifier-commitment accounting, explicit adversary and
+carries the shape/VK <strong>faithfulness</strong> checks, the adversarial <strong>negative</strong> fixtures, the degree
+and schedule checks, verifying-key lawfulness proofs, the adaptive-statement knowledge-failure
+endpoints — the conditionally staged-certified <code>2^125</code> adversary-work one and the modeled
+<code>2^123</code> one, with the declared-profile <code>2^123</code> instantiation pinned as the latter's rung —
+data-coupled programmed-basis and verifier-commitment accounting, explicit adversary and
 complete-program staging-fidelity obligations, mechanically composed reduction work, a direct-decode
 bound derived from a required family invariant, and a separate oracle-query budget, and
 <code>CapturedZeroFamily</code> — the shape-generic zero prover instantiated at the
@@ -3307,7 +3307,7 @@ the plain-soundness statement, so that is not stated separately. Legacy fixed-st
 and their events are retired.</p>
 <p><code>Action.lean</code> is the only endpoint file here. The <code>Action/</code> subdirectory below it holds what
 discharges those endpoints at the captured key: <code>Base</code> carries the shape identification the
-chain is stated over, <code>Checks</code> the captured key's scalars and static checks, and <code>Budgets</code> the
+chain is stated over, <code>Checks</code> the captured key’s scalars and shape counts, and <code>Budgets</code> the
 semantic surfaces. Those three are instance-level — stated at the capture and reaching it through
 their imports — which is why they sit here rather than under <code>Soundness/</code>, a subtree that imports
 no fixture so that the captures stay off <code>lake build Zcash</code>'s path.</p>
@@ -3369,20 +3369,32 @@ public instance-cell layout and splits the semantic witness into public and priv
 allocated by that same program; the per-check modules are <code>ValueCommit</code>, <code>DeriveNullifier</code>,
 <code>SpendAuthority</code>, and <code>AddressIntegrity</code>; <code>Bundle</code> is the end-to-end statement against protocol
 spec §4.17.4; and <code>TopLevel</code> presents the whole thing as a closed <code>TopLevelCircuit</code>.</li>
-<li><strong><code>Integration/</code></strong> — the Clean-to-Ironwood boundary, and the largest directory in the tree. Only
+<li><strong><code>Clean.Halo2.Compiler</code></strong> — compiler semantics and field compatibility, independent of the verifier and
+<code>Integration/</code>. <code>CompiledGates</code> derives source gate constraints from compiled row evaluations;
+<code>SelectorCompression</code>, <code>SelectorEvaluation</code>, and <code>Queries</code> justify that translation.
+<code>CompiledLookups</code> recovers source lookups from tuple membership at compiled activation rows;
+<code>LookupSelectors</code> and <code>LookupProjection</code> justify exact selector substitution and query indexing.
+<code>Fixed</code> derives fixed assignments and table constraints from the canonical environment, and
+<code>CompiledCopies</code> recovers source copy constraints from resolved column/row equalities.
+<code>CopyPermutation</code> derives those equalities from compiled cycles; <code>PermutationAssembly</code>
+proves the executable mapping correct, and <code>PermutationRows</code> supplies its row vectors to Keygen.
+<code>ConstraintsCompiled</code> assembles these row-level semantics into TLC soundness;
+<code>ConstraintFamilies</code> decomposes operation constraints by argument family.</li>
+<li><strong><code>Integration/</code></strong> — the Clean-to-Ironwood boundary. Only
 modules that <em>translate</em> belong here; pure verifier-native constraint, permutation and lookup
-mathematics stays in <code>Zcash/Snark/</code>. It compiles the circuit's declared structure into what the
-verifier's soundness model quantifies over: gates and lookups from the operation stream
-(<code>OperationGates</code>, <code>OperationLookups</code>, <code>OperationFixed</code>, <code>OperationCopies</code>), the permutation
-round trip (<code>PermutationCompiler</code>, <code>PermutationReplay</code>, <code>CopyListMembership</code>), the layout and
-selector compilers (<code>FixedLayout</code>, <code>SelectorCoherence</code>, <code>LookupSelectorRows</code>, <code>QueryLayouts</code>),
-the commitment provenance of the fixed, σ and instance columns (<code>FixedColumns</code>,
-<code>PermutationColumns</code>, <code>InstanceColumns</code>), the resolver-backed environments (<code>ResolverGates</code>,
-<code>ResolverQueryEnvironment</code>, <code>PolynomialEnvironment</code>, <code>ExprRich</code>), and the reassembly of full
-circuit satisfaction (<code>CircuitSatisfaction</code>, <code>CircuitIntegration</code>). The <code>Action*</code> modules
-specialize all of that to the deployed Action circuit and land at <code>ActionTerminal</code>; the
-<code>TopLevel*</code> modules are the circuit-generic versions. <code>Soundness/Action/StraightLineTerminal</code>
-reaches that same terminal from one accepting execution, and
+mathematics stays in <code>Zcash/Snark/</code>. It interprets accepted polynomial data in circuit semantics:
+compiled gate and lookup evaluations (<code>PolynomialConstraints</code>), using the tuple
+collision bounds in <code>Snark/Soundness/Pricing/TupleCompression</code>, the permutation interpretation
+(<code>PermutationCompiler</code>, <code>Permutation</code>),
+fixed-column provenance (<code>FixedColumns</code>), and public inputs (<code>TopLevelInstanceCommitment</code>).
+Shared opening comparison, σ-column commitment binding, and public-instance routing live in
+<code>Snark/Soundness/Multiopen/{RowBinding,PermutationColumns,InstanceColumns}</code>.
+Integration also provides the polynomial-backed environments
+(<code>PolynomialEnvironment</code>, <code>ExprRich</code>), the assignment/witness interface (<code>Assignment</code>),
+and the reassembly of full
+compiled satisfaction (<code>TopLevelInterpretation</code>). These arguments
+apply to any supported top-level circuit and feed <code>Soundness/Circuit/Terminal</code>.
+<code>Soundness/Action/StraightLineTerminal</code> specializes the generic endpoint to Action, and
 <code>Soundness/Action/StraightLineEvent</code> bounds the probability loss from the challenge exclusions it
 leaves open — the probability that an accepting run carries neither the bundle statement nor a
 nontrivial relation.</li>
