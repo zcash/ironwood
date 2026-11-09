@@ -24,7 +24,8 @@ abbrev topLevelRunModel
     [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (hvk : ∀ basis, family.vk basis =
       top.toVerifierKey
@@ -42,17 +43,17 @@ abbrev topLevelRunModel
     (O : BTranscript Fp VestaG
       (preIpaLen (top.shape.withProofParams pp) family.init.length 10
         + 3 * top.domainExponent) → Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
+    (h : family.straightLineConstraintDecoded basis O) :=
   CanonicalMemberConstraintRelation.acceptedModel
     (memberDecode := fun i hi =>
-      (straightLineRunDecodeAt (shape := top.shape.withProofParams pp) family static basis O
+      (straightLineRunDecodeAt (shape := top.shape.withProofParams pp) family basis O
         (top.toVerifierKey
           (ursOfAugmentedBasis top.domainExponent basis))
         (top.instanceCommitment (ursOfAugmentedBasis top.domainExponent basis) inputs)
         (hvk basis) (hI basis) h).toMemberDecode (hchar basis O) i hi)
     (hblinding := top.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis top.domainExponent basis))
-    (straightLineRunAcceptsAt (shape := top.shape.withProofParams pp) family static basis O
+    (straightLineRunAcceptsAt (shape := top.shape.withProofParams pp) family basis O
       (top.toVerifierKey
         (ursOfAugmentedBasis top.domainExponent basis))
       (top.instanceCommitment (ursOfAugmentedBasis top.domainExponent basis) inputs)
@@ -66,7 +67,8 @@ abbrev topLevelRunPolynomial
     [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (hvk : ∀ basis, family.vk basis =
       top.toVerifierKey
@@ -84,15 +86,15 @@ abbrev topLevelRunPolynomial
     (O : BTranscript Fp VestaG
       (preIpaLen (top.shape.withProofParams pp) family.init.length 10
         + 3 * top.domainExponent) → Fp)
-    (h : family.straightLineConstraintDecoded static basis O) :=
+    (h : family.straightLineConstraintDecoded basis O) :=
   CanonicalMemberConstraintRelation.acceptedPolynomial
     (memberDecode := fun i hi =>
-      (straightLineRunDecodeAt (shape := top.shape.withProofParams pp) family static basis O
+      (straightLineRunDecodeAt (shape := top.shape.withProofParams pp) family basis O
         (top.toVerifierKey
           (ursOfAugmentedBasis top.domainExponent basis))
         (top.instanceCommitment (ursOfAugmentedBasis top.domainExponent basis) inputs)
         (hvk basis) (hI basis) h).toMemberDecode (hchar basis O) i hi)
-    (straightLineRunAcceptsAt (shape := top.shape.withProofParams pp) family static basis O
+    (straightLineRunAcceptsAt (shape := top.shape.withProofParams pp) family basis O
       (top.toVerifierKey
         (ursOfAugmentedBasis top.domainExponent basis))
       (top.instanceCommitment (ursOfAugmentedBasis top.domainExponent basis) inputs)
@@ -107,7 +109,8 @@ variable
     [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (hvk : ∀ basis, family.vk basis =
       top.toVerifierKey
@@ -128,23 +131,23 @@ def topLevelXYFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (top.shape.withProofParams pp) family.init.length 10
           + 3 * top.domainExponent) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).x ∉ szBadSet
         (let model :=
-            topLevelRunModel top pp family static inputs hvk hI hchar q.1 q.2 h;
+            topLevelRunModel top pp family inputs hvk hI hchar q.1 q.2 h;
           combineConstraints
             model.fixedCols model.adviceCols model.instanceCols model.gates
             model.sets model.chunks model.lookups
             model.beta model.gamma model.delta model.theta
             (straightLineRunRecord family q.1 q.2).y
             model.chunkLen model.l0 model.lLast model.lBlind -
-          topLevelRunPolynomial top pp family static inputs hvk hI hchar q.1 q.2 h
+          topLevelRunPolynomial top pp family inputs hvk hI hchar q.1 q.2 h
               CommitmentId.vanishingH *
             (X ^ (top.toVerifierKey
               (ursOfAugmentedBasis top.domainExponent q.1)).n - 1))) ∧
       ∀ j, (straightLineRunRecord family q.1 q.2).y ∉ szBadSet
         (foldSplitWitness
-          (topLevelRunModel top pp family static inputs hvk hI hchar
+          (topLevelRunModel top pp family inputs hvk hI hchar
             q.1 q.2 h).constraints
           (top.toVerifierKey
             (ursOfAugmentedBasis top.domainExponent q.1)).n j))}
@@ -155,12 +158,12 @@ def topLevelBetaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (top.shape.withProofParams pp) family.init.length 10
           + 3 * top.domainExponent) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).beta ∉
         allResolverPermutationBetaBadSet
           pp.numProofs (top.toVerifierKey
             (ursOfAugmentedBasis top.domainExponent q.1))
-          (topLevelRunPolynomial top pp family static inputs hvk hI hchar
+          (topLevelRunPolynomial top pp family inputs hvk hI hchar
             q.1 q.2 h)
           (top.usableRowsAt top.domainExponent)) ∧
       (straightLineRunRecord family q.1 q.2).beta ∉
@@ -169,7 +172,7 @@ def topLevelBetaFailureEvent :
           (top.toVerifierKey
             (ursOfAugmentedBasis top.domainExponent q.1))
           (straightLineRunRecord family q.1 q.2)
-          (topLevelRunPolynomial top pp family static inputs hvk hI hchar
+          (topLevelRunPolynomial top pp family inputs hvk hI hchar
             q.1 q.2 h)
           ((top.toVerifierKey
               (ursOfAugmentedBasis top.domainExponent q.1)).n -
@@ -182,13 +185,13 @@ def topLevelGammaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (top.shape.withProofParams pp) family.init.length 10
           + 3 * top.domainExponent) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬(((straightLineRunRecord family q.1 q.2).gamma ∉
         allResolverPermutationGammaBadSet
           pp.numProofs (top.toVerifierKey
             (ursOfAugmentedBasis top.domainExponent q.1))
           (straightLineRunRecord family q.1 q.2)
-          (topLevelRunPolynomial top pp family static inputs hvk hI hchar
+          (topLevelRunPolynomial top pp family inputs hvk hI hchar
             q.1 q.2 h)
           (top.usableRowsAt top.domainExponent)) ∧
       (straightLineRunRecord family q.1 q.2).gamma ∉
@@ -197,7 +200,7 @@ def topLevelGammaFailureEvent :
           (top.toVerifierKey
             (ursOfAugmentedBasis top.domainExponent q.1))
           (straightLineRunRecord family q.1 q.2)
-          (topLevelRunPolynomial top pp family static inputs hvk hI hchar
+          (topLevelRunPolynomial top pp family inputs hvk hI hchar
             q.1 q.2 h)
           ((top.toVerifierKey
               (ursOfAugmentedBasis top.domainExponent q.1)).n -
@@ -210,11 +213,11 @@ def topLevelThetaFailureEvent :
       (BTranscript Fp VestaG
         (preIpaLen (top.shape.withProofParams pp) family.init.length 10
           + 3 * top.domainExponent) → Fp)) :=
-  {q | ∃ h : family.straightLineConstraintDecoded static q.1 q.2,
+  {q | ∃ h : family.straightLineConstraintDecoded q.1 q.2,
     ¬((straightLineRunRecord family q.1 q.2).theta ∉
       TopLevelLookup.thetaBadSet top pp
         (ursOfAugmentedBasis top.domainExponent q.1)
-        (topLevelRunPolynomial top pp family static inputs hvk hI hchar
+        (topLevelRunPolynomial top pp family inputs hvk hI hchar
           q.1 q.2 h))}
 
 end ChallengeFailureEvents
@@ -231,7 +234,8 @@ def topLevelTerminalRelationFinderCovers
     [TopLevelShape top]
     (pp : ProofParams)
     (family : ComputedStraightLineDeployedFSFamily (top.shape.withProofParams pp))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (inputs : Fin pp.numProofs → PublicInput Fp)
     (hvk : ∀ basis, family.vk basis =
       top.toVerifierKey
@@ -252,15 +256,15 @@ def topLevelTerminalRelationFinderCovers
           + 3 * top.domainExponent) → Fp) →
       Option (AlgebraicRelationWitness (F := Fp) basis)) : Prop :=
   ∀ basis O,
-    family.straightLineConstraintDecoded static basis O →
+    family.straightLineConstraintDecoded basis O →
     (basis, O) ∉
-      topLevelXYFailureEvent top pp family static inputs hvk hI hchar →
+      topLevelXYFailureEvent top pp family inputs hvk hI hchar →
     (basis, O) ∉
-      topLevelBetaFailureEvent top pp family static inputs hvk hI hchar →
+      topLevelBetaFailureEvent top pp family inputs hvk hI hchar →
     (basis, O) ∉
-      topLevelGammaFailureEvent top pp family static inputs hvk hI hchar →
+      topLevelGammaFailureEvent top pp family inputs hvk hI hchar →
     (basis, O) ∉
-      topLevelThetaFailureEvent top pp family static inputs hvk hI hchar →
+      topLevelThetaFailureEvent top pp family inputs hvk hI hchar →
     (¬∀ proofIndex, top.Statement (inputs proofIndex)) →
     (finder basis O).isSome
 

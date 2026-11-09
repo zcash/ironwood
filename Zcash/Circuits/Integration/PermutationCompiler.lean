@@ -1,5 +1,5 @@
-import Zcash.Circuits.Integration.ResolverQueryEnvironment
-import Zcash.Circuits.Integration.ListChunks
+import Zcash.Circuits.Integration.PolynomialEnvironment
+import Zcash.Common.ListChunks
 import Zcash.Snark.Keygen.Pipeline
 
 /-!
@@ -20,94 +20,6 @@ namespace Zcash.Snark
 open Halo2
 
 set_option maxHeartbeats 20000
-
-/-- An in-range `findIdx` decodes to the element it searched for. -/
-theorem getD_findIdx_eq_target
-    {α : Type} [DecidableEq α]
-    (xs : List α) (target fallback : α)
-    (hin : xs.findIdx (· = target) < xs.length) :
-    xs.getD (xs.findIdx (· = target)) fallback = target := by
-  rw [List.getD_eq_getElem _ _ hin]
-  have hfound :=
-    List.findIdx_getElem
-      (xs := xs) (p := fun value => value = target) (w := hin)
-  simpa using hfound
-
-/-- Reading one inner list is the same as reading the flattened list after the
-complete prefix of earlier inner lists. -/
-theorem flatten_getD_at_chunk
-    {α : Type*} (fallback : α) (chunks : List (List α))
-    (chunk column : ℕ)
-    (hchunk : chunk < chunks.length)
-    (hcolumn : column < (chunks.getD chunk []).length) :
-    chunks.flatten.getD
-        ((chunks.take chunk).flatten.length + column) fallback =
-      (chunks.getD chunk []).getD column fallback := by
-  induction chunks generalizing chunk with
-  | nil =>
-      simp at hchunk
-  | cons head tail ih =>
-      cases chunk with
-      | zero =>
-          simp only [List.take_zero, List.flatten_nil, List.length_nil,
-            Nat.zero_add, List.getD_cons_zero, List.flatten_cons]
-          exact List.getD_append head tail.flatten fallback column hcolumn
-      | succ chunk =>
-          have hchunkTail : chunk < tail.length := by
-            simpa only [List.length_cons, Nat.succ_lt_succ_iff] using hchunk
-          have hcolumnTail :
-              column < (tail.getD chunk []).length := by
-            simpa only [List.getD_cons_succ] using hcolumn
-          simp only [List.take_succ_cons, List.flatten_cons,
-            List.length_append, List.getD_cons_succ]
-          rw [List.getD_append_right]
-          · have hindex :
-                head.length +
-                    (tail.take chunk).flatten.length + column -
-                    head.length =
-                  (tail.take chunk).flatten.length + column := by
-                omega
-            rw [hindex]
-            exact ih chunk hchunkTail hcolumnTail
-          · omega
-
-/--
-If decoding flattened compiler chunks yields the source-column list, a local
-`(chunk,column)` reference decodes to the source column at its flattened index.
--/
-theorem decodedChunkAddress_eq_sourceColumn
-    {Reference Address : Type*}
-    (decode : Reference → Address)
-    (referenceFallback : Reference) (addressFallback : Address)
-    (chunks : List (List Reference)) (columns : List Address)
-    (hdecoded : chunks.flatten.map decode = columns)
-    (chunk column global : ℕ)
-    (hchunk : chunk < chunks.length)
-    (hcolumn : column < (chunks.getD chunk []).length)
-    (hglobal : global < columns.length)
-    (hindex :
-      (chunks.take chunk).flatten.length + column = global) :
-    decode ((chunks.getD chunk []).getD column referenceFallback) =
-      columns.getD global addressFallback := by
-  have hflatGlobal : global < chunks.flatten.length := by
-    have hlength := congrArg List.length hdecoded
-    have : chunks.flatten.length = columns.length := by
-      simpa only [List.length_map] using hlength
-    omega
-  have hmapGlobal : global < (chunks.flatten.map decode).length := by
-    simpa only [List.length_map] using hflatGlobal
-  have hlocal :=
-    flatten_getD_at_chunk referenceFallback chunks chunk column hchunk hcolumn
-  calc
-    decode ((chunks.getD chunk []).getD column referenceFallback) =
-        decode (chunks.flatten.getD global referenceFallback) := by
-          rw [hindex] at hlocal
-          exact congrArg decode hlocal.symm
-    _ = (chunks.flatten.map decode).getD global addressFallback := by
-          rw [List.getD_eq_getElem _ _ hflatGlobal,
-            List.getD_eq_getElem _ _ hmapGlobal]
-          simp only [List.getElem_map]
-    _ = columns.getD global addressFallback := by rw [hdecoded]
 
 /-- The verifier query reference assigned by the permutation compiler to one
 concrete column. -/
@@ -132,7 +44,7 @@ theorem verifierCS_permutationChunks_flatten
         (permutationQueryReference top.adviceQueryLayout
           top.fixedQueryLayout top.instanceQueryLayout)).zipIdx := by
   unfold TopLevelCircuit.verifierCS
-  rw [listToChunks_flatten]
+  rw [List.toChunks_flatten]
   congr 2
   funext column
   rcases column with ⟨kind, index⟩
@@ -151,62 +63,29 @@ theorem permutationQueryReference_coherent
       (permutationQueryReference top.adviceQueryLayout
         top.fixedQueryLayout top.instanceQueryLayout column) := by
   have hquery := top.permutationColumn_mem_queryLayout hcolumn
+  have hIndex (layout : List (ℕ × ℤ)) (count index : ℕ)
+      (hCount : count = layout.length) (h : (index, 0) ∈ layout) :
+      layout.findIdx (· = (index, 0)) < count ∧
+        layout.findIdx (· = (index, 0)) < layout.length ∧
+        (layout.getD (layout.findIdx (· = (index, 0))) (0, 0)).2 = 0 := by
+    have hlt : layout.findIdx (· = (index, 0)) < layout.length :=
+      List.findIdx_lt_length_of_exists ⟨(index, 0), h, by simp⟩
+    exact ⟨hCount.symm ▸ hlt, hlt,
+      by rw [List.getD_findIdx_eq_target layout (index, 0) (0, 0) hlt]⟩
   rcases column with ⟨kind, index⟩
   cases kind with
   | advice =>
-      have hin :
-          top.adviceQueryLayout.findIdx (· = (index, 0)) <
-            top.adviceQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.adviceQueryLayout.findIdx (· = (index, 0)) <
-              top.adviceQueryCount := by
-          rw [top.adviceQueryCount_eq_adviceQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_adviceQueryLayout] using hin
-      · rw [top.toVerifierKey_adviceQueryLayout,
-          getD_findIdx_eq_target top.adviceQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_adviceQueryLayout] using
+        hIndex _ _ index top.adviceQueryCount_eq_adviceQueryLayout_length hquery
   | fixed =>
-      have hin :
-          top.fixedQueryLayout.findIdx (· = (index, 0)) <
-            top.fixedQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.fixedQueryLayout.findIdx (· = (index, 0)) <
-              top.fixedQueryCount := by
-          rw [top.fixedQueryCount_eq_fixedQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_fixedQueryLayout] using hin
-      · rw [top.toVerifierKey_fixedQueryLayout,
-          getD_findIdx_eq_target top.fixedQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_fixedQueryLayout] using
+        hIndex _ _ index top.fixedQueryCount_eq_fixedQueryLayout_length hquery
   | «instance» =>
-      have hin :
-          top.instanceQueryLayout.findIdx (· = (index, 0)) <
-            top.instanceQueryLayout.length :=
-        List.findIdx_lt_length_of_exists ⟨(index, 0), hquery, by simp⟩
-      simp only [permutationQueryReference,
-        PermutationColumnRef.Coherent]
-      refine ⟨?_, ?_, ?_⟩
-      · have hcount :
-            top.instanceQueryLayout.findIdx (· = (index, 0)) <
-              top.instanceQueryCount := by
-          rw [top.instanceQueryCount_eq_instanceQueryLayout_length]
-          exact hin
-        exact hcount
-      · simpa only [top.toVerifierKey_instanceQueryLayout] using hin
-      · rw [top.toVerifierKey_instanceQueryLayout,
-          getD_findIdx_eq_target top.instanceQueryLayout
-            (index, 0) (0, 0) hin]
+      simpa only [permutationQueryReference, PermutationColumnRef.Coherent,
+        top.toVerifierKey_instanceQueryLayout] using
+        hIndex _ _ index top.instanceQueryCount_eq_instanceQueryLayout_length hquery
 
 /-- Every permutation reference produced by a top-level circuit's compiler is
 well-routed. No concrete-circuit certificate is required. -/
@@ -253,7 +132,7 @@ theorem verifierCS_permutationChunks_length
   simp only [TopLevelCircuit.verifierCS]
   have hchunkLen : 0 < top.chunkLen :=
     constraintSystem_chunkLen_pos top.constraintSystem
-  rw [listToChunks_length _ _
+  rw [List.toChunks_length _ _
     hchunkLen]
   simp only [List.length_zipIdx, List.length_map]
   rw [top.permutationSetCount_eq,
@@ -284,7 +163,7 @@ theorem verifierCS_permutationChunks_getD_length
   simp only [TopLevelCircuit.verifierCS] at hi ⊢
   have hchunkLen : 0 < top.chunkLen := by
     exact constraintSystem_chunkLen_pos top.constraintSystem
-  rw [listToChunks_getD_length top.chunkLen _ hchunkLen i hi]
+  rw [List.toChunks_getD_length top.chunkLen _ hchunkLen i hi]
   simp only [List.length_zipIdx, List.length_map]
   rw [top.permutationColumnCount_eq_permutationColumns_length]
 
@@ -302,6 +181,33 @@ theorem _root_.Halo2.TopLevelCircuit.toVerifierKey_permutationChunks_getD_length
   rw [top.toVerifierKey_permutationChunks] at hi ⊢
   exact verifierCS_permutationChunks_getD_length top i hi
 
+namespace _root_.Halo2.TopLevelCircuit
+
+/-- A closed circuit's compiler supplies all structural verifying-key laws;
+neither field compatibility nor a particular URS is needed for these facts. -/
+instance toVerifierKeyWellFormed
+    {G : Type} [AddCommGroup G] [Inhabited G]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (urs : URS G) : VerifyingKey.WellFormed (top.toVerifierKey urs) where
+  adviceQueryLayout_length := top.toVerifierKey_adviceQueryCount urs
+  instanceQueryLayout_length := top.toVerifierKey_instanceQueryCount urs
+  fixedQueryLayout_length := top.toVerifierKey_fixedQueryCount urs
+  blindingFactors_add_one_lt_n := by
+    rw [top.toVerifierKey_blindingFactors, top.toVerifierKey_n]
+    have h := top.blindingFactors_add_three_le_domainSize
+    omega
+  chunkLen_pos := by
+    rw [top.toVerifierKey_chunkLen]
+    exact constraintSystem_chunkLen_pos top.constraintSystem
+  permutationChunks_length := top.toVerifierKey_permutationChunks_length urs
+  permutationChunks_getD_length i hi := by
+    rw [top.toVerifierKey_chunkLen]
+    exact top.toVerifierKey_permutationChunks_getD_length urs i hi
+  permutationChunkRoutingCoherent := top.permutationChunkRoutingCoherent urs
+
+end _root_.Halo2.TopLevelCircuit
+
 /-- Every prefix ending before a valid compiler chunk contains `i * chunkLen`
 permutation columns. -/
 theorem verifierCS_permutationChunks_take_flatten_length
@@ -312,10 +218,27 @@ theorem verifierCS_permutationChunks_take_flatten_length
     (top.verifierCS.permutationChunks.take i).flatten.length =
       i * top.chunkLen := by
   unfold TopLevelCircuit.verifierCS at hi ⊢
-  apply take_flatten_length_of_dropLast_full
-  · exact listToChunks_dropLast_full _ _
+  apply List.take_flatten_length_of_dropLast_full
+  · exact List.toChunks_dropLast_full _ _
       (constraintSystem_chunkLen_pos top.constraintSystem)
   · exact hi
+
+/-- A local chunk entry is the globally indexed compiler reference at its flat offset. -/
+theorem verifierCS_permutationChunks_getD
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (chunk column : ℕ)
+    (hChunk : chunk < top.verifierCS.permutationChunks.length)
+    (hColumn : column < (top.verifierCS.permutationChunks.getD chunk []).length) :
+    (top.verifierCS.permutationChunks.getD chunk []).getD column ((.advice 0), 0) =
+      (top.permutationColumns.map (permutationQueryReference top.adviceQueryLayout
+        top.fixedQueryLayout top.instanceQueryLayout)).zipIdx.getD
+          (chunk * top.chunkLen + column) ((.advice 0), 0) := by
+  have h := List.flatten_getD_at_chunk ((ColumnRef.advice 0), 0)
+    top.verifierCS.permutationChunks chunk column hChunk hColumn
+  rw [verifierCS_permutationChunks_take_flatten_length top chunk hChunk,
+    verifierCS_permutationChunks_flatten] at h
+  exact h.symm
 
 /-- Top-level keygen exposes the compiler prefix law without requiring downstream
 proofs to unfold a concrete circuit or verifying-key constructor. -/
@@ -346,12 +269,12 @@ theorem permutationColumns_length_le_chunks_mul
   have hall :
       (source.toChunks top.chunkLen).Forall
         fun chunk => chunk.length ≤ top.chunkLen :=
-    listToChunks_all_le top.chunkLen source
+    List.toChunks_all_le top.chunkLen source
       (constraintSystem_chunkLen_pos top.constraintSystem)
   have hbound :=
-    flatten_length_le_mul_of_forall
+    List.flatten_length_le_mul_of_forall
       (source.toChunks top.chunkLen) top.chunkLen hall
-  rw [listToChunks_flatten] at hbound
+  rw [List.toChunks_flatten] at hbound
   have hchunks :
       top.verifierCS.permutationChunks =
         source.toChunks top.chunkLen := by
@@ -390,19 +313,19 @@ theorem permutationColumnAddress_queryReference
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hadvice] at hin ⊢
-      rw [getD_findIdx_eq_target adviceQueryLayout
+      rw [List.getD_findIdx_eq_target adviceQueryLayout
         (index, 0) (0, 0) hin]
   | fixed =>
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hfixed] at hin ⊢
-      rw [getD_findIdx_eq_target fixedQueryLayout
+      rw [List.getD_findIdx_eq_target fixedQueryLayout
         (index, 0) (0, 0) hin]
   | «instance» =>
       rcases hcoherent with ⟨-, hin, -⟩
       simp only [permutationQueryReference, permutationColumnAddress]
       rw [hinstance] at hin ⊢
-      rw [getD_findIdx_eq_target instanceQueryLayout
+      rw [List.getD_findIdx_eq_target instanceQueryLayout
         (index, 0) (0, 0) hin]
 
 /--
@@ -418,7 +341,7 @@ theorem topLevelPermutationColumnAddresses_eq
     top.verifierCS.permutationChunks.flatten.map
           (fun reference =>
             permutationColumnAddress (top.toVerifierKey urs) reference.1) =
-      (Keygen.permColsOf top.constraintSystem).map
+      (Halo2.Layout.permColsOf top.constraintSystem).map
         Halo2.Layout.ColRef.toAny := by
   rw [verifierCS_permutationChunks_flatten]
   change
@@ -427,61 +350,18 @@ theorem topLevelPermutationColumnAddresses_eq
         _ =
       _
   rw [← List.map_map, List.zipIdx_map_fst]
-  simp only [Keygen.permColsOf, List.map_map]
+  simp only [Halo2.Layout.permColsOf, List.map_map]
   apply List.map_congr_left
   intro column hcolumn
   simp only [Function.comp_apply]
-  let referenceOf :=
-    permutationQueryReference top.adviceQueryLayout
-      top.fixedQueryLayout top.instanceQueryLayout
-  let reference :=
-    referenceOf column
-  have hreference :
-      reference ∈
-        top.permutationColumns.map
-          referenceOf :=
-    List.mem_map.mpr ⟨column, hcolumn, rfl⟩
-  have hindexed :
-      ∃ indexed ∈
-          (top.permutationColumns.map
-            referenceOf).zipIdx,
-        indexed.1 = reference := by
-    have hfst :
-        reference ∈
-          ((top.permutationColumns.map
-            referenceOf).zipIdx).map Prod.fst := by
-      rw [List.zipIdx_map_fst]
-      exact hreference
-    simpa only using List.mem_map.mp hfst
-  obtain ⟨indexed, hindexed, hindexedReference⟩ := hindexed
-  have hindexedFlat :
-      indexed ∈
-        top.verifierCS.permutationChunks.flatten := by
-    rw [verifierCS_permutationChunks_flatten]
-    simpa only [referenceOf] using hindexed
-  obtain ⟨chunk, hchunk, hindexedChunk⟩ :=
-    List.mem_flatten.mp hindexedFlat
-  have hrouted := top.permutationChunkRoutingCoherent urs chunk (by
-    simpa only [top.toVerifierKey_permutationChunks] using hchunk)
-    indexed hindexedChunk
-  have hreferenceCoherent :
-      PermutationColumnRef.Coherent
-        (top.toVerifierKey urs) reference := by
-    rw [← hindexedReference]
-    exact hrouted.1
-  have hdecoded :
-      permutationColumnAddress (top.toVerifierKey urs) reference =
-        column :=
-    permutationColumnAddress_queryReference
-      (top.toVerifierKey urs)
-      top.adviceQueryLayout top.fixedQueryLayout top.instanceQueryLayout
-      (top.toVerifierKey_adviceQueryLayout urs)
-      (top.toVerifierKey_fixedQueryLayout urs)
-      (top.toVerifierKey_instanceQueryLayout urs)
-      column hreferenceCoherent
+  have hdecoded := permutationColumnAddress_queryReference
+    (top.toVerifierKey urs)
+    top.adviceQueryLayout top.fixedQueryLayout top.instanceQueryLayout
+    (top.toVerifierKey_adviceQueryLayout urs)
+    (top.toVerifierKey_fixedQueryLayout urs)
+    (top.toVerifierKey_instanceQueryLayout urs)
+    column (permutationQueryReference_coherent top urs hcolumn)
   rcases column with ⟨kind, index⟩
-  cases kind <;>
-    simpa [reference, referenceOf, permutationQueryReference,
-      Halo2.Layout.ColRef.toAny] using hdecoded
+  cases kind <;> simpa [permutationQueryReference, Halo2.Layout.ColRef.toAny] using hdecoded
 
 end Zcash.Snark

@@ -5,9 +5,11 @@ import Zcash.Circuits.Action.Shape.PlannerTrace
 # The captured checks, scalars, and schedule at the derived key
 
 Everything the endpoints need to know about the deployed Action key itself: the derived key's
-captured scalars, the shape counts they induce, the static checks, and the `x`-squeeze
+captured scalars, the shape counts they induce and the `x`-squeeze
 schedule whose degree caps make `epsilonX` concrete.
 -/
+
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark.Capstone
 
@@ -145,37 +147,6 @@ theorem action_domainExponent_eq :
   rw [Halo2.TopLevelCircuit.domainExponent,
     actionCircuit_shape_eq, actionShape_k]
 
-/-- **The captured static checks at the derived key**: the concrete specialization
-of `actionStaticChecks`, with the five decided facts transferred through the captured key's scalar
-equalities. -/
-theorem capturedActionStaticChecks
-    (family : ComputedStraightLineDeployedFSFamily
-      (actionCircuit.shape.withProofParams actionProofParams))
-    (hvk : ∀ basis, family.vk basis = actionCircuit.toVerifierKey
-      (ursOfAugmentedBasis actionCircuit.domainExponent basis)) :
-    DeployedConstraintStaticChecks family.toRootFamily where
-  adviceLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_adviceQueryLayout,
-      Halo2.CircuitShape.withProofParams_numAdviceQueries]
-    exact le_of_eq actionCircuit.adviceQueryCount_eq_adviceQueryLayout_length
-  instanceLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_instanceQueryLayout,
-      Halo2.CircuitShape.withProofParams_numInstanceQueries]
-    exact le_of_eq actionCircuit.instanceQueryCount_eq_instanceQueryLayout_length
-  fixedLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_fixedQueryLayout,
-      Halo2.CircuitShape.withProofParams_numFixedQueries]
-    exact le_of_eq actionCircuit.fixedQueryCount_eq_fixedQueryLayout_length
-  omegaOrder := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_omega,
-      actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainRoot
-      ActionConstraintBounds.domainExponent_lt
-  characteristic := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainSizeCastNeZero
-      ActionConstraintBounds.domainExponent_lt
-
 /-- **The captured `x`-squeeze schedule at the derived key**: the degree caps
 transfer through the scalar equalities, and pinning is the family's own derived projection. -/
 def capturedActionXSqueezeSchedule
@@ -256,38 +227,6 @@ theorem actionDerivedShapeCounts (numProofs : ℕ) :
       by simpa only [Halo2.CircuitShape.withProofParams_numQuotientPieces,
           Halo2.TopLevelCircuit.quotientPieceCount] using
         congrArg (fun proofShape : Shape => proofShape.numQuotientPieces) h⟩
-
-/-- The canonical Action static checks, quantified over arbitrary `numProofs`.  The captured-key
-specialization is stated separately as `capturedActionStaticChecks`. -/
-theorem actionStaticChecks (numProofs : ℕ)
-    (family : ComputedStraightLineDeployedFSFamily
-      (actionCircuit.shape.withProofParams (actionProofParamsFor numProofs)))
-    (hvk : ∀ basis, family.vk basis =
-      actionCircuit.toVerifierKey
-        (ursOfAugmentedBasis
-          actionCircuit.domainExponent basis)) :
-    DeployedConstraintStaticChecks family.toRootFamily where
-  adviceLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_adviceQueryLayout,
-      Halo2.CircuitShape.withProofParams_numAdviceQueries]
-    exact le_of_eq actionCircuit.adviceQueryCount_eq_adviceQueryLayout_length
-  instanceLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_instanceQueryLayout,
-      Halo2.CircuitShape.withProofParams_numInstanceQueries]
-    exact le_of_eq actionCircuit.instanceQueryCount_eq_instanceQueryLayout_length
-  fixedLength := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_fixedQueryLayout,
-      Halo2.CircuitShape.withProofParams_numFixedQueries]
-    exact le_of_eq actionCircuit.fixedQueryCount_eq_fixedQueryLayout_length
-  omegaOrder := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_omega,
-      actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainRoot
-      ActionConstraintBounds.domainExponent_lt
-  characteristic := fun basis => by
-    rw [hvk basis, actionCircuit.toVerifierKey_n]
-    exact TopLevelAssignment.domainSizeCastNeZero
-      ActionConstraintBounds.domainExponent_lt
 
 /-- The captured `x`-squeeze schedule transported to an arbitrary Action bundle size. -/
 def actionXSqueezeSchedule (numProofs : ℕ)

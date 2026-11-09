@@ -8,6 +8,7 @@ This module retains the adaptive-run abbreviations used by the stage-local surfa
 and provides the statement-independent terminal checker shared by adaptive-statement extraction.
 -/
 
+
 namespace Zcash.Snark
 
 namespace ActionTerminal
@@ -94,7 +95,8 @@ def actionWitnessOrRelationOfDecode?
       | none => none
       | some hgoodYProof =>
           match hpermutation : resolverPermutationChallengeExclusions?
-              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial actionActiveRows with
+              pp.numProofs (actionCircuit.toVerifierKey urs) ch polynomial
+                (actionCircuit.usableRowsAt actionCircuit.domainExponent) with
           | none => none
           | some hpermutationProof =>
               match hlookup : TopLevelLookup.topLevelLookupChallengeExclusions?
@@ -102,29 +104,13 @@ def actionWitnessOrRelationOfDecode?
               | none => none
               | some hlookupProof =>
                   let hblinding := actionCircuit.toVerifierKey_blindingFactors_lt_n urs
-                  let hnFp : (actionCircuit.n : Fp) ≠ 0 :=
-                    TopLevelAssignment.domainSizeCastNeZero
-                      ActionConstraintBounds.domainExponent_lt
                   match acceptedModel_circuitSat_or_relation_of_decodedMemberPolynomial_eq
                       urs rfl (actionCircuit.toVerifierKey urs)
                       (actionCircuit.instanceCommitment urs inputs) ps ch
                       (fun i hi => decode.toMemberDecode hchar i hi) haccepts hblinding
                       (polynomial .vanishingH) rfl
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numFixedQueries] using
-                        actionCircuit.toVerifierKey_fixedQueryCount urs)
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numAdviceQueries] using
-                        actionCircuit.toVerifierKey_adviceQueryCount urs)
-                      (by simpa only [Halo2.CircuitShape.withProofParams_numInstanceQueries] using
-                        actionCircuit.toVerifierKey_instanceQueryCount urs)
                       (fun slot point hpoint =>
                         PSum.inl (decode.memberBinding hchar slot point hpoint))
-                      (actionCircuit.permutationChunkRoutingCoherent urs)
-                      (TopLevelAssignment.toVerifierKey_domainRowsInjective
-                        urs ActionConstraintBounds.domainExponent_lt)
-                      (TopLevelAssignment.toVerifierKey_domainRoot
-                        urs ActionConstraintBounds.domainExponent_lt)
-                      (by
-                        simpa only [actionCircuit.toVerifierKey_n] using hnFp)
                       (by
                         simpa only [actionCircuit.toVerifierKey_n] using
                           hxgoodProof.down) with
@@ -201,7 +187,7 @@ theorem actionWitnessOrRelationOfDecode?_isSome_of
       ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial
         (memberDecode := fun i hi => decode.toMemberDecode hchar i hi) haccepts)
-      actionActiveRows)
+      (actionCircuit.usableRowsAt actionCircuit.domainExponent))
     (hlookup : TopLevelLookup.ChallengeExclusions actionCircuit pp
       (ursOfAugmentedBasis (actionCircuit.shape.withProofParams pp).k basis) ch
       (CanonicalMemberConstraintRelation.acceptedPolynomial

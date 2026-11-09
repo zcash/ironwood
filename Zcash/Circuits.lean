@@ -83,7 +83,6 @@ import Zcash.Circuits.Action.RealBases
 import Zcash.Circuits.Action.Spec
 import Zcash.Circuits.Action.Separation
 import Zcash.Circuits.Action.Shape
-import Zcash.Circuits.Action.Shape.Anchors
 import Zcash.Circuits.Integration
 
 /-!

@@ -1,5 +1,5 @@
 import Zcash.Snark.Soundness.Pricing.ChallengePricing
-import Zcash.Circuits.Integration.TopLevelLookups
+import Zcash.Circuits.Integration.PolynomialConstraints
 
 /-!
 # What each challenge exclusion reads
@@ -298,37 +298,20 @@ theorem allResolverLookupGammaBadSet_congr
 /-! ## The `θ` layer -/
 
 /-- The row environment reads only the proof's query columns. -/
-theorem resolverEnvironment_congr
+theorem polynomialEnvironmentOfCommitments_congr
     {shape : CircuitShape}
     (vk : VerifyingKey shape Fp G) {poly₁ poly₂ : CommitmentId → CPoly}
     (p : ℕ) (usableRows : ℕ)
     (h : ∀ id, id.isColumnInput → poly₁ id = poly₂ id) :
-    resolverEnvironment vk poly₁ p usableRows = resolverEnvironment vk poly₂ p usableRows := by
-  unfold resolverEnvironment
+    polynomialEnvironmentOfCommitments vk poly₁ p usableRows =
+      polynomialEnvironmentOfCommitments vk poly₂ p usableRows := by
+  unfold polynomialEnvironmentOfCommitments
   rw [show (fun column => poly₁ (CommitmentId.fixedCol column)) =
     (fun column => poly₂ (CommitmentId.fixedCol column)) from funext fun _ => h _ trivial]
   rw [show (fun column => poly₁ (CommitmentId.adviceCol p column)) =
     (fun column => poly₂ (CommitmentId.adviceCol p column)) from funext fun _ => h _ trivial]
   rw [show (fun column => poly₁ (CommitmentId.instanceCol p column)) =
-    (fun column => poly₂ (CommitmentId.instanceCol p column)) from funext fun _ => h _ trivial]
-
-/-- **The `θ` budget is a length count.**  Row count times input arity per activation — the
-polynomial map and the URS never enter, so the per-state `θ` epsilon is one number per
-circuit. -/
-theorem TopLevelLookup.thetaBudget_eq
-    {G' : Type} [AddCommGroup G'] [Inhabited G']
-    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
-    (top : Halo2.TopLevelCircuit Fp Config PublicInput)
-    [Halo2.TopLevelShape top]
-    (pp : ProofParams) (urs : URS G')
-    (poly : CommitmentId → CPoly) :
-    TopLevelLookup.thetaBudget top pp urs poly =
-      ∑ index : TopLevelLookup.ActivationIndex top pp,
-        top.usableRowsAt top.domainExponent *
-          ((operationEnabledLookups top.operations 0).get index.2).argument.inputs.length := by
-  unfold TopLevelLookup.thetaBudget
-  refine Finset.sum_congr rfl fun index _ => ?_
-  exact congrArg (top.usableRowsAt top.domainExponent * ·) (List.length_map _)
+      (fun column => poly₂ (CommitmentId.instanceCol p column)) from funext fun _ => h _ trivial]
 
 /-- **The top-level `θ` exclusion reads only the query columns.** -/
 theorem TopLevelLookup.thetaBadSet_congr
@@ -341,11 +324,12 @@ theorem TopLevelLookup.thetaBadSet_congr
     (h : ∀ id, id.isColumnInput → poly₁ id = poly₂ id) :
     TopLevelLookup.thetaBadSet top pp urs poly₁ =
       TopLevelLookup.thetaBadSet top pp urs poly₂ := by
-  unfold TopLevelLookup.thetaBadSet
-  exact Finset.biUnion_congr rfl fun index _ =>
-    congrArg (fun env => EnabledLookup.thetaBadSet top.placement env
-        ((operationEnabledLookups top.operations 0).get index.2))
-      (resolverEnvironment_congr (top.toVerifierKey urs) index.1
-        (top.usableRowsAt top.domainExponent) h)
+  have hvalues : TopLevelLookup.comparisonValues top pp urs poly₁ =
+      TopLevelLookup.comparisonValues top pp urs poly₂ := by
+    funext index
+    simp only [TopLevelLookup.comparisonValues,
+      polynomialEnvironmentOfCommitments_congr (top.toVerifierKey urs) index.1.1
+        (top.usableRowsAt top.domainExponent) h]
+  simp only [TopLevelLookup.thetaBadSet, hvalues]
 
 end Zcash.Snark

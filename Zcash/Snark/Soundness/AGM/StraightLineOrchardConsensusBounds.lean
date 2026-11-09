@@ -72,7 +72,8 @@ statistical error. -/
 theorem straightLineConstraintFailure_prob_le_at_consensus_max
     (B : VestaG)
     (family : ComputedStraightLineDeployedFSFamily (shape orchardConsensusMaxProofs))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily
       ((20470 : Nat) / (Fintype.card Fp : ENNReal)))
     (profile : family.StraightLineConstraintDlogProfile B)
@@ -82,12 +83,12 @@ theorem straightLineConstraintFailure_prob_le_at_consensus_max
         (BTranscript Fp VestaG
           (preIpaLen (shape orchardConsensusMaxProofs) family.init.length 10 +
             3 * (shape orchardConsensusMaxProofs).k) -> Fp))).toOuterMeasure
-        (family.straightLineConstraintFailureSet B static) <=
+        (family.straightLineConstraintFailureSet B) <=
       profile.advantage family.straightLineDlogRandomOracleQueries
           (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
         consensusStraightLineStatisticalModel T := by
   refine le_trans
-    (family.straightLineConstraintFailure_prob_le_of_dlogProfile B static schedule profile) ?_
+    (family.straightLineConstraintFailure_prob_le_of_dlogProfile B schedule profile) ?_
   rw [consensusStraightLineStatisticalModel]
   change _ <= profile.advantage family.straightLineDlogRandomOracleQueries
       (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
@@ -119,7 +120,8 @@ theorem straightLineConstraintFailure_prob_le_at_consensus_max_generatorRO
     (query : AugmentedIndex (2 ^ (shape orchardConsensusMaxProofs).k) -> T')
     (hquery : Function.Injective query)
     (family : ComputedStraightLineDeployedFSFamily (shape orchardConsensusMaxProofs))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily
       ((20470 : Nat) / (Fintype.card Fp : ENNReal)))
     (profile : family.StraightLineConstraintDlogProfile B)
@@ -130,13 +132,13 @@ theorem straightLineConstraintFailure_prob_le_at_consensus_max_generatorRO
           (preIpaLen (shape orchardConsensusMaxProofs) family.init.length 10 +
             3 * (shape orchardConsensusMaxProofs).k) -> Fp))).toOuterMeasure
         ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-          family.straightLineConstraintFailureEvent static) <=
+          family.straightLineConstraintFailureEvent) <=
       profile.advantage family.straightLineDlogRandomOracleQueries
           (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
         consensusStraightLineStatisticalModel T := by
   refine le_trans
     (family.straightLineConstraintFailure_prob_le_of_generatorRO_dlogProfile
-      B hB query hquery static schedule profile) ?_
+      B hB query hquery schedule profile) ?_
   rw [consensusStraightLineStatisticalModel]
   change _ <= profile.advantage family.straightLineDlogRandomOracleQueries
       (straightLineDlogGroupWork profile.proverGroupWork profile.reductionGroupWork) +
@@ -204,7 +206,8 @@ theorem orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_secur
     (query : AugmentedIndex (2 ^ (shape orchardConsensusMaxProofs).k) -> T')
     (hquery : Function.Injective query)
     (family : ComputedStraightLineDeployedFSFamily (shape orchardConsensusMaxProofs))
-    (static : DeployedConstraintStaticChecks family.toRootFamily)
+    [∀ basis, VerifyingKey.FieldSupport (family.vk basis)]
+    [∀ basis, VerifyingKey.WellFormed (family.vk basis)]
     (schedule : DeployedConstraintXSqueezeSchedule family.toRootFamily
       ((20470 : Nat) / (Fintype.card Fp : ENNReal)))
     (profile : family.StraightLineDirectDlogProfile B (2 ^ 123)) :
@@ -214,7 +217,7 @@ theorem orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_secur
             (preIpaLen (shape orchardConsensusMaxProofs) family.init.length 10 +
               3 * (shape orchardConsensusMaxProofs).k) -> Fp))).toOuterMeasure
           ((fun p => (orchardGeneratorROBasis query p.1, p.2)) ⁻¹'
-            family.straightLineConstraintFailureEvent static) <=
+            family.straightLineConstraintFailureEvent) <=
         profile.advantage (2 ^ 126) (2 ^ 126) +
           1 / (2 ^ 84 : ENNReal)) ∧
       family.straightLineDlogRandomOracleQueries <= 2 ^ 126 ∧
@@ -234,7 +237,7 @@ theorem orchard_deployed_straightline_consensus_2pow123_generatorRO_finite_secur
   refine ⟨?_, hqueries, hgroup, hcost.2.2⟩
   refine le_trans
     (straightLineConstraintFailure_prob_le_at_consensus_max_generatorRO
-      B hB query hquery family static schedule
+      B hB query hquery family schedule
       profile.toStraightLineConstraintDlogProfile profile.queryBound) ?_
   exact add_le_add
     (profile.advantage_mono hqueries hgroup)

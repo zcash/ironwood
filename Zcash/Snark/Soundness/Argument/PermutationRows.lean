@@ -471,7 +471,7 @@ theorem deployed_declared_equalities_of_identity
   deployed_copy_constraints_of_identity omega beta gamma delta theta y chunkLen z lastP cols
     fixedCols adviceCols instanceCols gates lookups l0P lLastP lBlindP hpoly hn p
     (PermConstruction.build cs) hidentity hgoodY hrow hactive hl0 hlast hσ hnm hgoodγ hgoodβ
-    ((PermConstruction.build_correct cs x w).mpr hxw)
+    ((PermConstruction.sameCycle_build_iff cs x w).mpr hxw)
 
 
 /-! ## Cells across chunks of different widths
@@ -789,7 +789,7 @@ theorem deployed_copy_constraints_of_identity_chunks
 open Finset in
 /-- **The circuit's declared equalities across every chunk.** The chunked endpoint with the
 permutation taken to be the one keygen builds from the circuit's copy constraints: by
-`build_correct` its cycles are exactly the classes those constraints force, so the conclusion names
+`sameCycle_build_iff` its cycles are exactly the classes those constraints force, so the conclusion names
 the equalities the circuit declared. -/
 theorem deployed_declared_equalities_of_identity_chunks
     (omega beta gamma delta theta y : Fp) (chunkLen : ℕ) {nc m : ℕ} (hnc : 0 < nc)
@@ -839,6 +839,6 @@ theorem deployed_declared_equalities_of_identity_chunks
   deployed_copy_constraints_of_identity_chunks omega beta gamma delta theta y chunkLen hnc z lastP
     cols fixedCols adviceCols instanceCols gates sets chunks lookups l0P lLastP lBlindP hpoly hn p
     hsets hchunks (PermConstruction.build cs) hidentity hgoodY hrow hactive hl0 hlast hlastEval
-    hσ hnm hgoodγ hgoodβ ((PermConstruction.build_correct cs x w).mpr hxw)
+    hσ hnm hgoodγ hgoodβ ((PermConstruction.sameCycle_build_iff cs x w).mpr hxw)
 
 end Zcash.Snark

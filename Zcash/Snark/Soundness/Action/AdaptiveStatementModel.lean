@@ -1,4 +1,5 @@
-import Zcash.Circuits.Integration.ActionCorrectness
+import Zcash.Circuits.Action.FieldSupport
+import Zcash.Circuits.Integration.TopLevelInstanceCommitment
 import Zcash.Snark.Soundness.AGM.AdaptiveOnline
 import Zcash.Snark.Verifier.Deployed
 
@@ -37,6 +38,8 @@ basis.  That exclusion is the accepted algebraic-group floor of these results; t
 strengthening models hash-to-curve as an adversary-queryable oracle whose fresh outputs extend
 the basis.
 -/
+
+open Zcash.Arithmetic (omegaOf)
 
 namespace Zcash.Snark
 

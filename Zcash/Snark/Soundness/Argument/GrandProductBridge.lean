@@ -452,7 +452,7 @@ theorem perm_copy_constraints_of_chunked_running_product {nc m : ℕ} (width : �
 
 open Finset in
 /-- **The circuit's declared equalities are enforced.** The same chain with the permutation taken to
-be the one the keygen builds from the circuit's copy constraints: by `build_correct` its cycles are
+be the one the keygen builds from the circuit's copy constraints: by `sameCycle_build_iff` its cycles are
 exactly the classes those constraints force, so the conclusion is about the circuit's own declared
 equalities rather than about an arbitrary permutation. -/
 theorem declared_equalities_of_running_product {m k : ℕ} (z : ℕ → Fp)
@@ -473,6 +473,6 @@ theorem declared_equalities_of_running_product {m k : ℕ} (z : ℕ → Fp)
     value (x.1 : ℕ) (x.2 : ℕ) = value (y.1 : ℕ) (y.2 : ℕ)
       ∨ ∃ p ∈ range m ×ˢ range k, value p.1 p.2 + β * nm p.1 p.2 + γ = 0 :=
   perm_copy_constraints_of_running_product z value nm sigmaName β γ (PermConstruction.build cs)
-    hσ hnm hrec hz0 hzm hgoodγ hgoodβ ((PermConstruction.build_correct cs x y).mpr hxy)
+    hσ hnm hrec hz0 hzm hgoodγ hgoodβ ((PermConstruction.sameCycle_build_iff cs x y).mpr hxy)
 
 end Zcash.Snark

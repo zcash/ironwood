@@ -23,6 +23,8 @@ arithmetic tier does not import it.
 
 namespace Zcash.Snark.Keygen
 
+open Halo2.Layout (permColsOf permutationRows permutationRows_length permutationRows_getD_length)
+
 open Zcash.Arithmetic (derivedUrsGLagrange derivedUrsGLagrange_getD domainSize_cast_ne_zero
   lagrangeBasisClosed lagrangeBasisClosed_coeff lagrangeBasisClosed_eval
   lagrangeBasisClosed_natDegree_lt omegaInvOf_eq_inv omegaOf omegaOf_isPrimitiveRoot
@@ -54,19 +56,6 @@ theorem polynomialCoefficients_single_closed (k : ℕ) (hk : k ≤ 32)
       (2 ^ k : Fp)⁻¹ * (omegaOf k)⁻¹ ^ ((i : ℕ) * (t : ℕ)) := by
   rw [polynomialCoefficients, rowPolynomial_single_eq_closed k hk i]
   exact lagrangeBasisClosed_coeff k i t
-
-theorem permPolysOf_length (k : ℕ) (cs : Halo2.ConstraintSystem Fp)
-    (ops : Halo2.Operations Fp) :
-    (permPolysOf k cs ops).length = (permColsOf cs).length := by
-  simp [permPolysOf]
-
-theorem permPolysOf_getD_length (k : ℕ) (cs : Halo2.ConstraintSystem Fp)
-    (ops : Halo2.Operations Fp) (c : ℕ) (hc : c < (permColsOf cs).length) :
-    ((permPolysOf k cs ops).getD c []).length = 2 ^ k := by
-  have hcl : c < (permPolysOf k cs ops).length := by
-    rw [permPolysOf_length]; exact hc
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hcl]
-  simp [permPolysOf]
 
 /--
 The executable Lagrange MSM of one full-domain row vector agrees with the computable
@@ -103,9 +92,8 @@ theorem commitLagrangeFastWith_eq_ofFullList_commitInstance
 
 /-- **The derived σ commitments are Lagrange-key commitments of the derived σ rows**:
 the executable Pippenger pipeline (with halo2's default blind, the `w` generator) equals
-the abstract prefix-key commitment. The two hypotheses are the per-URS setup facts —
-the derived basis length and the generator identities, native-tier at a concrete URS
-through the closed coefficient form (`polynomialCoefficients_single_closed`). -/
+the abstract prefix-key commitment. The two hypotheses are the per-URS setup facts:
+the derived basis length and the generator identities in closed coefficient form. -/
 theorem permutationCommitmentsOf_getD_eq_commitInstance
     {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
     (urs : URS G) (cs : Halo2.ConstraintSystem Fp) (ops : Halo2.Operations Fp)
@@ -118,19 +106,19 @@ theorem permutationCommitmentsOf_getD_eq_commitInstance
     (permutationCommitmentsOf urs.w (derivedUrsGLagrange urs) urs.k cs ops).getD c 0 =
       (LagrangeCommitmentKey.ofPrefix urs (omegaOf urs.k) (derivedUrsGLagrange urs)
           hprefix).commitInstance
-        ((permPolysOf urs.k cs ops).getD c []) 1 := by
+        ((permutationRows urs.k cs ops).getD c []) 1 := by
   classical
-  have hrowlen : ((permPolysOf urs.k cs ops).getD c []).length = 2 ^ urs.k :=
-    permPolysOf_getD_length urs.k cs ops c hc
+  have hrowlen : ((permutationRows urs.k cs ops).getD c []).length = 2 ^ urs.k :=
+    permutationRows_getD_length urs.k cs ops c hc
   rw [LagrangeCommitmentKey.ofPrefix_commitInstance_eq urs (omegaOf urs.k) _ hprefix _ 1
     (by rw [hrowlen, hlen]) (by rw [hrowlen])]
-  have hcl : c < (permPolysOf urs.k cs ops).length := by
-    rw [permPolysOf_length]; exact hc
-  have hget : ((permPolysOf urs.k cs ops).map
+  have hcl : c < (permutationRows urs.k cs ops).length := by
+    rw [permutationRows_length]; exact hc
+  have hget : ((permutationRows urs.k cs ops).map
       (Fast.Msm.commitLagrangeFastWith Fast.Msm.defaultWindow urs.w
         (derivedUrsGLagrange urs))).getD c 0 =
       Fast.Msm.commitLagrangeFastWith Fast.Msm.defaultWindow urs.w
-        (derivedUrsGLagrange urs) ((permPolysOf urs.k cs ops).getD c []) := by
+        (derivedUrsGLagrange urs) ((permutationRows urs.k cs ops).getD c []) := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem hcl,
       List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hcl]
     rfl
@@ -144,9 +132,7 @@ theorem permutationCommitmentsOf_getD_eq_commitInstance
   rw [← Nat.cast_smul_eq_nsmul Fp ((1 : Fp).val) urs.w,
     ZMod.natCast_rightInverse (1 : Fp), one_smul]
 
-/-- The `ofPrefix` setup obligation in fully computable form: the noncomputable
-interpolation coefficients are replaced by the closed form, so a concrete URS can
-discharge the per-generator identities by native evaluation. -/
+/-- The prefix setup follows from the closed formula for interpolation coefficients. -/
 theorem ofPrefix_setup_of_closed {G : Type} [AddCommGroup G] [Module Fp G]
     [Inhabited G] (urs : URS G) (hk : urs.k ≤ 32)
     (hgen : ∀ i : Fin (2 ^ urs.k),
@@ -193,3 +179,87 @@ theorem derivedUrsGLagrange_generator_eq {G : Type} [AddCommGroup G] [Inhabited 
   rw [derivedUrsGLagrange_getD urs hk i, commit, omegaInvOf_eq_inv urs.k hk]
 
 end Zcash.Snark.Keygen
+
+namespace Halo2.TopLevelCircuit
+
+open Zcash.Snark Zcash.Arithmetic CompElliptic.Curves.Pasta
+
+/-- The circuit-derived VK's fixed commitment at one in-range column is the
+full-list commitment of the corresponding keygen row vector. -/
+theorem fixedCommitments_getD_eq_commitInstance
+    {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
+    {Config : Type} {PublicInput : TypeMap}
+    [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput)
+    [TopLevelShape top] [CircuitFieldSupport top]
+    (urs : URS G)
+    (hk : top.domainExponent = urs.k)
+    (column : ℕ) (hcolumn : column < top.fixedColumnCount) :
+    (top.fixedCommitments urs).getD column 0 =
+      (LagrangeCommitmentKey.canonical urs top.omega).commitInstance
+          (top.fixedRows.getD column []) 1 := by
+  have hkUrs : urs.k ≤ 32 := by
+    rw [← hk]
+    exact Nat.le_of_lt_succ top.domainExponent_lt
+  have homega : top.omega = omegaOf urs.k := by
+    simp only [TopLevelCircuit.omega, Zcash.Arithmetic.pastaDomain_omega_eq, hk]
+  have hlen := derivedUrsGLagrange_length urs
+  have hgenerators : ∀ i : Fin (2 ^ urs.k),
+      (derivedUrsGLagrange urs).getD (i : ℕ) 0 =
+        commit urs (polynomialCoefficients (2 ^ urs.k)
+          (rowPolynomial top.omega (Pi.single i (1 : Fp)))) := by
+    intro i
+    simpa only [homega] using
+      Keygen.ofPrefix_setup_of_closed urs hkUrs
+        (Keygen.derivedUrsGLagrange_generator_eq urs hkUrs) i
+        (by rw [hlen]; exact i.isLt)
+  have hcolumnRows : column < top.fixedRows.length := by
+    simpa only [top.fixedRows_length] using hcolumn
+  have hget :
+      (top.fixedRows.map
+        (Fast.Msm.commitLagrangeFastWith
+          Fast.Msm.defaultWindow urs.w
+          (derivedUrsGLagrange urs))).getD column 0 =
+        Fast.Msm.commitLagrangeFastWith
+          Fast.Msm.defaultWindow urs.w
+          (derivedUrsGLagrange urs)
+          (top.fixedRows.getD column []) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_getElem hcolumnRows,
+      List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem hcolumnRows]
+    rfl
+  rw [TopLevelCircuit.fixedCommitments, List.parMap_eq_map, hget]
+  rw [show LagrangeCommitmentKey.canonical urs top.omega =
+      LagrangeCommitmentKey.ofFullList
+        urs top.omega (derivedUrsGLagrange urs) hgenerators from
+    Subsingleton.elim _ _]
+  apply Keygen.commitLagrangeFastWith_eq_ofFullList_commitInstance
+    urs top.omega hlen hgenerators
+  rw [top.fixedRows_getD_length column hcolumn]
+  simp only [TopLevelCircuit.n, hk]
+
+/-- Keygen commits exactly the compiler's permutation row vector. -/
+theorem permutationCommitments_getD_eq_commitInstance
+    {G : Type} [AddCommGroup G] [Module Fp G] [Inhabited G]
+    {Config : Type} {PublicInput : TypeMap} [ProvableType PublicInput]
+    (top : TopLevelCircuit Fp Config PublicInput) [TopLevelShape top]
+    (urs : URS G) (hk : top.domainExponent = urs.k)
+    (hlen : (derivedUrsGLagrange urs).length = 2 ^ urs.k)
+    (hprefix : ∀ i : Fin (2 ^ urs.k), (i : ℕ) < (derivedUrsGLagrange urs).length →
+      (derivedUrsGLagrange urs).getD (i : ℕ) 0 =
+        commit urs (polynomialCoefficients (2 ^ urs.k)
+          (rowPolynomial (omegaOf urs.k) (Pi.single i (1 : Fp)))))
+    (column : ℕ) (hcolumn : column < top.permutationColumnCount) :
+    (top.permutationCommitments urs).getD column 0 =
+      (LagrangeCommitmentKey.ofPrefix urs (omegaOf urs.k) (derivedUrsGLagrange urs)
+        hprefix).commitInstance (top.permutationRows column) 1 := by
+  have hcolumn' : column < (Layout.permColsOf top.constraintSystem).length := by
+    rw [top.permutationColumnCount_eq_permutationColumns_length] at hcolumn
+    simpa only [TopLevelCircuit.permutationColumns, Layout.permColsOf, List.length_map]
+      using hcolumn
+  have h := Keygen.permutationCommitmentsOf_getD_eq_commitInstance
+    urs top.constraintSystem top.operations hlen hprefix column hcolumn'
+  simpa only [TopLevelCircuit.permutationCommitments, TopLevelCircuit.permutationRows, hk] using h
+
+end Halo2.TopLevelCircuit

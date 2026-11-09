@@ -103,7 +103,6 @@ assert_axioms Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_urs +native(
 -- its end-to-end derivation. Owners are the single-action certificate's plus the cross-capture
 -- point equalities — no second keygen evaluation.
 assert_axioms Zcash.Snark.FixtureRandom2.vk_eq_derived +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu,
@@ -147,7 +146,6 @@ assert_axioms Zcash.Snark.nonInteractiveFingerprintForStatement
 assert_axioms Zcash.Snark.FixtureRandom2.derivedVk +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_derived +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu,
@@ -178,20 +176,18 @@ assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_deriv
 #print axioms Zcash.Snark.FixtureRandom2.capturedPublicInstances_within_lagrange
 
 /-- info: 'Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_derived' depends on axioms: [propext,
-Classical.choice,
-Quot.sound,
-CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_1,
-CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_2,
-Zcash.Snark.FixtureRandom2.deriveChallenges_matches_captured_schedule._native.native_decide.ax_1_1,
-Zcash.Snark.FixtureRandom2.fingerprint_matches._native.native_decide.ax_1_1,
-Zcash.Snark.FixtureRandom2.instance_commitments_derived._native.native_decide.ax_1_1,
-Zcash.Snark.Keygen.certificate._native.native_decide.ax_1_1,
-Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_fixedCommitments._native.native_decide.ax_1_1,
-Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_permutationCommonCommitments._native.native_decide.ax_1_1,
-Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG._native.native_decide.ax_1_1,
-Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu._native.native_decide.ax_1_1,
-CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
-CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
+ Classical.choice,
+ Quot.sound,
+ Zcash.Snark.FixtureRandom2.deriveChallenges_matches_captured_schedule._native.native_decide.ax_1_1,
+ Zcash.Snark.FixtureRandom2.fingerprint_matches._native.native_decide.ax_1_1,
+ Zcash.Snark.FixtureRandom2.instance_commitments_derived._native.native_decide.ax_1_1,
+ Zcash.Snark.Keygen.certificate._native.native_decide.ax_1_1,
+ Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_fixedCommitments._native.native_decide.ax_1_1,
+ Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_permutationCommonCommitments._native.native_decide.ax_1_1,
+ Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG._native.native_decide.ax_1_1,
+ Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu._native.native_decide.ax_1_1,
+ CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1,
+ CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1] -/
 #guard_msgs (whitespace := lax) in
 #print axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_derived
 
@@ -367,7 +363,6 @@ assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_blake
   Zcash.Snark.FixtureRandom2.deriveChallenges_matches_blake2b,
   Zcash.Snark.FixtureRandom2.fingerprint_matches)
 assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_derived_blake2b +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu,
@@ -420,7 +415,6 @@ assert_axioms Zcash.Snark.FixtureRandom2.flipped_sign_decodes_negated +native(
 assert_axioms Zcash.Snark.FixtureRandom2.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.FixtureRandom2.keyDigest_eq_capturedVkTranscriptRepr)
 assert_axioms Zcash.Snark.FixtureRandom2.nonInteractiveFingerprint_matches_derived_keyDigest +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomMulti_uses_same_wu,
