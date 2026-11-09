@@ -396,7 +396,6 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_blake2b +nat
   Zcash.Snark.Fixture.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture.fingerprint_matches)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_blake2b +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
@@ -404,7 +403,6 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_blak
   Zcash.Snark.Fixture.fingerprint_matches,
   Zcash.Snark.Fixture.instance_commitments_derived)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs_blake2b +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
   Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,
@@ -471,7 +469,6 @@ assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_u
 assert_axioms Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks +native(
   Zcash.Snark.Fixture.capturedPinnedKeyDescription_rejects_changed_used_permutationChunks)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyDigest +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
@@ -480,7 +477,6 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_keyD
   Zcash.Snark.Fixture.instance_commitments_derived,
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inputs_keyDigest +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.Keygen.instanceCommitment_capturedActionInputs,
   Zcash.Snark.Keygen.publicInputRows_capturedActionInputs,

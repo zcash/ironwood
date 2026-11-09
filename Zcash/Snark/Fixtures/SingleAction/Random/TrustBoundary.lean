@@ -363,7 +363,6 @@ assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_blake2
   Zcash.Snark.FixtureRandom.deriveChallenges_matches_blake2b,
   Zcash.Snark.FixtureRandom.fingerprint_matches)
 assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_blake2b +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,
@@ -416,7 +415,6 @@ assert_axioms Zcash.Snark.FixtureRandom.flipped_sign_decodes_negated +native(
 assert_axioms Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.FixtureRandom.keyDigest_eq_capturedVkTranscriptRepr)
 assert_axioms Zcash.Snark.FixtureRandom.nonInteractiveFingerprint_matches_derived_keyDigest +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_ursG,
   Zcash.Snark.PostNu63Fixture.randomSingle_uses_same_wu,

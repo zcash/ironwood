@@ -1204,7 +1204,7 @@ assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.accepts_of_acc
 -- `rustAcceptedProofRepresented` AGM edge rather than proving them, and it is not an input to the
 -- modeled knowledge-failure bound, which is stated over the record's idealized observer.
 assert_axioms Zcash.Snark.ActionDeploymentInstantiation.rustAccepts_halo2Coins_implies_familyAccepts +native(
-  CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Fields.Pasta.vestaBase,
+  CompElliptic.Fields.Pasta.vestaBase,
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 -- The record's certified query ceiling at its profile's work limit; it reaches the circuit
 -- certificates only through the record's type, as the record itself does.

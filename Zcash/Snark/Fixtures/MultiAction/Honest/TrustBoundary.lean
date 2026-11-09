@@ -692,7 +692,6 @@ assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_blake2b +na
   Zcash.Snark.Fixture2.deriveChallenges_matches_blake2b,
   Zcash.Snark.Fixture2.fingerprint_matches)
 assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_blake2b +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
   Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
@@ -751,7 +750,6 @@ assert_axioms Zcash.Snark.Fixture2.capture_deployedAcceptsRawBytes +native(
   Zcash.Snark.Fixture2.valid_capture_assembles,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.Fixture2.nonInteractiveFingerprint_matches_derived_keyDigest +native(
-  CompElliptic.Fields.Pasta.pallasBase,
   Zcash.Snark.Keygen.certificate,
   Zcash.Snark.PostNu63Fixture.captures_use_same_ursG,
   Zcash.Snark.PostNu63Fixture.captures_use_same_wu,
