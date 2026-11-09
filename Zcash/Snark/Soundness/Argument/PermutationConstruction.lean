@@ -16,7 +16,7 @@ open Zcash.Snark
 /-- **Declared equalities are enforced.** If the verifier accepts — yielding the permutation-argument
 multiset identity `h` for the constructed permutation `σ = build cs` (see `Permutation.lean`) — and the
 copy constraints force `x` and `y` equal (the `Relation.EqvGen` closure), then their witnessed values
-coincide. Combines `build_correct` (σ's cycles are exactly the constraint classes) with
+coincide. Combines `sameCycle_build_iff` (σ's cycles are exactly the constraint classes) with
 `Permutation.perm_copy_constraints` (cells in a cycle hold equal values). -/
 theorem value_eq_of_constraints {ι L V : Type*} [Fintype ι] [DecidableEq ι]
     (cs : List (ι × ι)) {label : ι → L} (hlabel : Function.Injective label) (value : ι → V)
@@ -24,7 +24,7 @@ theorem value_eq_of_constraints {ι L V : Type*} [Fintype ι] [DecidableEq ι]
        = Finset.univ.val.map (fun c => (value c, label ((build cs) c))))
     {x y : ι} (hxy : Relation.EqvGen (fun u v => (u, v) ∈ cs) x y) :
     value x = value y :=
-  perm_copy_constraints (build cs) hlabel value h ((build_correct cs x y).mpr hxy)
+  perm_copy_constraints (build cs) hlabel value h ((sameCycle_build_iff cs x y).mpr hxy)
 
 /-- Specialization to a directly declared copy constraint `(c, d) ∈ cs`. -/
 theorem value_eq_of_mem {ι L V : Type*} [Fintype ι] [DecidableEq ι]

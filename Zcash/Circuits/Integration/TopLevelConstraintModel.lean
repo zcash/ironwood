@@ -232,7 +232,7 @@ def resolverPermutationCycleOfKeygenColumns
   have hrows : Function.Injective fun i : Fin top.n =>
       (top.toVerifierKey urs).omega ^ (i : ℕ) := by
     simpa only [top.toVerifierKey_omega] using
-      top.domainRowsInjective
+      top.omega_pow_injective
   exact ResolverPermutationCycle.ofKeygenColumns
     (top.toVerifierKey urs) poly p hactive fullSigma sigma
       hrows hcolumns' hrestrict

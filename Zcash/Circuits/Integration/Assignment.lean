@@ -82,7 +82,7 @@ theorem publicInputEncoding_of_publicInputRowPolynomials
       top.usableRowsAt_domainExponent_le_n⟩
   rw [polynomialAssignment_instance, hpoly index]
   have hrow := instanceRowPolynomial_eval
-    (values := top.publicInputRows input cell.1) top.domainRowsInjective domainRow
+    (values := top.publicInputRows input cell.1) top.omega_pow_injective domainRow
   calc
     _ = (top.publicInputRows input cell.1).getD cell.2 0 := by
       simpa only [domainRow, cell] using hrow

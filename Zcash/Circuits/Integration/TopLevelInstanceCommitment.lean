@@ -237,7 +237,7 @@ def publicInputEncoding_or_relation
       acceptedColumn_eq_rowPolynomial_or_relation
         top pp urs hk inputs ps ch pU pW a batchOpenings
         memberDecode haccepts proofIndex index
-        (top.domainRowsInjective))
+        (top.omega_pow_injective))
     fun hcolumns => ?_
   exact top.publicInputEncoding_of_publicInputRowPolynomials _ proofIndex
     (inputs proofIndex) hcolumns

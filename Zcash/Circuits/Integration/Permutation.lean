@@ -733,7 +733,7 @@ def resolverPermutationCycle_or_relation
       relation.resolverPermutationPairs_snd_eq_keygenSigmaColumn_or_relation_of_size
         proofIndex chunk column hj shapeCommon hidx key
         (top.permutationRows common)
-        hcommit (by simpa only [top.toVerifierKey_omega] using top.domainRowsInjective_of_domainExponent_eq hk)
+        hcommit (by simpa only [top.toVerifierKey_omega] using top.omega_pow_injective_of_domainExponent_eq hk)
         (by
           simpa only [top.n_eq_two_pow_domainExponent] using
             congrArg (2 ^ ·) hkDomain)

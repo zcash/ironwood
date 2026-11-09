@@ -228,7 +228,7 @@ theorem topLevelFixedColumnEncoding_of_binding
   have heval :=
     instanceRowPolynomial_eval
       (values := top.fixedRows.getD column.index [])
-      top.domainRowsInjective domainRow
+      top.omega_pow_injective domainRow
   rw [top.fixedValue_eq_fixedRows_getD]
   simpa only [domainRow] using heval
 
@@ -341,7 +341,7 @@ def topLevelFixedColumns_eq_rowPolynomials_or_relation
         instanceRowPolynomial (2 ^ urs.k)
           top.omega (top.fixedRows.getD column [])) ⊕'
       AugmentedRelationWitness (F := Fp) urs.g urs.u urs.w := by
-  have hrows := top.domainRowsInjective_of_domainExponent_eq hk
+  have hrows := top.omega_pow_injective_of_domainExponent_eq hk
   have hrowsVk : Function.Injective
       fun i : Fin (2 ^ urs.k) =>
         (top.toVerifierKey urs).omega ^ (i : ℕ) := by

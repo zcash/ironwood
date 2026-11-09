@@ -545,7 +545,7 @@ theorem adaptiveActionXDegree_bound (numProofs : ℕ)
     exact vk_n_pred_le
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
       actionCircuit.omega ^ (i : ℕ) :=
-    actionCircuit.domainRowsInjective
+    actionCircuit.omega_pow_injective
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis
@@ -1083,7 +1083,7 @@ private theorem adaptive_action_x_degree_of_le_for (numProofs : ℕ)
     exact vk_n_pred_le
   have hrows : Function.Injective fun i : Fin actionCircuit.n =>
       actionCircuit.omega ^ (i : ℕ) :=
-    actionCircuit.domainRowsInjective
+    actionCircuit.omega_pow_injective
   have hblindingVk : avk.blindingFactors < avk.n :=
     actionCircuit.toVerifierKey_blindingFactors_lt_n
       (ursOfAugmentedBasis
