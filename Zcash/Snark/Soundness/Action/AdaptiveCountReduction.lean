@@ -513,9 +513,11 @@ def selectedKnowledgeFailureEvent {maxActions : ℕ}
   {q | family.selectedAccepts q.1 q.2 ∧
     family.selectedKnowledgeExtractor q.1 q.2 = none}
 
-/-- The four concrete statistical failure surfaces on the count selected by the
-shared run: `z = 0`, the guarded IPA binding discrepancy, a failed deployed-root
-check, or one of the five Action semantic challenge surfaces. -/
+/-- The four statistical bad sets of the count selected by the shared run, at the selected run's
+own challenges: `z = 0`; a root of one IPA round quadratic; a root of one of the six multiopen
+and IPA-shift polynomials (`outputRootSurface`); or one of the five Action semantic bad sets
+(`outputSemanticSurface`). These are the fixed-count families' priced events, read at the
+selected output, and `AdaptiveCountSurfaces` prices them over the shared table. -/
 def selectedStatisticalSurface {maxActions : ℕ}
     (family : ComputedAdaptiveActionCountFSFamily maxActions)
     (basis : AdaptiveActionCountBasis) (O : family.Coins) : Prop := by
@@ -523,25 +525,22 @@ def selectedStatisticalSurface {maxActions : ℕ}
   let component := family.components selected.count
   let view := (family.selectedCachedRun basis O).toRunView
   exact view.pre 10 = 0 ∨
-    fullAlgebraicBindingAttackZ basis
-      (adaptiveActionStatementVk (adaptiveActionCountParams selected.count) basis)
-      (adaptiveActionStatementInstanceCommitment
-        (adaptiveActionCountParams selected.count) basis view.output.inputs)
-      view.output.toAlgebraicWfProof view.pre view.rounds ∨
-    (∃ witness,
-      component.batchOutcomeV basis view = PSum.inl witness ∧
-        ¬component.BatchGoodRootsV basis view witness) ∨
+    (∃ j, view.rounds j ∈
+      szBadSet (view.output.toAlgebraicWfProof.straightLineIpaRootPolynomial
+        view.pre view.rounds j)) ∨
+    (∃ i : Fin 6,
+      view.pre (deployedRootChallengeIndex i) ∈
+        component.outputRootSurface basis (deployedRootChallengeIndex i) view.output
+          (fun j => view.pre (j.castLE (le_of_lt (deployedRootChallengeIndex i).isLt)))) ∨
     (∃ n : Fin 5,
       let n11 : Fin 11 := Fin.castLE (by omega) n
-      view.pre n11 ∈ adaptiveActionSurfaceAt
-        (adaptiveActionCountParams selected.count) basis view.output.inputs n
-        view.output.toAlgebraicWfProof.proof.1
-        (ComputedAdaptiveActionStatementFSFamily.semanticRepresentationTarget
-          view.output n ++ component.fixedRepresentations basis)
+      view.pre n11 ∈ component.outputSemanticSurface basis n view.output
         (fun i => view.pre (i.castLE (le_of_lt n11.isLt))))
 
-/-- Away from the concrete selected-count surfaces, an accepting shared run with
-no relation yields an Action-bundle witness. -/
+/-- Away from the four selected-count bad sets, an accepting shared run with no relation yields
+an Action-bundle witness: the IPA binding attack would have a round root
+(`terminalRelationFinderV_none_attack_root`), bad batch roots would lie on a root surface
+(`goodRoots_of_not_rootSurface`), and the semantic surfaces are excluded directly. -/
 theorem selectedKnowledgeExtractor_isSome_of_no_surface {maxActions : ℕ}
     (family : ComputedAdaptiveActionCountFSFamily maxActions)
     (basis : AdaptiveActionCountBasis) (O : family.Coins)
@@ -560,32 +559,28 @@ theorem selectedKnowledgeExtractor_isSome_of_no_surface {maxActions : ℕ}
       (family.selectedRelationFinderWithCalls_none_provenance basis O hnone)
   have hfinderNone : finder.1 = none := by
     simpa only [finder, selectedRelationFinder] using hrelation
-  have hstages := family.selectedRelationFinderWithCalls_none_later basis O hfinderNone
+  obtain ⟨hquotientStage, hidentityStage, hterminalStage⟩ :=
+    family.selectedRelationFinderWithCalls_none_later basis O hfinderNone
   have hquotientNone : component.statementQuotientRelationFinderV basis view = none := by
-    simpa only [selected, component, cache, view] using hstages.1
+    simpa only [selected, component, cache, view] using hquotientStage
   have hidentityNone : component.identityRelationFinderV basis view hcharV none
       (fun _ => hfacts hfinderNone) = none := by
-    simpa only [selected, component, cache, view, hcharV, hfacts] using hstages.2.1
+    simpa only [selected, component, cache, view, hcharV, hfacts] using hidentityStage
   have hterminalNone : component.terminalRelationFinderV basis view hcharV = none := by
-    simpa only [selected, component, cache, view, hcharV] using hstages.2.2
+    simpa only [selected, component, cache, view, hcharV] using hterminalStage
   have hacceptsV : component.acceptsV basis view := by
     simpa only [selectedAccepts, selected, component, cache, view] using haccepts
   have hno : ¬(view.pre 10 = 0 ∨
-      fullAlgebraicBindingAttackZ basis
-        (adaptiveActionStatementVk (adaptiveActionCountParams selected.count) basis)
-        (adaptiveActionStatementInstanceCommitment
-          (adaptiveActionCountParams selected.count) basis view.output.inputs)
-        view.output.toAlgebraicWfProof view.pre view.rounds ∨
-      (∃ witness,
-        component.batchOutcomeV basis view = PSum.inl witness ∧
-          ¬component.BatchGoodRootsV basis view witness) ∨
+      (∃ j, view.rounds j ∈
+        szBadSet (view.output.toAlgebraicWfProof.straightLineIpaRootPolynomial
+          view.pre view.rounds j)) ∨
+      (∃ i : Fin 6,
+        view.pre (deployedRootChallengeIndex i) ∈
+          component.outputRootSurface basis (deployedRootChallengeIndex i) view.output
+            (fun j => view.pre (j.castLE (le_of_lt (deployedRootChallengeIndex i).isLt)))) ∨
       (∃ n : Fin 5,
         let n11 : Fin 11 := Fin.castLE (by omega) n
-        view.pre n11 ∈ adaptiveActionSurfaceAt
-          (adaptiveActionCountParams selected.count) basis view.output.inputs n
-          view.output.toAlgebraicWfProof.proof.1
-          (ComputedAdaptiveActionStatementFSFamily.semanticRepresentationTarget
-            view.output n ++ component.fixedRepresentations basis)
+        view.pre n11 ∈ component.outputSemanticSurface basis n view.output
           (fun i => view.pre (i.castLE (le_of_lt n11.isLt))))) := by
     simpa only [selectedStatisticalSurface, selected, component, cache, view] using hnosurface
   have hz : view.pre 10 ≠ 0 := fun h => hno (Or.inl h)
@@ -593,14 +588,14 @@ theorem selectedKnowledgeExtractor_isSome_of_no_surface {maxActions : ℕ}
       (adaptiveActionStatementVk (adaptiveActionCountParams selected.count) basis)
       (adaptiveActionStatementInstanceCommitment
         (adaptiveActionCountParams selected.count) basis view.output.inputs)
-      view.output.toAlgebraicWfProof view.pre view.rounds :=
-    fun h => hno (Or.inr (Or.inl h))
+      view.output.toAlgebraicWfProof view.pre view.rounds := fun hattack =>
+    hno (Or.inr (Or.inl (component.terminalRelationFinderV_none_attack_root basis view hcharV
+      hterminalNone hacceptsV hz hattack)))
   have hgoodRoots : ∀ witness,
       component.batchOutcomeV basis view = PSum.inl witness →
-        component.BatchGoodRootsV basis view witness := by
-    intro witness hout
-    by_contra hbad
-    exact hno (Or.inr (Or.inr (Or.inl ⟨witness, hout, hbad⟩)))
+        component.BatchGoodRootsV basis view witness := fun witness _ =>
+    witness.goodRoots_of_not_rootSurface component basis view fun i hmem =>
+      hno (Or.inr (Or.inr (Or.inl ⟨i, hmem⟩)))
   have hsurface : ∀ n : Fin 5,
       let n11 : Fin 11 := Fin.castLE (by omega) n
       view.pre n11 ∉ adaptiveActionSurfaceAt
@@ -620,7 +615,7 @@ theorem selectedKnowledgeExtractor_isSome_of_no_surface {maxActions : ℕ}
 
 /-- The purely statistical residual after the single relation finder has returned
 no relation.  Unlike a generic "failure and no relation" remainder, this event is
-the explicit union of the four selected-count statistical surfaces. -/
+the explicit union of the four selected-count bad sets. -/
 def selectedStatisticalFailureEvent {maxActions : ℕ}
     (family : ComputedAdaptiveActionCountFSFamily maxActions) :
     Set (AdaptiveActionCountBasis × family.Coins) :=

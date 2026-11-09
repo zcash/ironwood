@@ -86,6 +86,7 @@ import Zcash.Snark.Soundness.AGM.AdaptiveIpaSurfaces
 import Zcash.Snark.Soundness.AGM.AdaptiveRootSurfaces
 import Zcash.Snark.Soundness.Action.AdaptiveStatementReads
 import Zcash.Snark.Soundness.Action.AdaptiveStatementInhabitant
+import Zcash.Snark.Soundness.Action.AdaptiveCountSurfaces
 import Zcash.Snark.Soundness.Oracle.Challenge255
 import Zcash.Snark.Soundness.Composition.ZeroBasisAcceptance
 import Zcash.Snark.Soundness.Action.DeploymentRecord
@@ -2275,6 +2276,17 @@ assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.queriedSemanti
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statementLabeledPrefixBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statementPrefixBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms Zcash.Snark.adaptiveRootSurfaceAt_measure_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+-- The same bad sets over the shared adaptive-count table, where the count is read off the query
+-- point's length and every count is priced at the largest count's budget; the two `iUnion` lemmas
+-- are the generic measure bounds for a union indexed by a length equation or a proposition.
+assert_axioms Zcash.Snark.iUnion_length_measure_le
+assert_axioms Zcash.Snark.iUnion_prop_measure_le
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedRootBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputRootBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedSemanticBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputSemanticBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedQueriedIpaBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.sharedOutputIpaBad_measure_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Probability bounds spelled `_prob_le`
 
@@ -2289,6 +2301,7 @@ assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineRootZ
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineDeployedRoots_prob_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedStraightLineDeployedFSFamily.straightLineConstraintBadX_prob_le +native(CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.statisticalSurfaceEvent_prob_le +native(CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms Zcash.Snark.ComputedAdaptiveActionCountFSFamily.selectedStatisticalFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Snark.ComputedAdaptiveActionStatementFSFamily.adaptiveStatementKnowledgeFailure_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.event_prob_le_of_subset +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms Zcash.Security.Ledger.AdaptiveActionReduction.Family.ledgerFailureEvent_prob_le +native(CompElliptic.Fields.Pasta.pallasBase, CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt, CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
