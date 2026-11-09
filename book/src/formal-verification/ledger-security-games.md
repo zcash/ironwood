@@ -138,11 +138,15 @@ On the composed route to the Balance goals, the `_combinedDLR` endpoints carry o
 hypothesis per kind of error. The Action discrete-log term is charged once: the proofs of
 every chain position come from one shared adaptive-count execution, whose combined
 relation finder (`combinedRelationFinder`) is the one discrete-log adversary, so neither
-`numChainPositions` nor `maxActions` multiplies that term. The selected count's
-statistical surfaces keep a union bound with factor `numChainPositions`; the bound on
-them (`hstat`) is a hypothesis of these endpoints, and the fixed-count capstone's
-concrete bound is the template for discharging it. Every ledger-side relation arm —the
-bridge escapes, the Sinsemilla reducer's relations, and the value-DLR finder's— is
+`numChainPositions` nor `maxActions` multiplies that term. The statistical term is summed
+over the chain positions, and it is a proved bound rather than a hypothesis
+(`Family.statisticalBound`, from `orchard_action_adaptiveCount_statistical_error_bound`).
+It is the query budget plus one, times the probability that a challenge lands in one of
+the four bad sets, with that probability taken at the largest Action count. The count
+that the adversary chose can be read off the length of the transcript at each oracle
+query. So the proof does not pay for a union over the possible counts, and `maxActions`
+enters only through that largest-count probability. Every ledger-side relation arm
+—the bridge escapes, the Sinsemilla reducer's relations, and the value-DLR finder's— is
 carried by the single term `combinedDLRAdvantage`: one event over the composed deployed
 experiment, whose samples all compute nontrivial relations over the combined deployed
 basis (`orchardPoints`).

@@ -75,6 +75,14 @@ and this project adheres to Rust's notion of
   (`Zcash/Security/Ledger/AdaptiveActionReduction.lean`, `AdaptiveActionBundleBridge.lean`) runs
   every chain position in one such execution and combines every position's relation into one
   finder, which a single textbook discrete-log hypothesis prices.
+- The statistical bound of the shared adaptive-count execution
+  (`Zcash/Snark/Soundness/Action/AdaptiveCountSurfaces.lean`,
+  `orchard_action_adaptiveCount_statistical_error_bound`). The bound is the query budget plus one,
+  times the probability that a challenge lands in one of the selected count's four bad sets, with
+  that probability taken at the largest Action count. The count that the adversary chose can be
+  read off the length of the transcript at each oracle query, so the proof does not pay for a
+  union over the possible counts, and no factor `maxActions` appears. The Orchard extraction
+  endpoints consume this bound in place of the statistical hypothesis they took before (#236).
 
 ### Removed
 - The deployment record's `deployedVkDigest` and `vkDigestAgreesOnCanonical` fields, which were
@@ -89,8 +97,7 @@ and this project adheres to Rust's notion of
   presentation are gone (#224), and the Action discrete-log term is charged once, for the combined
   relation finder, so that neither the number of chain positions nor `maxActions` multiplies it
   (#214). The `_of_dlogProfiles` endpoints are replaced by the `_combinedDLR` endpoints, which
-  carry every ledger-side relation arm in `combinedDLRAdvantage` and take the bound on the
-  selected count's statistical surfaces as a hypothesis.
+  carry every ledger-side relation arm in `combinedDLRAdvantage`.
 - `scripts/regenerate-fingerprint-fixtures.sh` fetches the pinned Orchard commit by SHA when
   `refs/pull/544/head` has moved past it, and names the pin in its failure otherwise.
 - `Describes` takes the designated canonical key and the verifier-used key, and

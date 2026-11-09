@@ -1,4 +1,5 @@
 import Zcash.Snark.Capstones.Action.Budgets
+import Zcash.Snark.Soundness.Action.AdaptiveCountSurfaces
 import Zcash.Snark.Soundness.Action.DeploymentRecord
 
 /-!
@@ -23,6 +24,13 @@ size. Four endpoints state them:
   and the declared-profile formula at the `2^123` work factor is transported to that record's
   idealized failure observer with the Challenge255 conversion priced:
   `Adv_DLOG(2^126, 2^126) + 2^-83 + 2^-136`.
+
+The shared adaptive-count execution of the ledger composition has its statistical bound here too,
+`orchard_action_adaptiveCount_statistical_error_bound`. It prices the four bad sets of the
+selected count over the one shared table, from the per-count surface bounds taken at the largest
+count (`orchardAdaptiveCountStatisticalBound`). It is not a knowledge-soundness endpoint; the
+ledger endpoints (`Zcash/Security/Ledger/OrchardExtractionExperiment.lean`) consume it together
+with the discrete-log term of the combined relation finder.
 
 The declared-profile formula's own `2^123` evaluation,
 `adaptiveStatementKnowledgeFailure_le_at_2pow123`, is the rung the modeled endpoint transports
@@ -745,5 +753,55 @@ theorem orchard_action_adaptiveStatement_certified_2pow125_knowledge_finite_secu
   simpa only [show 2 * 2 ^ 125 = 2 ^ 126 by norm_num] using
     (adaptiveStatementCertifiedEndpoint numProofs (2 ^ 125) hn (by norm_num) le_rfl
       B hB query hquery family hQ certificate profile)
+
+/-! ## The shared adaptive-count execution
+
+The ledger composition (`Zcash/Security/Ledger/OrchardExtractionExperiment.lean`) runs one
+adversary over one oracle table for every permitted Action count, and the count is part of the
+adversary's output. `selectedStatisticalFailureEvent_prob_le` prices that execution's statistical
+failure over the shared table, given a bound on the five semantic surfaces at every count. The
+captured per-count surface bound supplies one at `c + 1` Actions for each count `c`. The surface
+degrees grow with the count, so the degrees at `maxActions` bound every count at once. -/
+
+/-- The degrees of the five Action semantic surfaces (the bad sets of `θ`, `β`, `γ`, `y`, `x`) at
+`numProofs` Actions, as `orchard_adaptiveActionStatementSurface_measure_le_for` bounds them. -/
+def orchardActionSemanticDegrees (numProofs : ℕ) : Fin 5 → ℕ :=
+  ![numProofs * 2 ^ 25, numProofs * 950835027, numProofs * 73554, numProofs * 2 ^ 23, 20470]
+
+/-- The semantic surface degrees grow with the number of Actions. -/
+theorem orchardActionSemanticDegrees_mono {n m : ℕ} (h : n ≤ m) (i : Fin 5) :
+    orchardActionSemanticDegrees n i ≤ orchardActionSemanticDegrees m i := by
+  fin_cases i <;> simp [orchardActionSemanticDegrees] <;> omega
+
+/-- The statistical bound of the shared adaptive-count execution: `Q + 1` times the prices of the
+four bad sets (the zero challenge, the IPA round quadratics, the deployed roots, and the semantic
+surfaces). The deployed-root budget is taken at the largest count and the semantic surface degrees
+at `maxActions` Actions. `Q` is the shared adversary's query budget. -/
+noncomputable def orchardAdaptiveCountStatisticalBound (Q maxActions : ℕ) : ℝ≥0∞ :=
+  (Q + 1 : ℕ) *
+    (1 / Fintype.card Fp +
+      actionCircuit.shape.k * (2 / (Fintype.card Fp : ℝ≥0∞)) +
+      algebraicRootBudget (maxCountShape maxActions) actionCircuit.shape.k +
+      ∑ i : Fin 5, (orchardActionSemanticDegrees maxActions i : ℝ≥0∞) / Fintype.card Fp)
+
+/-- **The statistical failure of the shared adaptive-count execution, at deployed Orchard.** Under
+the uniform scalar basis and the uniform shared table, the selected statistical failure event has
+probability at most `orchardAdaptiveCountStatisticalBound Q maxActions`. That event is the
+selected count's reduction returning no relation while the selected run lands in one of the four
+bad sets. The count enters only through the largest shape's root budget and the semantic degrees
+at `maxActions`; `Q` is the shared adversary's own query budget. -/
+theorem orchard_action_adaptiveCount_statistical_error_bound (maxActions : ℕ)
+    (family : ComputedAdaptiveActionCountFSFamily maxActions) (B : VestaG) :
+    (PMF.uniformOfFintype ((ActionBasisIndex → Fp) × family.Coins)).toOuterMeasure
+        ((fun q => (scalarBasis B q.1, q.2)) ⁻¹' family.selectedStatisticalFailureEvent) ≤
+      orchardAdaptiveCountStatisticalBound family.Q maxActions := by
+  unfold orchardAdaptiveCountStatisticalBound
+  refine family.selectedStatisticalFailureEvent_prob_le B
+    (fun i => (orchardActionSemanticDegrees maxActions i : ℝ≥0∞) / Fintype.card Fp) ?_
+  intro c basis n instanceCommitment ps source earlier
+  refine le_trans (orchard_adaptiveActionStatementSurface_measure_le_for ((c : ℕ) + 1) basis
+    instanceCommitment n ps source earlier) ?_
+  exact ENNReal.div_le_div_right
+    (by exact_mod_cast orchardActionSemanticDegrees_mono (Nat.succ_le_of_lt c.isLt) n) _
 
 end Zcash.Snark.Capstone
