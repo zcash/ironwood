@@ -202,8 +202,10 @@ not edit by hand"):
     public spec sections like §4.13);
   - stale process-prose: `grep -rn 'will follow\|next phase\|the next step\|is the remaining\|filled in incrementally'`
     — for each hit, check whether the "pending" thing now exists in the tree;
-  - dash style: `grep -rn -- '—[a-zA-Z\`]\|[a-zA-Z\`]—'` (unspaced em-dashes) and
-    `grep -rn 'Fiat-Shamir'` (hyphen; house style is the en dash, `Fiat–Shamir`);
+  - dash style: `grep -rn -- '[a-zA-Z\`]—[a-zA-Z\`]'` (an em-dash with no space on either side)
+    and `grep -rn 'Fiat-Shamir'` (hyphen; house style is the en dash, `Fiat–Shamir`). The spaced
+    style for en dashes (`word — word`) is accepted; for asides, either the spaced or enclosing
+    style (`word —aside— word`) may be used, and the tree mixes them by author;
   - coined-term chains in prose: `grep -rn ' → .*kernel\| → .*bridge'`.
 - **Per-docstring checklist**, reading each file top to bottom: the rules above, with staleness
   checked against the current tree rather than the docstring's own claims.
