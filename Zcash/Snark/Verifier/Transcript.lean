@@ -8,10 +8,10 @@ import Zcash.Snark.Verifier.FiatShamir
 # Halo2's transcript byte layer
 
 The deployed verifier's Fiat–Shamir transcript is one running BLAKE2b state, personalized
-`Halo2-Transcript`, fed a tagged byte encoding of every absorbed element; each squeeze finalizes a
+`Halo2-Transcript`, fed a tagged byte encoding of every absorbed element. Each squeeze finalizes a
 copy of that state and reduces the 64-byte digest modulo `p`. This module writes that byte layer
-down and instantiates the abstract `FiatShamir` oracle with it — `halo2Transcript` — so the typed
-schedule `deriveChallenges` evaluates to the challenges the deployed verifier actually draws.
+down and instantiates the abstract `FiatShamir` oracle with it as `halo2Transcript`, so that the
+typed schedule `deriveChallenges` evaluates to the challenges the deployed verifier actually draws.
 
 The encoding, from halo2's `transcript.rs` and `pasta_curves`' `to_repr`/`coordinates`:
 
@@ -121,7 +121,7 @@ The tag bytes are halo2's `BLAKE2B_PREFIX_CHALLENGE = 0`, `BLAKE2B_PREFIX_POINT 
 coordinates. The deployed verifier refuses to absorb the identity (`cannot write points at infinity
 to the transcript`); this total function encodes the `(0, 0)` sentinel as zero coordinates instead.
 Nothing accepted reaches that branch: `readProof?` rejects identity proof points, and
-`DeployedAcceptsBytes` excludes identity instance commitments as a conjunct, so the deployed refusal
+`DeployedAcceptsBytes` excludes identity instance commitments as a conjunct. So the deployed refusal
 is a premise of the byte-level predicate rather than a case of this encoding. -/
 def pointBytes (P : VestaG) : List UInt8 :=
   1 :: ((coordRepr P.x).toList ++ (coordRepr P.y).toList)

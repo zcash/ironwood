@@ -15,10 +15,10 @@ random proof string, whose elements are random canonical values rather than a pr
 
 The negatives tamper with the bytes rather than the typed data: a truncated string, a
 non-canonical scalar, the identity encoding, an out-of-range coordinate, and a non-residue `x`
-are all rejected, and flipping a sign bit decodes to the negated point. They exercise Lean's
-decoder independently. At the pinned Orchard #544 commit, the random capture driver applies these
+are all rejected. Flipping a sign bit decodes to the negated point. They exercise Lean's decoder
+independently. At the pinned `zcash/orchard#544` commit, the random capture driver applies these
 same six edits to this deterministic proof before export and checks them through deployed
-`Blake2bRead`: the first five reject and the sign-bit edit decodes to the negated point.
+`Blake2bRead`. The first five reject and the sign-bit edit decodes to the negated point.
 `decodePoint32_eq_some_iff` and `decodeScalar32_eq_some_iff` state why the two readers agree for
 every individual canonical encoding; the capture supplies concrete end-to-end regression coverage
 for these exact bytes.

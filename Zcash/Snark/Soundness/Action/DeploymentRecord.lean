@@ -9,7 +9,7 @@ The Action capstones are exact inside their stated model. `ActionDeploymentInsta
 the typed observer's model identifications and, separately, the production Rust objects and
 one-way containment assumptions. Its finite failure observer is
 deduplicated before the proved Challenge255 hybrid is applied, so one record supplies a *joint*
-modeled experiment rather than an insufficient per-squeeze event bound, and its query budget is
+modeled experiment rather than an insufficient per-squeeze event bound. Its query budget is
 certified tight, so the hybrid's per-query charge totals a closed number rather than a free
 multiple.
 `Capstones/Action.lean` consumes the record and derives a knowledge-failure bound for the record's

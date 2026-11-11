@@ -760,8 +760,8 @@ theorem readProof?_eq_none_of_first_point {shape : Shape} {bs : List UInt8}
 
 /-- The prover's byte string for a typed proof: `write_point`/`write_scalar` in `readProof?`'s
 order. Halo2's reader itself ignores trailing bytes. The production transaction/bundle boundary
-modeled here separately enforces the canonical total length `2720 + 2272 · nActionsOrchard` —
-ZIP 225's format value, a consensus rule from NU6.2 onward (ZIP 257) — while the Lean byte
+modeled here separately enforces the canonical total length `2720 + 2272 · nActionsOrchard`,
+ZIP 225's format value and a consensus rule from NU6.2 onward (ZIP 257). The Lean byte
 predicate additionally requires this reader to consume that string exactly. The latter is a
 Rust-to-Lean refinement obligation, concretely checked at each capture, not a property of Halo2's
 reader alone. -/
@@ -1282,7 +1282,7 @@ theorem readProof?_none_of_truncated {shape : Shape} {bs : List UInt8} {n : ℕ}
       omega
 
 /-- **A non-canonical final scalar is rejected.** Replacing the last 32 bytes of an
-exactly-parsed proof string with any 32 bytes reading at or above `p` fails the parse: by
+exactly-parsed proof string with any 32 bytes reading at or above `p` fails the parse. By
 whole-proof canonicality a successful parse would end in the `to_repr` bytes of its own final
 scalar, whose little-endian value is canonical. -/
 theorem readProof?_none_of_noncanonical_final_scalar {shape : Shape} {bs V : List UInt8}
@@ -1331,9 +1331,9 @@ theorem readProof?_none_of_noncanonical_final_scalar {shape : Shape} {bs V : Lis
 
 Bit 255 of a compressed encoding is the parity of `y`; the low 255 bits are `x`. Negation fixes
 `x` and flips the parity over an odd-order field, so flipping the top bit of a non-identity
-point's encoding is exactly the negated point's encoding, and a proof string with its leading
-point's sign bit flipped still parses in full, with the negated point landing in the first
-advice commitment — the projection the fixture negatives state. -/
+point's encoding is exactly the negated point's encoding. A proof string with its leading
+point's sign bit flipped therefore still parses in full, with the negated point landing in the
+first advice commitment — the projection the fixture negatives state. -/
 
 /-- The bytes of `a` followed by the bytes of `b` read as `leInt a + 256^|a| · leInt b`. -/
 theorem leInt_append (a b : List UInt8) :
@@ -1408,7 +1408,7 @@ theorem toBytes_neg_flip {P : VestaG} (hP : P ≠ 0) :
   omega
 
 /-- A successful vector read with its first element's bytes replaced by bytes its reader reads
-back as `x'`, leaving the same remainder, succeeds with only the first slot changed: the later
+back as `x'`, leaving the same remainder, succeeds with only the first slot changed. The later
 element reads run on the same suffix. -/
 theorem readVec_run_replace_head {α : Type} {n : ℕ} {r : Fin (n + 1) → ProofReader α}
     {bs bs' rest : List UInt8} {f : Fin (n + 1) → α} {x' : α}

@@ -418,9 +418,10 @@ assert_axioms Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr +native(
   Zcash.Snark.Fixture.keyDigest_eq_capturedVkTranscriptRepr)
 
 -- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
--- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
--- relation to the captured key (`Describes`, with the captured key as both its canonical and its
--- used key) and the identity exclusion on the derived instance commitments, both evaluated here.
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`. The composition is under the
+-- pinned description's relation to the captured key (`Describes`, with the captured key as both
+-- its canonical and its used key) and the identity exclusion on the derived instance
+-- commitments, both evaluated here.
 assert_axioms Zcash.Snark.Fixture.capturedProofBytes_decodes +native(
   Zcash.Snark.Fixture.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
@@ -491,7 +492,7 @@ assert_axioms Zcash.Snark.Fixture.nonInteractiveFingerprint_matches_derived_inpu
 -- back field by field against the captured key (its digest check is the family's own
 -- `keyDigest_eq_capturedVkTranscriptRepr`, censused above). The parsed value and the readers the
 -- native claims range over are ordinary definitions (`Describes`' own, at the captured string),
--- censused flagless so compiler trust cannot reach them; well-formedness of the parse is derived
+-- censused flagless so compiler trust cannot reach them. Well-formedness of the parse is derived
 -- from the `base_modulus_eq` field check.
 assert_axioms Zcash.Snark.PinnedKey.pinned
 assert_axioms Zcash.Snark.PinnedKey.fuel

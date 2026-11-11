@@ -31,7 +31,7 @@ challenge as BLAKE2b over halo2's transcript encoding (`Transcript.lean`,
 `deriveChallenges_matches_blake2b`). The captured-table form stays as the diagnostic that
 separates a schedule error from an encoding or hash error.
 The strongest statement of record, `nonInteractiveFingerprint_matches_derived_keyDigest`, goes
-one step further: the key digest that opens the transcript is recomputed from the exact pinned-key
+one step further. The key digest that opens the transcript is recomputed from the exact pinned-key
 string emitted by the exporter, rather than accepting the captured digest scalar. The preimage
 string remains capture data.
 -/

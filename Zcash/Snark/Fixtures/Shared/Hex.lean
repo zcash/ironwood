@@ -5,8 +5,8 @@ import Mathlib.Data.Nat.Notation
 
 The random capture families keep the fabricated proof string the deployed verifier consumed as a
 `proof-bytes.hex` sibling and directly in the generated `Fixture.lean` as `capturedProofHex`.
-`hexDecode?` turns that generated string back into bytes and accepts nothing else — an odd length
-or a non-hex character is `none` — so a corrupted capture fails the family's checks instead of
+`hexDecode?` turns that generated string back into bytes and accepts nothing else: an odd length
+or a non-hex character is `none`. So a corrupted capture fails the family's checks instead of
 decoding to some other byte string.
 -/
 

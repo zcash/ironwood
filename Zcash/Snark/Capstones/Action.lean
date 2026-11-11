@@ -72,7 +72,7 @@ rather than proved, with its known strengthening named where one exists:
   `challenge255_weightedBias_le`, and `challenge255_joint_eventBias_le` composes it through an
   adaptive deduplicated query tree (`Soundness/Oracle/Challenge255.lean`). The byte layer beneath
   the schedule — halo2's transcript encoding and BLAKE2b itself — is modeled and checked against
-  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform, and
+  every capture (`Verifier/Transcript.lean`). Idealizing that digest as uniform, and
   `blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, remain
   external.
 * *DLOG hardness* — each profile takes a caller-supplied advantage bound for its exact relation
@@ -81,30 +81,31 @@ rather than proved, with its known strengthening named where one exists:
 * *Key digest* — `vkHash` is opaque: one canonical key per basis, no cross-key binding claimed
   (`AdaptiveStatementModel.lean`, *Intended instantiation*). At the captures the digest scalar is
   recomputed from the exact exporter-emitted preimage: each family's `Transcript.lean` hashes that
-  string, `Describes` reads its fields against the captured key, which is certified equal to the
+  string. `Describes` reads its fields against the captured key, which is certified equal to the
   derived key, and `Fixtures/PinnedKey.lean` states that reading field by field. The fixture
-  inputs remain trusted. `Describes` is not consumed by any theorem, neither by the modeled
-  probability bound nor by the Rust-containment theorem, whose refinement assumption names the
-  Lean-derived key directly; the captures discharge it as evidence for that assumption (#232).
+  inputs remain trusted. `Describes` is not consumed by any theorem: neither the modeled
+  probability bound nor the Rust-containment theorem uses it, and the latter's refinement
+  assumption names the Lean-derived key directly. The captures discharge it as evidence for that
+  assumption (#232).
   Collision resistance of the reduced digest `keyDigest` follows in the random-oracle model from
   reducing BLAKE2b's 512-bit random-oracle output modulo `p`, with a birthday bound governed by the
   field size. This consequence of the random-oracle model is not formalized here.
-* *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle;
+* *Acceptance* — `DeployedAccepts` is the typed core and prices one proof bundle.
   `DeployedAcceptsBytes` composes exact proof parsing, the derived key digest, and the BLAKE2b
   challenge schedule into it, under `Describes` and halo2's refusal of identity instance
-  commitments, and `DeployedAcceptsRawBytes` validates the raw public columns first and derives
-  their commitments internally. Both honest captures witness both predicates. Universal
-  refinement of Rust's reader to the Lean decoder and halo2's optional `BatchVerifier` remain
-  outside the formalized verifier (`Fingerprint/Match.lean`, *What remains external*); the
-  deployment record names that refinement as its one-way `rustAcceptsRefinesLeanRaw` assumption,
-  consumed only by `rustAccepts_halo2Coins_implies_familyAccepts` — a containment of production
-  acceptance in the family's typed acceptance at the one concrete BLAKE2b table, not an input to
-  the modeled bound below, which is stated over the record's idealized observer. The record also
-  pins the call shape behind that boundary: exact ten-row instance columns — Lagrange commitment
-  zero-padding makes a shorter column verify as its zero-padding
+  commitments. `DeployedAcceptsRawBytes` validates the raw public columns first and derives their
+  commitments internally. Both honest captures witness both predicates. Universal refinement of
+  Rust's reader to the Lean decoder and halo2's optional `BatchVerifier` remain outside the
+  formalized verifier (`Fingerprint/Match.lean`, *What remains external*). The deployment record
+  names that refinement as its one-way `rustAcceptsRefinesLeanRaw` assumption, consumed only by
+  `rustAccepts_halo2Coins_implies_familyAccepts`. That theorem is a containment of production
+  acceptance in the family's typed acceptance at the one concrete BLAKE2b table. It is not an
+  input to the modeled bound below, which is stated over the record's idealized observer. The
+  record also pins the call shape behind that boundary: exact ten-row instance columns and a
+  positive per-bundle action count (`instanceColumnsExact`, `numProofs_pos`). Exact rows matter
+  because Lagrange commitment zero-padding makes a shorter column verify as its zero-padding
   (`assembleNonInteractiveInstances?_padColumns`), aliasing a missing trailing row to
-  `disableCrossAddress = 0` — and a positive per-bundle action count
-  (`instanceColumnsExact`, `numProofs_pos`).
+  `disableCrossAddress = 0`.
 
 The bounds these endpoints prove are exact inside that model. The machine-readable shape for a
 deployment interpretation is `ActionDeploymentInstantiation`

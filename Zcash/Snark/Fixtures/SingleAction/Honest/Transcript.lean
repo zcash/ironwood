@@ -6,9 +6,9 @@ import Zcash.Snark.Verifier.Transcript
 # Byte-level Fiat–Shamir check for the single-action capture
 
 `FiatShamir.lean` reaches the captured challenges through `capturedFs`, a table returning each
-captured challenge at its captured typed prefix. This module reaches them with no table at all:
-`halo2Transcript` recomputes every squeeze from the transcript bytes — the tagged encoding of the
-typed prefix, BLAKE2b-512 personalized `Halo2-Transcript`, the digest reduced modulo `p` — and
+captured challenge at its captured typed prefix. This module reaches them with no table at all.
+`halo2Transcript` recomputes every squeeze from the transcript bytes: the tagged encoding of the
+typed prefix, BLAKE2b-512 personalized `Halo2-Transcript`, the digest reduced modulo `p`.
 `deriveChallenges_matches_blake2b` states that the deployed schedule run through it yields exactly
 the captured `ch`. The captured-table route stays as the diagnostic that separates a schedule
 error from an encoding or hash error.

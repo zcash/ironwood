@@ -111,11 +111,14 @@ it scale.
   canonical home — module docstring or the owning declaration — and every other docstring
   references it in one sentence ("reduction form (see the module docstring)"). Duplicated
   recaps drift; pointers don't.
-- **No private shorthand, no issue numbers.** Spell out repo-internal section numbers ("§1" →
-  "the transcription layer (`assembleFinalMsm`/`ipaFold`, checked by the fingerprint fixtures)").
-  Doc comments never cite issue numbers (#18, #14): state the fact ("binding the decode to the
-  witness is still open") and let the tracker own the numbering — issue refs rot and mean
-  nothing to a reader outside the repo's process.
+- **No private shorthand; issue numbers only for open tracked gaps.** Spell out repo-internal
+  section numbers ("§1" → "the transcription layer (`assembleFinalMsm`/`ipaFold`, checked by the
+  fingerprint fixtures)"). A doc comment cites an issue number only for a gap that is still open
+  and tracked there, and states the fact first so that the sentence stands without the tracker
+  ("`Describes` is not consumed by any theorem (#232)"). It never cites a closed issue, an issue
+  that the PR itself closes, or an issue in place of the fact. The `pr-preflight` skill audits
+  this: removing an open-issue reference for a tracked gap is blocking, and a reference is
+  removed when its issue closes.
 - **Module docstrings are maps, not walls.** Convert narrative paragraphs into: the families/
   endpoints as bullets, the proof route as a numbered chain (each step marked *proven* /
   *residual* / *proven up to X* with its Lean anchor), then an assumptions section.
@@ -199,8 +202,10 @@ not edit by hand"):
     public spec sections like §4.13);
   - stale process-prose: `grep -rn 'will follow\|next phase\|the next step\|is the remaining\|filled in incrementally'`
     — for each hit, check whether the "pending" thing now exists in the tree;
-  - dash style: `grep -rn -- '—[a-zA-Z\`]\|[a-zA-Z\`]—'` (unspaced em-dashes) and
-    `grep -rn 'Fiat-Shamir'` (hyphen; house style is the en dash, `Fiat–Shamir`);
+  - dash style: `grep -rn -- '[a-zA-Z\`]—[a-zA-Z\`]'` (an em-dash with no space on either side)
+    and `grep -rn 'Fiat-Shamir'` (hyphen; house style is the en dash, `Fiat–Shamir`). The spaced
+    style for en dashes (`word — word`) is accepted; for asides, either the spaced or enclosing
+    style (`word —aside— word`) may be used, and the tree mixes them by author;
   - coined-term chains in prose: `grep -rn ' → .*kernel\| → .*bridge'`.
 - **Per-docstring checklist**, reading each file top to bottom: the rules above, with staleness
   checked against the current tree rather than the docstring's own claims.

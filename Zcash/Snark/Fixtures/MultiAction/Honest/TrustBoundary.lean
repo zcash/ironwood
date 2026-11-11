@@ -709,9 +709,10 @@ assert_axioms Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr +native
   Zcash.Snark.Fixture2.keyDigest_eq_capturedVkTranscriptRepr)
 
 -- The generated honest proof bytes parse exactly, serialize canonically, and compose the derived
--- key digest plus BLAKE2b schedule into typed `DeployedAccepts`, under the pinned description's
--- relation to the captured key (`Describes`, with the captured key as both its canonical and its
--- used key) and the identity exclusion on the derived instance commitments, both evaluated here.
+-- key digest plus BLAKE2b schedule into typed `DeployedAccepts`. The composition is under the
+-- pinned description's relation to the captured key (`Describes`, with the captured key as both
+-- its canonical and its used key) and the identity exclusion on the derived instance
+-- commitments, both evaluated here.
 assert_axioms Zcash.Snark.Fixture2.capturedProofBytes_decodes +native(
   Zcash.Snark.Fixture2.capturedProofBytes_decodes,
   CompElliptic.Fields.Pasta.vestaBase)
