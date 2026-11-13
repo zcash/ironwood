@@ -94,9 +94,11 @@ globs = [
 # Rust circuit (see `Zcash/Circuits/Fixtures/`). Like `FixtureCheck`, these are `#eval`-checked
 # empirical bindings kept out of `lake build Zcash`, but compiled by plain `lake build`
 # (what CI runs) so a divergence between the Lean circuit model and the deployed VK fails the
-# build. The glob covers the whole directory, so a newly added test cannot land in no target
-# at all; that also pulls in `BenchFixedBase`, a pure kernel-`decide` benchmark, which is
-# cheap enough at its current size to keep honest alongside the rest.
+# build. `Zcash/Circuits/Tests/TestVectors/` likewise checks the Lean primitives against the
+# pinned zcash-test-vectors (by kernel `decide`). The glob covers the whole directory, so a
+# newly added test cannot land in no target at all; that also pulls in `BenchFixedBase`, a
+# pure kernel-`decide` benchmark, which is cheap enough at its current size to keep honest
+# alongside the rest.
 [[lean_lib]]
 name = "CircuitCheck"
 globs = ["Zcash.Circuits.Tests.+"]

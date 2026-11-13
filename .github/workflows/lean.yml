@@ -180,7 +180,9 @@ jobs:
       #
       # `CircuitCheck` covers `Zcash/Circuits/Tests/TestVk*`, which compare the ported
       # `configure`/`synthesize` against the CS and layout fixtures dumped from the Rust
-      # circuit, so a divergence between the Lean circuit model and the deployed VK fails here.
+      # circuit, so a divergence between the Lean circuit model and the deployed VK fails here,
+      # and `Zcash/Circuits/Tests/TestVectors/`, which checks the Lean primitives against the
+      # pinned zcash-test-vectors.
       #
       # `MetaCheck` runs the census machinery's own negative regression suite, and
       # `SecurityCheck` the ledger-bridge regression checks.
