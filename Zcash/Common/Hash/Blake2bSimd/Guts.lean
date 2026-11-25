@@ -22,7 +22,8 @@ cannot fail and have no counterpart.
 
 `blake2b_simd` 1.0.5 from crates.io:
 
-* `src/lib.rs:63-64` `Word` and `Count`, `src/lib.rs:76` `BLOCKBYTES`, `src/lib.rs:78-87` `IV`,
+* `src/lib.rs:63-64` `Word` and `Count`, `src/lib.rs:67` `OUTBYTES`, `src/lib.rs:73`
+  `PERSONALBYTES`, `src/lib.rs:76` `BLOCKBYTES`, `src/lib.rs:78-87` `IV`,
   `src/lib.rs:89-102` `SIGMA`;
 * `src/guts.rs:14-24` `Platform` and `Implementation`;
 * `src/guts.rs:158-201` `Finalize`, `LastNode` and `Stride`, with `src/blake2bp.rs:38` `DEGREE`;
@@ -38,6 +39,12 @@ abbrev Word := UInt64
 /-- `Count`: the 128-bit count of bytes compressed so far. Lean has no 128-bit unsigned integer
 type, so it is a 128-bit vector. -/
 abbrev Count := BitVec 128
+
+/-- `OUTBYTES`: the longest digest, eight words, 64 bytes. -/
+def OUTBYTES : ℕ := 64
+
+/-- `PERSONALBYTES`: the personalization's length, two words, 16 bytes. -/
+def PERSONALBYTES : ℕ := 16
 
 /-- `BLOCKBYTES`: a block is sixteen words, 128 bytes. -/
 def BLOCKBYTES : ℕ := 128
