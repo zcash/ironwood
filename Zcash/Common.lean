@@ -1,5 +1,6 @@
 import Zcash.Common.DiscreteLogRelation
 import Zcash.Common.Hash.Blake2bSimd.Guts
+import Zcash.Common.Hash.Blake2bSimd.Portable
 import Zcash.Common.Hash.Blake2bSimd.X86
 import Zcash.Common.ProgrammedBasis
 import Zcash.Common.RelationProbability
