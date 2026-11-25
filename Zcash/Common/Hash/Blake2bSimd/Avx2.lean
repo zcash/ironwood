@@ -1,3 +1,4 @@
+import Zcash.Common.Hash.Blake2bSimd.Loop
 import Zcash.Common.Hash.Blake2bSimd.X86
 
 /-!
@@ -19,7 +20,7 @@ table read from the Rust (`src/avx2.rs:206-444`).
 
 * `src/avx2.rs:70-74` `_MM_SHUFFLE!`, `src/avx2.rs:86-103` `rot32`, `rot24`, `rot16`, `rot63`;
 * `src/avx2.rs:106-128` `g1` and `g2`, `src/avx2.rs:135-150` `diagonalize` and `undiagonalize`;
-* `src/avx2.rs:153-454` `compress_block`.
+* `src/avx2.rs:153-454` `compress_block`, `src/avx2.rs:457-510` `compress1_loop`.
 -/
 
 namespace Zcash.Common.Blake2bSimd.Avx2
@@ -156,5 +157,13 @@ def compressBlock (block : Vector UInt8 128) (words : Vector Word 8) (count : Co
   let a' := mm256XorSi256 (mm256XorSi256 a' c') a
   let b' := mm256XorSi256 (mm256XorSi256 b' d') b
   mm256StoreuSi256 a' ++ mm256StoreuSi256 b'
+
+/-- `compress1_loop`: the compression loop (`compress1Loop`) with the AVX2 `compress_block`. The
+Rust is `unsafe` and compiled for AVX2 (`#[target_feature(enable = "avx2")]`), so it may run only
+on a CPU with AVX2; its full-block read is an unchecked pointer cast (`src/avx2.rs:491`), which
+the loop's offsets keep inside the input. -/
+def compress1Loop (input : List UInt8) (words : Vector Word 8) (count : Count)
+    (lastNode : LastNode) (finalize : Finalize) (stride : Stride) : Vector Word 8 :=
+  Blake2bSimd.compress1Loop compressBlock input words count lastNode finalize stride
 
 end Zcash.Common.Blake2bSimd.Avx2

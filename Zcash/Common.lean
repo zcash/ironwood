@@ -1,5 +1,6 @@
 import Zcash.Common.DiscreteLogRelation
 import Zcash.Common.Hash.Blake2bSimd.Avx2
+import Zcash.Common.Hash.Blake2bSimd.Dispatch
 import Zcash.Common.Hash.Blake2bSimd.Guts
 import Zcash.Common.Hash.Blake2bSimd.Portable
 import Zcash.Common.Hash.Blake2bSimd.X86
