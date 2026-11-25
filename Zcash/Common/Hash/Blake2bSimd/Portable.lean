@@ -1,4 +1,4 @@
-import Zcash.Common.Hash.Blake2bSimd.Guts
+import Zcash.Common.Hash.Blake2bSimd.Loop
 
 /-!
 # `blake2b_simd`'s portable compression function
@@ -18,7 +18,7 @@ type: the state positions `g` mixes and the entries of `SIGMA` are `Fin 16`, and
 `blake2b_simd` 1.0.5 from crates.io:
 
 * `src/portable.rs:13-22` `g`, `src/portable.rs:27-42` `round`;
-* `src/portable.rs:45-149` `compress_block`.
+* `src/portable.rs:45-149` `compress_block`, `src/portable.rs:151-200` `compress1_loop`.
 -/
 
 namespace Zcash.Common.Blake2bSimd
@@ -80,6 +80,13 @@ def compressBlock (block : Vector UInt8 128) (words : Vector Word 8) (count : Co
   let v := round 10 m v
   let v := round 11 m v
   Vector.ofFn fun i : Fin 8 => words[i] ^^^ (v[i.val] ^^^ v[i.val + 8])
+
+/-- `compress1_loop`: the compression loop (`compress1Loop`) with the portable `compress_block`.
+Its full-block read is a bounds-checked slice (`src/portable.rs:182`), which the loop's offsets
+keep inside the input. -/
+def compress1Loop (input : List UInt8) (words : Vector Word 8) (count : Count)
+    (lastNode : LastNode) (finalize : Finalize) (stride : Stride) : Vector Word 8 :=
+  Blake2bSimd.compress1Loop compressBlock input words count lastNode finalize stride
 
 end Portable
 
