@@ -9,6 +9,7 @@ import Zcash.Common.Hash.Blake2bSimd.Params
 import Zcash.Common.Hash.Blake2bSimd.Portable
 import Zcash.Common.Hash.Blake2bSimd.PortableSpec
 import Zcash.Common.Hash.Blake2bSimd.State
+import Zcash.Common.Hash.Blake2bSimd.StateSpec
 import Zcash.Common.Hash.Blake2bSimd.X86
 import Zcash.Common.Hash.Blake2bSimd.X86Spec
 import Zcash.Common.ProgrammedBasis
