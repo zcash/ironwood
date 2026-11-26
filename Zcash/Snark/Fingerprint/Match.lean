@@ -146,12 +146,14 @@ Twelve premises remain trusted rather than fixture-checked:
 * Fiat–Shamir bytes — `halo2Transcript` recomputes every captured challenge from bytes through a
   Lean BLAKE2b (`Verifier/Transcript.lean`); BLAKE2b's identification with a random oracle stays
   idealized;
-* BLAKE2b implementation agreement — `blake2b_simd`, which the deployed transcript hashes with, is
-  checked against the Lean RFC 7693 model (`Common/Hash/Blake2b.lean`) only on the captured
-  transcripts and the known-answer vectors, and only on the compression path (portable, SSE4.1,
-  or AVX2) it selected at run time on the capturing machine; that the two agree on every other
-  input and path is trusted. A replacement diverging on the captures is caught, one agreeing
-  there and diverging elsewhere is not;
+* BLAKE2b implementation agreement — a hand transcription of `blake2b_simd`'s one-stream hashing
+  is proved to compute the Lean RFC 7693 model (`Common/Hash/Blake2b.lean`) on every input, with
+  each of its implementations, in halo2's configuration
+  (`Common/Hash/Blake2bSimd/StateSpec.lean`). Three things are trusted: that the transcription
+  matches the Rust; that its models of the AVX2 intrinsics and of the standard-library functions
+  the Rust calls compute what those do; and that the version does not matter. The transcription
+  was read from 1.0.5 and the fixtures are captured under a lockfile that resolves 1.0.1, whose
+  one-stream source differs only in how fixed-size views of the same bytes are taken;
 * the pinned-point caveat — a published capture could be special-cased by a malicious edit,
   excluded by review and by seeds fixed before code;
 * sampled-point distribution — applying the literal ε treats scalar expansion from fixed public

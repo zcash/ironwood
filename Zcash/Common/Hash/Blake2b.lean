@@ -9,9 +9,10 @@ parameter configuration halo2's Fiat–Shamir transcript uses: the full 64-byte 
 personalization, no key, no salt, and the sequential (fanout 1, depth 1) mode. The deployed
 transcript hashes with `blake2b_simd`; this module lets Lean recompute those digests, so the byte
 layer beneath the typed challenge schedule can be checked against the captured runs instead of
-idealized away. Agreement with `blake2b_simd` beyond the captured transcripts and the known-answer
-vectors below is trusted, not proved, and the captures exercise only the compression path
-(portable, SSE4.1, or AVX2) that `blake2b_simd` selected at run time on the capturing machine.
+idealized away. A hand transcription of `blake2b_simd`'s one-stream hashing is proved to compute
+`digest64` on every input, with each of its implementations, in this configuration
+(`Common/Hash/Blake2bSimd/StateSpec.lean`); what that leaves trusted is listed in
+`Snark/Fingerprint/Match.lean`, *What remains external*.
 
 Everything here is a total function on lists and fixed-length vectors — no `IO`, no `extern`, no
 `implemented_by` — so the kernel and compiled evaluation compute the same definitions. The
@@ -134,7 +135,7 @@ decreasing_by simp only [List.length_drop]; omega
 /-- The initial state for an unkeyed sequential hash of `outLen` output bytes with the 16-byte
 personalization `personal`: `IV` xor the parameter block, whose first word packs the digest length,
 key length `0`, fanout `1`, and depth `1`, and whose last two words carry the personalization
-(RFC 7693 §2.8, BLAKE2 specification §2.8). -/
+(RFC 7693 §2.5 for the first word, BLAKE2 specification §2.8 for the personalization). -/
 def initialState (outLen : ℕ) (personal : Vector UInt8 16) : Vector UInt64 8 :=
   let h := upd IV 0 (IV.get 0 ^^^ (0x01010000 ||| UInt64.ofNat outLen))
   let h := upd h 6 (h.get 6 ^^^ wordLE (personal.toList.take 8))
