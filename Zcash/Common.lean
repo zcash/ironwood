@@ -6,6 +6,7 @@ import Zcash.Common.Hash.Blake2bSimd.GutsSpec
 import Zcash.Common.Hash.Blake2bSimd.LoopSpec
 import Zcash.Common.Hash.Blake2bSimd.Params
 import Zcash.Common.Hash.Blake2bSimd.Portable
+import Zcash.Common.Hash.Blake2bSimd.PortableSpec
 import Zcash.Common.Hash.Blake2bSimd.State
 import Zcash.Common.Hash.Blake2bSimd.X86
 import Zcash.Common.ProgrammedBasis
