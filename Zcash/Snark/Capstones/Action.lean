@@ -72,9 +72,8 @@ rather than proved, with its known strengthening named where one exists:
   `challenge255_weightedBias_le`, and `challenge255_joint_eventBias_le` composes it through an
   adaptive deduplicated query tree (`Soundness/Oracle/Challenge255.lean`). The byte layer beneath
   the schedule — halo2's transcript encoding and BLAKE2b itself — is modeled and checked against
-  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform, and
-  `blake2b_simd`'s agreement with the Lean BLAKE2b beyond the captured transcripts, remain
-  external.
+  every capture (`Verifier/Transcript.lean`); idealizing that digest as uniform, and the match of
+  the `blake2b_simd` transcription with the Rust, remain external.
 * *DLOG hardness* — each profile takes a caller-supplied advantage bound for its exact relation
   finder (`AdaptiveStatementDlogProfile`, `CertifiedAdaptiveStatementDlogProfile`); relating that
   bound to a standard resource-bounded DLOG game and a concrete security estimate is external.

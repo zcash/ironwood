@@ -91,6 +91,7 @@ import Zcash.Snark.Soundness.Action.DeploymentRecord
 import Zcash.Security.GroupHash.Indiff
 import Zcash.Security.GroupHash.Pasta
 import Zcash.Security.GroupHash.TwoOracle
+import Zcash.Snark.Verifier.Blake2bSimdSpec
 
 /-!
 # Trust boundary, build-checked
@@ -2317,6 +2318,16 @@ assert_axioms Zcash.Circuits.Action.Separation.crossAddressBinding_nontrivial
 -- capture families run the schedule through. The encoding is injective, and one encoded
 -- transcript is a prefix of another exactly when the corresponding typed transcript is.
 assert_computable Zcash.Common.Blake2b.digest64
+-- `blake2b_simd`'s one-stream hashing, transcribed from 1.0.5 (`Common/Hash/Blake2bSimd/`): set up
+-- as Halo 2 sets it up, the transcription computes `digest64`, with each implementation.
+assert_computable Zcash.Common.Blake2bSimd.State.update +choice
+assert_computable Zcash.Common.Blake2bSimd.State.finalize +choice
+assert_axioms Zcash.Common.Blake2bSimd.compressBlock_eq_compress
+assert_axioms Zcash.Common.Blake2bSimd.Avx2.compressBlock_eq_portable
+assert_axioms Zcash.Common.Blake2bSimd.compress1Loop_final
+assert_axioms Zcash.Common.Blake2bSimd.halo2_finalize_eq_digest64
+assert_axioms Zcash.Snark.squeezeDigest_eq_blake2bSimd
+assert_axioms Zcash.Snark.keyDigest_eq_blake2bSimd
 assert_computable Zcash.Snark.encodeTranscript +choice
 assert_computable Zcash.Snark.halo2Transcript +choice
 assert_axioms Zcash.Snark.LEOS2IP_I2LEOSP_256

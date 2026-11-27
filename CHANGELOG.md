@@ -8,6 +8,10 @@ and this project adheres to Rust's notion of
 ## [Unreleased]
 
 ### Added
+- A transcription of `blake2b_simd`'s one-stream hashing (`Zcash/Common/Hash/Blake2bSimd/`), read
+  from 1.0.5 and proved to compute `digest64` in halo2's setup with each of its implementations,
+  and the corollaries that the transcription gives halo2's squeeze and key digests
+  (`Zcash/Snark/Verifier/Blake2bSimdSpec.lean`). That the transcription matches the Rust is trusted.
 - The Fiat–Shamir byte layer: an executable BLAKE2b (`Zcash/Common/Hash/Blake2b.lean`), halo2's
   transcript encoding and the concrete oracle `halo2Transcript` (`Zcash/Snark/Verifier/
   Transcript.lean`), and per-family checks that recompute every captured challenge from bytes

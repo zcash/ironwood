@@ -168,8 +168,8 @@ describe the key (`Describes`) and excluding identity instance commitments as ha
 honest captures witness the composition. The `Describes` requirement is not consumed by any theorem:
 it is evidence on the captures for the identification of Rust's verifying key with the Lean key,
 which the deployment record assumes ([#232](https://github.com/zcash/ironwood/issues/232)).
-BLAKE2b's idealization as a random oracle, `blake2b_simd`'s agreement with the Lean BLAKE2b beyond
-the captured transcripts, universal refinement of Rust's reader to the Lean decoder, and
+BLAKE2b's idealization as a random oracle, the match of the `blake2b_simd` transcription with the
+Rust, universal refinement of Rust's reader to the Lean decoder, and
 identification of the pinned description as Rust's exact exporter output remain external.
 `Snark/Fingerprint/Match.lean` enumerates the boundary, while
 `Snark/Soundness/Action/DeploymentRecord.lean` states production-reader refinement as the explicit

@@ -333,16 +333,16 @@ deployment record assumes, and it is not consumed by any theorem; see
 [#232](https://github.com/zcash/ironwood/issues/232).
 
 Four boundaries remain outside the universal proof. The security argument idealizes the BLAKE2b
-digest as uniform; `blake2b_simd` is not proved equal to Lean's BLAKE2b on every input; Rust's
+digest as uniform; `blake2b_simd` is proved equal to Lean's BLAKE2b on every input only through a
+hand transcription of its source in halo2's configuration, and that the transcription and its
+models of the AVX2 intrinsics match the Rust is trusted; Rust's
 transcript reader is not proved equal to `readProof?` on every proof byte string; and the pinned
 description's identification with the unique string emitted by Rust remains deployment provenance.
 The captures check all three implementation-facing identifications on their concrete executions, but
-finite captures do not establish them for arbitrary inputs. They also exercise only the compression
-path that `blake2b_simd` selected at run time on the capturing machine (portable, SSE4.1, or AVX2),
-not the others. Two further premisses the captures rest on are listed with the rest in
-`Snark/Fingerprint/Match.lean`: that the exporter records what the verifier consumed, and that the
-production code performs the ZIP 257 canonical-length check on which `readProof?`'s empty-suffix
-requirement relies (`Snark/Soundness/Main.lean`).
+finite captures do not establish them for arbitrary inputs. Two further premisses the captures rest
+on are listed with the rest in `Snark/Fingerprint/Match.lean`: that the exporter records what the
+verifier consumed, and that the production code performs the ZIP 257 canonical-length check on
+which `readProof?`'s empty-suffix requirement relies (`Snark/Soundness/Main.lean`).
 
 The formalized verifier prices one proof bundle. Halo2's optional randomized `BatchVerifier`
 aggregation of separate proof blobs is outside the model and is not included in the probability
@@ -380,7 +380,8 @@ Everything above, collected.
 2. **The hash behaves like a random oracle.** BLAKE2b is treated as fresh randomness with no
    exploitable structure; the algorithm (RFC 7693) is formalized and checked against the
    captured transcripts, but plays no role in the argument. The deployed implementation,
-   `blake2b_simd`, is not proved equal to it.
+   `blake2b_simd`, is proved equal to it in halo2's configuration through a hand transcription of
+   its source, whose match with the Rust is trusted.
 3. **The attacker is algebraic** — it shows its work for every curve point it outputs. One
    that does not is outside the claim rather than covered by it.
 4. **Attacks do not depend on specific encodings.** How curve points and field elements become bytes
